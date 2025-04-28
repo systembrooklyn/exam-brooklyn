@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import apiClient from '@/api/axiosInstance';
 import notyf from '@/components/global/notyf';
-import { IMPORT_EXAMS } from '../api/Api';
+import { IMPORT_EXAMS } from '../../api/Api';
 
 
 const file = ref(null);
