@@ -44,7 +44,7 @@ const systems = [
   {
     name: "One Task System",
     link: "https://www.1task.net/",
-    image: "https://ik.imagekit.io/ts7pphpbz3/Subheading%20(1)%20(1).png?updatedAt=1730567921316",
+    image: "https://ik.imagekit.io/ts7pphpbz3/Subheading%20(1)%20(1).png?ik-obj-version=9sTuepUtU27Iw3.FfIbdKOdc7MYL4WM0&updatedAt=1737223784202",
   },
   // {
   //   name: "SMR Platform",
