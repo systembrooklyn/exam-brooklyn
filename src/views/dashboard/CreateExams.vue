@@ -6,7 +6,7 @@ import ExamQuestions from "@/components/dashboard/ExamQuestions.vue";
 import { computed, inject, onMounted, ref } from "vue";
 import { useExamStore } from "@/stores/examStore";
 import { useScholarshipStore } from "@/stores/scholarships";
-import notyf from "@/components/global/Notyf";
+import notyf from "@/components/global/notyf";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
