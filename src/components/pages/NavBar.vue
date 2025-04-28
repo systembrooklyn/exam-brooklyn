@@ -10,7 +10,7 @@
         <!-- Right Side (User/Auth) -->
         <div class="flex items-center gap-4">
           <!-- Theme Toggle -->
-          <Toggle />
+          <!-- <Toggle /> -->
 
           <!-- User Profile or Login Button -->
           <div v-if="user" class="relative group">
@@ -66,7 +66,7 @@
 import { ref, computed, onMounted, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import logo from "../../assets/logo.png";
-import Toggle from "./ToggleTheme.vue";
+// import Toggle from "./ToggleTheme.vue";
 import { useAuthStore } from "@/stores/auth";
 import { LogOutIcon, UserIcon } from "lucide-vue-next";
 

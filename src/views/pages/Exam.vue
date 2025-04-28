@@ -34,12 +34,9 @@ const quizStarted = ref(false);
 const isSubmitting = ref(false);
 let interval;
 
-
 const mode = ref("all");
 
 const unansweredIndexes = ref([]);
-
-
 
 const currentQuestion = computed(
   () => questions.value[currentQuestionIndex.value] || null
@@ -50,13 +47,9 @@ const isLastQuestion = computed(
 
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-
-
 const filteredQuestions = computed(() => {
   return mode.value === "filter"
-    ? questions.value.filter(
-        (_, i) => unansweredIndexes.value.includes(i)
-      )
+    ? questions.value.filter((_, i) => unansweredIndexes.value.includes(i))
     : questions.value;
 });
 
@@ -170,8 +163,6 @@ const previousQuestion = () => {
 };
 
 const submitFinalExam = async () => {
-
-
   try {
     const unansweredQuestionIndexes = questions.value.reduce(
       (acc, question, index) => {
@@ -200,8 +191,8 @@ const submitFinalExam = async () => {
     saveAnswer();
     const payload = { answers: answersArray.value };
     isSubmitting.value = true;
-    (payload);
-    
+    payload;
+
     await studentStore.submitFinalExam(payload);
     isSubmitting.value = false;
     clearInterval(interval);
@@ -250,8 +241,8 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Show 'Start Exam' button initially -->
-    <div v-if="!quizStarted && timeLeft > 0" class="text-center ">
-      <button @click="handleStart" class="buttonClass">Start Exam</button>
+    <div v-if="!quizStarted && timeLeft > 0" class="text-center">
+      <button @click="handleStart" class="buttonClass">Start</button>
     </div>
     <div v-if="timeLeft <= 0" class="text-center">
       <button @click="router.push('/home')" class="btn-start">Go Back</button>
@@ -263,35 +254,37 @@ onBeforeUnmount(() => {
           >Go to question:</label
         >
         <select
-  v-model="currentQuestionIndex"
-  class="border px-4 py-2 rounded-md font-semibold"
-  @change="loadSelectedOption"
-  :class="{
-    'border-red-500 text-red-600': unansweredIndexes.length > 0 && mode === 'filter',
-    'border-indigo-500 text-indigo-700': mode !== 'filter',
-  }"
->
-  <option :value="null" disabled selected>
-    {{
-      mode === 'filter' && unansweredIndexes.length > 0
-        ? 'Unanswered questions'  
-        : 'Select a question'
-    }}
-  </option>
+          v-model="currentQuestionIndex"
+          class="border px-4 py-2 rounded-md font-semibold"
+          @change="loadSelectedOption"
+          :class="{
+            'border-red-500 text-red-600':
+              unansweredIndexes.length > 0 && mode === 'filter',
+            'border-indigo-500 text-indigo-700': mode !== 'filter',
+          }"
+        >
+          <option :value="null" disabled selected>
+            {{
+              mode === "filter" && unansweredIndexes.length > 0
+                ? "Unanswered questions"
+                : "Select a question"
+            }}
+          </option>
 
-  <option
-    v-for="(index, idx) in (mode === 'filter' ? unansweredIndexes : questions.map((_, i) => i))"
-    :key="idx"
-    :value="index"
-  >
-    Question {{ index + 1 }}
-  </option>
-</select>
-
+          <option
+            v-for="(index, idx) in mode === 'filter'
+              ? unansweredIndexes
+              : questions.map((_, i) => i)"
+            :key="idx"
+            :value="index"
+          >
+            Question {{ index + 1 }}
+          </option>
+        </select>
       </div>
       <div v-if="currentQuestion" class="question-container">
         <h3
-          class="text-lg font-semibold  text-center border p-3 rounded-xl mb-5 bg-primary text-white"
+          class="text-lg font-semibold text-center border p-3 rounded-xl mb-5 bg-primary text-white"
         >
           {{ currentQuestion.question_text }}
         </h3>
@@ -336,7 +329,7 @@ onBeforeUnmount(() => {
       </div> -->
 
       <div
-        class="answered-counter text-center mt-3 text-lg font-medium dark:text-white"
+        class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white"
       >
         It has been answered
         <span class="text-primary dark:text-blue-500 text-xl font-bold"
@@ -358,7 +351,6 @@ onBeforeUnmount(() => {
     </div>
   </div>
 </template>
-
 <style scoped>
 .question-container {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -366,7 +358,6 @@ onBeforeUnmount(() => {
 }
 
 .quiz-container {
-  position: relative;
   font-family: Arial, sans-serif;
   margin: 20px;
   padding: 10px;
@@ -374,29 +365,11 @@ onBeforeUnmount(() => {
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
-  overflow: hidden;
-  z-index: 1;
 }
-
-.quiz-container::before {
-  content: "";
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url('@/assets/logo.png');
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-  opacity: 0.07; 
-  z-index: 0;
- 
+.answered-counter {
+  margin-top: 15px;
+  color: #0d47aa;
 }
-
-.quiz-container > * {
-  position: relative;
-  z-index: 2; 
-}
-
-
 .option {
   display: flex;
   align-items: center;
@@ -428,34 +401,46 @@ onBeforeUnmount(() => {
   color: white;
 }
 
+button {
+  padding: 10px 50px;
+  background-color: #092c67;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+}
 
+button:hover {
+  background-color: #073481;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:disabled {
+  background-color: #ccc;
+}
 .buttonClass {
-  font-size:15px;
-  font-family:Arial;
-  width:140px;
-  height:50px;
-  border-width:1px;
-  color:#fff;
+  font-size: 15px;
+  font-family: Arial;
+  width: 140px;
+  height: 50px;
+  border-width: 1px;
+  color: #fff;
   cursor: pointer;
   font-weight: 500;
   font-size: 16px;
-  border-color:rgba(9, 44, 103, 1);
-  border-top-left-radius:10px;
-  border-top-right-radius:10px;
-  border-bottom-left-radius:10px;
-  border-bottom-right-radius:10px;
+  border-color: rgba(9, 44, 103, 1);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
   box-shadow: 0px 0px 0px 2px #9fb4f2;
   text-shadow: 0px 1px 0px rgba(136, 148, 179, 1);
-  background:linear-gradient(rgb(120, 146, 194), rgba(9, 44, 103, 1));
+  background: linear-gradient(rgb(120, 146, 194), rgba(9, 44, 103, 1));
 }
 
 .buttonClass:hover {
   background: linear-gradient(rgba(9, 44, 103, 1), rgb(120, 146, 194));
-}
-              
-
-button:disabled {
-  background-color: #ccc;
 }
 
 .selected-option {
@@ -504,12 +489,7 @@ button:disabled {
   color: white;
 }
 
-.answered-counter {
-  margin-top: 15px;
-  color: #0d47aa;
-}
 
-.dark .answered-counter {
-  color: #ffffff;
-}
+
+
 </style>

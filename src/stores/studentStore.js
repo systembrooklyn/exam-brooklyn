@@ -96,19 +96,9 @@ export const useStudentStore = defineStore("studentStore", () => {
 
       (response.data);
     } catch (err) {
-      (err);
-
-      if (err.response) {
-        otpMasg.value =
-          err.response.data.message || "Error occurred while sending OTP.";
-        otpMessageColor.value = "text-red-500";
-      } else if (err.request) {
-        otpMasg.value = "Network error. Please check your connection.";
-        otpMessageColor.value = "text-red-500";
-      } else {
-        otpMasg.value = "An unexpected error occurred.";
-        otpMessageColor.value = "text-red-500";
-      }
+    handleError(err);
+window.location.reload();
+     
 
       loadingOtp.value = false;
       console.error(err);
