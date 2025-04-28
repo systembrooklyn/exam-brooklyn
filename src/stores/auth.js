@@ -10,7 +10,7 @@ import {
   RESET_PASSWORD,
   USER_BY_TOKEN,
 } from "../api/Api";
-import CryptoJS from "crypto-js"; 
+import CryptoJS from "crypto-js";
 import { handleError } from "./handleError";
 
 export const useAuthStore = defineStore("authStore", () => {
@@ -61,7 +61,6 @@ export const useAuthStore = defineStore("authStore", () => {
   const login = async (email, password) => {
     loading.value = true;
     error.value = null;
-    console.log(email, password);
     try {
       const response = await apiClient.post(LOGIN, { email, password });
       token.value = response.data.token;
@@ -139,7 +138,6 @@ export const useAuthStore = defineStore("authStore", () => {
       const response = await apiClient.get(USER_BY_TOKEN);
       user.value = response.data.User;
       permissions.value = response.data.permissions;
-      console.log(response.data);
 
       Cookies.set("user", JSON.stringify(user.value), {
         expires: 7,

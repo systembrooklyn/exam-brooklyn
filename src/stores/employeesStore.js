@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { REGISTER, USERS , USER_BY_TOKEN} from "../api/Api";
+import { REGISTER, USERS, USER_BY_TOKEN } from "../api/Api";
 import notyf from "@/components/global/notyf";
 import { handleError } from "./handleError";
 
@@ -10,13 +10,12 @@ export const useEmployeeStore = defineStore("employees", () => {
   const loading = ref(false);
   const user = ref(null);
 
-
   // Fetch employees from API
   const fetchEmployees = async () => {
     loading.value = true;
     try {
       const response = await apiClient.get(USERS);
-      employees.value =  response.data.data
+      employees.value = response.data.data;
       loading.value = false;
     } catch (error) {
       handleError(error);
@@ -28,10 +27,8 @@ export const useEmployeeStore = defineStore("employees", () => {
     loading.value = true;
     try {
       const response = await apiClient.get(USER_BY_TOKEN);
-      user.value =  response.data.User
-      (response.data)
-      ();
-      
+      user.value = response.data.User(response.data)();
+
       loading.value = false;
     } catch (error) {
       handleError(error);
@@ -54,14 +51,14 @@ export const useEmployeeStore = defineStore("employees", () => {
   const updateEmployee = async (id, updatedEmployee) => {
     try {
       const response = await apiClient.put(`${USERS}/${id}`, updatedEmployee);
-      const index = employees.value.findIndex(emp => emp.id === id);
+      const index = employees.value.findIndex((emp) => emp.id === id);
       if (index !== -1) {
         employees.value[index] = response.data.User;
       }
       if (user.value?.id === id) {
         user.value = response.data.User;
       }
-      
+
       notyf.success("Employee updated successfully");
     } catch (error) {
       handleError(error);
@@ -70,8 +67,8 @@ export const useEmployeeStore = defineStore("employees", () => {
 
   // Delete employee via API
   const deleteEmployee = async (id) => {
-    (id);
-    
+    id;
+
     try {
       await apiClient.delete(`${USERS}/${id}`);
       employees.value = employees.value.filter((emp) => emp.id !== id);
