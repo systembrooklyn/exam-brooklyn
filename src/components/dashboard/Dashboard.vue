@@ -6,7 +6,7 @@
     <!-- Main content -->
     <div class="flex-1 flex flex-col">
       <!-- Navbar -->
-      <Navbar />
+      <NavBar />
 
       <!-- Content area -->
       <main class="flex-1 p-4 bg-indigo-50">
@@ -18,5 +18,5 @@
 
 <script setup>
 import Sidebar from './Sidebar.vue'
-import Navbar from './Navbar.vue'
+import NavBar from './NavBar.vue'
 </script>
