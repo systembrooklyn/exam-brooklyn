@@ -59,19 +59,19 @@ const systems = [
     image: dashboard,
     requiresPermission: "view-dashboard", 
   },
-  {
-    name: "Reservation System",
-    route: "/reservation",
-    image: reservation ,
-    // requiresPermission: "view-dashboard", 
-  },
-  {
-    name: "Placement Test",
-    route: "/placement-test",
+  // {
+  //   name: "Reservation System",
+  //   route: "/reservation",
+  //   image: reservation ,
+  //   // requiresPermission: "view-dashboard", 
+  // },
+  // {
+  //   name: "Placement Test",
+  //   route: "/placement-test",
 
-    image: Placement ,
-    // requiresPermission: "view-dashboard", 
-  },
+  //   image: Placement ,
+  //   // requiresPermission: "view-dashboard", 
+  // },
 ];
 
 
