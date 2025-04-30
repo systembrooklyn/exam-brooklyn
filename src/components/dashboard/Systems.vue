@@ -31,6 +31,8 @@ import { computed } from 'vue';
 
 import onetask from '../../assets/exam.png';
 import dashboard from '../../assets/dashboard.png';
+import reservation from '../../assets/reservation.png';
+import Placement from '../../assets/placement.png';
 import { useAuthStore } from '@/stores/auth';
 
 
@@ -56,6 +58,19 @@ const systems = [
     route: "/dashboard",
     image: dashboard,
     requiresPermission: "view-dashboard", 
+  },
+  {
+    name: "Reservation System",
+    route: "/reservation",
+    image: reservation ,
+    // requiresPermission: "view-dashboard", 
+  },
+  {
+    name: "Placement Test",
+    route: "/placement-test",
+
+    image: Placement ,
+    // requiresPermission: "view-dashboard", 
   },
 ];
 

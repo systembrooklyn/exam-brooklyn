@@ -10,6 +10,9 @@ const routes = [
   { path: "/", name: "login", component: LogIn },
   { path: "/home", name: "home", component: Home },
   { path: "/examPage", name: "examPage", component: Exam },
+  { path: "/reservation", name: "reservation", component: () => import("../views/pages/Reservation.vue") },
+  { path: "/placement-test", name: "placement-test", component: () => import("../views/pages/PlacementTest.vue") },
+
   {
     path: "/result",
     name: "ResultPage",
