@@ -5,7 +5,7 @@
   
       <!-- Information Section -->
       <div class="bg-blue-50 p-6 border-l-4 border-blue-500 rounded-xl shadow-md text-blue-900 mb-6">
-        <p class="font-semibold text-lg mb-2">Please be noted of the following:</p>
+        <p class="font-semibold text-lg mb-2">Please Be Noted Of The Following:</p>
         <div class="space-y-2">
           <p><strong>Time of the exam is:</strong> 1 hour</p>
           <p><strong>The test is composed of three phases:</strong></p>

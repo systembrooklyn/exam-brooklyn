@@ -2,7 +2,7 @@
 import InstructorSelect from "@/components/dashboard/InstructorSelect.vue";
 import CourseSelect from "@/components/dashboard/CourseSelect.vue";
 import ExamInfoForm from "@/components/dashboard/ExamInfoForm.vue";
-import ExamQuestions from "@/components/dashboard/ExamQuestions.vue";
+import { defineAsyncComponent } from "vue";
 import { computed, inject, onMounted, ref } from "vue";
 import { useExamStore } from "@/stores/examStore";
 import { useScholarshipStore } from "@/stores/scholarships";
@@ -18,6 +18,14 @@ const scholarshipStore = useScholarshipStore();
 const questionForm = ref()
 const router = useRouter();
 
+
+const ExamQuestions = defineAsyncComponent(() =>
+  import("@/components/dashboard/ExamQuestions.vue")
+);
+
+const prefetchExamQuestions = () => {
+  import("@/components/dashboard/ExamQuestions.vue");
+};
 
 onMounted(() => {
   scholarshipStore.fetchScholarships();
@@ -135,6 +143,7 @@ const submitExam = async () => {
         v-show="!isAdding"
         @click="isAdding = true"
         :disabled="!isFormValid"
+         @mouseover="prefetchExamQuestions"
         :class="[
           'bg-primary text-white px-4 py-2 rounded hover:bg-indigo-700 cursor-pointer flex items-center gap-2 min-w-[140px]',
           !isFormValid ? 'opacity-50 cursor-not-allowed' : '',
