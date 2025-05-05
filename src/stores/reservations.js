@@ -16,6 +16,8 @@ export const useReservationStore = defineStore("reservationStore", () => {
     try {
       const response = await apiClient.get(RESERVATIONS);
       reservations.value = response.data.data;
+      console.log(reservations.value);
+      
  
       
     } catch (err) {
@@ -32,7 +34,7 @@ export const useReservationStore = defineStore("reservationStore", () => {
     try {
       const response = await apiClient.post(RESERVATIONS, reservation);
     //   reservations.value.push(response.data.data);
-      console.log(response.dada);
+      console.log(response.data.data);
       
       notyf.success("Reservation added successfully");
     } catch (err) {
