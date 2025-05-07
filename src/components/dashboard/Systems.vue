@@ -31,7 +31,7 @@ import { computed } from 'vue';
 
 import onetask from '../../assets/exam.png';
 import dashboard from '../../assets/dashboard.png';
-import reservation from '../../assets/reservation.png';
+import reservation from '../../assets/reservation.jpeg';
 import Placement from '../../assets/placement.png';
 import { useAuthStore } from '@/stores/auth';
 
@@ -63,7 +63,6 @@ const systems = [
   {
     name: "Placement Test",
     route: "/placement-test",
-
     image: Placement ,
     // requiresPermission: "view-dashboard", 
   },
