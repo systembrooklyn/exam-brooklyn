@@ -13,20 +13,20 @@ const handelSendOtp = () => {
   }
 };
 
-watch(
-  () => studentStore.studentId,
-  (newId) => {
-    if (timeout) {
-      clearTimeout(timeout);
-    }
+// watch(
+//   () => studentStore.studentId,
+//   (newId) => {
+//     if (timeout) {
+//       clearTimeout(timeout);
+//     }
 
-    if (newId) {
-      timeout = setTimeout(() => {
-        studentStore.fetchCourses();
-      }, 500);
-    }
-  }
-);
+//     if (newId) {
+//       timeout = setTimeout(() => {
+//         studentStore.fetchCourses();
+//       }, 500);
+//     }
+//   }
+// );
 
 watch(
   () => studentStore.selectedModule,
@@ -92,6 +92,7 @@ const submitForm = async () => {
           />
           <input
             v-model="studentStore.studentId"
+              @blur="studentStore.fetchCourses"
             :disabled="studentStore.otpSent"
             type="text"
             id="name-input"
