@@ -2,14 +2,7 @@
   <div class="space-y-6 p-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-800">Instructor List</h1>
-      <!-- <button
-        @click="openAddModal"
-        v-if="authStore.hasPermission('create-instructors')"
-        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
-      >
-        + Add Instructor
-      </button> -->
-      <!-- From Uiverse.io by Nawsome -->
+    
       <div
         @click="openAddModal"
         v-if="authStore.hasPermission('create-instructors')"

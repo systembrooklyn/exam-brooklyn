@@ -1,4 +1,4 @@
-import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog } from 'lucide-vue-next'
+import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog ,ClipboardCheck } from 'lucide-vue-next'
 
 export const items = [
   {
@@ -33,6 +33,11 @@ export const items = [
     name: 'Roles',
     icon: ShieldCheck,  
     route: 'roles'
+  },
+  {
+    name:'Reservations',
+    icon: ClipboardCheck  ,  
+    route: 'reservations'
   },
   {
     name: 'Settings',

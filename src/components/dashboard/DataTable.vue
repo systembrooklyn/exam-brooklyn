@@ -47,7 +47,7 @@
       ></div>
     </div>
 
-    <div v-else>
+    <div  v-else  >
       <!-- Table -->
       <table class="min-w-[600px] w-full divide-y text-center divide-gray-200">
         <thead class="bg-gradient-to-r bg-primary text-white">
@@ -219,11 +219,19 @@ const formatDate = (date) => {
 };
 
 const filteredItems = computed(() => {
-  return props.items.filter(
-    (item) =>
-      item.name && item.name.toLowerCase().includes(search.value.toLowerCase())
+  if (!search.value) return props.items;
+  const lowerSearch = search.value.toLowerCase();
+  return props.items.filter(item =>
+    props.headers.some(header => {
+      const value = getValueByPath(item, header.key);
+      return (
+        typeof value === "string" &&
+        value.toLowerCase().includes(lowerSearch)
+      );
+    })
   );
 });
+
 
 const totalPages = computed(() => {
   return Math.ceil(filteredItems.value.length / itemsPerPage);

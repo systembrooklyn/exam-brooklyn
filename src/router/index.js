@@ -12,6 +12,7 @@ const routes = [
   { path: "/examPage", name: "examPage", component: Exam },
   { path: "/reservation", name: "reservation", component: () => import("../views/pages/Reservation.vue") },
   { path: "/placement-test", name: "placement-test", component: () => import("../views/pages/PlacementTest.vue") },
+  { path: "/reservationSuccess", name: "reservation-success", component: () => import("../views/pages/ReservationSuccess.vue") },
 
   {
     path: "/result",
@@ -99,6 +100,12 @@ const routes = [
         meta: { requiresPermission: "view-role" },
         component: () => import("@/views/dashboard/RoleList.vue"),
       },
+      {
+        path:"reservations",
+        name:"reservations",
+        // meta: { requiresPermission: "view-reservations" },
+        component: () => import("@/views/dashboard/ReservationsList.vue"),
+      }
     ],
   },
 ];
