@@ -20,16 +20,12 @@
     { label: 'Student Email', key: 'student.email' },
     { label: 'Grade', key: 'student.grade' },
     { label: 'Scholarship', key: 'student.scholarship' },
-    { label: 'Reserved Time', key: 'reserved_time' },
-    { label: 'Called By', key: 'called_by.name' },
-    { label: 'Registered By', key: 'registered_by.name' },
-    { label: 'Branch', key: 'branch.name' },
-    { label: 'Marketing Code', key: 'marketing_code' },
     { label: 'Status', key: 'status.label' },
     // أضف باقي الحقول اللي محتاجها
   ]"
   :items="reservationStore.reservations"
   resourceType="reservations"
+  :isReservation="true"
   @edit="editReservation"
   @delete="confirmDelete"
 />

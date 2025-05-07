@@ -58,13 +58,13 @@ const systems = [
     name: "Reservation System",
     route: "/reservation",
     image: reservation ,
-    // requiresPermission: "view-dashboard", 
+    requiresPermission: "view-reservation", 
   },
   {
     name: "Placement Test",
     route: "/placement-test",
     image: Placement ,
-    // requiresPermission: "view-dashboard", 
+    requiresPermission: "view-placement-test", 
   },
 ];
 

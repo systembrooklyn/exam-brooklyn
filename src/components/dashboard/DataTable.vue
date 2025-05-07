@@ -82,7 +82,7 @@
             >
               <!-- Make the 'name' column clickable -->
               <span
-                v-if="header.key === 'name'"
+                v-if="header.key === 'name' || header.key === 'student.name'"
                 @click="showDetails(item)"
                 class="cursor-pointer font-semibold text-indigo-600 hover:text-indigo-800"
               >
@@ -164,6 +164,7 @@
       :selectedExam="selectedExam"
       :isCourse="isCourse"
       :isExam="isExam"
+      :isReservation="isReservation"
       :isInstructors="isInstructors"
       :isEmployee="isEmployee"
       @close="selectedExam = null"
@@ -188,6 +189,7 @@ const props = defineProps({
   isEmployee: Boolean,
   isCourse: Boolean,
   resourceType: String,
+  isReservation: Boolean,
 });
 
 const search = ref("");

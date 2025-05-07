@@ -1,12 +1,12 @@
 <template>
     <div
-     v-if="(isExam || isInstructors || isEmployee || isCourse) && Object.keys(selectedExam).length"
+     v-if="(isExam || isInstructors || isEmployee || isCourse || isReservation) && Object.keys(selectedExam).length"
       class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex items-center justify-center z-50 transition-all duration-300 ease-in-out"
     >
       <div class="bg-white relative p-8 rounded-lg shadow-2xl max-w-lg w-full transform transition-all duration-500 ease-in-out scale-95 hover:scale-100">
         <!-- Modal Header -->
         <div class="mb-6">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{ isExam && 'Exam' || isInstructors && 'Instructor'|| isEmployee && 'Employee' || isCourse && 'Course' }} Details</h2>
+          <h2 class="text-2xl font-semibold text-gray-800 mb-2">{{ isExam && 'Exam' || isInstructors && 'Instructor'|| isEmployee && 'Employee' || isCourse && 'Course' || isReservation && 'Reservation' }} Details</h2>
           <div class="border-b-2 border-gray-300 mb-4"></div>
         </div>
   
@@ -53,6 +53,33 @@
           </p>
         
         </div>
+        <div v-if="isReservation">
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Reserved Time:</strong> {{ selectedExam.reserved_time && formatDate(selectedExam.reserved_time) || "No Reserved Time" }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Called By:</strong> {{ selectedExam.called_by && selectedExam.called_by.name  || "No Called By" }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Registered By:</strong> {{ selectedExam.registered_by && selectedExam.registered_by.name  || "No Registration" }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Marketing Code:</strong> {{ selectedExam.marketing_code }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Branch:</strong> {{ selectedExam.branch && selectedExam.branch.name  || "No Branch" }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Updated At:</strong> {{ formatDate(selectedExam.updated_at) }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Created At:</strong> {{ formatDate(selectedExam.registered_at) }}
+          </p>
+          <p class="text-gray-700 text-sm mb-2">
+            <strong class="text-primary font-medium">Called Time:</strong> {{ formatDate(selectedExam.called_time) }}
+          </p>
+
+        </div>
 
 
   
@@ -89,6 +116,10 @@
       required: true
     },
     isCourse : {
+      type: Boolean,
+      required: true
+    },
+    isReservation : {
       type: Boolean,
       required: true
     }
