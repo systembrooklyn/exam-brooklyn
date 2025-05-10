@@ -60,7 +60,7 @@
               {{ header.label }}
             </th>
             <th
-              v-if="canEdit || canDelete"
+            
               class="px-6 py-4 text-center text-md font-semibold tracking-wider"
             >
               Actions
@@ -92,18 +92,18 @@
             </td>
 
             <td
-              v-if="canEdit || canDelete"
+              
               class="px-6 py-4 whitespace-nowrap space-x-6"
             >
               <button
-                v-if="canEdit"
+              
                 @click="$emit('edit', item)"
                 class="text-indigo-600 cursor-pointer hover:text-indigo-800 transition inline-flex items-center gap-1"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
-                v-if="canDelete"
+            
                 @click="$emit('delete', item.id)"
                 class="text-red-600 cursor-pointer hover:text-red-800 transition inline-flex items-center gap-1"
               >
@@ -307,3 +307,9 @@ td {
   white-space: normal;
 }
 </style>
+
+
+<!-- v-if="canEdit"
+v-if="canEdit"
+v-if="canDelete"
+v-if="canEdit || canDelete" -->

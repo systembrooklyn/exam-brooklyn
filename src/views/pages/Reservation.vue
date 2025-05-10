@@ -26,6 +26,10 @@ const form = reactive({
   status: "",
   called_time: "",
   called_by: "",
+  faculity : "",
+major :"",
+careerType: [], 
+
 });
 
 const missingFieldsError = ref(false);
@@ -33,7 +37,7 @@ const missingFieldsError = ref(false);
 async function handleSubmit() {
   const requiredFields = [
     "name", "email", "mobile", "ID_number", "birth_date",
-    "grade", "company", "marketing_code", "scholarship", "status",
+    "grade", "company", "marketing_code", "scholarship",
     "called_time", "called_by"
   ];
 
@@ -62,6 +66,10 @@ const calledDateTime = form.called_time.replace("T", " ") + ":00";
     status: form.status,
     called_by: form.called_by,
     called_time: calledDateTime,
+    faculity: form.faculity,
+major: form.major,
+careerType: form.careerType.join(','),
+
   };
 
   try {
@@ -88,7 +96,7 @@ onMounted(() => {
     <h2
       class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-7"
     >
-    Reservation Intake Form
+      Reservation Intake Form
     </h2>
 
     <form
@@ -160,18 +168,18 @@ onMounted(() => {
       <!-- National ID -->
       <div>
         <label class="form-label">National ID (14 digits)</label>
-       <div class="relative">
-        <IdCard 
+        <div class="relative">
+          <IdCard
             class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
           />
-        <input
-          v-model="form.ID_number"
-          type="text"
-          class="form-input"
-          maxlength="14"
-          placeholder="12345678901234"
-        />
-       </div>
+          <input
+            v-model="form.ID_number"
+            type="text"
+            class="form-input"
+            maxlength="14"
+            placeholder="12345678901234"
+          />
+        </div>
       </div>
 
       <!-- Date of Birth -->
@@ -202,9 +210,88 @@ onMounted(() => {
           <option>>45</option>
         </select>
       </div>
+      <!-- Faculty -->
+<div>
+  <label class="form-label">Faculty</label>
+  <input
+    v-model="form.faculity"
+    type="text"
+    class="form-input"
+    placeholder="Faculty name"
+  />
+</div>
+
+<!-- Major -->
+<div>
+  <label class="form-label">Major</label>
+  <input
+    v-model="form.major"
+    type="text"
+    class="form-input"
+    placeholder="Your Major"
+  />
+</div>
+
+<!-- Career Type -->
+<!-- Career Type - Checkboxes -->
+<div class="space-y-2">
+  <label class="form-label">Career Type (You can select multiple)</label>
+  <label class="inline-flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="form.careerType"
+      value="Engineer"
+      class="form-checkbox h-5 w-5 text-blue-600"
+    />
+    <span>Engineer</span>
+  </label>
+
+  <label class="inline-flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="form.careerType"
+      value="healthcare"
+      class="form-checkbox h-5 w-5 ms-3  text-blue-600"
+    />
+    <span>Healthcare</span>
+  </label>
+
+  <label class="inline-flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="form.careerType"
+      value="Business Administration"
+      class="form-checkbox h-5 w-5  text-blue-600"
+    />
+    <span>Business Administration</span>
+  </label>
+
+  <label class="inline-flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="form.careerType"
+      value="Science graduates"
+      class="form-checkbox h-5 w-5 text-blue-600"
+    />
+    <span>Science graduates</span>
+  </label>
+
+  <label class="inline-flex items-center space-x-2">
+    <input
+      type="checkbox"
+      v-model="form.careerType"
+      value="other"
+      class="form-checkbox h-5 w-5 text-blue-600"
+    />
+    <span>Other</span>
+  </label>
+</div>
+
+
+
 
       <!-- status -->
-      <div>
+      <!-- <div>
         <label class="form-label"> Status</label>
         <select v-model="form.status" class="form-input">
           <option disabled value="">Select Status</option>
@@ -213,22 +300,22 @@ onMounted(() => {
           <option value="ask">Ask</option>
           <option value="cancel">Cancel</option>
         </select>
-      </div>
+      </div> -->
 
       <!-- Company -->
       <div>
         <label class="form-label">Company</label>
-       <div class="relative">
-        <Landmark 
+        <div class="relative">
+          <Landmark
             class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
           />
-        <input
-          v-model="form.company"
-          type="text"
-          class="form-input"
-          placeholder="Company name (if any)"
-        />
-       </div>
+          <input
+            v-model="form.company"
+            type="text"
+            class="form-input"
+            placeholder="Company name (if any)"
+          />
+        </div>
       </div>
 
       <!-- Marketing Code -->
@@ -245,48 +332,57 @@ onMounted(() => {
       <!-- Manual Called Time -->
 
       <!-- Call Info Section -->
-<div class="md:col-span-2  border-t-1 border-blue-200">
- 
+      <div class="md:col-span-2 border-t-1 border-blue-200">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <!-- Call Time -->
+          <!-- Call Time -->
+          <div>
+            <label class="flex items-center gap-2 mb-2">
+              <span class="font-bold text-[#1e3a8a]">Call Date & Time</span>
+              <span class="text-sm text-gray-500"
+                >(Filled by the employee)</span
+              >
+            </label>
+            <input
+              v-model="form.called_time"
+              type="datetime-local"
+              class="form-input"
+            />
+          </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-    <!-- Call Time -->
-   <!-- Call Time -->
-<div>
-  <label class="flex items-center gap-2 mb-2">
-    <span class="font-bold text-[#1e3a8a]">Call Date & Time</span>
-    <span class="text-sm text-gray-500">(Filled by the employee)</span>
-  </label>
-  <input
-    v-model="form.called_time"
-    type="datetime-local"
-    class="form-input"
-  />
-</div>
-
-
-    <!-- Called By -->
-    <div>
-      <label class="flex items-center gap-2 mb-2"><span class="font-bold text-[#1e3a8a]">Called By</span> <span class="text-sm text-gray-500">(Filled by the employee)</span></label>
-      <select v-model="form.called_by" class="form-input">
-        <option disabled value="">Select</option>
-        <option
-          v-for="employee in employeeStore.employees"
-          :key="employee.id"
-          :value="employee.id"
-        >
-          {{ employee.name }}
-        </option>
-      </select>
-    </div>
-  </div>
-</div>
-<!-- Error message if required fields are missing -->
-<p v-if="missingFieldsError" class="text-red-600 text-center font-medium md:col-span-2">
-  ⚠️ Please fill in all required fields before submitting.
-</p>
+          <!-- Called By -->
+          <div>
+            <label class="flex items-center gap-2 mb-2"
+              ><span class="font-bold text-[#1e3a8a]">Called By</span>
+              <span class="text-sm text-gray-500"
+                >(Filled by the employee)</span
+              ></label
+            >
+            <select v-model="form.called_by" class="form-input">
+              <option disabled value="">Select</option>
+              <option
+                v-for="employee in employeeStore.employees"
+                :key="employee.id"
+                :value="employee.id"
+              >
+                {{ employee.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- Error message if required fields are missing -->
+      <p
+        v-if="missingFieldsError"
+        class="text-red-600 text-center font-medium md:col-span-2"
+      >
+        ⚠️ Please fill in all required fields before submitting.
+      </p>
 
       <!-- Submit -->
-      <div class="md:col-span-2 text-center  py-4 flex items-center justify-center  ">
+      <div
+        class="md:col-span-2 text-center py-4 flex items-center justify-center"
+      >
         <button
           type="submit"
           :disabled="isLoading"
