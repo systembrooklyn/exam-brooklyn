@@ -76,6 +76,9 @@
             <strong class="text-primary font-lg text-lg">Faculity: </strong> {{ selectedExam.student.faculity || "Not Available" }}
           </p>
           <p class="text-gray-700 text-md mb-2 ">
+            <strong class="text-primary font-lg text-lg">Scholarship: </strong> {{ selectedExam.student.scholarship.name || "Not Available" }}
+          </p>
+          <p class="text-gray-700 text-md mb-2 ">
             <strong class="text-primary font-lg text-lg">Major: </strong> {{ selectedExam.student.majorx || "Not Available" }}
           </p>
           <p class="text-gray-700 text-md mb-2 ">

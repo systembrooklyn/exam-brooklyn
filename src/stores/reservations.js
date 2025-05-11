@@ -44,6 +44,8 @@ export const useReservationStore = defineStore("reservationStore", () => {
   };
 
   const updateReservation = async (id, updatedData) => {
+    console.log(updatedData);
+    
     try {
       const response = await apiClient.put(`${RESERVATIONS}/${id}`, updatedData);
       reservations.value = reservations.value.map((r) =>

@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, reactive } from "vue";
-import { User, Mail, Phone, Calendar ,IdCard ,Landmark} from "lucide-vue-next";
+import { User, Mail, Phone, Calendar, IdCard, Landmark } from "lucide-vue-next";
 import { useReservationStore } from "@/stores/reservations.js";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 import { useEmployeeStore } from "@/stores/employeesStore.js";
@@ -23,22 +23,28 @@ const form = reactive({
   company: "",
   marketing_code: "",
   scholarship: "",
-  status: "",
   called_time: "",
   called_by: "",
-  faculity : "",
-major :"",
-careerType: [], 
-
+  faculity: "",
+  major: "",
+  careerType: "",
 });
 
 const missingFieldsError = ref(false);
 
 async function handleSubmit() {
   const requiredFields = [
-    "name", "email", "mobile", "ID_number", "birth_date",
-    "grade", "company", "marketing_code", "scholarship",
-    "called_time", "called_by"
+    "name",
+    "email",
+    "mobile",
+    "ID_number",
+    "birth_date",
+    "grade",
+    "company",
+    "marketing_code",
+    "scholarship",
+    "called_time",
+    "called_by",
   ];
 
   const missing = requiredFields.filter((field) => !form[field]);
@@ -51,7 +57,7 @@ async function handleSubmit() {
   missingFieldsError.value = false;
   isLoading.value = true;
 
-const calledDateTime = form.called_time.replace("T", " ") + ":00";
+  const calledDateTime = form.called_time.replace("T", " ") + ":00";
 
   const payload = {
     name: form.name,
@@ -63,24 +69,21 @@ const calledDateTime = form.called_time.replace("T", " ") + ":00";
     company: form.company,
     marketing_code: form.marketing_code,
     scholarship: form.scholarship,
-    status: form.status,
     called_by: form.called_by,
     called_time: calledDateTime,
     faculity: form.faculity,
-major: form.major,
-careerType: form.careerType.join(','),
-
+    major: form.major,
+    careerType: form.careerType,
   };
 
   try {
     await reservationStore.addReservation(payload);
     router.push({ name: "reservation-success" });
-    rou
+    rou;
   } finally {
     isLoading.value = false;
   }
 }
-
 
 onMounted(() => {
   scholarshipStore.fetchScholarships();
@@ -211,96 +214,43 @@ onMounted(() => {
         </select>
       </div>
       <!-- Faculty -->
+      <div>
+        <label class="form-label">Faculty</label>
+        <input
+          v-model="form.faculity"
+          type="text"
+          class="form-input"
+          placeholder="Faculty name"
+        />
+      </div>
+
+      <!-- Major -->
+      <div>
+        <label class="form-label">Major</label>
+        <input
+          v-model="form.major"
+          type="text"
+          class="form-input"
+          placeholder="Your Major"
+        />
+      </div>
+
+     
+   <!-- Career Type -->
 <div>
-  <label class="form-label">Faculty</label>
-  <input
-    v-model="form.faculity"
-    type="text"
-    class="form-input"
-    placeholder="Faculty name"
-  />
-</div>
-
-<!-- Major -->
-<div>
-  <label class="form-label">Major</label>
-  <input
-    v-model="form.major"
-    type="text"
-    class="form-input"
-    placeholder="Your Major"
-  />
-</div>
-
-<!-- Career Type -->
-<!-- Career Type - Checkboxes -->
-<div class="space-y-2">
-  <label class="form-label">Career Type (You can select multiple)</label>
-  <label class="inline-flex items-center space-x-2">
-    <input
-      type="checkbox"
-      v-model="form.careerType"
-      value="Engineer"
-      class="form-checkbox h-5 w-5 text-blue-600"
-    />
-    <span>Engineer</span>
-  </label>
-
-  <label class="inline-flex items-center space-x-2">
-    <input
-      type="checkbox"
-      v-model="form.careerType"
-      value="healthcare"
-      class="form-checkbox h-5 w-5 ms-3  text-blue-600"
-    />
-    <span>Healthcare</span>
-  </label>
-
-  <label class="inline-flex items-center space-x-2">
-    <input
-      type="checkbox"
-      v-model="form.careerType"
-      value="Business Administration"
-      class="form-checkbox h-5 w-5  text-blue-600"
-    />
-    <span>Business Administration</span>
-  </label>
-
-  <label class="inline-flex items-center space-x-2">
-    <input
-      type="checkbox"
-      v-model="form.careerType"
-      value="Science graduates"
-      class="form-checkbox h-5 w-5 text-blue-600"
-    />
-    <span>Science graduates</span>
-  </label>
-
-  <label class="inline-flex items-center space-x-2">
-    <input
-      type="checkbox"
-      v-model="form.careerType"
-      value="other"
-      class="form-checkbox h-5 w-5 text-blue-600"
-    />
-    <span>Other</span>
-  </label>
+  <label class="form-label">Career Type</label>
+  <select v-model="form.careerType" class="form-input">
+    <option disabled value="">Select Career Type</option>
+    <option value="Engineer">Engineer</option>
+    <option value="healthcare">Healthcare</option>
+    <option value="Business Administration">Business Administration</option>
+    <option value="Science graduates">Science graduates</option>
+    <option value="other">Other</option>
+  </select>
 </div>
 
 
-
-
-      <!-- status -->
-      <!-- <div>
-        <label class="form-label"> Status</label>
-        <select v-model="form.status" class="form-input">
-          <option disabled value="">Select Status</option>
-          <option value="manual">Manual</option>
-          <option value="reserve">Reserve</option>
-          <option value="ask">Ask</option>
-          <option value="cancel">Cancel</option>
-        </select>
-      </div> -->
+    
 
       <!-- Company -->
       <div>

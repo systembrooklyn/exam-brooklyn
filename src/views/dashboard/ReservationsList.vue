@@ -1,3 +1,144 @@
+<script setup>
+import { ref, onMounted, computed } from "vue";
+import { useReservationStore } from "@/stores/reservations";
+import DataTable from "@/components/dashboard/DataTable.vue";
+import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
+import Modal from "@/components/global/Modal.vue";
+import { useAuthStore } from "@/stores/auth";
+
+const authStore = useAuthStore();
+const reservationStore = useReservationStore();
+const showModal = ref(false);
+const saving = ref(false);
+const isEditing = ref(false);
+const form = ref({
+  name: "",
+  email: "",
+  mobile: "",
+  ID_number: "",
+  birth_date: "",
+  grade: "",
+  company: "",
+  marketing_code: "",
+  scholarship: "",
+  called_time: "",
+  called_by: "",
+  faculity: "",
+  major: "",
+  careerType: "",
+});
+
+const showDeleteAlert = ref(false);
+const reservationIdToDelete = ref(null);
+const search = ref("");
+const reservations = ref([]);
+
+const filteredReservations = computed(() => {
+  return reservationStore.reservations.filter((reservation) => {
+    return (
+      reservation.student.name.toLowerCase().includes(search.value.toLowerCase()) ||
+      reservation.reserved_time.toLowerCase().includes(search.value.toLowerCase())
+    );
+  });
+});
+
+const toggleForm = () => {
+  showModal.value = true;
+  isEditing.value = false;
+  form.value = {
+  name: "",
+  email: "",
+  mobile: "",
+  ID_number: "",
+  birth_date: "",
+  grade: "",
+  company: "",
+  marketing_code: "",
+  scholarship: "",
+  called_time: "",
+  called_by: "",
+  faculity: "",
+  major: "",
+  careerType: "",
+}
+};
+
+const closeModal = () => {
+  showModal.value = false;
+  isEditing.value = false;
+  saving.value = false;
+};
+
+const editReservation = (reservation) => {
+  isEditing.value = true;
+
+  form.value = {
+    ...reservation,
+    student: {
+    ...reservation.student,
+    scholarship_id: reservation.student.scholarship?.id || "",
+  },
+    status: reservation.status?.key || "", 
+    called_by: reservation.called_by?.name || "",
+
+    
+    
+  };
+
+  showModal.value = true;
+};
+
+const saveReservation = async () => {
+  saving.value = true;
+
+  // const payload = {
+  //   ...form.value,
+  //   student: {
+  //   ...form.value.student,
+  //   scholarship_id: form.value.student.scholarship?.id || "",
+  // },
+  //   status: form.value.status?.key || "", 
+  // };
+
+  try {
+    if (isEditing.value) {
+      console.log("Form:", form.value);
+      
+      await reservationStore.updateReservation(form.value.id, form.value);
+    } else {
+      await reservationStore.addReservation(payload);
+    }
+    closeModal();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    saving.value = false;
+  }
+};
+
+const confirmDelete = (id) => {
+  showDeleteAlert.value = true;
+  reservationIdToDelete.value = id;
+};
+
+const deleteReservation = async () => {
+  await reservationStore.deleteReservation(reservationIdToDelete.value);
+  showDeleteAlert.value = false;
+  reservationIdToDelete.value = null;
+};
+
+const cancelDelete = () => {
+  showDeleteAlert.value = false;
+  reservationIdToDelete.value = null;
+};
+
+onMounted(() => {
+  reservationStore.fetchReservations();
+  saving.value = false;
+  reservations.value = reservationStore.reservations;
+});
+</script>
+
 <template>
     <div class="space-y-6 p-6">
       <div class="flex items-center justify-between">
@@ -19,9 +160,9 @@
     { label: 'Student Name', key: 'student.name' },
     { label: 'Student Email', key: 'student.email' },
     { label: 'Grade', key: 'student.grade' },
-    { label: 'Scholarship', key: 'student.scholarship' },
+    { label: 'Scholarship', key: 'student.scholarship.name' },
     { label: 'Status', key: 'status.label' },
-    // أضف باقي الحقول اللي محتاجها
+
   ]"
   :items="reservationStore.reservations"
   resourceType="reservations"
@@ -57,96 +198,5 @@
     </div>
   </template>
   
-  <script setup>
-  import { ref, onMounted, computed } from "vue";
-  import { useReservationStore } from "@/stores/reservations";  // Assuming the store is available
-  import DataTable from "@/components/dashboard/DataTable.vue";
-  import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
-  import Modal from "@/components/global/Modal.vue";
-  import { useAuthStore } from "@/stores/auth";
-  
-  const authStore = useAuthStore();
-  const reservationStore = useReservationStore();
-  const showModal = ref(false);
-  const saving = ref(false);
-  const isEditing = ref(false);
-  const form = ref({ student: {}, reserved_time: "", called_by: {}, status: {} });
-  const showDeleteAlert = ref(false);
-  const reservationIdToDelete = ref(null);
-  const search = ref("");
-  const reservations = ref([]);
-  
-  const filteredReservations = computed(() => {
-    return reservationStore.reservations.filter((reservation) => {
-      return (
-        reservation.student.name.toLowerCase().includes(search.value.toLowerCase()) ||
-        reservation.reserved_time.toLowerCase().includes(search.value.toLowerCase())
-      );
-    });
-  });
-  
-  const toggleForm = () => {
-    showModal.value = true;
-    isEditing.value = false;
-    form.value = { student: {}, reserved_time: "", called_by: {}, status: {} };
-  };
-  
-  const closeModal = () => {
-    showModal.value = false;
-    isEditing.value = false;
-    saving.value = false;
-  };
-  
-  const editReservation = (reservation) => {
-    isEditing.value = true;
-    form.value = { ...reservation };
-    showModal.value = true;
-  };
-  
-  const saveReservation = async () => {
-    saving.value = true;
-  
-    const payload = {
-      ...form.value,
-      reserved_time: String(form.value.reserved_time),  // Ensure correct format
-    };
-  
-    try {
-      if (isEditing.value) {
-        await reservationStore.updateReservation(form.value.id, payload);
-      } else {
-        await reservationStore.addReservation(payload);
-      }
-      closeModal();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      saving.value = false;
-    }
-  };
-  
-  const confirmDelete = (id) => {
-    showDeleteAlert.value = true;
-    reservationIdToDelete.value = id;
-  };
-  
-  const deleteReservation = async () => {
-    await reservationStore.deleteReservation(reservationIdToDelete.value);
-    showDeleteAlert.value = false;
-    reservationIdToDelete.value = null;
-  };
-  
-  const cancelDelete = () => {
-    showDeleteAlert.value = false;
-    reservationIdToDelete.value = null;
-  };
-  
-  onMounted(() => {
-    reservationStore.fetchReservations();
-    saving.value = false;
-    reservations.value = reservationStore.reservations;
-    console.log("Reservations:", reservationStore.reservations);
-    
-  });
-  </script>
+
   
