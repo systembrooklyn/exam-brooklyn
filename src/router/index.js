@@ -85,7 +85,7 @@ const routes = [
       {
         path: "scholarships",
         name: "scholarships",
-        meta: { requiresPermission: "view-scholarships" },
+        meta: { requiresPermission: "view-scholarship" },
         component: () => import("@/views/dashboard/ScholarshipList.vue"),
       },
       {

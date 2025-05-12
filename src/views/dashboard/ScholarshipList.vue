@@ -2,63 +2,40 @@
   <div class="space-y-6 p-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-800">Scholarships</h1>
-      <button
-        @click="toggleForm"
-        v-if="authStore.hasPermission('create-scholarship')"
-        class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
-      >
-        + Add Scholarship
-      </button>
+
+      <div v-if="authStore.hasPermission('create-scholarship')" @click="toggleForm" class="buttons">
+        <button class="btn"><span></span>
+          <p data-start="good luck!" data-text="ADD!" data-title="new Scholarship"></p>
+        </button>
+      </div>
     </div>
 
-  
+
 
     <div>
-      <DataTable
-        :headers="[
-          { label: 'Scholarship Name', key: 'name' },
-          { label: 'Courses', key: 'courses' }
-        ]"
-        :items="filteredScholarships"
-        :search="search"
-        resourceType="scholarship"
-        @edit="editScholarship"
-        @delete="confirmDelete"
-        :loading="scholarshipStore.loading"
-      />
+      <DataTable :headers="[
+        { label: 'Scholarship Name', key: 'name' },
+        { label: 'Courses', key: 'courses' }
+      ]" :items="filteredScholarships" :search="search" resourceType="scholarship" @edit="editScholarship"
+        @delete="confirmDelete" :loading="scholarshipStore.loading" />
     </div>
 
     <!-- Reuse Modal Component for Add/Edit Scholarship -->
-    <Modal
-      v-if="showModal"
-      :showModal="showModal"
-      :modalTitle="isEditing ? 'Edit Scholarship' : 'Add Scholarship'"
-      :form="form"
-      :saving="saving"
-      :isScholarship="true"
-      :isCourse="false"
-      :scholarships="true"
-      @closeModal="closeModal"
-      @saveData="saveScholarship"
-    />
+    <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship' : 'Add Scholarship'"
+      :form="form" :saving="saving" :isScholarship="true" :isCourse="false" :scholarships="true"
+      @closeModal="closeModal" @saveData="saveScholarship" />
 
     <!-- SweetAlert2 Modal for Confirmation -->
-    <SweetAlert2Modal
-      v-if="showDeleteAlert"
-      :title="'Are you sure?'"
-      :text="'This scholarship will be deleted.'"
-      :confirmButtonText="'Yes, delete it!'"
-      :cancelButtonText="'Cancel'"
-      @confirm="deleteScholarship"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteAlert" :title="'Are you sure?'" :text="'This scholarship will be deleted.'"
+      :confirmButtonText="'Yes, delete it!'" :cancelButtonText="'Cancel'" @confirm="deleteScholarship"
+      @cancel="cancelDelete" />
   </div>
 </template>
 
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useScholarshipStore } from "@/stores/scholarships"; 
+import { useScholarshipStore } from "@/stores/scholarships";
 import DataTable from "@/components/dashboard/DataTable.vue";
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import Modal from "@/components/global/Modal.vue";
@@ -73,7 +50,7 @@ const isEditing = ref(false);
 const form = ref({ name: "", courses: [] });
 const showDeleteAlert = ref(false);
 const scholarshipIdToDelete = ref(null);
-const search = ref("");  
+const search = ref("");
 
 
 const filteredScholarships = computed(() => {

@@ -2,8 +2,8 @@
 
 export default {
     scholarships: {
-      blockedIfHas: ["create-scholarship"],
-      requires: ["view-scholarships"]
+      // blockedIfHas: ["create-scholarship"],
+      requires: ["view-scholarship"]
     },
     "dashboard-home": {
       requires: ["view-dashboard"],

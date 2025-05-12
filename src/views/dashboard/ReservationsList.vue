@@ -72,39 +72,50 @@ const closeModal = () => {
 const editReservation = (reservation) => {
   isEditing.value = true;
 
-  form.value = {
-    ...reservation,
-    student: {
+form.value = {
+  ...reservation,
+  student: {
     ...reservation.student,
     scholarship_id: reservation.student.scholarship?.id || "",
   },
-    status: reservation.status?.key || "", 
-    called_by: reservation.called_by?.name || "",
+  called_by: reservation.called_by?.id || "", // هنا ضروري يكون ID فقط
+  status: reservation.status?.key || "",
+};
 
-    
-    
-  };
 
   showModal.value = true;
 };
 
 const saveReservation = async () => {
+  console.log("form.value:", form.value);
+  
   saving.value = true;
+const payload = {
+  name: form.value.student.name,
+  email: form.value.student.email,
+  phones: form.value.student.phones,
+  ID_number: form.value.student.ID_number,
+  grade: form.value.student.grade,
+  birth_date: form.value.student.birth_date,
+  company: form.value.student.company,
+  marketing_code: form.value.student.marketing_code,
+  scholarship: form.value.student.scholarship_id, // ID فقط
+  status: form.value.status,
+  called_by: form.value.called_by, // ID فقط
+  called_time: form.value.called_time,
+  careerType: form.value.student.careerType,
+  faculity: form.value.student.faculity,
+  major: form.value.student.major,
+};
 
-  // const payload = {
-  //   ...form.value,
-  //   student: {
-  //   ...form.value.student,
-  //   scholarship_id: form.value.student.scholarship?.id || "",
-  // },
-  //   status: form.value.status?.key || "", 
-  // };
+console.log("payload:", payload);
+
 
   try {
     if (isEditing.value) {
-      console.log("Form:", form.value);
+      console.log("payload:", payload);
       
-      await reservationStore.updateReservation(form.value.id, form.value);
+      await reservationStore.updateReservation(form.value.id, payload);
     } else {
       await reservationStore.addReservation(payload);
     }

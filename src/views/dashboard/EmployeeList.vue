@@ -3,15 +3,7 @@
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold text-gray-800 mb-4">Users List</h1>
 
-      <!-- Button to trigger modal -->
-      <!-- <button
-        v-if="authStore.hasPermission('create-user')"
-        @click="showForm = true"
-        class="px-4 py-2 bg-indigo-500 cursor-pointer text-white rounded hover:bg-indigo-600"
-      >
-        Create New User
-      </button> -->
-      <!-- From Uiverse.io by Nawsome --> 
+    
 <div v-if="authStore.hasPermission('create-user')"
 @click="showForm = true" class="buttons">
    <button class="btn"><span></span><p data-start="good luck!" data-text="ADD!" data-title="new User"></p></button>

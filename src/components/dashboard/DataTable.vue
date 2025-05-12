@@ -103,7 +103,7 @@
                 <Edit class="w-4 h-4" />
               </button>
               <button
-            
+                  v-show="!isReservation"
                 @click="$emit('delete', item.id)"
                 class="text-red-600 cursor-pointer hover:text-red-800 transition inline-flex items-center gap-1"
               >
