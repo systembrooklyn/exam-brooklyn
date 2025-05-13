@@ -31,7 +31,7 @@
       >
       <multiselect
         v-model="form.roles"
-        :options="roles || []"
+        :options="roleStore.roles || []"
         track-by="id"
         label="name"
         multiple
@@ -49,8 +49,9 @@
 <script setup>
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.min.css";
-import { useRoleStore } from "@/stores/roleStore";
-import { LucideUser } from "lucide-vue-next";
+import { useRoleStore  } from "@/stores/roleStore";
+import { LucideUser, LucideMail } from "lucide-vue-next";
+
 
 const roleStore = useRoleStore();
 const props = defineProps({

@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { useReservationStore } from "@/stores/reservations";
 import DataTable from "@/components/dashboard/DataTable.vue";
-import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import Modal from "@/components/global/Modal.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -33,34 +32,26 @@ const reservationIdToDelete = ref(null);
 const search = ref("");
 const reservations = ref([]);
 
-const filteredReservations = computed(() => {
-  return reservationStore.reservations.filter((reservation) => {
-    return (
-      reservation.student.name.toLowerCase().includes(search.value.toLowerCase()) ||
-      reservation.reserved_time.toLowerCase().includes(search.value.toLowerCase())
-    );
-  });
-});
 
 const toggleForm = () => {
   showModal.value = true;
   isEditing.value = false;
   form.value = {
-  name: "",
-  email: "",
-  mobile: "",
-  ID_number: "",
-  birth_date: "",
-  grade: "",
-  company: "",
-  marketing_code: "",
-  scholarship: "",
-  called_time: "",
-  called_by: "",
-  faculity: "",
-  major: "",
-  careerType: "",
-}
+    name: "",
+    email: "",
+    mobile: "",
+    ID_number: "",
+    birth_date: "",
+    grade: "",
+    company: "",
+    marketing_code: "",
+    scholarship: "",
+    called_time: "",
+    called_by: "",
+    faculity: "",
+    major: "",
+    careerType: "",
+  }
 };
 
 const closeModal = () => {
@@ -72,15 +63,15 @@ const closeModal = () => {
 const editReservation = (reservation) => {
   isEditing.value = true;
 
-form.value = {
-  ...reservation,
-  student: {
-    ...reservation.student,
-    scholarship_id: reservation.student.scholarship?.id || "",
-  },
-  called_by: reservation.called_by?.id || "", // هنا ضروري يكون ID فقط
-  status: reservation.status?.key || "",
-};
+  form.value = {
+    ...reservation,
+    student: {
+      ...reservation.student,
+      scholarship_id: reservation.student.scholarship?.id || "",
+    },
+    called_by: reservation.called_by?.id || "",
+    status: reservation.status?.key || "",
+  };
 
 
   showModal.value = true;
@@ -88,33 +79,33 @@ form.value = {
 
 const saveReservation = async () => {
   console.log("form.value:", form.value);
-  
-  saving.value = true;
-const payload = {
-  name: form.value.student.name,
-  email: form.value.student.email,
-  phones: form.value.student.phones,
-  ID_number: form.value.student.ID_number,
-  grade: form.value.student.grade,
-  birth_date: form.value.student.birth_date,
-  company: form.value.student.company,
-  marketing_code: form.value.student.marketing_code,
-  scholarship: form.value.student.scholarship_id, // ID فقط
-  status: form.value.status,
-  called_by: form.value.called_by, // ID فقط
-  called_time: form.value.called_time,
-  careerType: form.value.student.careerType,
-  faculity: form.value.student.faculity,
-  major: form.value.student.major,
-};
 
-console.log("payload:", payload);
+  saving.value = true;
+  const payload = {
+    name: form.value.student.name,
+    email: form.value.student.email,
+    phones: form.value.student.phones,
+    ID_number: form.value.student.ID_number,
+    grade: form.value.student.grade,
+    birth_date: form.value.student.birth_date,
+    company: form.value.student.company,
+    marketing_code: form.value.student.marketing_code,
+    scholarship: form.value.student.scholarship_id, // ID فقط
+    status: form.value.status,
+    called_by: form.value.called_by, // ID فقط
+    called_time: form.value.called_time,
+    careerType: form.value.student.careerType,
+    faculity: form.value.student.faculity,
+    major: form.value.student.major,
+  };
+
+  console.log("payload:", payload);
 
 
   try {
     if (isEditing.value) {
       console.log("payload:", payload);
-      
+
       await reservationStore.updateReservation(form.value.id, payload);
     } else {
       await reservationStore.addReservation(payload);
@@ -132,16 +123,7 @@ const confirmDelete = (id) => {
   reservationIdToDelete.value = id;
 };
 
-const deleteReservation = async () => {
-  await reservationStore.deleteReservation(reservationIdToDelete.value);
-  showDeleteAlert.value = false;
-  reservationIdToDelete.value = null;
-};
 
-const cancelDelete = () => {
-  showDeleteAlert.value = false;
-  reservationIdToDelete.value = null;
-};
 
 onMounted(() => {
   reservationStore.fetchReservations();
@@ -151,63 +133,46 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="space-y-6 p-6">
-      <div class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold text-gray-800">Reservations List</h1>
-        
-        <!-- Button to Add New Reservation (if the user has permission) -->
-        <div v-if="authStore.hasPermission('create-reservations')" @click="toggleForm" class="buttons">
-          <button class="btn">
-            <span></span>
-            <p data-start="good luck!" data-text="ADD!" data-title="new Reservation"></p>
-          </button>
-        </div>
-      </div>
-  
-      <div>
-        <!-- DataTable to display Reservations -->
-        <DataTable
-  :headers="[
-    { label: 'Student Name', key: 'student.name' },
-    { label: 'Student Email', key: 'student.email' },
-    { label: 'Grade', key: 'student.grade' },
-    { label: 'Scholarship', key: 'student.scholarship.name' },
-    { label: 'Status', key: 'status.label' },
+  <div class="space-y-6 p-6">
+    <div class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold text-gray-800">Reservations List</h1>
 
-  ]"
-  :items="reservationStore.reservations"
-  resourceType="reservations"
-  :isReservation="true"
-  @edit="editReservation"
-  @delete="confirmDelete"
-/>
-
+      <!-- Button to Add New Reservation (if the user has permission) -->
+      <div v-if="authStore.hasPermission('create-reservations')" @click="toggleForm" class="buttons">
+        <button class="btn">
+          <span></span>
+          <p data-start="good luck!" data-text="ADD!" data-title="new Reservation"></p>
+        </button>
       </div>
-  
-      <!-- Reuse Modal Component for Add/Edit Reservation -->
-      <Modal
-        v-if="showModal"
-        :showModal="showModal"
-        :modalTitle="isEditing ? 'Edit Reservation' : 'Add Reservation'"
-        :form="form"
-        :saving="saving"
-        :isReservation="true"
-        @closeModal="closeModal"
-        @saveData="saveReservation"
-      />
-  
-      <!-- SweetAlert2 Modal for Confirmation -->
-      <SweetAlert2Modal
-        v-if="showDeleteAlert"
-        :title="'Are you sure?'"
-        :text="'This reservation will be deleted.'"
-        :confirmButtonText="'Yes, delete it!'"
-        :cancelButtonText="'Cancel'"
-        @confirm="deleteReservation"
-        @cancel="cancelDelete"
-      />
     </div>
-  </template>
-  
 
-  
+    <div>
+      <div v-if="reservationStore.reservations.length">
+        <!-- DataTable to display Reservations -->
+        <DataTable :headers="[
+          { label: 'Student Name', key: 'student.name' },
+          { label: 'Student Email', key: 'student.email' },
+          { label: 'Grade', key: 'student.grade' },
+          { label: 'Scholarship', key: 'student.scholarship.name' },
+          { label: 'Status', key: 'status.label' },
+        ]" :items="reservationStore.reservations" resourceType="reservations" :isReservation="true"
+          @edit="editReservation" @delete="confirmDelete" />
+      </div>
+
+
+      <div v-else class="text-center py-16">
+        <img class="mx-auto mb-4 " src="@/assets/undraw_empty_4zx0.png" alt="">
+        <h2 class="text-3xl font-bold  text-primary">No reservations today</h2>
+        <p class="text-gray-500 mt-2">Please check back later.</p>
+      </div>
+
+    </div>
+
+
+    <!-- Reuse Modal Component for Add/Edit Reservation -->
+    <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Reservation' : 'Add Reservation'"
+      :form="form" :saving="saving" :isReservation="true" @closeModal="closeModal" @saveData="saveReservation" />
+
+
+  </div>
+</template>

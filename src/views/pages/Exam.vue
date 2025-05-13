@@ -217,6 +217,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
 });
+
+
 </script>
 
 <template>
@@ -250,19 +252,13 @@ onBeforeUnmount(() => {
 
     <div v-if="quizStarted">
       <div class="text-end mb-5 mt-4">
-        <label class="text-gray-700 font-medium block mb-2"
-          >Go to question:</label
-        >
-        <select
-          v-model="currentQuestionIndex"
-          class="border px-4 py-2 rounded-md font-semibold"
-          @change="loadSelectedOption"
-          :class="{
+        <label class="text-gray-700 font-medium block mb-2">Go to question:</label>
+        <select v-model="currentQuestionIndex" class="border px-4 py-2 rounded-md font-semibold"
+          @change="loadSelectedOption" :class="{
             'border-red-500 text-red-600':
               unansweredIndexes.length > 0 && mode === 'filter',
             'border-indigo-500 text-indigo-700': mode !== 'filter',
-          }"
-        >
+          }">
           <option :value="null" disabled selected>
             {{
               mode === "filter" && unansweredIndexes.length > 0
@@ -271,50 +267,35 @@ onBeforeUnmount(() => {
             }}
           </option>
 
-          <option
-            v-for="(index, idx) in mode === 'filter'
-              ? unansweredIndexes
-              : questions.map((_, i) => i)"
-            :key="idx"
-            :value="index"
-          >
+          <option v-for="(index, idx) in mode === 'filter'
+            ? unansweredIndexes
+            : questions.map((_, i) => i)" :key="idx" :value="index">
             Question {{ index + 1 }}
           </option>
         </select>
       </div>
       <div v-if="currentQuestion" class="question-container">
+
         <h3
-          class="text-lg font-semibold text-center border p-3 rounded-xl mb-5 bg-primary text-white"
-        >
+          class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md  rounded-xl mb-5 bg-primary text-white">
           {{ currentQuestion.question_text }}
         </h3>
-        <div
-          v-for="(option, key) in currentQuestion.options"
-          :key="key"
-          class="option dark:text-gray-300"
-          :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
-          @click="selectedOptions[currentQuestionIndex] = key"
-        >
-          <input
-            type="radio"
-            :id="'option-' + key"
-            v-model="selectedOptions[currentQuestionIndex]"
-            :value="key"
-            style="opacity: 0; position: absolute"
-          />
+        <div v-for="[key, option] in Object.entries(currentQuestion?.options || {}).filter(
+          ([_, value]) => value && value.trim() !== ''
+        )" :key="key" class="option dark:text-gray-300" :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
+          @click="selectedOptions[currentQuestionIndex] = key">
+          <input type="radio" :id="'option-' + key" v-model="selectedOptions[currentQuestionIndex]" :value="key"
+            style="opacity: 0; position: absolute" />
           <label :for="'option-' + key">{{ option }}</label>
         </div>
       </div>
-
       <div class="text-center">
         <button @click="previousQuestion" class="btn-prev">Previous</button>
         <button v-if="!isLastQuestion" @click="nextQuestion" class="btn-next">
           next
         </button>
         <button v-if="isLastQuestion" @click="submitFinalExam" class="btn-next">
-          <span v-if="isSubmitting"
-            ><i class="fa-solid fa-circle-notch fa-spin-pulse"></i
-          ></span>
+          <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin-pulse"></i></span>
           <span v-else>Submit</span>
         </button>
       </div>
@@ -328,25 +309,16 @@ onBeforeUnmount(() => {
         </button>
       </div> -->
 
-      <div
-        class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white"
-      >
+      <div class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white">
         It has been answered
-        <span class="text-primary dark:text-blue-500 text-xl font-bold"
-          >({{ answeredCount }})</span
-        >
+        <span class="text-primary dark:text-blue-500 text-xl font-bold">({{ answeredCount }})</span>
         from
-        <span class="text-primary font-bold text-xl dark:text-blue-500"
-          >({{ questions.length }})</span
-        >
+        <span class="text-primary font-bold text-xl dark:text-blue-500">({{ questions.length }})</span>
         Questions
       </div>
     </div>
 
-    <div
-      v-if="showUnansweredMessage"
-      class="alert-message text-red-500 text-center mt-3"
-    >
+    <div v-if="showUnansweredMessage" class="alert-message text-red-500 text-center mt-3">
       {{ showUnansweredMessage }}
     </div>
   </div>
@@ -366,10 +338,12 @@ onBeforeUnmount(() => {
   margin-left: auto;
   margin-right: auto;
 }
+
 .answered-counter {
   margin-top: 15px;
   color: #0d47aa;
 }
+
 .option {
   display: flex;
   align-items: center;
@@ -377,7 +351,7 @@ onBeforeUnmount(() => {
   border: 2px solid #ccc;
   border-radius: 8px;
   padding: 7px;
-  margin: 5px 0;
+  margin: 7px 0;
   cursor: pointer;
   transition: all 0.3s ease-in-out;
 }
@@ -392,14 +366,17 @@ onBeforeUnmount(() => {
 }
 
 .selected {
-  background-color: #d3e0ff;
-  border-color: #337af5;
+  background-color: #b5ccf3;
+  border-color: #689af1;
+  color: #092c67;
+  font-weight: bold;
+
 }
 
-.dark .selected {
-  background-color: #2c67ce;
-  color: white;
-}
+/* .dark .selected {
+  background-color: #b5ccf3;
+  color: rgb(255, 255, 255);
+} */
 
 button {
   padding: 10px 50px;
@@ -419,6 +396,7 @@ button:hover {
 button:disabled {
   background-color: #ccc;
 }
+
 .buttonClass {
   font-size: 15px;
   font-family: Arial;
@@ -444,7 +422,7 @@ button:disabled {
 }
 
 .selected-option {
-  background-color: #d3e0ff;
+  background-color: #b0c3ee;
   border-radius: 10px;
   padding: 10px;
   transition: background-color 0.3s ease-in-out;
@@ -488,8 +466,4 @@ button:disabled {
   background-color: #204b80;
   color: white;
 }
-
-
-
-
 </style>

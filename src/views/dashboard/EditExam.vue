@@ -12,6 +12,7 @@
         <InstructorSelect v-model="exam.ins_id" :disabled="!courseChanged" />
 
 
+
         
       </div>
 
@@ -75,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch ,inject } from "vue";
+import { ref, onMounted, watch ,inject, watchEffect } from "vue";
 import { useRoute } from "vue-router";
 import { useExamStore } from "../../stores/examStore";
 import InstructorSelect from "@/components/dashboard/InstructorSelect.vue";
@@ -219,12 +220,14 @@ const updateExam = async () => {
   }
 };
 
-
-watch(() => exam.course_id, (newVal, oldVal) => {
-  if (newVal !== initialExamData.course_id) {
+watchEffect(() => {
+  if (exam.value.course_id && exam.value.course_id !== initialExamData.course_id) {
+    console.log("Course has changed!");
     courseChanged.value = true;
   }
 });
+
+
 
 const submitNewQuestions = async () => {
   submittingNewQuestions.value = true;

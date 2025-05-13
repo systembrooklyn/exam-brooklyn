@@ -34,9 +34,9 @@ const form = reactive({
 const missingFieldsError = ref(false);
 
 async function handleSubmit() {
-const cleanedPhones = form.mobiles
-  .map(phone => phone?.replace(/\D/g, ''))
-  .filter(phone => phone);
+  const cleanedPhones = form.mobiles
+    .map(phone => phone?.replace(/\D/g, ''))
+    .filter(phone => phone);
 
 
 
@@ -140,40 +140,27 @@ onMounted(() => {
         <label class="form-label">Mobile Number</label>
         <vue-tel-input mode="international" v-model="form.mobile" placeholder="Enter your mobile number"
           class="form-input-tel"></vue-tel-input>
-
       </div> -->
       <!-- Mobile Numbers -->
-<div >
-  <label class="form-label">Mobile Numbers</label>
-  <div v-for="(phone, index) in form.mobiles" :key="index" class="flex items-center gap-2 mb-2">
-    <vue-tel-input
-      v-model="form.mobiles[index]"
-      mode="international"
-      placeholder="Enter mobile number"
-      class="form-input-tel "
-    ></vue-tel-input>
+      <div                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             >
+        <label class="form-label">Mobile Numbers</label>
+        <div v-for="(phone, index) in form.mobiles" :key="index" class="flex items-center gap-2 mb-2">
+          <vue-tel-input v-model="form.mobiles[index]" mode="international" placeholder="Enter mobile number"
+            class="form-input-tel "></vue-tel-input>
 
-    <!-- Add button only on last input -->
-    <button
-      v-if="index === form.mobiles.length - 1"
-      type="button"
-      @click="form.mobiles.push('')"
-      class="text-blue-600 text-xl font-bold w-8 h-8 flex items-center justify-center border rounded-full border-blue-600 hover:bg-blue-100"
-    >
-      +
-    </button>
+          <!-- Add button only on last input -->
+          <button v-if="index === form.mobiles.length - 1" type="button" @click="form.mobiles.push('')"
+            class="text-blue-600 text-xl font-bold w-7 h-7 cursor-pointer flex items-center justify-center border rounded  border-blue-600 hover:bg-blue-100">
+            +
+          </button>
 
-    <!-- Remove button (optional) -->
-    <button
-      v-if="form.mobiles.length > 1"
-      type="button"
-      @click="form.mobiles.splice(index, 1)"
-      class="text-red-500 text-xl w-8 h-8 flex items-center justify-center font-bold  border rounded-full border-red-400 hover:bg-red-100"
-    >
-      −
-    </button>
-  </div>
-</div>
+          <!-- Remove button (optional) -->
+          <button v-if="form.mobiles.length > 1" type="button" @click="form.mobiles.splice(index, 1)"
+            class="text-red-500 text-xl w-7 h-7 flex cursor-pointer items-center justify-center font-bold  border rounded  border-red-400 hover:bg-red-100">
+            −
+          </button>
+        </div>
+      </div>
 
 
       <!-- National ID -->

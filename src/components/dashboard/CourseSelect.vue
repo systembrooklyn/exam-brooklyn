@@ -5,6 +5,7 @@
       <div>
         <label class="text-gray-700 font-medium block mb-1">Select Course:</label>
         <select v-model="selectedCourse"
+          :disabled="disabled"
           class="w-[200px] border border-indigo-500 rounded px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500">
           <option disabled value="">Choose Courses</option>
           <option v-for="course in courseStore.courses" :key="course.id" :value="course.id">
@@ -35,7 +36,12 @@ const modelValue = defineModel();
 const courseStore = useCourseStore();
 const selectedCourse = ref("");
 
-
+const props = defineProps({
+  disabled: {
+    type: Boolean,
+    default: false,
+  }
+});
 
 onMounted(() => {
   courseStore.fetchCourses();

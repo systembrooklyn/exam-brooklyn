@@ -16,7 +16,7 @@
 
 
       <div class="flex justify-end gap-3 mt-6">
-        <button @click="saveData" :disabled="isSaveButtonDisabled" class="save-button min-w-[90px] flex justify-center items-center">
+        <button @click="saveData" :disabled="saving" class="save-button min-w-[90px] flex justify-center items-center">
           <span v-if="saving"
             class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
           Save
@@ -56,20 +56,20 @@ const props = defineProps({
 
 const emit = defineEmits(["closeModal", "saveData"]);
 
-const originalForm = ref({ ...props.form }); // استخدم النسخ البسيط بدلاً من structuredClone
+const originalForm = ref({ ...props.form });
 
 const hasChanges = ref(false);
 
-// استخدم watch على الفورم لمراقبة التغييرات
+
 watch(
   () => props.form,
   (newForm) => {
     hasChanges.value = !isEqual(newForm, originalForm.value);
   },
-  { deep: true }
+  { immediate: true }
 );
 
-// تحقق من الحقول المطلوبة لتفعيل زر الحفظ
+
 const isSaveButtonDisabled = computed(() => {
   const form = props.form;
   const requiredFieldsValid =
@@ -79,18 +79,18 @@ const isSaveButtonDisabled = computed(() => {
   return !hasChanges.value || !requiredFieldsValid;
 });
 
-// مراقبة الـ showModal لضبط القيمة الأولية عند فتح المودال
+
 watch(
   () => props.showModal,
   (isOpen) => {
     if (isOpen) {
-      originalForm.value = { ...props.form }; // نسخة جديدة
+      originalForm.value = { ...props.form }; 
       hasChanges.value = false;
     }
   }
 );
 
-// التعامل مع إغلاق المودال وحفظ البيانات
+
 const closeModal = () => emit("closeModal");
 const saveData = () => emit("saveData");
 </script>

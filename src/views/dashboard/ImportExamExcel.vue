@@ -3,10 +3,12 @@ import { ref } from 'vue';
 import apiClient from '@/api/axiosInstance';
 import notyf from '@/components/global/notyf';
 import { IMPORT_EXAMS } from '../../api/Api';
+import { useRoute } from 'vue-router';
 
 
 const file = ref(null);
 const loading = ref(false);
+const route = useRoute();
 
 const validFileTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
 
@@ -33,6 +35,7 @@ const uploadExcel = async () => {
     });
 
     notyf.success('Exam imported successfully!');
+    route.push({ name: 'exams' });
     file.value = null; // Reset input after upload
   } catch (error) {
     console.error(error);
