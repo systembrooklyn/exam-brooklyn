@@ -179,7 +179,9 @@ const submitForm = async () => {
       </div>
 
       <button v-show="studentStore.selectedModule && studentStore.selectedInstructor" @click="submitForm" type="button"
-        class="btn-primary bg-primary flex items-center justify-center" :disabled="studentStore.loading">
+        class="btn-primary bg-primary flex items-center justify-center" :disabled="studentStore.loading && !studentStore.selectedModule && !studentStore.selectedInstructor"
+        :class="{ 'opacity-50 cursor-not-allowed': studentStore.loading && !studentStore.selectedModule && !studentStore.selectedInstructor }"
+>
         <span v-if="studentStore.loading" class="loader"></span>
         <span v-else>Submit</span>
       </button>

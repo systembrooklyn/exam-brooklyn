@@ -16,7 +16,8 @@
 
 
       <div class="flex justify-end gap-3 mt-6">
-        <button @click="saveData" :disabled="saving" class="save-button min-w-[90px] flex justify-center items-center">
+        <button @click="saveData" :disabled="!hasChanges"
+          class="save-button min-w-[90px] flex justify-center items-center">
           <span v-if="saving"
             class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
           Save
@@ -65,10 +66,20 @@ watch(
   () => props.form,
   (newForm) => {
     hasChanges.value = !isEqual(newForm, originalForm.value);
+    console.log(originalForm.value, newForm, hasChanges.value);
   },
-  { immediate: true }
+  { deep: true }
 );
 
+watch(
+  () => props.form.student,
+  (newForm) => {
+    if (!isEqual(newForm, originalForm.value)) {
+      hasChanges.value = true;
+    }
+  },
+  { deep: true }
+);
 
 const isSaveButtonDisabled = computed(() => {
   const form = props.form;
@@ -84,7 +95,7 @@ watch(
   () => props.showModal,
   (isOpen) => {
     if (isOpen) {
-      originalForm.value = { ...props.form }; 
+      originalForm.value = { ...props.form };
       hasChanges.value = false;
     }
   }
