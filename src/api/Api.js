@@ -22,3 +22,4 @@ export const FORGOT_PASSWORD = "forgotPassword";
 export const RESET_PASSWORD = "resetPassword";
 export const IMPORT_EXAMS = "importExams";
 export const RESERVATIONS = "reservations";
+export const STUDENT = "student";

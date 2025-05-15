@@ -33,6 +33,7 @@ import onetask from '@/assets/exam.png';
 import dashboard from '@/assets/dashbord.jpeg';
 import reservation from '@/assets/reservation.jpeg';
 import Placement from '@/assets/plasment.jpeg';
+import srm from '@/assets/srm.jpg';
 import { useAuthStore } from '@/stores/auth';
 
 
@@ -64,6 +65,12 @@ const systems = [
     name: "Placement Test",
     route: "/placement-test",
     image: Placement ,
+    // requiresPermission: "view-placement-test", 
+  },
+  {
+    name: "SRM System",
+    route: "/srm",
+    image: srm ,
     // requiresPermission: "view-placement-test", 
   },
 ];
