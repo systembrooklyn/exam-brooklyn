@@ -5,11 +5,11 @@ import LogIn from "../views/pages/LogIn.vue";
 import dashboard from "../components/dashboard/Dashboard.vue";
 import { useAuthStore } from "../stores/auth";
 import accessControl from "./access-control";
-import Wach from "../views/pages/wach.vue";
+
 
 const routes = [
   { path: "/", name: "login", component: LogIn },
-  { path: "/home", name: "home", component: Wach },
+  { path: "/home", name: "home", component: Home },
   { path: "/examPage", name: "examPage", component: Exam },
   { path: "/reservation", name: "reservation", component: () => import("../views/pages/Reservation.vue") },
   { path: "/srm", name: "srm", component: () => import("../views/pages/SrmSystem.vue") },
