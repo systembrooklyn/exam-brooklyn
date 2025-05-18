@@ -19,7 +19,7 @@
             @keyup.enter="searchStudent"
             type="text"
             placeholder="Enter Student ID..."
-            class="flex-1 p-4 rounded-xl shadow-md border border-gray-300 focus:ring-2 focus:outline-none transition"
+            class="flex-1 p-3 rounded-xl shadow-md border border-gray-300 focus:ring-2 focus:outline-none transition"
           />
           <button
             @click="searchStudent"

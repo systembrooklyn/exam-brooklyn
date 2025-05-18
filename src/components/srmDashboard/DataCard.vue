@@ -18,7 +18,7 @@
 defineProps({
   title: String,
   items: Array,
-  img : String
+  img : [String, Object, Function]
 
 });
 </script>

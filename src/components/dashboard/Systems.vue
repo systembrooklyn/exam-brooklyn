@@ -33,7 +33,7 @@ import onetask from '@/assets/exam.png';
 import dashboard from '@/assets/dashbord.jpeg';
 import reservation from '@/assets/reservation.jpeg';
 import Placement from '@/assets/plasment.jpeg';
-import srm from '@/assets/srm.jpg';
+import srm from '@/assets/srm.png';
 import { useAuthStore } from '@/stores/auth';
 
 

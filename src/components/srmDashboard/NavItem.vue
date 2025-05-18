@@ -11,7 +11,7 @@
 
 <script setup>
 const props = defineProps({
-  icon: Object, // 👈 أو type: [Object, Function]
+  icon: [Object, Function],
   label: String,
   to: String
 })
