@@ -6,16 +6,36 @@ import dashboard from "../components/dashboard/Dashboard.vue";
 import { useAuthStore } from "../stores/auth";
 import accessControl from "./access-control";
 
-
 const routes = [
   { path: "/", name: "login", component: LogIn },
   { path: "/home", name: "home", component: Home },
   { path: "/examPage", name: "examPage", component: Exam },
-  { path: "/reservation", name: "reservation", component: () => import("../views/pages/Reservation.vue") },
-  { path: "/srm", name: "srm", component: () => import("../views/pages/SrmSystem.vue") },
-
-  { path: "/placement-test", name: "placement-test", component: () => import("../views/pages/PlacementTest.vue") },
-  { path: "/reservationSuccess", name: "reservation-success", component: () => import("../views/pages/ReservationSuccess.vue") },
+  {
+    path: "/reservation",
+    name: "reservation",
+    component: () => import("../views/pages/Reservation.vue"),
+  },
+  {
+    path: "/srm",
+    name: "srm",
+    component: () => import("../views/pages/SrmSystem.vue"),
+  },
+  {
+    path: "/details/:cardName",
+    name: "details",
+    props: true,
+    component: () => import("../views/pages/CardDetails.vue"),
+  },
+  {
+    path: "/placement-test",
+    name: "placement-test",
+    component: () => import("../views/pages/PlacementTest.vue"),
+  },
+  {
+    path: "/reservationSuccess",
+    name: "reservation-success",
+    component: () => import("../views/pages/ReservationSuccess.vue"),
+  },
 
   {
     path: "/result",
@@ -104,11 +124,11 @@ const routes = [
         component: () => import("@/views/dashboard/RoleList.vue"),
       },
       {
-        path:"reservations",
-        name:"reservations",
+        path: "reservations",
+        name: "reservations",
         // meta: { requiresPermission: "view-reservations" },
         component: () => import("@/views/dashboard/ReservationsList.vue"),
-      }
+      },
     ],
   },
 ];
@@ -120,16 +140,14 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
-  const isAuthenticated = !!authStore.token; 
+  const isAuthenticated = !!authStore.token;
   const userPermissions = authStore.permissions || [];
   const access = accessControl[to.name];
 
- 
   if (to.path === "/" && isAuthenticated) {
     return next({ name: "SystemsPage" });
   }
 
-  
   const publicPages = ["login", "password-reset", "error"];
   const authRequired = !publicPages.includes(to.name);
 
@@ -137,19 +155,16 @@ router.beforeEach((to, from, next) => {
     return next({ name: "login" });
   }
 
- 
   if (access) {
-    if (access.blockedIfHas?.some(p => userPermissions.includes(p))) {
+    if (access.blockedIfHas?.some((p) => userPermissions.includes(p))) {
       return next({ name: "dashboard" });
     }
-    if (access.requires?.some(p => !userPermissions.includes(p))) {
+    if (access.requires?.some((p) => !userPermissions.includes(p))) {
       return next({ name: "SystemsPage" });
     }
   }
 
   next();
 });
-
-
 
 export default router;

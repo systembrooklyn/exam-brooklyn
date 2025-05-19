@@ -10,8 +10,11 @@ export const useStudentStore = defineStore("studentStore", () => {
   const student = ref(null);
   const loading = ref(false);
   const error = ref(null);
+  const studentId = ref(null);
+  const studentData = ref(null);
 
   const fetchStudent = async (id) => {
+    studentId.value = id;
     console.log(`Fetching student with ID: ${id}`);
     
     loading.value = true;
@@ -19,6 +22,23 @@ export const useStudentStore = defineStore("studentStore", () => {
     try {
       const response = await apiClient.get(`${STUDENT}/${id}`);
       student.value = response.data.data;
+  
+      
+      
+    } catch (err) {
+      handleError(err);
+    } finally {
+      loading.value = false;
+    }
+  };
+ const fetchDataStuden = async (name) => {
+ 
+    
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await apiClient.get(`${STUDENT}/${studentId.value}/${name}`);
+      studentData.value = response.data.data;
       console.log( "Student fetched successfully:", response.data);
       console.log( "Fetched student:", student.value);
       
@@ -31,9 +51,10 @@ export const useStudentStore = defineStore("studentStore", () => {
   };
 
 
-
   return {
     student,
+    fetchDataStuden,
+    studentData,
     loading,
     error,
     fetchStudent,

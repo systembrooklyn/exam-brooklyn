@@ -1,24 +1,44 @@
+<!-- components/srmDashboard/DataCard.vue -->
 <template>
-  <div class="bg-white flex items-center  gap-10 dark:bg-gray-800 p-5 rounded-2xl shadow">
-     <component :is="img" class="w-20 h-20 text-indigo-500 shrink-0" />
-   <div>
-     <h3 class="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">{{ title }}</h3>
-    <ul class="space-y-2 text-gray-700 dark:text-gray-300">
-      <li v-if="!items || items.length === 0">No data available</li>
-      <li v-for="(item, index) in items" :key="index">
-        {{ item.name || item.status || JSON.stringify(item).slice(0, 40) + '...' }}
-      </li>
-    </ul>
-   </div>
-   
+  <div
+    :class="[
+      'flex items-center justify-between gap-5  p-5 rounded-2xl cursor-pointer shadow hover:shadow-2xl transition duration-300 ease-in-out',
+      'dark:bg-gray-800 bg-white',
+      colorClass,
+    ]"
+  >
+    <!-- أيقونة -->
+    <component :is="icon" class="w-12 h-12 shrink-0" />
+
+    <!-- محتوى -->
+    <div class="flex-1">
+      <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
+        {{ title }}
+      </h3>
+
+      <!-- قيمة واحدة أو لائحة -->
+      <template v-if="Array.isArray(items)">
+        <ul class="space-y-1 text-gray-700 dark:text-gray-300">
+          <li v-for="(it, i) in items" :key="i">{{ it }}</li>
+        </ul>
+      </template>
+      <template v-else>
+        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          {{ items }}
+        </p>
+      </template>
+    </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+const props = defineProps({
   title: String,
-  items: Array,
-  img : [String, Object, Function]
-
+  /* يمكن أن يكون نصًا، رقمًا، أو Array لعرض قائمة */
+  items: { type: [String, Number, Array], default: "" },
+  /* مكوّن أيقونة */
+  icon: { type: [Object, Function], required: true },
+  /* كلاس Tailwind لألوان الخلفية/النص */
+  colorClass: { type: String, default: "" },
 });
 </script>
