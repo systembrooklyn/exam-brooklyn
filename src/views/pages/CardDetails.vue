@@ -99,7 +99,7 @@ function goToPage(page) {
       </table>
 
       <div v-if="!paginatedData.length" class="mt-4 text-gray-500">
-        <img class="mx-auto h-80 mt-10" src="@/assets/not1.png" alt="">
+        <img class="mx-auto h-80 mt-10" src="@/assets/src/assets/undraw_empty_4zx0-removebg-preview (1).png" alt="">
         <p class="text-center mt-4 font-semibold">No Data Found</p>
       </div>
 

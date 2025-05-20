@@ -198,12 +198,10 @@ import DataCard from "@/components/srmDashboard/DataCard.vue";
 import ShareOptions from "@/components/srmDashboard/ShareOptions.vue";
 
 import {
-  BookOpen,
   ClipboardList,
   UsersRound,
   AlarmClock,
   FileText,
-  Files,
   ArrowLeft,
 } from "lucide-vue-next";
 
