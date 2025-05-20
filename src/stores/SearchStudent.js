@@ -22,7 +22,9 @@ export const useStudentStore = defineStore("studentStore", () => {
     try {
       const response = await apiClient.get(`${STUDENT}/${id}`);
       student.value = response.data.data;
-  
+      console.log( "Student fetched successfully:", response.data);
+      
+  console.log( "Fetched student:", student.value);
       
       
     } catch (err) {

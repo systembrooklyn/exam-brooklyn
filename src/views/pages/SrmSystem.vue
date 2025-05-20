@@ -43,7 +43,7 @@
       </div>
 
       <!-- Student Profile Card -->
-      <div v-if="student" class="max-w-4xl mx-auto space-y-6">
+      <div v-if="student && !cardName" class="max-w-5xl mx-auto space-y-6">
         <!-- Basic Info -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
           <h2
@@ -75,7 +75,11 @@
               {{ student.student.major || "No Available" }}
             </p>
           </div>
-
+          <h3
+            class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
+          >
+            Scholarship & Reserv Information
+          </h3>
           <div
             class="grid grid-cols-2 pt-3 gap-4 text-gray-700 dark:text-gray-300"
           >
@@ -83,6 +87,7 @@
               <strong>Scholarship:</strong>
               {{ student.student.scholarship?.name || "N/A" }}
             </p>
+
             <p>
               <strong>Career Type:</strong> {{ student.student.careerType }}
             </p>
@@ -90,44 +95,56 @@
               <strong>Marketing Code:</strong>
               {{ student.student.marketing_code }}
             </p>
+            <p>
+              <strong>Branch:</strong>
+              {{ reservationInfo.branch?.name || "No Available" }}
+            </p>
+            <p>
+              <strong>Called By:</strong>
+              {{ reservationInfo.called_by?.name || "No Available" }}
+            </p>
+            <p>
+              <strong>Called Time:</strong>
+              {{ reservationInfo.called_time || "No Available" }}
+            </p>
+            <p>
+              <strong>Registered By:</strong>
+              {{ reservationInfo.registered_by?.name || "No Available" }}
+            </p>
+            <p>
+              <strong>Registered At:</strong>
+              {{ reservationInfo.registered_at || "No Available" }}
+            </p>
+
+            <p>
+              <strong>Reservation By:</strong>
+              {{ reservationInfo.reserved_by?.name || "No Available" }}
+            </p>
+            <p>
+              <strong>Reservation Time:</strong>
+              {{ reservationInfo.reserved_time || "No Available" }}
+            </p>
           </div>
         </div>
 
         <ShareOptions />
 
-        <!-- Single Chart -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
-          <StatsBarChart
-            :labels="barLabels"
-            :values="barValues"
-            class="max-w-full"
-          />
-        </div>
-
         <!-- Student Data Sections -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DataCard
-            title="Courses"
-            :items="`${student.counts.doneCourses}/${student.counts.courses}`"
-            :icon="BookOpen"
-            colorClass="bg-indigo-100 text-indigo-600"
-              @click="goToDetails('courses')"
-          />
-
           <DataCard
             title="Requests"
             :items="student.counts.requests"
             :icon="ClipboardList"
             colorClass="bg-emerald-100 text-emerald-600"
-              @click="goToDetails('requests')"
+            @click="goToDetails('requests')"
           />
 
           <DataCard
-            title="Complaint"
+            title="Groups"
             :items="student.counts.groups"
-            :icon="AlertCircle"
+            :icon="UsersRound "
             colorClass="bg-rose-100 text-rose-600"
-              @click="goToDetails('groups')"
+            @click="goToDetails('groups')"
           />
 
           <DataCard
@@ -135,7 +152,7 @@
             :items="student.counts.payments"
             :icon="AlarmClock"
             colorClass="bg-amber-100 text-amber-600"
-              @click="goToDetails('payments')"
+            @click="goToDetails('payments')"
           />
 
           <DataCard
@@ -143,89 +160,102 @@
             :items="student.counts.lectures"
             :icon="FileText"
             colorClass="bg-sky-100 text-sky-600"
-              @click="goToDetails('lectures')"
+            @click="goToDetails('lectures')"
           />
 
-          <DataCard
-            title="Documents"
-            :items="student.counts.documents"
-            :icon="Files"
-            colorClass="bg-cyan-100 text-cyan-600"
-              @click="goToDetails('documents')"
-          />
+          <!-- <DataCard title="Documents" :items="student.counts.documents" :icon="Files"
+            colorClass="bg-cyan-100 text-cyan-600" @click="goToDetails('documents')" /> -->
         </div>
+      </div>
+
+      <div v-if="cardName" class="f">
+        <button
+          @click="goBack"
+          class="flex font-bold ms-8 items-center text-gray-700 dark:text-gray-300 hover:text-[#6c63ff] transition mb-6"
+        >
+          <ArrowLeft class="w-5 h-5 mr-2" />
+          <span>Back</span>
+        </button>
+
+        <CardDetails
+          v-if="cardName"
+          :cardName="cardName"
+          :headers="headers"
+          :data="data"
+          :loading="loading"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-/* ---------------------------------- imports --------------------------------- */
-import { ref, computed } from "vue";
+import { ref, watch } from "vue";
 import { useStudentStore } from "@/stores/SearchStudent";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
 import DataCard from "@/components/srmDashboard/DataCard.vue";
 import ShareOptions from "@/components/srmDashboard/ShareOptions.vue";
-import StatsBarChart from "@/components/srmDashboard/StatsBarChart.vue";
+
 import {
   BookOpen,
   ClipboardList,
-  AlertCircle,
+  UsersRound,
   AlarmClock,
   FileText,
   Files,
-  Users,
-  CreditCard,
-  Presentation,
+  ArrowLeft,
 } from "lucide-vue-next";
-import { useRouter } from "vue-router";
 
-const router = useRouter();
+import CardDetails from "./CardDetails.vue";
+import { computed } from "vue";
+
+const reservationInfo = computed(() => {
+  return student.value?.reservation?.[0] || {};
+});
 
 
-/* ----------------------------- store & state ----------------------------- */
+
+function goBack() {
+  cardName.value = "";
+}
+
 const studentStore = useStudentStore();
 const studentId = ref("");
 const student = ref(null);
+const cardName = ref("");
+const data = ref([]);
+const loading = ref(false);
+const headers = ref([]);
+
+const columnMap = {
+  groups: ["name", "code", "type", "start_date", "student_start", "total_lec"],
+  payments: ["amount","paid_amount", "due_date", "paid_date" ,"status"],
+  requests: [],
+  lectures: ["name", "notes", "start_time", "end_time" ,"status"],
+};
+
+
+ watch(
+  () => studentId.value,
+  (newVal, oldVal) => {
+    cardName.value = "";
+  })
+const goToDetails = async (name) => {
+  cardName.value = name;
+  loading.value = true;
+  await studentStore.fetchDataStuden(name);
+  data.value = studentStore.studentData || [];
+
+  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
+  loading.value = false;
+};
 
 const defaultImg =
   "https://st2.depositphotos.com/1531183/5770/v/950/depositphotos_57709697-stock-illustration-male-person-silhouette-profile-picture.jpg";
 
-/* ----------------------------- search action ----------------------------- */
 const searchStudent = async () => {
   await studentStore.fetchStudent(studentId.value);
   student.value = studentStore.student;
 };
-
-const goToDetails = (cardName) => {
-  router.push({ name: "details", params: { cardName } });
-};
-
-
-/* --------------------------- chart computed data ------------------------- */
-const barLabels = [
-  "Courses",
-  "Documents",
-  "Done",
-  "Groups",
-  "Lectures",
-  "Payments",
-  "Requests",
-];
-
-const barValues = computed(() => {
-  if (!student.value) return [];
-  const { counts } = student.value;
-
-  return [
-    counts.courses || 0,
-    counts.documents || 0,
-    counts.doneCourses || 0,
-    counts.groups || 0,
-    counts.lectures || 0,
-    Number(counts.payments?.split("/")[0] || 0),
-    Number(counts.requests?.split("/")[0] || 0),
-  ];
-});
 </script>
