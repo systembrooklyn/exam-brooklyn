@@ -2,7 +2,7 @@
   <div class="space-y-6 p-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-800">Instructor List</h1>
-    
+
       <div
         @click="openAddModal"
         v-if="authStore.hasPermission('create-instructors')"
@@ -115,10 +115,12 @@ const saveInstructor = async () => {
 
   try {
     if (isEditing.value) {
-      (payload);
+      payload;
+
       await instructorStore.updateInstructor(formInstructor.value.id, payload);
     } else {
-      (payload);
+      payload;
+
       await instructorStore.addInstructor(payload);
     }
     closeModal();

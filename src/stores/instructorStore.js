@@ -28,10 +28,11 @@ export const useInstructorStore = defineStore("instructorStore", () => {
   };
 
   // ✅ Add instructor
-  const addInstructor = async ({ name, phone }) => {
+  const addInstructor = async (data) => {
+   
+    
     try {
-      const response = await apiClient.post(ALL_INSTRUCTORS, { name, phone });
-      (response.data);
+      const response = await apiClient.post(ALL_INSTRUCTORS, data);
 
       instructors.value.push(response.data.data);
       notyf.success("Instructor added successfully");
@@ -48,6 +49,8 @@ export const useInstructorStore = defineStore("instructorStore", () => {
         `${ALL_INSTRUCTORS}/${id}`,
         updatedData
       );
+      console.log(response.data);
+      
       const index = instructors.value.findIndex((i) => i.id === id);
       if (index !== -1) {
         instructors.value.splice(index, 1, response.data.data);

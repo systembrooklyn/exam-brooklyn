@@ -66,7 +66,6 @@ watch(
   () => props.form,
   (newForm) => {
     hasChanges.value = !isEqual(newForm, originalForm.value);
-    console.log(originalForm.value, newForm, hasChanges.value);
   },
   { deep: true }
 );
