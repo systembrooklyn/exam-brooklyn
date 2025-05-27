@@ -37,9 +37,9 @@ const props = defineProps({
 })
 
 const navItems = ref([
-  { icon: LayoutDashboard, label: 'My Dashboard', to: '/dashboard' },
-  { icon: GraduationCap, label: 'Students', to: '/students' },
-  { icon: Users, label: 'Teachers', to: '/teachers' },
+  { icon: LayoutDashboard, label: 'Student Dashboard', to: '/srm' },
+  // { icon: GraduationCap, label: 'Students', to: '/students' },
+  // { icon: Users, label: 'Teachers', to: '/teachers' },
 ])
 
 
