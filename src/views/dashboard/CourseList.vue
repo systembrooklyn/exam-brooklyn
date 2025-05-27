@@ -36,6 +36,7 @@
         :items="filteredCourses"
         resourceType="courses"
         :isCourse="true"
+        :loading="courseStore.loading"
         @edit="editCourse"
         @delete="confirmDelete"
       />

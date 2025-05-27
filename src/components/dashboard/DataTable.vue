@@ -39,7 +39,7 @@
 
     <!-- Loading Spinner -->
     <div
-      v-if="!filteredItems.length"
+      v-if="!filteredItems.length && loading"
       class="flex justify-center items-center py-20"
     >
       <div
@@ -92,18 +92,19 @@
             </td>
 
             <td
-              
+              v-if="canEdit || canDelete"
               class="px-6 py-4 whitespace-nowrap space-x-6"
             >
               <button
-              
+                v-show="canEdit"
                 @click="$emit('edit', item)"
                 class="text-indigo-600 cursor-pointer hover:text-indigo-800 transition inline-flex items-center gap-1"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
-                  v-show="!isReservation"
+                  v-show="!isReservation || canDelete"
+
                 @click="$emit('delete', item.id)"
                 class="text-red-600 cursor-pointer hover:text-red-800 transition inline-flex items-center gap-1"
               >
@@ -205,7 +206,7 @@ const canEdit = computed(() =>
 const canDelete = computed(() =>
   authStore.hasPermission(`delete-${props.resourceType}`)
 );
-const canCreate = computed(() => hasPermission(`create-${props.resourceType}`));
+
 
 // Function to format the created_at or updated_at date
 const formatDate = (date) => {

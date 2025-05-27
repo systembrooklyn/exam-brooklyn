@@ -155,8 +155,9 @@ onMounted(() => {
           { label: 'Grade', key: 'student.grade' },
           { label: 'Scholarship', key: 'student.scholarship.name' },
           { label: 'Status', key: 'status.label' },
-        ]" :items="reservationStore.reservations" resourceType="reservations" :isReservation="true"
-          @edit="editReservation" @delete="confirmDelete" />
+          
+        ]" :items="reservationStore.reservations" resourceType="reservations" :loading="reservationStore.loading" :isReservation="true"
+          @edit="editReservation" @delete="confirmDelete"/>
       </div>
 
 

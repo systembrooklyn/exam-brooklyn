@@ -31,6 +31,7 @@
         :items="rolesStore.roles"
         :isPermission="true"
         resourceType="role"
+        :loading="rolesStore.loading"
         @edit="editInstructor"
         @delete="showDeleteAlert"
       />

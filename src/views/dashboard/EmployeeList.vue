@@ -18,6 +18,7 @@
         :items="employeesStore.employees"
         :isEmployee="true"
         resourceType="user"
+        :loading="employeesStore.loading"
        
         @delete="showDeleteAlert"
         @edit="editEmployee"

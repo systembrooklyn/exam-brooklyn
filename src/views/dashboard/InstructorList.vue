@@ -29,6 +29,7 @@
           :items="filteredInstructors"
           :isInstructors="true"
           resourceType="instructors"
+          :loading="instructorStore.loading"
           @edit="editInstructor"
           @delete="showDeleteAlert"
           :search="search"
