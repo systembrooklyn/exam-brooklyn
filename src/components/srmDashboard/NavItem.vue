@@ -3,7 +3,10 @@ import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 
 const props = defineProps({
-  icon: Object,
+  icon: {
+    type: [Object, Function],
+    required: true
+  },
   label: String,
   to: String
 })

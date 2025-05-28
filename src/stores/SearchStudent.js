@@ -12,12 +12,14 @@ export const useStudentStore = defineStore("studentStore", () => {
   const error = ref(null);
   const studentId = ref(null);
   const studentData = ref(null);
+  const loadingData = ref(false);
 
   const fetchStudent = async (id) => {
     studentId.value = id;
     console.log(`Fetching student with ID: ${id}`);
     
-    loading.value = true;
+    loadingData.value = true;
+
     error.value = null;
     try {
       const response = await apiClient.get(`${STUDENT}/${id}`);
@@ -30,7 +32,7 @@ export const useStudentStore = defineStore("studentStore", () => {
     } catch (err) {
       handleError(err);
     } finally {
-      loading.value = false;
+      loadingData.value = false;
     }
   };
  const fetchDataStuden = async (name) => {
@@ -42,13 +44,17 @@ export const useStudentStore = defineStore("studentStore", () => {
       const response = await apiClient.get(`${STUDENT}/${studentId.value}/${name}`);
       studentData.value = response.data.data;
       console.log( "Student fetched successfully:", response.data);
-      console.log( "Fetched student:", student.value);
+   
       
       
     } catch (err) {
+      studentData.value = null;
       handleError(err);
+      
+
     } finally {
       loading.value = false;
+           
     }
   };
 
@@ -60,5 +66,6 @@ export const useStudentStore = defineStore("studentStore", () => {
     loading,
     error,
     fetchStudent,
+    loadingData
   };
 });

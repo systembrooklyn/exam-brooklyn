@@ -1,46 +1,194 @@
 <template>
-  <div class="flex min-h-screen bg-gray-100 ">
+  <div class="flex min-h-screen bg-gray-100">
     <!-- Sidebar -->
-    <aside class="w-70 bg-white shadow-lg shadow-blue-300 flex flex-col ">
-      <div class="flex flex-col items-center py-6 border-b">
-       <img
-  :src="img || 'https://via.placeholder.com/100'"
-  class="w-20 h-20 rounded-full"
-/>
-
-        <h2 class="mt-2 font-semibold text-gray-800">{{ name }}</h2>
-        <p class="text-sm text-gray-400">{{num}}</p>
+    <aside class="w-90 bg-white shadow-lg shadow-blue-300 flex flex-col">
+      <!-- Profile -->
+      <div class="flex flex-col items-center py-6 border-b px-4 text-center">
+        <img
+          :src="student?.ppUrl || 'https://dummyimage.com/100x100/000/fff'"
+          class="w-24 h-24 rounded-full shadow-md"
+        />
+        <h2 class="mt-3 text-xl font-bold text-gray-800">
+          {{ student?.name || "John Doe" }}
+        </h2>
+        <p class="text-sm text-gray-600">
+          <strong>Student No:</strong> {{ student?.st_num || "343455" }}
+        </p>
+        <p class="text-sm text-gray-600">
+          <strong> ID:</strong> {{ student?.ID_number || "N/A" }}
+        </p>
+        <div class="flex gap-3 mt-3">
+          <div class="flex items-center space-x-2 relative group">
+            <Share2 color="red" />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              Share
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 relative group">
+            <QrCode color="green" />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              QR
+            </div>
+          </div>
+          <div class="flex items-center space-x-2 relative group">
+            <AppWindow color="blue" />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              View
+            </div>
+          </div>
+        </div>
       </div>
+
+      <!-- Contact Buttons -->
+     <div
+  class="py-4 border-b p-3"
+  v-if="student && (student.email || (student.phones && student.phones.length > 0))"
+>
+
+        <h3 class="font-bold text-center mb-3 text-indigo-400">
+          General & Personal Information
+        </h3>
+        <div class="flex items-center space-x-2">
+          <strong>Email:</strong>
+
+          <span>{{ student?.email }}</span>
+          <div class="relative group">
+            <Mail
+              @click="openModal('email')"
+              class="w-5 h-5 transition text-[#6c63ff] hover:text-blue-800"
+            />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              Send Email
+            </div>
+          </div>
+          <!-- Tooltip -->
+        </div>
+        <div class="flex items-center space-x-2 mt-2">
+          <strong>Phones:</strong>
+          <!-- Display phones as a list -->
+          <span>{{ student?.phones?.join(" / ") }}</span>
+          <div class="relative group">
+            <Phone
+              @click="openModal('phone')"
+              class="w-5 h-5 transition text-green-500 hover:text-green-800"
+            />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              Send SMS
+            </div>
+          </div>
+        </div>
+        <div class="space-y-2 mt-2">
+          <div class="flex items-center space-x-4">
+            <p><strong>Birth Date:</strong> {{ student?.birth_date }}</p>
+            <p><strong>Grade:</strong> {{ student?.grade }}</p>
+          </div>
+
+          <div class="flex items-center space-x-4">
+            <p>
+              <strong class="text-primary">Company:</strong>
+              {{ student?.company || "No Available" }}
+            </p>
+            <p>
+              <strong>Faculty:</strong>
+              {{ student?.faculity || "No Available" }}
+            </p>
+          </div>
+
+          
+          <div class="flex items-center space-x-4">
+            <p>
+              <strong>Major:</strong> {{ student?.major || "No Available" }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
       <nav class="flex-1 px-4 pt-6 space-y-2">
-        <NavItem v-for="item in navItems" class="text-red" :key="item.label" v-bind="item" />
+        <NavItem
+          v-for="item in navItems"
+          class="text-red"
+          :key="item.label"
+          v-bind="item"
+        />
       </nav>
+      
     </aside>
+
+    <!-- Message Modal -->
+    <MessageModal
+      v-if="student"
+      :type="modalType"
+      :recipient="
+        student
+          ? modalType === 'email'
+            ? student.email
+            : student.phones?.join(' / ')
+          : ''
+      "
+      :visible="showModal"
+      @update:visible="showModal = $event"
+      @send="handleSend"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import NavItem from './NavItem.vue';
-import { LayoutDashboard, GraduationCap, Users } from 'lucide-vue-next';
+import { ref } from "vue";
+import MessageModal from "./MessageModal.vue";
+import {
+  LayoutDashboard,
+  Mail,
+  Phone,
+  Share2,
+  QrCode,
+  AppWindow,
+} from "lucide-vue-next";
+import NavItem from "./NavItem.vue";
+import { defineProps } from "vue";
 
-
-const props = defineProps({
-  img: {
-    type: String,
-  },
-  name: {
-    type: String,
-  },
-  num: {
-    type: String,
-  },
-})
-
+// Define the navigation items
 const navItems = ref([
-  { icon: LayoutDashboard, label: 'Student Dashboard', to: '/srm' },
+  { icon: LayoutDashboard, label: "Student Dashboard", to: "/srm" },
   // { icon: GraduationCap, label: 'Students', to: '/students' },
   // { icon: Users, label: 'Teachers', to: '/teachers' },
-])
+]);
 
+const props = defineProps({
+  student: {
+    type: Object,
+    required: true,
+  },
+});
 
+const showModal = ref(false);
+const modalType = ref("email");
+
+const openModal = (type) => {
+  modalType.value = type;
+  showModal.value = true;
+};
+
+const handleSend = (message) => {
+  const recipient =
+    modalType.value === "email"
+      ? props.student.email
+      : props.student.phones?.join(", ");
+
+  alert(
+    `${
+      modalType.value === "email" ? "Email" : "SMS"
+    } sent to ${recipient}:\n${message}`
+  );
+};
 </script>

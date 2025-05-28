@@ -2,15 +2,11 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
     <!-- Sidebar -->
-    <SideBar
-      :img="student?.student.ppUrl || defaultImg"
-      :name="student?.student.name || 'Ms. John Doe'"
-      :num="String(student?.student.st_num || '123335')"
-    />
+    <SideBar :student="student?.student || {}" />
 
     <!-- Main Content -->
     <div class="flex-1 p-8 overflow-y-auto">
-      <Loader :show="studentStore.loading" />
+      <Loader :show="studentStore.loadingData" />
 
       <!-- Search -->
       <div class="max-w-3xl mx-auto mb-10">
@@ -43,45 +39,16 @@
       </div>
 
       <!-- Student Profile Card -->
-      <div v-if="student && !cardName" class="max-w-5xl mx-auto space-y-6">
+      <div v-if="student" class="max-w-5xl mx-auto space-y-6">
         <!-- Basic Info -->
         <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
-          <h2
-            class="text-2xl font-bold mb-10 text-[#6c63ff] text-center dark:text-gray-200"
-          >
-            General & Personal Information
-          </h2>
-
-          <div
-            class="grid grid-cols-2 border-b pb-3 border-gray-400 gap-4 text-gray-700 dark:text-gray-300"
-          >
-            <p><strong>Name:</strong> {{ student.student.name }}</p>
-            <p><strong>Email:</strong> {{ student.student.email }}</p>
-            <p><strong>Phones:</strong> {{ student.student.phones }}</p>
-            <p><strong>ID Number:</strong> {{ student.student.ID_number }}</p>
-            <p><strong>Student Number:</strong> {{ student.student.st_num }}</p>
-            <p><strong>Birth Date:</strong> {{ student.student.birth_date }}</p>
-            <p><strong>Grade:</strong> {{ student.student.grade }}</p>
-            <p>
-              <strong>Company:</strong>
-              {{ student.student.company || "No Available" }}
-            </p>
-            <p>
-              <strong>Faculty:</strong>
-              {{ student.student.faculity || "No Available" }}
-            </p>
-            <p>
-              <strong>Major:</strong>
-              {{ student.student.major || "No Available" }}
-            </p>
-          </div>
           <h3
             class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
           >
             Scholarship & Reserv Information
           </h3>
           <div
-            class="grid grid-cols-2 pt-3 gap-4 text-gray-700 dark:text-gray-300"
+            class="grid grid-cols-3 pt-3 gap-4 text-gray-700 dark:text-gray-300"
           >
             <p>
               <strong>Scholarship:</strong>
@@ -91,26 +58,32 @@
             <p>
               <strong>Career Type:</strong> {{ student.student.careerType }}
             </p>
+
             <p>
               <strong>Marketing Code:</strong>
               {{ student.student.marketing_code }}
             </p>
+
             <p>
               <strong>Branch:</strong>
               {{ reservationInfo.branch?.name || "No Available" }}
             </p>
+
             <p>
               <strong>Called By:</strong>
               {{ reservationInfo.called_by?.name || "No Available" }}
             </p>
+
             <p>
               <strong>Called Time:</strong>
               {{ reservationInfo.called_time || "No Available" }}
             </p>
+
             <p>
               <strong>Registered By:</strong>
               {{ reservationInfo.registered_by?.name || "No Available" }}
             </p>
+
             <p>
               <strong>Registered At:</strong>
               {{ reservationInfo.registered_at || "No Available" }}
@@ -120,23 +93,45 @@
               <strong>Reservation By:</strong>
               {{ reservationInfo.reserved_by?.name || "No Available" }}
             </p>
+
             <p>
               <strong>Reservation Time:</strong>
               {{ reservationInfo.reserved_time || "No Available" }}
             </p>
           </div>
         </div>
+<!-- Tabs Navigation -->
+<div class="max-w-4xl mx-auto">
+  <div class="flex gap-4 border rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6">
+    <button
+      v-for="tab in tabs"
+      :key="tab.name"
+      @click="selectTab(tab.name)"
+      :class="[
+        'px-4 py-2 font-semibold',
+        cardName === tab.name
+          ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
+          : 'text-gray-500 hover:text-[#6c63ff]'
+      ]"
+    >
+      {{ tab.label }}
+    </button>
+  </div>
 
-        <ShareOptions />
-
-        <!-- Student Data Sections -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Table Section -->
+  <CardDetails
+    v-if="cardName"
+    :cardName="cardName"
+    :headers="headers"
+    :data="data"
+    :loading="loading"
+  />
+         <div v-show="!cardName" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <DataCard
             title="Requests"
             :items="student.counts.requests"
             :icon="ClipboardList"
             colorClass="bg-emerald-100 text-emerald-600"
-            @click="goToDetails('requests')"
           />
 
           <DataCard
@@ -163,11 +158,49 @@
             @click="goToDetails('lectures')"
           />
 
-          <!-- <DataCard title="Documents" :items="student.counts.documents" :icon="Files"
-            colorClass="bg-cyan-100 text-cyan-600" @click="goToDetails('documents')" /> -->
+         
         </div>
-      </div>
+</div>
 
+        <!-- Student Data Sections -->
+        <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <DataCard
+            title="Requests"
+            :items="student.counts.requests"
+            :icon="ClipboardList"
+            colorClass="bg-emerald-100 text-emerald-600"
+            @click="goToDetails('requests')"
+          />
+
+          <DataCard
+            title="Groups"
+            :items="student.counts.groups"
+            :icon="UsersRound"
+            colorClass="bg-rose-100 text-rose-600"
+            @click="goToDetails('groups')"
+          />
+
+          <DataCard
+            title="Deadlines"
+            :items="student.counts.payments"
+            :icon="AlarmClock"
+            colorClass="bg-amber-100 text-amber-600"
+            @click="goToDetails('payments')"
+          />
+
+          <DataCard
+            title="Papers"
+            :items="student.counts.lectures"
+            :icon="FileText"
+            colorClass="bg-sky-100 text-sky-600"
+            @click="goToDetails('lectures')"
+          />
+
+          <DataCard title="Documents" :items="student.counts.documents" :icon="Files"
+            colorClass="bg-cyan-100 text-cyan-600" @click="goToDetails('documents')" />
+        </div> -->
+      </div>
+<!-- 
       <div v-if="cardName" class="f">
         <button
           @click="goBack"
@@ -184,7 +217,7 @@
           :data="data"
           :loading="loading"
         />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -195,7 +228,6 @@ import { useStudentStore } from "@/stores/SearchStudent";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
 import DataCard from "@/components/srmDashboard/DataCard.vue";
-import ShareOptions from "@/components/srmDashboard/ShareOptions.vue";
 
 import {
   ClipboardList,
@@ -205,18 +237,32 @@ import {
   ArrowLeft,
 } from "lucide-vue-next";
 
-import CardDetails from "./CardDetails.vue";
+import CardDetails from "../../components/srmDashboard/CardDetails.vue";
 import { computed } from "vue";
 
 const reservationInfo = computed(() => {
   return student.value?.reservation?.[0] || {};
 });
 
-
-
 function goBack() {
   cardName.value = "";
 }
+const tabs = [
+  { name: "requests", label: "Requests" },
+  { name: "groups", label: "Groups" },
+  { name: "payments", label: "Deadlines" },
+  { name: "lectures", label: "Papers" },
+];
+
+const selectTab = async (name) => {
+  cardName.value = name;
+  loading.value = true;
+  await studentStore.fetchDataStuden(name);
+  data.value = studentStore.studentData || [];
+  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
+  loading.value = false;
+};
+
 
 const studentStore = useStudentStore();
 const studentId = ref("");
@@ -228,17 +274,17 @@ const headers = ref([]);
 
 const columnMap = {
   groups: ["name", "code", "type", "start_date", "student_start", "total_lec"],
-  payments: ["amount","paid_amount", "due_date", "paid_date" ,"status"],
+  payments: ["amount", "paid_amount", "due_date", "paid_date", "status"],
   requests: [],
-  lectures: ["name", "notes", "start_time", "end_time" ,"status"],
+  lectures: ["name", "notes", "start_time", "end_time", "status"],
 };
 
-
- watch(
+watch(
   () => studentId.value,
   (newVal, oldVal) => {
     cardName.value = "";
-  })
+  }
+);
 const goToDetails = async (name) => {
   cardName.value = name;
   loading.value = true;
