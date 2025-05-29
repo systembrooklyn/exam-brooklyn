@@ -21,12 +21,6 @@ const routes = [
     component: () => import("../views/pages/SrmSystem.vue"),
   },
   {
-    path: "/details/:cardName",
-    name: "details",
-    props: true,
-    component: () => import("../views/pages/CardDetails.vue"),
-  },
-  {
     path: "/placement-test",
     name: "placement-test",
     component: () => import("../views/pages/PlacementTest.vue"),
