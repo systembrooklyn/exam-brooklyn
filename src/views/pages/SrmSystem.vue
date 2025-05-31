@@ -101,8 +101,8 @@
           </div>
         </div>
 <!-- Tabs Navigation -->
-<div class="max-w-4xl mx-auto">
-  <div class="flex gap-4 border rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6">
+<div class="max-w-4xl mx-auto ">
+  <div class="flex gap-4 border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6">
     <button
       v-for="tab in tabs"
       :key="tab.name"
