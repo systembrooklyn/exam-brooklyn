@@ -89,15 +89,19 @@
         </div>
         <div class="space-y-2 mt-2">
           <div class="flex items-center space-x-4">
-            <p><strong>Birth Date:</strong> {{ student?.birth_date }}</p>
-            <p><strong>Grade:</strong> {{ student?.grade }}</p>
+             <p>
+              <strong>Major:</strong> {{ student?.major || "No Available" }}
+            </p>
+           
+             <p>
+              <strong >Company:</strong>
+              {{ student?.company || "No Available" }}
+            </p>
           </div>
 
           <div class="flex items-center space-x-4">
-            <p>
-              <strong class="text-primary">Company:</strong>
-              {{ student?.company || "No Available" }}
-            </p>
+            <p><strong>Grade:</strong> {{ student?.grade }}</p>
+           
             <p>
               <strong>Faculty:</strong>
               {{ student?.faculity || "No Available" }}
@@ -106,9 +110,7 @@
 
           
           <div class="flex items-center space-x-4">
-            <p>
-              <strong>Major:</strong> {{ student?.major || "No Available" }}
-            </p>
+           
           </div>
         </div>
       </div>

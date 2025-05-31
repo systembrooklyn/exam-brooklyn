@@ -120,13 +120,13 @@
 
   <!-- Table Section -->
   <CardDetails
-    v-if="cardName"
+  
     :cardName="cardName"
     :headers="headers"
     :data="data"
     :loading="loading"
   />
-         <div v-show="!cardName" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+         <!-- <div v-show="!cardName" class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <DataCard
             title="Requests"
             :items="student.counts.requests"
@@ -159,7 +159,7 @@
           />
 
          
-        </div>
+        </div> -->
 </div>
 
         <!-- Student Data Sections -->
@@ -228,6 +228,7 @@ import { useStudentStore } from "@/stores/SearchStudent";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
 import DataCard from "@/components/srmDashboard/DataCard.vue";
+
 
 import {
   ClipboardList,
