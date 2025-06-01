@@ -131,7 +131,7 @@ import {
 } from "lucide-vue-next";
 
 import CardDetails from "../../components/srmDashboard/CardDetails.vue";
-import { computed } from "vue";
+import { computed ,watch} from "vue";
 
 
 const studentStore = useStudentStore();
@@ -163,6 +163,14 @@ const selectTab = async (name , label) => {
   loading.value = false;
 };
 
+
+watch(student, (newVal) => {
+  if (newVal) {
+    cardName.value = ""; 
+    data.value = [];      
+    headers.value = [];   
+  }
+});
 
 
 const handleStudentSelected = (studentData) => {

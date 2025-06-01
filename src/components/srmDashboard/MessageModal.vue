@@ -12,25 +12,24 @@
         }}
       </h3>
 
-      <div v-if=" type === 'share'" class="space-y-4">
-        <input
-          type="text"
-          readonly
-          class="input-field"
-          :value="recipient"
-        />
+      <div v-if="type === 'share'" class="space-y-4">
+        <input type="text" readonly class="input-field" :value="recipient" />
 
-        <select  class="input-field ">
-            <option value="" disabled>Select a Course</option>
-            <option v-for="course in courseStore.courses" :key="course.id" :value="course.id">
-              {{ course.name }}
-            </option>
-          </select>
+        <select class="input-field">
+          <option value="" disabled>Select a Course</option>
+          <option
+            v-for="course in courseStore.courses"
+            :key="course.id"
+            :value="course.id"
+          >
+            {{ course.name }}
+          </option>
+        </select>
 
         <input
           type="text"
           v-model="message"
-          class="input-field "
+          class="input-field"
           placeholder="Module Code"
         />
       </div>

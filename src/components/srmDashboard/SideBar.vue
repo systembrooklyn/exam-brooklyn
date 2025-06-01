@@ -159,8 +159,9 @@
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import MessageModal from "./MessageModal.vue";
+
 import {
   LayoutDashboard,
   Mail,
@@ -192,15 +193,24 @@ const showModal = ref(false);
 const modalType = ref("email");
 
 const searchStudent = async () => {
-  await studentStore.fetchStudent(studentId.value);
-  student.value = studentStore.student.student;
-  studentAllData.value = studentStore.student; 
-  console.log("Selected Student:", student.value);
-  console.log("Student ID:", studentId.value);
-  
-  
-  emit('student-selected', studentAllData.value); 
+  try {
+    await studentStore.fetchStudent(studentId.value);
+    student.value = studentStore.student.student;
+    studentAllData.value = studentStore.student;
+
+    console.log("Selected Student:", student.value);
+    console.log("Student ID:", studentId.value);
+
+    emit('student-selected', studentAllData.value);
+  } catch (error) {
+   
+    student.value = {};
+    studentAllData.value = null;
+emit('student-selected', studentAllData.value);
+    console.error("Error fetching student:", error);
+  }
 };
+
 
 
 // watch(

@@ -14,49 +14,47 @@ export const useStudentStore = defineStore("studentStore", () => {
   const studentData = ref(null);
   const loadingData = ref(false);
 
-  const fetchStudent = async (id) => {
-    studentId.value = id;
-    console.log(`Fetching student with ID: ${id}`);
-    
-    loadingData.value = true;
+ const fetchStudent = async (id) => {
+  studentId.value = id;
+  console.log(`Fetching student with ID: ${id}`);
+  
+  loadingData.value = true;
+  error.value = null;
 
-    error.value = null;
-    try {
-      const response = await apiClient.get(`${STUDENT}/${id}`);
-      student.value = response.data.data;
-      console.log( "Student fetched successfully:", response.data);
-      
-  console.log( "Fetched student:", student.value);
-      
-      
-    } catch (err) {
-      handleError(err);
-    } finally {
-      loadingData.value = false;
-    }
-  };
- const fetchDataStuden = async (name) => {
- 
-    
-    loading.value = true;
-    error.value = null;
-    try {
-      const response = await apiClient.get(`${STUDENT}/${studentId.value}/${name}`);
-      studentData.value = response.data.data;
-      console.log( "Student fetched successfully:", response.data);
-   
-      
-      
-    } catch (err) {
-      studentData.value = null;
-      handleError(err);
-      
+  try {
+    const response = await apiClient.get(`${STUDENT}/${id}`);
+    student.value = response.data.data;
+    console.log("Student fetched successfully:", response.data);
+    console.log("Fetched student:", student.value);
+  } catch (err) {
+    handleError(err);
+    error.value = err.response?.data?.message || "An error occurred while fetching the student.";
+    throw err; 
+  } finally {
+    loadingData.value = false;
+  }
+};
 
-    } finally {
-      loading.value = false;
-           
-    }
-  };
+
+
+const fetchDataStuden = async (name) => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    const response = await apiClient.get(`${STUDENT}/${studentId.value}/${name}`);
+    studentData.value = response.data.data;
+    console.log("Student fetched successfully:", response.data);
+  } catch (err) {
+    studentData.value = null;
+    handleError(err);
+    error.value = err.response?.data?.message || "An error occurred while fetching student data.";
+    throw err; // ✅
+  } finally {
+    loading.value = false;
+  }
+};
+
 
 
   return {
