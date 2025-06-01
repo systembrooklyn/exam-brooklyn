@@ -2,32 +2,12 @@
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
     <!-- Sidebar -->
-    <SideBar :student="student?.student || {}" />
+    <SideBar @student-selected="handleStudentSelected" />
 
     <!-- Main Content -->
     <div class="flex-1 p-8 overflow-y-auto">
       <Loader :show="studentStore.loadingData" />
 
-      <!-- Search -->
-      <div class="max-w-3xl mx-auto mb-10">
-        <div class="flex gap-4 items-center">
-          <input
-            v-model="studentId"
-            @keyup.enter="searchStudent"
-            type="text"
-            placeholder="Enter Student ID..."
-            class="flex-1 p-3 rounded-xl shadow-md border border-gray-300 focus:ring-2 focus:outline-none transition"
-          />
-          <button
-            @click="searchStudent"
-            class="px-6 py-3 bg-[#6c63ff] text-white rounded-xl hover:bg-blue-800 transition font-semibold shadow-md"
-          >
-            Search
-          </button>
-        </div>
-      </div>
-
-      <!-- Placeholder Before Search -->
       <div
         v-if="!student"
         class="text-center mt-20 text-gray-600 dark:text-gray-300"
@@ -39,196 +19,108 @@
       </div>
 
       <!-- Student Profile Card -->
-      <div v-if="student" class="max-w-5xl mx-auto space-y-6">
-        <!-- Basic Info -->
-        <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
-          <h3
-            class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
-          >
-            Scholarship & Reserv Information
-          </h3>
-          <div
-            class="grid grid-cols-3 pt-3 gap-4 text-gray-700 dark:text-gray-300"
-          >
-            <p>
-              <strong>Scholarship:</strong>
-              {{ student.student.scholarship?.name || "N/A" }}
-            </p>
-
-            <p>
-              <strong>Career Type:</strong> {{ student.student.careerType }}
-            </p>
-
-            <p>
-              <strong>Marketing Code:</strong>
-              {{ student.student.marketing_code }}
-            </p>
-
-            <p>
-              <strong>Branch:</strong>
-              {{ reservationInfo.branch?.name || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Called By:</strong>
-              {{ reservationInfo.called_by?.name || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Called Time:</strong>
-              {{ reservationInfo.called_time || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Registered By:</strong>
-              {{ reservationInfo.registered_by?.name || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Registered At:</strong>
-              {{ reservationInfo.registered_at || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Reservation By:</strong>
-              {{ reservationInfo.reserved_by?.name || "No Available" }}
-            </p>
-
-            <p>
-              <strong>Reservation Time:</strong>
-              {{ reservationInfo.reserved_time || "No Available" }}
-            </p>
-          </div>
-        </div>
-<!-- Tabs Navigation -->
-<div class="max-w-4xl mx-auto ">
-  <div class="flex gap-4 border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6">
-    <button
-      v-for="tab in tabs"
-      :key="tab.name"
-      @click="selectTab(tab.name)"
-      :class="[
-        'px-4 py-2 font-semibold',
-        cardName === tab.name
-          ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
-          : 'text-gray-500 hover:text-[#6c63ff]'
-      ]"
+      <!-- Student Profile Card -->
+<div v-if="student" class="max-w-5xl mx-auto space-y-6">
+  <!-- Basic Info -->
+  <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+    <h3
+      class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
     >
-      {{ tab.label }}
-    </button>
+      Scholarship & Reserv Information
+    </h3>
+    <div
+      class="grid grid-cols-3 pt-3 gap-4 text-gray-700 dark:text-gray-300"
+    >
+      <p v-if="student?.student?.scholarship?.name">
+        <strong>Scholarship:</strong>
+        {{ student.student.scholarship.name }}
+      </p>
+
+      <p v-if="student?.student?.careerType">
+        <strong>Career Type:</strong> {{ student.student.careerType }}
+      </p>
+
+      <p v-if="student?.student?.marketing_code">
+        <strong>Marketing Code:</strong> {{ student.student.marketing_code }}
+      </p>
+
+      <p v-if="reservationInfo.branch?.name">
+        <strong>Branch:</strong>
+        {{ reservationInfo.branch.name }}
+      </p>
+
+      <p v-if="reservationInfo.called_by?.name">
+        <strong>Called By:</strong>
+        {{ reservationInfo.called_by.name }}
+      </p>
+
+      <p v-if="reservationInfo.called_time">
+        <strong>Called Time:</strong>
+        {{ reservationInfo.called_time }}
+      </p>
+
+      <p v-if="reservationInfo.registered_by?.name">
+        <strong>Registered By:</strong>
+        {{ reservationInfo.registered_by.name }}
+      </p>
+
+      <p v-if="reservationInfo.registered_at">
+        <strong>Registered At:</strong>
+        {{ reservationInfo.registered_at }}
+      </p>
+
+      <p v-if="reservationInfo.reserved_by?.name">
+        <strong>Reservation By:</strong>
+        {{ reservationInfo.reserved_by.name }}
+      </p>
+
+      <p v-if="reservationInfo.reserved_time">
+        <strong>Reservation Time:</strong>
+        {{ reservationInfo.reserved_time }}
+      </p>
+    </div>
   </div>
 
-  <!-- Table Section -->
-  <CardDetails
-  
-    :cardName="cardName"
-    :headers="headers"
-    :data="data"
-    :loading="loading"
-  />
-         <!-- <div v-show="!cardName" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DataCard
-            title="Requests"
-            :items="student.counts.requests"
-            :icon="ClipboardList"
-            colorClass="bg-emerald-100 text-emerald-600"
-          />
+  <!-- Tabs Navigation -->
+  <div class="max-w-4xl mx-auto">
+    <div
+      class="flex gap-4 border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
+    >
+      <button
+        v-for="tab in tabs"
+        :key="tab.name"
+        @click="selectTab(tab.name , tab.label)"
+        :class="[
+          'px-4 py-2 font-semibold',
+          cardName === tab.label
+            ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
+            : 'text-gray-500 hover:text-[#6c63ff]',
+        ]"
+      >
+        {{ tab.label }}
+      </button>
+    </div>
 
-          <DataCard
-            title="Groups"
-            :items="student.counts.groups"
-            :icon="UsersRound "
-            colorClass="bg-rose-100 text-rose-600"
-            @click="goToDetails('groups')"
-          />
-
-          <DataCard
-            title="Deadlines"
-            :items="student.counts.payments"
-            :icon="AlarmClock"
-            colorClass="bg-amber-100 text-amber-600"
-            @click="goToDetails('payments')"
-          />
-
-          <DataCard
-            title="Papers"
-            :items="student.counts.lectures"
-            :icon="FileText"
-            colorClass="bg-sky-100 text-sky-600"
-            @click="goToDetails('lectures')"
-          />
-
-         
-        </div> -->
+    <!-- Table Section -->
+    <CardDetails
+      :cardName="cardName"
+      :headers="headers"
+      :data="data"
+      :loading="loading"
+    />
+  </div>
 </div>
 
-        <!-- Student Data Sections -->
-        <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <DataCard
-            title="Requests"
-            :items="student.counts.requests"
-            :icon="ClipboardList"
-            colorClass="bg-emerald-100 text-emerald-600"
-            @click="goToDetails('requests')"
-          />
-
-          <DataCard
-            title="Groups"
-            :items="student.counts.groups"
-            :icon="UsersRound"
-            colorClass="bg-rose-100 text-rose-600"
-            @click="goToDetails('groups')"
-          />
-
-          <DataCard
-            title="Deadlines"
-            :items="student.counts.payments"
-            :icon="AlarmClock"
-            colorClass="bg-amber-100 text-amber-600"
-            @click="goToDetails('payments')"
-          />
-
-          <DataCard
-            title="Papers"
-            :items="student.counts.lectures"
-            :icon="FileText"
-            colorClass="bg-sky-100 text-sky-600"
-            @click="goToDetails('lectures')"
-          />
-
-          <DataCard title="Documents" :items="student.counts.documents" :icon="Files"
-            colorClass="bg-cyan-100 text-cyan-600" @click="goToDetails('documents')" />
-        </div> -->
-      </div>
-<!-- 
-      <div v-if="cardName" class="f">
-        <button
-          @click="goBack"
-          class="flex font-bold ms-8 items-center text-gray-700 dark:text-gray-300 hover:text-[#6c63ff] transition mb-6"
-        >
-          <ArrowLeft class="w-5 h-5 mr-2" />
-          <span>Back</span>
-        </button>
-
-        <CardDetails
-          v-if="cardName"
-          :cardName="cardName"
-          :headers="headers"
-          :data="data"
-          :loading="loading"
-        />
-      </div> -->
+     
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from "vue";
+import { ref, defineProps } from "vue";
 import { useStudentStore } from "@/stores/SearchStudent";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
-import DataCard from "@/components/srmDashboard/DataCard.vue";
-
 
 import {
   ClipboardList,
@@ -241,66 +133,51 @@ import {
 import CardDetails from "../../components/srmDashboard/CardDetails.vue";
 import { computed } from "vue";
 
-const reservationInfo = computed(() => {
-  return student.value?.reservation?.[0] || {};
-});
-
-function goBack() {
-  cardName.value = "";
-}
-const tabs = [
-  { name: "requests", label: "Requests" },
-  { name: "groups", label: "Groups" },
-  { name: "payments", label: "Deadlines" },
-  { name: "lectures", label: "Papers" },
-];
-
-const selectTab = async (name) => {
-  cardName.value = name;
-  loading.value = true;
-  await studentStore.fetchDataStuden(name);
-  data.value = studentStore.studentData || [];
-  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
-  loading.value = false;
-};
-
 
 const studentStore = useStudentStore();
-const studentId = ref("");
 const student = ref(null);
 const cardName = ref("");
 const data = ref([]);
 const loading = ref(false);
 const headers = ref([]);
 
+const reservationInfo = computed(() => {
+  return student.value?.reservation?.[0] || {};
+});
+
+const tabs = [
+  { name: "requests", label: "Requests" },
+  { name: "complaints", label: "Complaints" }, 
+  { name: "payments", label: "Deadlines" },
+  { name: "invoices", label: "Invoices" },
+  { name: "lectures", label: "Papers" },
+  { name: "groups", label: "Groups" },
+];
+
+const selectTab = async (name , label) => {
+  cardName.value = label;
+  loading.value = true;
+  await studentStore.fetchDataStuden(name);
+  data.value = studentStore.studentData || [];
+  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
+  loading.value = false;
+};
+
+
+
+const handleStudentSelected = (studentData) => {
+  console.log("Selected Student Data:", studentData);
+
+  
+  student.value = studentData;
+
+  console.log("Received student from child:", studentData);
+};
+
 const columnMap = {
   groups: ["name", "code", "type", "start_date", "student_start", "total_lec"],
   payments: ["amount", "paid_amount", "due_date", "paid_date", "status"],
   requests: [],
   lectures: ["name", "notes", "start_time", "end_time", "status"],
-};
-
-watch(
-  () => studentId.value,
-  (newVal, oldVal) => {
-    cardName.value = "";
-  }
-);
-const goToDetails = async (name) => {
-  cardName.value = name;
-  loading.value = true;
-  await studentStore.fetchDataStuden(name);
-  data.value = studentStore.studentData || [];
-
-  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
-  loading.value = false;
-};
-
-const defaultImg =
-  "https://st2.depositphotos.com/1531183/5770/v/950/depositphotos_57709697-stock-illustration-male-person-silhouette-profile-picture.jpg";
-
-const searchStudent = async () => {
-  await studentStore.fetchStudent(studentId.value);
-  student.value = studentStore.student;
 };
 </script>

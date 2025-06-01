@@ -11,7 +11,7 @@ const props = defineProps({
 console.log("CardDetails props:", props.data);
 
 const currentPage = ref(1);
-const pageSize = 3;
+const pageSize = 10;
 
 const totalPages = computed(() => Math.ceil(props.data?.length / pageSize) || 1);
 
@@ -104,7 +104,8 @@ function goToPage(page) {
         </tbody>
       </table>
 
-      <div class="mt-6 flex justify-center items-center space-x-2">
+     <div v-if="props.data.length > pageSize" class="mt-6 flex justify-center items-center space-x-2">
+
         <button
           @click="currentPage.value--"
           :disabled="currentPage.value === 1"
