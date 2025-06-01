@@ -154,13 +154,21 @@ const tabs = [
   { name: "groups", label: "Groups" },
 ];
 
-const selectTab = async (name , label) => {
+const selectTab = async (name, label) => {
   cardName.value = label;
   loading.value = true;
-  await studentStore.fetchDataStuden(name);
-  data.value = studentStore.studentData || [];
-  headers.value = columnMap[name] || Object.keys(data.value[0] || {});
-  loading.value = false;
+
+  try {
+    await studentStore.fetchDataStuden(name);
+    data.value = studentStore.studentData || [];
+    headers.value = columnMap[name] || Object.keys(data.value[0] || {});
+  } catch (error) {
+    console.error("Error fetching tab data:", error);
+    data.value = [];         
+    headers.value = [];      
+  } finally {
+    loading.value = false;
+  }
 };
 
 

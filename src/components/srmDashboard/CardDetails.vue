@@ -56,7 +56,7 @@ function goToPage(page) {
       <span class="text-indigo-600">{{ cardName.toLocaleUpperCase() }}</span>
     </h1>
 
-    <div v-if="loading">
+    <div v-if=" loading ">
       <div class="flex justify-center items-center">
         <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
       </div>
