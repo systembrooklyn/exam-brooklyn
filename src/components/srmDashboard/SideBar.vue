@@ -212,13 +212,6 @@ emit('student-selected', studentAllData.value);
 };
 
 
-
-// watch(
-//   () => studentId.value,
-//   (newVal, oldVal) => {
-//     cardName.value = "";
-//   }
-// );
 const openModal = (type) => {
   modalType.value = type;
   showModal.value = true;
