@@ -111,6 +111,12 @@ const routes = [
         meta: { requiresPermission: "edit-exams" },
         component: () => import("@/views/dashboard/EditExam.vue"),
       },
+         {
+        path: "placement/:id/edit",
+        name: "edit-placement",
+        meta: { requiresPermission: "edit-placement" },
+        component: () => import("@/views/dashboard/EditPlacementTest.vue"),
+      },
       {
         path: "roles",
         name: "roles",
@@ -122,6 +128,18 @@ const routes = [
         name: "reservations",
         // meta: { requiresPermission: "view-reservations" },
         component: () => import("@/views/dashboard/ReservationsList.vue"),
+      },
+       {
+        path: "placement",
+        name: "placement",
+        // meta: { requiresPermission: "view-reservations" },
+        component: () => import("@/views/dashboard/PlacementTestList.vue"),
+      },
+        {
+        path: "create-placement",
+        name: "create-placement",
+        // meta: { requiresPermission: "view-reservations" },
+        component: () => import("@/views/dashboard/CreatePlacement.vue"),
       },
     ],
   },

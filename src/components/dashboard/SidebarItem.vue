@@ -8,7 +8,7 @@
       <div class="flex items-center gap-2">
         <component
           :is="item.icon"
-          class="w-5 h-5"
+          class="w-5 h-5 text-indigo-400"
           :class="{ 'text-indigo-600': isActive }"
           v-if="item.icon"
         />

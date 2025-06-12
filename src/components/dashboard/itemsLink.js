@@ -1,4 +1,4 @@
-import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog ,ClipboardCheck } from 'lucide-vue-next'
+import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog ,ClipboardCheck, Brain } from 'lucide-vue-next'
 
 export const items = [
   {
@@ -38,6 +38,14 @@ export const items = [
     name:'Reservations',
     icon: ClipboardCheck  ,  
     route: 'reservations'
+  },
+    {
+    name: 'Placement Tests',
+    icon: Brain ,
+    children: [
+      { name: 'Placement List', route: 'placement'},  
+      { name: 'Create Placement Test', route: 'create-placement'}  
+    ]
   },
   {
     name: 'Settings',

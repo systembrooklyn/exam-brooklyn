@@ -3,7 +3,6 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
 import { STUDENT } from "../api/Api";
-import notyf from "../components/global/notyf"; // Adjust the path as necessary
 import { handleError } from "./handleError";
 
 export const useStudentStore = defineStore("studentStore", () => {
