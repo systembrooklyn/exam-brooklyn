@@ -10,54 +10,40 @@
       <ExamInfoForm v-model="exam" />
 
       <div class="flex justify-end mt-6">
-        <button
-          @click="updatePlacementTest"
-          :disabled="!hasChanges || submitting"
-          :class="[
-            'px-6 py-2 rounded flex items-center cursor-pointer justify-center min-w-[140px] transition-all duration-300',
-            !hasChanges || submitting ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
-          ]"
-        >
-          <span
-            v-if="submitting"
-            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"
-          ></span>
+        <button @click="updatePlacementTest" :disabled="!hasChanges || submitting" :class="[
+          'px-6 py-2 rounded flex items-center cursor-pointer justify-center min-w-[140px] transition-all duration-300',
+          !hasChanges || submitting ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'
+        ]">
+          <span v-if="submitting"
+            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
           Save Changes
         </button>
       </div>
 
       <div class="flex justify-center items-center mt-6 gap-4">
-        <button
-          v-if="showGetButton"
-          @click="loadQuestions"
-          class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 flex items-center gap-2 min-w-[140px]"
-        >
-          <span v-if="loadingQuestions" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+        <button v-if="showGetButton" @click="loadQuestions"
+          class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 flex items-center gap-2 min-w-[140px]">
+          <span v-if="loadingQuestions"
+            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
           <span v-else>Get Questions</span>
         </button>
 
-        <button
-          v-if="!showAdder"
-          @click="handleAddQuestion"
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2 min-w-[140px]"
-        >
+        <button v-if="!showAdder" @click="handleAddQuestion"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2 min-w-[140px]">
           + Add Question
         </button>
       </div>
 
-      <QuestionEditor v-if="showEditor" :questions="questions" @update:questions="handleQuestionsUpdate" />
+      <QuestionEditor v-if="showEditor" type="placement" :questions="questions" @update:questions="handleQuestionsUpdate" />
       <ExamQuestions v-if="showAdder" ref="questionForm" />
 
       <div v-if="showAdder" class="flex justify-center mt-6">
-        <button
-          @click="submitNewQuestions"
-          :disabled="addQuestions.length === 0"
-          :class="[
-            'px-6 py-2 rounded flex items-center cursor-pointer justify-center min-w-[140px] transition-all duration-300',
-            addQuestions.length === 0 ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-green-600 hover:bg-green-700 text-white'
-          ]"
-        >
-          <span v-if="submittingNewQuestions" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+        <button @click="submitNewQuestions" :disabled="addQuestions.length === 0" :class="[
+          'px-6 py-2 rounded flex items-center cursor-pointer justify-center min-w-[140px] transition-all duration-300',
+          addQuestions.length === 0 ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-green-600 hover:bg-green-700 text-white'
+        ]">
+          <span v-if="submittingNewQuestions"
+            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
           <span v-else>Submit New Questions</span>
         </button>
       </div>
@@ -127,7 +113,10 @@ onMounted(async () => {
 
 const loadQuestions = async () => {
   loadingQuestions.value = true;
+
   try {
+    console.log();
+
     await placementStore.fetchExamQuestions(route.params.id);
     questions.value = placementStore.examQuestions;
     showEditor.value = true;
@@ -171,20 +160,28 @@ const updatePlacementTest = async () => {
 const submitNewQuestions = async () => {
   submittingNewQuestions.value = true;
 
-  for (let question of addQuestions.value) {
-    if (!question.question_text || !question.option_a || !question.option_b || !question.option_c || !question.option_d) {
-      notyf.error("Please fill in all fields for each question.");
-      submittingNewQuestions.value = false;
-      return;
-    }
+for (let question of addQuestions.value) {
+  if (
+    !question.question_text?.trim() ||
+    !question.option_a?.trim() ||
+    !question.option_b?.trim() ||
+    !question.option_c?.trim() ||
+    !question.option_d?.trim() ||
+    !question.correct_option?.trim()
+  ) {
+    notyf.error("Please fill in all fields for each question.");
+    submittingNewQuestions.value = false;
+    return;
   }
+}
+
 
   try {
     console.log("Submitting new questions:", addQuestions.value);
     console.log("Exam ID:", route.params.id);
-    
 
-   await placementStore.addNewQuestions(route.params.id, addQuestions.value);
+
+    await placementStore.addNewQuestions(route.params.id, addQuestions.value);
     addQuestions.value = [];
     showAdder.value = false;
     showGetButton.value = true;

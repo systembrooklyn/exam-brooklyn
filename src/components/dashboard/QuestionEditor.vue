@@ -33,12 +33,16 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <div v-for="(opt, index) in ['A', 'B', 'C', 'D']" :key="index">
-            <label class="text-sm capitalize">Option {{ opt }}</label>
-            <input v-model="questions[currentQuestionIndex].options[opt]" type="text"
-              class="w-full border-1 border-indigo-300 px-3 py-2 rounded-md" @input="setModified(true)" />
-          </div>
-        </div>
+  <div v-for="(opt, index) in ['A', 'B', 'C', 'D']" :key="index">
+    <label class="text-sm capitalize">Option {{ opt }}</label>
+    <input
+      :value="getOption(opt)"
+      @input="updateOption(opt, $event.target.value)"
+      type="text"
+      class="w-full border-1 border-indigo-300 px-3 py-2 rounded-md"
+    />
+  </div>
+</div>
 
 
         <div class="text-center flex flex-col items-center mt-8">
@@ -88,15 +92,18 @@
 <script setup>
 import { ref, watch } from "vue";
 import { useExamStore } from "@/stores/examStore";
-import { ArrowDownToDot, Beer } from "lucide-vue-next";
+import { usePlacementTestsStore } from "@/stores/placementTestsStore";
 
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 
 
 const props = defineProps({
   questions: Array,
+ type: String,
 });
 
+
+const placementStore = usePlacementTestsStore();
 const showDeleteAlertDialog = ref(false);
 const examStore = useExamStore();
 const currentQuestionIndex = ref(0);
@@ -121,14 +128,22 @@ const saveQuestion = async (q) => {
 
   saving.value = true;
   try {
-    await examStore.updateQuestion(q.id, {
+    const payload = {
       question_text: q.question_text,
-      option_a: q.options.A,
-      option_b: q.options.B,
-      option_c: q.options.C,
-      option_d: q.options.D,
+      option_a: getOption("A"),
+      option_b: getOption("B"),
+      option_c: getOption("C"),
+      option_d: getOption("D"),
       correct_option: q.correct_option,
-    });
+    };
+
+    if (props.type === "placement") {
+      console.log("Updating placement test question:", q.id, payload);
+      
+      await placementStore.updatePlacementTestQuestion(q.id, payload);
+    } else {
+      await examStore.updateQuestion(q.id, payload);
+    }
 
     originalQuestion.value = { ...q };
     isModified.value = false;
@@ -139,6 +154,7 @@ const saveQuestion = async (q) => {
   }
 };
 
+
 // Handle deletion with confirmation
 const deleteQuestion = (id) => {
   showDeleteAlertDialog.value = true;
@@ -147,16 +163,46 @@ const deleteQuestion = (id) => {
 // Confirm delete
 const confirmDelete = async () => {
   showDeleteAlertDialog.value = false;
+
   try {
-    await examStore.deleteQuestion(
-      props.questions[currentQuestionIndex.value].id
-    );
+    const id = props.questions[currentQuestionIndex.value].id;
+
+    if (props.type === "placement") {
+      await placementStore.deletePlacementTestQuestion(id);
+    } else {
+      await examStore.deleteQuestion(id);
+    }
+
     props.questions.splice(currentQuestionIndex.value, 1);
-    currentQuestionIndex.value = Math.max(0, currentQuestionIndex.value - 1); // Move to the previous question or stay at 0
+    currentQuestionIndex.value = Math.max(0, currentQuestionIndex.value - 1);
   } catch (e) {
     console.error("Error deleting question:", e);
   }
 };
+
+const getOption = (opt) => {
+  const q = props.questions[currentQuestionIndex.value];
+  if (!q) return "";
+  if (q.options && typeof q.options === "object") {
+    return q.options[opt] ?? "";
+  } else {
+    return q[`option_${opt.toLowerCase()}`] ?? "";
+  }
+};
+
+const updateOption = (opt, value) => {
+  const q = props.questions[currentQuestionIndex.value];
+  if (!q) return;
+
+  if (q.options && typeof q.options === "object") {
+    q.options[opt] = value;
+  } else {
+    q[`option_${opt.toLowerCase()}`] = value;
+  }
+
+  setModified(true);
+};
+
 
 // Cancel deletion
 const cancelDelete = () => {

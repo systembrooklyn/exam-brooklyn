@@ -1,8 +1,9 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import apiClient from "../api/axiosInstance";
-import { ADD_PLACEMENT_QUESTIONS, ADD_PLACEMENT_TEST, GET_ST_BY_EMAIL, PLACEMENT_TESTS } from "../api/Api";
+import { ADD_PLACEMENT_QUESTIONS, ADD_PLACEMENT_TEST, GET_PLACEMENT_QUESTIONS, GET_ST_BY_EMAIL, PLACEMENT_TESTS } from "../api/Api";
 import { handleError } from "./handleError";
+import notyf from "../components/global/notyf";
 
 
 export const usePlacementTestsStore = defineStore("placementTests", () => {
@@ -115,6 +116,7 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
       console.log(`Placement test created:`, response.data);
       
       placementTests.value.push(response.data);
+       notyf.success("Placement Test added successfully");
       return response.data;
     } catch (e) {
       error.value = e;
@@ -126,20 +128,20 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   }
 
   const fetchExamQuestions = async (examId) => {
-    loading.value = true;
+    console.log(`Fetching questions for exam ID: ${examId}`);
+    
     error.value = null;
     try {
-      const response = await apiClient.get(`${PLACEMENT_TESTS}/${examId}/questions`);
-      console.log(`Fetched questions for exam ID ${examId}:`, response.data);
+      const response = await apiClient.get(`${GET_PLACEMENT_QUESTIONS}/${examId}`);
+      console.log(`Fetched exam questions:`, response.data.data);
       
-      examQuestions.value = response.data;
+      examQuestions.value = response.data.data || [];
+      notyf.success(response.data.message || "Exam questions fetched successfully");
     } catch (e) {
       error.value = e;
       handleError(e);
       throw e;
-    } finally {
-      loading.value = false;
-    }
+    } 
   }
 
  async function addNewQuestions(exam_id, questions) {
@@ -148,7 +150,7 @@ console.log(`Adding new questions to exam ID ${exam_id}:`, questions);
 
   error.value = null;
   try {
-    const response = await apiClient.post(`${ADD_PLACEMENT_QUESTIONS}/${exam_id}`, questions);
+    const response = await apiClient.post(`${GET_PLACEMENT_QUESTIONS}/${exam_id}`, {questions});
     return response.data;
   } catch (e) {
     error.value = e;
@@ -159,16 +161,51 @@ console.log(`Adding new questions to exam ID ${exam_id}:`, questions);
   }
 }
 
+const updatePlacementTestQuestion = async (questionId, data) => {
+  console.log(`Updating placement test question with ID: ${questionId}`, data); 
+  error.value = null;
+  try {
+    const response = await apiClient.put(`${GET_PLACEMENT_QUESTIONS}/${questionId}`, data);
+    console.log(`Placement test question updated:`, response.data);
+    notyf.success("Placement Test Question updated successfully");
+    return response.data;
+  } catch (e) {
+    error.value = e;
+    handleError(e);
+    throw e;
+  } finally {
+    loading.value = false;
+  }
+}
+
+const deletePlacementTestQuestion = async (questionId) => {
+  console.log(`Deleting placement test question with ID: ${questionId}`); 
+  error.value = null;
+  try {
+    await apiClient.delete(`${GET_PLACEMENT_QUESTIONS}/${questionId}`);
+    examQuestions.value = examQuestions.value.filter(q => q.id !== questionId);
+    notyf.success("Placement Test Question deleted successfully");
+  } catch (e) {
+    error.value = e;
+    handleError(e);
+  } finally {
+    loading.value = false;
+  }
+}
+
   return {
     // state
     student,
     placementTest,
     placementTests,
+    examQuestions,
     loading,
     error,
 
     // actions
     fetchPlacementTests,
+    updatePlacementTestQuestion,
+    deletePlacementTestQuestion,
     addNewQuestions,
     addPlacementTest,
     fetchPlacementTestById,

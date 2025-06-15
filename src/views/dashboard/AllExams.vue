@@ -35,6 +35,7 @@ const cancelDelete = () => {
 
 onMounted(() => {
   examStore.fetchExams();
+  examStore.exams
 });
 </script>
 

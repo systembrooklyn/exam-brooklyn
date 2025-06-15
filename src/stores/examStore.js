@@ -37,7 +37,9 @@ export const useExamStore = defineStore("examStore", () => {
     try {
       const response = await apiClient.post(ADD_EXAM, examData);
       notyf.success("Exam created successfully");
-      exams.value.push(response.data);
+      console.log("Exam created:", response.data);
+      
+      exams.value.push(response.data.data);
       router.push({ name: "exams" });
     } catch (err) {
       handleError(err);

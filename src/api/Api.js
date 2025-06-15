@@ -27,3 +27,4 @@ export const GET_ST_BY_EMAIL = "getStByEmail";
 export const PLACEMENT_TESTS = "ptests";
 export const ADD_PLACEMENT_QUESTIONS = "questions";
 export const ADD_PLACEMENT_TEST = "ptestWithQuestions";
+export const GET_PLACEMENT_QUESTIONS = "ptestQuestions";

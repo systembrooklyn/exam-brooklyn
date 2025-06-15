@@ -2,10 +2,12 @@
 import { ref } from 'vue';
 import { Mail, Loader2 } from 'lucide-vue-next';
 import { usePlacementTestsStore } from '@/stores/placementTestsStore';
+import { useRouter } from 'vue-router';
 
 const placementTestsStore = usePlacementTestsStore();
 
 const email = ref('');
+const router = useRouter();
 const loading = ref(false);
 const studentData = ref(null);
 const showConfirm = ref(false);
@@ -31,6 +33,7 @@ function confirmStart() {
   showConfirm.value = false;
   startPlas.value.pt_id = placementTestsStore.placementTest.id;
   startPlas.value.st_id = studentData.value.id;
+router.push({name : 'placement-essay'})
 
 }
 

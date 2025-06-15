@@ -54,7 +54,7 @@
         </button>
       </div>
 
-      <QuestionEditor v-if="showEditor" :questions="questions" @update:questions="handleQuestionsUpdate" />
+      <QuestionEditor v-if="showEditor" type="exam" :questions="questions" @update:questions="handleQuestionsUpdate" />
       <ExamQuestions v-if="showAdder" ref="questionForm"/>
 
       <div v-if="showAdder" class="flex justify-center mt-6">

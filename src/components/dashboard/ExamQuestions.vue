@@ -89,26 +89,18 @@ const errorMessage = ref(false)
 const getQuestions = () => {
   const allQuestions = questions.value
 
-  // تحقق أن آخر سؤال مكتمل
-  const last = allQuestions[allQuestions.length - 1]
-  if (
-    !last.question_text ||
-    !last.option_a ||
-    !last.option_b ||
-    !last.option_c ||
-    !last.option_d ||
-    !last.correct_option
-  ) {
+  const hasEmptyField = (q) =>
+    !q.question_text || !q.option_a || !q.option_b || !q.option_c || !q.option_d || !q.correct_option
+
+  const anyIncomplete = allQuestions.some(q => hasEmptyField(q))
+
+  if (anyIncomplete) {
     errorMessage.value = true
     return null
   }
 
   errorMessage.value = false
-
- 
-  return allQuestions.filter(q =>
-    q.question_text && q.option_a && q.option_b && q.option_c && q.option_d && q.correct_option
-  )
+  return allQuestions
 }
 
 

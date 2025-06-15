@@ -27,12 +27,12 @@ onMounted(() => {
   });
 });
 
-// ✅ هل تم ملء بيانات النموذج العلوي؟
+
 const isInfoFilled = computed(() => {
   return exam.value.name && exam.value.description && exam.value.duration > 0;
 });
 
-// ✅ هل النموذج كاملاً جاهز لإرساله؟
+
 const isFormValid = computed(() => {
   return isInfoFilled.value && exam.value.questions.length > 0;
 });

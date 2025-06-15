@@ -62,7 +62,7 @@ onMounted(() => {
     <SweetAlert2Modal
       v-if="showDeleteAlertDialog"
       title="Are you sure?"
-      text="This exam will be deleted."
+      text="This placement Test will be deleted."
       icon="warning"
       @confirm="deleteExam"
       @cancel="cancelDelete"

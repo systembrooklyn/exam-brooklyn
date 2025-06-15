@@ -46,6 +46,12 @@ const routes = [
     name: "password-reset",
     component: () => import("../views/pages/password-reset.vue"),
   },
+    {
+    path: "/placement-essay",
+    name: "placement-essay",
+    component: () => import("../views/pages/PlacementEssay.vue"),
+  },
+
   {
     path: "/:catchAll(.*)",
     name: "error",
