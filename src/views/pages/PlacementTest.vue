@@ -1,8 +1,11 @@
 <script setup>
 import { ref } from 'vue';
+import Cookies from 'js-cookie';
 import { Mail, Loader2 } from 'lucide-vue-next';
 import { usePlacementTestsStore } from '@/stores/placementTestsStore';
 import { useRouter } from 'vue-router';
+import trurIcon from '@/assets/true.png'; // Adjust the path as necessary
+
 
 const placementTestsStore = usePlacementTestsStore();
 
@@ -12,10 +15,7 @@ const loading = ref(false);
 const studentData = ref(null);
 const showConfirm = ref(false);
 const acceptedTerms = ref(false);
-const startPlas = ref({
-  pt_id: null,
-st_id:null
-});
+
 
 function handleSubmit() {
   loading.value = true;
@@ -31,9 +31,8 @@ function handleSubmit() {
 
 function confirmStart() {
   showConfirm.value = false;
-  startPlas.value.pt_id = placementTestsStore.placementTest.id;
-  startPlas.value.st_id = studentData.value.id;
-router.push({name : 'placement-essay'})
+Cookies.set('st_id', studentData.value.id, { expires: 7 });
+router.push({name :'placement-essay'})
 
 }
 
@@ -96,17 +95,18 @@ function cancelConfirm() {
 <!-- Confirmation Popup -->
 <div v-if="showConfirm" class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex justify-center items-center z-50">
   <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-3xl text-center transform transition-all duration-300">
+    <h3 class="text-2xl font-bold text-blue-900 dark:text-white mb-6">Is this your information?</h3>
 
     <!-- Lucide Icon -->
-    <div class="flex justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#092c67" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="flex justify-center mb-4">
+      <!-- <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#092c67" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
         <circle cx="9" cy="7" r="4"></circle>
         <polyline points="16 11 18 13 22 9"></polyline>
-      </svg>
+      </svg> -->
+      <img :src="trurIcon" class="w-40" alt="">
     </div>
 
-    <h3 class="text-2xl font-bold text-blue-900 dark:text-white mb-6">Is this your information?</h3>
 
     <!-- Grid Layout - Two Columns with Conditional Rendering -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm text-gray-700 dark:text-gray-200 text-left px-8 mb-6">

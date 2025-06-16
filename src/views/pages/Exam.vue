@@ -299,16 +299,6 @@ onBeforeUnmount(() => {
           <span v-else>Submit</span>
         </button>
       </div>
-
-      <!-- <div class="pagination">
-        <button v-for="(q, index) in questions" :key="index" @click="goToQuestion(index)" :class="{
-            active: currentQuestionIndex === index,
-            answered: studentStore.examAnswers.some((ans) => ans.q_id === q.id),
-          }">
-          {{ index + 1 }}
-        </button>
-      </div> -->
-
       <div class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white">
         It has been answered
         <span class="text-primary dark:text-blue-500 text-xl font-bold">({{ answeredCount }})</span>

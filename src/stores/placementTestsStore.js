@@ -12,9 +12,9 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   const error = ref(null);
   const placementTests = ref([]);
   const placementTest = ref(null); 
-    const examQuestions = ref([]); // لتخزين أسئلة الاختبار
+    const examQuestions = ref([]); 
 
-  // ✅ جلب كل الاختبارات
+ 
   async function fetchPlacementTests() {
     loading.value = true;
     error.value = null;
@@ -29,7 +29,7 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
     }
   }
 
-  // ✅ جلب اختبار واحد بالتفصيل
+
   async function fetchPlacementTestById(id) {
     loading.value = true;
     error.value = null;

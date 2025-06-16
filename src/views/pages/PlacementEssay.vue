@@ -47,13 +47,15 @@
 
         <div class="flex justify-between mt-4">
           <button @click="cancelModal" class="px-4 py-2 rounded text-gray-600 hover:bg-gray-100">Cancel</button>
-          <button
-            :disabled="!selectedExamId"
-            @click="confirmStartExam"
-            class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
-          >
-            Start Exam
-          </button>
+         <button
+  :disabled="!selectedExamId || loadingExam"
+  @click="confirmStartExam"
+  class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
+>
+  <span v-if="loadingExam" class="loader w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+  <span>{{ loadingExam ? 'Starting...' : 'Start Exam' }}</span>
+</button>
+
         </div>
       </div>
     </div>
@@ -63,8 +65,15 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usePlacementTestsStore } from "@/stores/placementTestsStore";
+import { usePlacementTestsExamStore } from "@/stores/placementTestsExamStore";
+import Cookies from 'js-cookie';
+import { useRouter } from 'vue-router';
 
-const placementStore = usePlacementTestsStore()
+
+
+const placementStore = usePlacementTestsStore();
+const placementExamStore = usePlacementTestsExamStore();
+const router = useRouter();
 
 const answers = ref({
   q1: '',
@@ -106,12 +115,23 @@ const cancelModal = () => {
   selectedExamId.value = ''
 }
 
-const confirmStartExam = () => {
-  console.log('Submitted Answers:', answers.value)
-  console.log('Selected Exam ID:', selectedExamId.value)
-  showModal.value = false
+const loadingExam = ref(false)
 
-  // 🔁 Optional: Navigate to exam route or send to API
-  // router.push({ name: 'start-exam', params: { id: selectedExamId.value } })
+const confirmStartExam = async () => {
+  loadingExam.value = true;
+
+  const st_num = Number(Cookies.get('st_id')) || 0;
+
+  try {
+    await placementExamStore.fetchPlacementExam(selectedExamId.value, st_num);
+
+    showModal.value = false;
+    router.push({ name: 'placement-exam' });
+  } catch (error) {
+    console.error('Error fetching exam:', error);
+  } finally {
+    loadingExam.value = false;
+  }
 }
+
 </script>

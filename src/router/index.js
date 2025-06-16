@@ -46,10 +46,20 @@ const routes = [
     name: "password-reset",
     component: () => import("../views/pages/password-reset.vue"),
   },
-    {
+  {
     path: "/placement-essay",
     name: "placement-essay",
     component: () => import("../views/pages/PlacementEssay.vue"),
+  },
+  {
+    path: "/placement-exam",
+    name: "placement-exam",
+    component: () => import("../views/pages/PlacementTestExam.vue"),
+  },
+   {
+    path: '/exam-success',
+    name: 'exam-success',
+    component: () => import("../views/pages/PlacementSuccess.vue"),
   },
 
   {
@@ -117,7 +127,7 @@ const routes = [
         meta: { requiresPermission: "edit-exams" },
         component: () => import("@/views/dashboard/EditExam.vue"),
       },
-         {
+      {
         path: "placement/:id/edit",
         name: "edit-placement",
         meta: { requiresPermission: "edit-placement" },
@@ -135,13 +145,13 @@ const routes = [
         // meta: { requiresPermission: "view-reservations" },
         component: () => import("@/views/dashboard/ReservationsList.vue"),
       },
-       {
+      {
         path: "placement",
         name: "placement",
         // meta: { requiresPermission: "view-reservations" },
         component: () => import("@/views/dashboard/PlacementTestList.vue"),
       },
-        {
+      {
         path: "create-placement",
         name: "create-placement",
         // meta: { requiresPermission: "view-reservations" },
