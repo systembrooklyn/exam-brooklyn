@@ -33,16 +33,12 @@
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-  <div v-for="(opt, index) in ['A', 'B', 'C', 'D']" :key="index">
-    <label class="text-sm capitalize">Option {{ opt }}</label>
-    <input
-      :value="getOption(opt)"
-      @input="updateOption(opt, $event.target.value)"
-      type="text"
-      class="w-full border-1 border-indigo-300 px-3 py-2 rounded-md"
-    />
-  </div>
-</div>
+          <div v-for="(opt, index) in ['A', 'B', 'C', 'D']" :key="index">
+            <label class="text-sm capitalize">Option {{ opt }}</label>
+            <input :value="getOption(opt)" @input="updateOption(opt, $event.target.value)" type="text"
+              class="w-full border-1 border-indigo-300 px-3 py-2 rounded-md" />
+          </div>
+        </div>
 
 
         <div class="text-center flex flex-col items-center mt-8">
@@ -93,13 +89,13 @@
 import { ref, watch } from "vue";
 import { useExamStore } from "@/stores/examStore";
 import { usePlacementTestsStore } from "@/stores/placementTestsStore";
-
+import { ArrowDownToDot, Beer } from 'lucide-vue-next';
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 
 
 const props = defineProps({
   questions: Array,
- type: String,
+  type: String,
 });
 
 
@@ -139,7 +135,7 @@ const saveQuestion = async (q) => {
 
     if (props.type === "placement") {
       console.log("Updating placement test question:", q.id, payload);
-      
+
       await placementStore.updatePlacementTestQuestion(q.id, payload);
     } else {
       await examStore.updateQuestion(q.id, payload);
