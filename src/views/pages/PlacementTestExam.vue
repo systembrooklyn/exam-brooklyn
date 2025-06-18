@@ -44,6 +44,7 @@ const startTimer = () => {
     if (timeLeft.value <= 0) {
       clearInterval(interval);
       notyf.error("Time is up!");
+      submitFinalExam();
       router.replace({ name: "placement-test" });
     } else {
       timeLeft.value = parseFloat((timeLeft.value - 0.01).toFixed(2));
@@ -177,6 +178,7 @@ const handleBeforeUnload = (e) => {
   e.preventDefault();
   sessionStorage.removeItem("attemptId");
   sessionStorage.removeItem("answers");
+  router.replace({ name: "placement-test" });
   return "";
 };
 

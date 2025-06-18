@@ -89,6 +89,8 @@ export const usePlacementTestsExamStore = defineStore(
         );
         isFinished.value = true;
         clearInterval(autoSaveInterval);
+        attemptId && Cookies.remove("attempt_id"); // Clear attempt_id after submission
+        Cookies.remove("st_id");
       } catch (error) {
         console.error("Error submitting final exam:", error);
       }
