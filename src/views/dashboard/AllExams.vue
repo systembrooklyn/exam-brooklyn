@@ -52,7 +52,7 @@ onMounted(() => {
         { label: 'Course', key: 'course.name' },
       ]"
       :isExam="true"
-      :items="examStore.exams"
+      :items="examStore.exams || []"
       resourceType="exams"
       @edit="handleEditExam"
       @delete="showDeleteAlert"

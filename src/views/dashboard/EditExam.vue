@@ -55,7 +55,12 @@
       </div>
 
       <QuestionEditor v-if="showEditor" type="exam" :questions="questions" @update:questions="handleQuestionsUpdate" />
-      <ExamQuestions v-if="showAdder" ref="questionForm"/>
+      <ExamQuestions 
+  v-if="showAdder"
+  ref="questionForm"
+  @update:questions="handleNewQuestions"
+/>
+
 
       <div v-if="showAdder" class="flex justify-center mt-6">
         <button
@@ -127,6 +132,9 @@ const exam = ref({
 let initialExamData = {};
 
 
+const handleNewQuestions = (questionsData) => {
+  addQuestions.value = questionsData?.filter(q => q?.question_text?.trim()) || [];
+};
 
 
 watch(

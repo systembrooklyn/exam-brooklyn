@@ -1,7 +1,7 @@
 import { ref } from "vue";
 import { defineStore } from "pinia";
 import apiClient from "../api/axiosInstance";
-import { ADD_PLACEMENT_QUESTIONS, ADD_PLACEMENT_TEST, GET_PLACEMENT_QUESTIONS, GET_ST_BY_EMAIL, PLACEMENT_TESTS } from "../api/Api";
+import { ADD_PLACEMENT_QUESTIONS, ADD_PLACEMENT_TEST, FINISH_PLACEMENT, GET_PLACEMENT_QUESTIONS, GET_ST_BY_EMAIL, PLACEMENT_TESTS } from "../api/Api";
 import { handleError } from "./handleError";
 import notyf from "../components/global/notyf";
 
@@ -54,8 +54,9 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
       
       student.value = response.data.data;
     } catch (e) {
-      error.value = e;
+      error.value = e.response ? e.response.data : e;
       handleError(e);
+      student.value = null; // Reset student if error occurs
     } finally {
       loading.value = false;
     }
@@ -107,7 +108,7 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
     }
   }
   
-  const addPlacementTest = async (data) => {
+  const addPlacementTestWithQuestions = async (data) => {
     console.log(`Adding placement test with data:`, data);
     
     error.value = null;
@@ -193,6 +194,23 @@ const deletePlacementTestQuestion = async (questionId) => {
   }
 }
 
+const addPlacementTestBasic = async (data) => {
+  console.log(`Adding basic placement test with data:`, data);
+  error.value = null;
+  try {
+    const response = await apiClient.post(PLACEMENT_TESTS, data);
+    console.log(`Basic placement test added:`, response.data);
+    notyf.success("Placement Test added successfully");
+    return response.data;
+  } catch (e) {
+    error.value = e;
+    handleError(e);
+    throw e;
+  } finally {
+    loading.value = false;
+  }
+}
+
   return {
     // state
     student,
@@ -206,8 +224,9 @@ const deletePlacementTestQuestion = async (questionId) => {
     fetchPlacementTests,
     updatePlacementTestQuestion,
     deletePlacementTestQuestion,
+    addPlacementTestBasic,
     addNewQuestions,
-    addPlacementTest,
+    addPlacementTestWithQuestions,
     fetchPlacementTestById,
     fetchExamQuestions,
     fetchStudenByEmail,

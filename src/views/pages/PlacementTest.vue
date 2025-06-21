@@ -24,6 +24,11 @@ function handleSubmit() {
 
   placementTestsStore.fetchStudenByEmail(email.value).then(response => {
     studentData.value = placementTestsStore.student
+    if (!studentData.value) {
+      showConfirm.value = false;
+      loading.value = false;
+      return;
+    }
     showConfirm.value = true;
   }).finally(() => {
     loading.value = false;

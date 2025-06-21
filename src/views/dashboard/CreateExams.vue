@@ -9,15 +9,13 @@ import { useScholarshipStore } from "@/stores/scholarships";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
-
 const authStore = useAuthStore();
 const examStore = useExamStore();
 const isAdding = ref(false);
 const emitter = inject("emitter");
 const scholarshipStore = useScholarshipStore();
-const questionForm = ref()
+const questionForm = ref();
 const router = useRouter();
-
 
 const ExamQuestions = defineAsyncComponent(() =>
   import("@/components/dashboard/ExamQuestions.vue")
@@ -30,7 +28,7 @@ const prefetchExamQuestions = () => {
 onMounted(() => {
   scholarshipStore.fetchScholarships();
   emitter.on("questions", (questions) => {
-    (questions);
+    questions;
 
     exam.value.questions = questions;
   });
@@ -38,10 +36,10 @@ onMounted(() => {
 
 const isFormValid = computed(() => {
   return (
-    exam.value.name &&
+    exam.value.name?.trim() &&
     exam.value.duration > 0 &&
     exam.value.ins_id &&
-    exam.value.crs_id
+    exam.value.crs_id // ← متأكد إنك تقصد crs_id مش course_id هنا
   );
 });
 
@@ -63,52 +61,54 @@ const errors = ref({
   ins_id: "",
   crs_id: "",
 });
+const handleNewQuestions = (questions) => {
+  const valid = questions?.filter((q) => q?.question_text?.trim()) || [];
+  exam.value.questions = valid;
+};
 
-(exam.value.ins_id);
-
-
+exam.value.ins_id;
 
 const submitExam = async () => {
-  const questions = questionForm.value.getQuestions();
-  if (!questions) return;
-
   submitting.value = true;
 
   try {
-    
-    exam.value.questions = questions;
+    const questions = questionForm.value?.getQuestions?.();
 
-    (exam.value);
-
-    await examStore.addExam(exam.value);
-
-    
-    exam.value = {
-      name: "",
-      description: "",
-      duration: 0,
-      ins_id: "20",
-      crs_id: "",
-      is_active: true,
-      questions: [],
+    const payload = {
+      name: exam.value.name,
+      description: exam.value.description,
+      duration: Number(exam.value.duration),
+      ins_id: Number(exam.value.ins_id),
+      is_active: exam.value.is_active ? 1 : 0,
     };
 
-  
+    if (questions && questions.length > 0) {
+      // في حالة وجود أسئلة → استخدم crs_id
+      payload.crs_id = Number(exam.value.crs_id);
+      payload.questions = questions;
+      await examStore.addExam(payload);
+    } else {
+      // في حالة عدم وجود أسئلة → استخدم course_id
+      payload.course_id = Number(exam.value.crs_id);
+      await examStore.addExamBasic(payload);
+    }
   } catch (error) {
-    isAdding.value = false;
-    
-   
+    console.error("Error submitting exam:", error);
   } finally {
     submitting.value = false;
   }
 };
-
 </script>
 
 <template>
- <div class=" flex justify-end mr-10">
-  <button class="bg-primary text-white py-2 px-4 cursor-pointer mt-5 rounded" @click="router.push({ name: 'examExel'})">Import Exam Excel</button>
- </div>
+  <div class="flex justify-end mr-10">
+    <button
+      class="bg-primary text-white py-2 px-4 cursor-pointer mt-5 rounded"
+      @click="router.push({ name: 'examExel' })"
+    >
+      Import Exam Excel
+    </button>
+  </div>
 
   <div class="m-10 bg-white shadow-md rounded-2xl p-5">
     <h1 class="text-3xl font-bold text-primary shadow-sm text-center mb-5 p-2">
@@ -122,10 +122,9 @@ const submitExam = async () => {
           {{ errors.crs_id }}
         </p>
       </div>
-     
+
       <div>
-      
-        <InstructorSelect v-model="exam.ins_id"  :disabled="!exam.crs_id" />
+        <InstructorSelect v-model="exam.ins_id" :disabled="!exam.crs_id" />
 
         <p v-if="errors.ins_id" class="text-red-500 text-sm ms-5">
           {{ errors.ins_id }}
@@ -143,12 +142,11 @@ const submitExam = async () => {
         v-show="!isAdding"
         @click="isAdding = true"
         :disabled="!isFormValid"
-         @mouseover="prefetchExamQuestions"
+        @mouseover="prefetchExamQuestions"
         :class="[
           'bg-primary text-white px-4 py-2 rounded hover:bg-indigo-700 cursor-pointer flex items-center gap-2 min-w-[140px]',
           !isFormValid ? 'opacity-50 cursor-not-allowed' : '',
         ]"
-      
       >
         + Add Question
       </button>
@@ -158,9 +156,8 @@ const submitExam = async () => {
     <ExamQuestions
       v-show="isAdding"
       ref="questionForm"
-      v-model="exam.questions"
       :questions="exam.questions"
-      @update:questions="exam.questions = $event"
+      @update:questions="handleNewQuestions"
     />
 
     <div class="flex justify-start mt-6">
@@ -174,7 +171,10 @@ const submitExam = async () => {
             : 'bg-primary text-white hover:bg-[#063585]',
         ]"
       >
-        <span v-if="submitting" class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"></span>
+        <span
+          v-if="submitting"
+          class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4"
+        ></span>
         <span v-else>Submit</span>
       </button>
     </div>

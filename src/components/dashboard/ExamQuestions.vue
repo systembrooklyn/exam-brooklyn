@@ -70,8 +70,10 @@
 </template>
 
 <script setup>
-import { ref, inject } from 'vue'
 
+import { ref, inject ,defineEmits , watch } from 'vue'
+
+const emit = defineEmits(['update:questions']);
 
 const questions = ref([{
   question_text: '',
@@ -85,7 +87,11 @@ const questions = ref([{
 const currentQuestionIndex = ref(0)
 const errorMessage = ref(false)
 
-// ✅ دالة ترجع كل الأسئلة المكتملة
+watch(questions, (newQuestions) => {
+  emit('update:questions', newQuestions);
+}, { deep: true });
+
+
 const getQuestions = () => {
   const allQuestions = questions.value
 

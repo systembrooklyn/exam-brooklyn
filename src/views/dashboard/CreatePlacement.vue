@@ -34,8 +34,14 @@ const isInfoFilled = computed(() => {
 
 
 const isFormValid = computed(() => {
-  return isInfoFilled.value && exam.value.questions.length > 0;
+  return isInfoFilled.value; // فقط نتحقق من معلومات الامتحان
 });
+
+const handleNewQuestions = (questionsData) => {
+  const valid = questionsData?.filter(q => q?.question_text?.trim()) || [];
+  exam.value.questions = valid;
+};
+
 
 const exam = ref({
   name: "",
@@ -53,14 +59,20 @@ const errors = ref({
 });
 
 const submitExam = async () => {
-  const questions = questionForm.value?.getQuestions();
-  if (!questions) return;
-
-  exam.value.questions = questions;
   submitting.value = true;
 
   try {
-    await placementStore.addPlacementTest(exam.value);
+    // لو المستخدم أضاف أسئلة من ExamQuestions component
+    const questions = questionForm.value?.getQuestions?.();
+    if (questions && questions.length > 0) {
+      exam.value.questions = questions;
+      await placementStore.addPlacementTestWithQuestions(exam.value); // API لو فيها أسئلة
+    } else {
+      // تأكد إن الأسئلة فاضية
+      exam.value.questions = [];
+      await placementStore.addPlacementTestBasic(exam.value); // API لو مفيهاش أسئلة
+    }
+
     router.push({ name: "placement" });
   } catch (error) {
     console.error("Error submitting placement test:", error);
@@ -68,6 +80,9 @@ const submitExam = async () => {
     submitting.value = false;
   }
 };
+
+
+
 </script>
 <template>
   <div class="m-10 bg-white shadow-md rounded-2xl p-5">
@@ -99,12 +114,12 @@ const submitExam = async () => {
 
     <!-- Questions Component -->
     <ExamQuestions
-      v-show="isAdding"
-      ref="questionForm"
-      v-model="exam.questions"
-      :questions="exam.questions"
-      @update:questions="exam.questions = $event"
-    />
+  v-show="isAdding"
+  ref="questionForm"
+  :questions="exam.questions"
+  @update:questions="handleNewQuestions"
+/>
+
 
     <!-- Submit Button -->
     <div class="flex justify-start mt-6">

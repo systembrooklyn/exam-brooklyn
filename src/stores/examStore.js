@@ -4,6 +4,7 @@ import apiClient from "@/api/axiosInstance";
 import { ALL_EXAMS, ADD_EXAM, QUESTIONS } from "../api/Api";
 import notyf from '@/components/global/notyf' 
 import { useRouter } from "vue-router";
+import { handleError } from "./handleError";
 
 export const useExamStore = defineStore("examStore", () => {
   const exams = ref([]);
@@ -32,6 +33,7 @@ export const useExamStore = defineStore("examStore", () => {
 
   // ✅ Add new exam
   const addExam = async (examData) => {
+    console.log("Exam Data:", examData);
     loading.value = true;
     error.value = null;
     try {
@@ -156,6 +158,25 @@ export const useExamStore = defineStore("examStore", () => {
     }
   };
 
+  // ✅ Add basic exam
+  const addExamBasic = async (examData) => {
+  console.log("Exam Data:", examData);
+  
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await apiClient.post(ALL_EXAMS, examData);
+      notyf.success("Exam created successfully");
+      exams.value.push(response.data.data);
+      router.push({ name: "exams" });
+    } catch (err) {
+      handleError(err);
+      console.error(err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     exams,
     loading,
@@ -165,6 +186,7 @@ export const useExamStore = defineStore("examStore", () => {
     addNewQuestions,
     fetchExams,
     addExam,
+    addExamBasic,
     updateExam,
     deleteExam,
     fetchExamById,

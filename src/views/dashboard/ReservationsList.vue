@@ -32,7 +32,6 @@ const reservationIdToDelete = ref(null);
 const search = ref("");
 const reservations = ref([]);
 
-
 const toggleForm = () => {
   showModal.value = true;
   isEditing.value = false;
@@ -51,7 +50,7 @@ const toggleForm = () => {
     faculity: "",
     major: "",
     careerType: "",
-  }
+  };
 };
 
 const closeModal = () => {
@@ -72,7 +71,6 @@ const editReservation = (reservation) => {
     called_by: reservation.called_by?.id || "",
     status: reservation.status?.key || "",
   };
-
 
   showModal.value = true;
 };
@@ -101,7 +99,6 @@ const saveReservation = async () => {
 
   console.log("payload:", payload);
 
-
   try {
     if (isEditing.value) {
       console.log("payload:", payload);
@@ -123,8 +120,6 @@ const confirmDelete = (id) => {
   reservationIdToDelete.value = id;
 };
 
-
-
 onMounted(() => {
   reservationStore.fetchReservations();
   saving.value = false;
@@ -138,42 +133,68 @@ onMounted(() => {
       <h1 class="text-2xl font-bold text-gray-800">Reservations List</h1>
 
       <!-- Button to Add New Reservation (if the user has permission) -->
-      <div v-if="authStore.hasPermission('create-reservations')" @click="toggleForm" class="buttons">
+      <div
+        v-if="authStore.hasPermission('create-reservations')"
+        @click="toggleForm"
+        class="buttons"
+      >
         <button class="btn">
           <span></span>
-          <p data-start="good luck!" data-text="ADD!" data-title="new Reservation"></p>
+          <p
+            data-start="good luck!"
+            data-text="ADD!"
+            data-title="new Reservation"
+          ></p>
         </button>
       </div>
     </div>
 
     <div>
-      <div v-if="reservationStore.reservations.length">
-        <!-- DataTable to display Reservations -->
-        <DataTable :headers="[
-          { label: 'Student Name', key: 'student.name' },
-          { label: 'Student Email', key: 'student.email' },
-          { label: 'Grade', key: 'student.grade' },
-          { label: 'Scholarship', key: 'student.scholarship.name' },
-          { label: 'Status', key: 'status.label' },
-          
-        ]" :items="reservationStore.reservations" resourceType="reservations" :loading="reservationStore.loading" :isReservation="true"
-          @edit="editReservation" @delete="confirmDelete"/>
+      <div
+        v-if="reservationStore.loading"
+        class="flex justify-center items-center py-20"
+      >
+        <div
+          class="animate-spin border-4 border-indigo-500 border-t-transparent rounded-full w-10 h-10"
+        ></div>
       </div>
 
+      <div v-else-if="reservationStore.reservations.length">
+        <DataTable
+          :headers="[
+            { label: 'Student Name', key: 'student.name' },
+            { label: 'Student Email', key: 'student.email' },
+            { label: 'Grade', key: 'student.grade' },
+            { label: 'Scholarship', key: 'student.scholarship.name' },
+            { label: 'Status', key: 'status.label' },
+          ]"
+          :items="reservationStore.reservations"
+          resourceType="reservations"
+          :loading="reservationStore.loading"
+          :isReservation="true"
+          @edit="editReservation"
+          @delete="confirmDelete"
+        />
+      </div>
 
+      <!-- عرض الصورة إذا مفيش بيانات -->
       <div v-else class="text-center py-16">
-        <img class="mx-auto mb-4 " src="@/assets/undraw_empty_4zx0.png" alt="">
-        <h2 class="text-3xl font-bold  text-primary">No reservations today</h2>
+        <img class="mx-auto mb-4" src="@/assets/undraw_empty_4zx0.png" alt="" />
+        <h2 class="text-3xl font-bold text-primary">No reservations today</h2>
         <p class="text-gray-500 mt-2">Please check back later.</p>
       </div>
-
     </div>
 
-
     <!-- Reuse Modal Component for Add/Edit Reservation -->
-    <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Reservation' : 'Add Reservation'"
-      :form="form" :saving="saving" :isReservation="true" @closeModal="closeModal" @saveData="saveReservation" />
-
-
+    <Modal
+      v-if="showModal"
+      :showModal="showModal"
+      :modalTitle="isEditing ? 'Edit Reservation' : 'Add Reservation'"
+      :form="form"
+      :saving="saving"
+      :isReservation="true"
+      @closeModal="closeModal"
+      @saveData="saveReservation"
+    />
   </div>
 </template>

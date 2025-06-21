@@ -38,7 +38,10 @@ const cancelDelete = () => {
 
 onMounted(() => {
   placementTestsStore.fetchPlacementTests();
+
+  
 });
+  console.log("Placement tests loaded:", placementTestsStore.placementTests);
 </script>
 
 <template>

@@ -35,10 +35,15 @@
       </div>
 
       <QuestionEditor v-if="showEditor" type="placement" :questions="questions" @update:questions="handleQuestionsUpdate" />
-      <ExamQuestions v-if="showAdder" ref="questionForm" />
+     <ExamQuestions
+  v-if="showAdder"
+  ref="questionForm"
+  @update:questions="handleNewQuestions"
+/>
+
 
       <div v-if="showAdder" class="flex justify-center mt-6">
-        <button @click="submitNewQuestions" :disabled="addQuestions.length === 0" :class="[
+        <button @click="submitNewQuestions"   :disabled="addQuestions.length === 0" :class="[
           'px-6 py-2 rounded flex items-center cursor-pointer justify-center min-w-[140px] transition-all duration-300',
           addQuestions.length === 0 ? 'bg-gray-400 cursor-not-allowed text-white' : 'bg-green-600 hover:bg-green-700 text-white'
         ]">
@@ -91,6 +96,11 @@ watch(
   },
   { deep: true }
 );
+
+const handleNewQuestions = (questionsData) => {
+
+  addQuestions.value = questionsData?.filter(q => q?.question_text?.trim()) || [];
+};
 
 onMounted(async () => {
   const id = route.params.id;
