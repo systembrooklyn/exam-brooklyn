@@ -15,115 +15,103 @@ import { handleError } from "./handleError";
 
 export const useStudentStore = defineStore("studentStore", () => {
   const studentId = ref("");
-
   const courses = ref([]);
-  const router = useRouter();
-  const selectedModule = ref("");
-  const errorMessages = ref("");
   const instructors = ref([]);
+  const selectedModule = ref("");
   const selectedInstructor = ref("");
   const startExam = ref({ questions: [] });
-  const loading = ref(false);
-  const error = ref(null);
-  const attemptId = ref(null);
   const examAnswers = ref([]);
   const otpMasg = ref("");
-  const loadingOtp = ref(false);
   const otpMessageColor = ref("#000000");
-  const otpSent = ref(false);
   const studentOTP = ref("");
   const timer = ref(120);
+  const attemptId = ref(null);
+  const errorMessages = ref("");
+  const error = ref(null);
+  const router = useRouter();
+
+  // Loading Flags
+  const loading = ref(false); // general form loading
+  const loadingCourses = ref(false);
+  const loadingInstructors = ref(false);
+  const loadingOtp = ref(false);
+  const otpSent = ref(false);
+
   let startTimer = null;
+
   const storedAttemptId = computed(
     () => attemptId.value || sessionStorage.getItem("attemptId")
   );
 
   const fetchCourses = async () => {
-    loading.value = true;
+    loadingCourses.value = true;
     try {
       const response = await apiClient.get(`${STUDENT_ID}/${studentId.value}`);
       courses.value = response.data;
-      (courses.value);
-
       otpSent.value = true;
       errorMessages.value = "";
-      (response.data);
     } catch (error) {
-      console.error(error);
-      if (error.response && error.response.status === 404) {
+      if (error.response?.status === 404) {
         errorMessages.value =
           error.response?.data?.message || "Something went wrong.";
       }
     } finally {
-      loading.value = false;
+      loadingCourses.value = false;
       otpSent.value = false;
     }
   };
-  const startCountdown = () => {
-    if (startTimer) {
-      clearInterval(startTimer);
-    }
 
+  const fetchInstructors = async () => {
+    if (!selectedModule.value) return;
+    loadingInstructors.value = true;
+    try {
+      const response = await apiClient.get(`${INSTRUCTORS}/${selectedModule.value}`);
+      instructors.value = response.data;
+    } catch (error) {
+      handleError(error);
+    } finally {
+      loadingInstructors.value = false;
+    }
+  };
+
+  const sendOTP = async (studentId) => {
+    try {
+      otpMasg.value = "";
+      loadingOtp.value = true;
+
+      const response = await apiClient.post(SEND_OTP_API, {
+        st_num: studentId,
+      });
+
+      otpSent.value = true;
+      if (response.data?.message) {
+        otpMasg.value = response.data.message;
+        otpMessageColor.value = "text-green-500";
+        startCountdown();
+      }
+    } catch (err) {
+      handleError(err);
+      window.location.reload();
+    } finally {
+      loadingOtp.value = false;
+      otpSent.value = false;
+    }
+  };
+
+  const startCountdown = () => {
+    if (startTimer) clearInterval(startTimer);
     timer.value = 120;
+
     startTimer = setInterval(() => {
       if (timer.value > 0) {
         timer.value--;
-      } else if (timer.value === 0) {
+      } else {
         clearInterval(startTimer);
         timer.value = 120;
         otpMasg.value = "OTP is expired.";
         otpMessageColor.value = "text-red-500";
       }
     }, 1000);
-  };
-
-  const sendOTP = async (studentId) => {
-    try {
-      otpMasg.value = "";
-
-      ("studentId", studentId);
-
-      loadingOtp.value = true;
-      const response = await apiClient.post(SEND_OTP_API, {
-        st_num: studentId,
-      });
-      otpSent.value = true;
-      if (response.data && response.data.message) {
-        otpMasg.value = response.data.message || "OTP sent to your email";
-        otpMessageColor.value = "text-green-500";
-        startCountdown();
-      }
-
-      (response.data);
-    } catch (err) {
-    handleError(err);
-window.location.reload();
-     
-
-      loadingOtp.value = false;
-      console.error(err);
-    } finally {
-      loadingOtp.value = false;
-      otpSent.value = false;
-    }
-  };
-
-  const fetchInstructors = async () => {
-    ("Selected Module:", selectedModule.value);
-
-    if (!selectedModule.value) return;
-    loading.value = true;
-    try {
-      const response = await apiClient.get(
-        `${INSTRUCTORS}/${selectedModule.value}`
-      );
-
-      instructors.value = response.data;
-      (response.data);
-      (instructors.value);
-    } finally {
-      loading.value = false;
-    }
   };
 
   const submitForm = async () => {
@@ -136,16 +124,14 @@ window.location.reload();
         st_num: studentId.value,
         otp: studentOTP.value,
       };
-      (payload);
 
       const response = await apiClient.post(START_EXAM, payload);
 
-      if (response && response.data && response.data.data) {
+      if (response?.data?.data) {
         clearInterval(startTimer);
         startExam.value = response.data;
         attemptId.value = startExam.value.data.attempt_id;
         examAnswers.value = startExam.value.data.answers;
-        error.value = null;
         sessionStorage.setItem("attemptId", attemptId.value);
         studentId.value = "";
         selectedModule.value = null;
@@ -156,62 +142,46 @@ window.location.reload();
         router.push({ name: "examPage" });
         startAutoSubmit();
       } else {
-        console.error("الاستجابة غير متوقعة من السيرفر:", response);
+        console.error("Unexpected server response:", response);
       }
     } catch (error) {
-      console.error(error);
-
       handleError(error);
-      loading.value = false;
       router.push({ name: "home" });
     } finally {
       loading.value = false;
-      errorMessages.value = "";
     }
   };
 
   const submitExamAnswers = async () => {
     const answersFromStorage = sessionStorage.getItem("answers");
-    if (!answersFromStorage) {
-      return;
-    }
+    if (!answersFromStorage) return;
 
     try {
       const answers = JSON.parse(answersFromStorage);
-      const finalPayload = {
-        answers: answers,
-      };
+      const finalPayload = { answers };
 
-      ("Answers to submit:", answers);
-
-      const res = await apiClient.post(
-        `${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`,
-        finalPayload
-      );
-     
+      await apiClient.post(`${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`, finalPayload);
     } catch (error) {
       handleError(error);
-      console.error("Error:", error.response || error);
     }
   };
 
   let interval = null;
-  
+
   const startAutoSubmit = () => {
-     interval = setInterval(() => {
-       submitExamAnswers();
-     }, 5000); 
-   };
-  
-   const stopAutoSubmit = () => {
-     if (interval) {
-       clearInterval(interval);
+    interval = setInterval(() => {
+      submitExamAnswers();
+    }, 5000);
+  };
+
+  const stopAutoSubmit = () => {
+    if (interval) {
+      clearInterval(interval);
       interval = null;
-     }
-   };
+    }
+  };
 
   const submitFinalExam = async (payload) => {
-   
     stopAutoSubmit();
     try {
       let answers = payload.answers;
@@ -226,22 +196,14 @@ window.location.reload();
         return;
       }
 
-     
-
-      const finalPayload = {
-        answers: answers,
-      };
-
-      
+      const finalPayload = { answers };
 
       const res = await apiClient.post(
         `${FINISH_EXAM_API}/${storedAttemptId.value}`,
         finalPayload
       );
-      stopAutoSubmit();
-     
 
-      if (res.data && res.data.message) {
+      if (res.data?.message) {
         notyf.success("Exam submitted successfully.");
         clearExamData();
         router.push({ name: "ResultPage" });
@@ -250,8 +212,6 @@ window.location.reload();
       }
     } catch (error) {
       handleError(error);
-      console.error("Error:", error.response || error);
-
     }
   };
 
@@ -264,29 +224,38 @@ window.location.reload();
   };
 
   return {
+    // Data
     studentId,
-    startExam,
     courses,
-    selectedModule,
     instructors,
+    selectedModule,
     selectedInstructor,
-    loading,
-    error,
+    startExam,
     examAnswers,
-    fetchCourses,
-    fetchInstructors,
-    submitForm,
-    submitExamAnswers,
-    submitFinalExam,
+
+    // State
     errorMessages,
+    error,
+    otpMasg,
     otpMessageColor,
     otpSent,
     studentOTP,
-    sendOTP,
-    otpMasg,
-    startCountdown,
     timer,
+
+    // Loaders
+    loading,
     loadingOtp,
+    loadingCourses,
+    loadingInstructors,
+
+    // Actions
+    fetchCourses,
+    fetchInstructors,
+    sendOTP,
+    startCountdown,
+    submitForm,
+    submitExamAnswers,
+    submitFinalExam,
     stopAutoSubmit,
   };
 });

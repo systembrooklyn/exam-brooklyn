@@ -6,7 +6,6 @@ import { useScholarshipStore } from "@/stores/scholarships.js";
 import { useEmployeeStore } from "@/stores/employeesStore.js";
 import { useRouter } from "vue-router";
 
-
 const reservationStore = useReservationStore();
 const scholarshipStore = useScholarshipStore();
 const employeeStore = useEmployeeStore();
@@ -35,10 +34,8 @@ const missingFieldsError = ref(false);
 
 async function handleSubmit() {
   const cleanedPhones = form.mobiles
-    .map(phone => phone?.replace(/\D/g, ''))
-    .filter(phone => phone);
-
-
+    .map((phone) => phone?.replace(/\D/g, ""))
+    .filter((phone) => phone);
 
   const requiredFields = [
     "name",
@@ -99,20 +96,32 @@ onMounted(() => {
 
 <template>
   <div
-    class="w-full max-w-4xl border border-gray-300 mx-auto m-5 bg-white p-8 rounded-2xl shadow-lg shadow-blue-300 space-y-6 dark:bg-gray-800">
+    class="w-full max-w-4xl border border-gray-300 mx-auto m-5 bg-white p-8 rounded-2xl shadow-lg shadow-blue-300 space-y-6 dark:bg-gray-800"
+  >
     <img src="@/assets/logo.png" class="h-15 mx-auto" alt="" />
-    <h2 class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-7">
+    <h2
+      class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-7"
+    >
       Reservation Intake Form
     </h2>
 
-    <form @submit.prevent="handleSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+    <form
+      @submit.prevent="handleSubmit"
+      class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10"
+    >
       <!-- Full Name -->
       <div>
         <label class="form-label">Full Name (English)</label>
         <div class="relative">
-          <User class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
-          <input v-model="form.name" type="text" class="form-input pl-10"
-            placeholder="Please enter full English name" />
+          <User
+            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+          />
+          <input
+            v-model="form.name"
+            type="text"
+            class="form-input pl-10"
+            placeholder="Please enter full English name"
+          />
         </div>
       </div>
 
@@ -120,7 +129,11 @@ onMounted(() => {
         <label class="form-label">Select Scholarship</label>
         <select v-model="form.scholarship" class="form-input">
           <option disabled value="">Select</option>
-          <option v-for="scholarship in scholarshipStore.scholarships" :key="scholarship.id" :value="scholarship.id">
+          <option
+            v-for="scholarship in scholarshipStore.scholarships"
+            :key="scholarship.id"
+            :value="scholarship.id"
+          >
             {{ scholarship.name }}
           </option>
         </select>
@@ -130,8 +143,15 @@ onMounted(() => {
       <div>
         <label class="form-label">E-Mail Address</label>
         <div class="relative">
-          <Mail class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
-          <input v-model="form.email" type="email" class="form-input pl-10" placeholder="example@mail.com" />
+          <Mail
+            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+          />
+          <input
+            v-model="form.email"
+            type="email"
+            class="form-input pl-10"
+            placeholder="example@mail.com"
+          />
         </div>
       </div>
 
@@ -142,33 +162,56 @@ onMounted(() => {
           class="form-input-tel"></vue-tel-input>
       </div> -->
       <!-- Mobile Numbers -->
-      <div                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             >
+      <div>
         <label class="form-label">Mobile Numbers</label>
-        <div v-for="(phone, index) in form.mobiles" :key="index" class="flex items-center gap-2 mb-2">
-          <vue-tel-input v-model="form.mobiles[index]" mode="international" placeholder="Enter mobile number"
-            class="form-input-tel "></vue-tel-input>
+        <div
+          v-for="(phone, index) in form.mobiles"
+          :key="index"
+          class="flex items-center gap-2 mb-2"
+        >
+          <vue-tel-input
+            v-model="form.mobiles[index]"
+            mode="international"
+            placeholder="Enter mobile number"
+            class="form-input-tel"
+          ></vue-tel-input>
 
           <!-- Add button only on last input -->
-          <button v-if="index === form.mobiles.length - 1" type="button" @click="form.mobiles.push('')"
-            class="text-blue-600 text-xl font-bold w-7 h-7 cursor-pointer flex items-center justify-center border rounded  border-blue-600 hover:bg-blue-100">
+          <button
+            v-if="index === form.mobiles.length - 1"
+            type="button"
+            @click="form.mobiles.push('')"
+            class="text-blue-600 text-xl font-bold w-7 h-7 cursor-pointer flex items-center justify-center border rounded border-blue-600 hover:bg-blue-100"
+          >
             +
           </button>
 
           <!-- Remove button (optional) -->
-          <button v-if="form.mobiles.length > 1" type="button" @click="form.mobiles.splice(index, 1)"
-            class="text-red-500 text-xl w-7 h-7 flex cursor-pointer items-center justify-center font-bold  border rounded  border-red-400 hover:bg-red-100">
+          <button
+            v-if="form.mobiles.length > 1"
+            type="button"
+            @click="form.mobiles.splice(index, 1)"
+            class="text-red-500 text-xl w-7 h-7 flex cursor-pointer items-center justify-center font-bold border rounded border-red-400 hover:bg-red-100"
+          >
             −
           </button>
         </div>
       </div>
 
-
       <!-- National ID -->
       <div>
         <label class="form-label">National ID (14 digits)</label>
         <div class="relative">
-          <IdCard class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
-          <input v-model="form.ID_number" type="text" class="form-input" maxlength="14" placeholder="12345678901234" />
+          <IdCard
+            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+          />
+          <input
+            v-model="form.ID_number"
+            type="text"
+            class="form-input"
+            maxlength="14"
+            placeholder="12345678901234"
+          />
         </div>
       </div>
 
@@ -176,10 +219,36 @@ onMounted(() => {
       <div>
         <label class="form-label">Date of Birth</label>
         <div class="relative">
-          <Calendar class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
-          <input v-model="form.birth_date" type="date"
-            class="form-input pl-10 appearance-none bg-white text-gray-800 dark:bg-gray-700 dark:text-white" />
+          <Calendar
+            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+          />
+          <input
+            v-model="form.birth_date"
+            type="date"
+            class="form-input pl-10 appearance-none bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
+          />
         </div>
+      </div>
+      <!-- Major -->
+      <div>
+        <label class="form-label">Major</label>
+        <input
+          v-model="form.major"
+          type="text"
+          class="form-input"
+          placeholder="Your Major"
+        />
+      </div>
+
+      <!-- Faculty -->
+      <div>
+        <label class="form-label">Faculty</label>
+        <input
+          v-model="form.faculity"
+          type="text"
+          class="form-input"
+          placeholder="Faculty name"
+        />
       </div>
 
       <!-- Grade -->
@@ -195,18 +264,6 @@ onMounted(() => {
           <option>>45</option>
         </select>
       </div>
-      <!-- Faculty -->
-      <div>
-        <label class="form-label">Faculty</label>
-        <input v-model="form.faculity" type="text" class="form-input" placeholder="Faculty name" />
-      </div>
-
-      <!-- Major -->
-      <div>
-        <label class="form-label">Major</label>
-        <input v-model="form.major" type="text" class="form-input" placeholder="Your Major" />
-      </div>
-
       <!-- Career Type -->
       <div>
         <label class="form-label">Career Type</label>
@@ -226,15 +283,27 @@ onMounted(() => {
       <div>
         <label class="form-label">Company</label>
         <div class="relative">
-          <Landmark class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
-          <input v-model="form.company" type="text" class="form-input" placeholder="Company name (if any)" />
+          <Landmark
+            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+          />
+          <input
+            v-model="form.company"
+            type="text"
+            class="form-input"
+            placeholder="Company name (if any)"
+          />
         </div>
       </div>
 
       <!-- Marketing Code -->
       <div>
-        <label class="form-label">Marketing Code</label>
-        <input v-model="form.marketing_code" type="text" class="form-input" placeholder="Marketing Code" />
+        <label class="form-label">Scholarship Code</label>
+        <input
+          v-model="form.marketing_code"
+          type="text"
+          class="form-input"
+          placeholder="Marketing Code"
+        />
       </div>
 
       <!-- Manual Called Time -->
@@ -247,18 +316,32 @@ onMounted(() => {
           <div>
             <label class="flex items-center gap-2 mb-2">
               <span class="font-bold text-[#1e3a8a]">Call Date & Time</span>
-              <span class="text-sm text-gray-500">(Filled by the employee)</span>
+              <span class="text-sm text-gray-500"
+                >(Filled by the employee)</span
+              >
             </label>
-            <input v-model="form.called_time" type="datetime-local" class="form-input" />
+            <input
+              v-model="form.called_time"
+              type="datetime-local"
+              class="form-input"
+            />
           </div>
 
           <!-- Called By -->
           <div>
-            <label class="flex items-center gap-2 mb-2"><span class="font-bold text-[#1e3a8a]">Called By</span>
-              <span class="text-sm text-gray-500">(Filled by the employee)</span></label>
+            <label class="flex items-center gap-2 mb-2"
+              ><span class="font-bold text-[#1e3a8a]">Called By</span>
+              <span class="text-sm text-gray-500"
+                >(Filled by the employee)</span
+              ></label
+            >
             <select v-model="form.called_by" class="form-input">
               <option disabled value="">Select</option>
-              <option v-for="employee in employeeStore.employees" :key="employee.id" :value="employee.id">
+              <option
+                v-for="employee in employeeStore.employees"
+                :key="employee.id"
+                :value="employee.id"
+              >
                 {{ employee.name }}
               </option>
             </select>
@@ -266,18 +349,42 @@ onMounted(() => {
         </div>
       </div>
       <!-- Error message if required fields are missing -->
-      <p v-if="missingFieldsError" class="text-red-600 text-center font-medium md:col-span-2">
+      <p
+        v-if="missingFieldsError"
+        class="text-red-600 text-center font-medium md:col-span-2"
+      >
         ⚠️ Please fill in all required fields before submitting.
       </p>
 
       <!-- Submit -->
-      <div class="md:col-span-2 text-center py-4 flex items-center justify-center">
-        <button type="submit" :disabled="isLoading"
-          class="bg-primary text-white py-2 px-6 w-50 cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
-          <svg v-if="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      <div
+        class="md:col-span-2 text-center py-4 flex items-center justify-center"
+      >
+        <button
+          type="submit"
+          :disabled="isLoading"
+          class="bg-primary text-white py-2 px-6 w-50 cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2"
+        >
+          <svg
+            v-if="isLoading"
+            class="animate-spin h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
           </svg>
           <span>{{ isLoading ? "Submitting..." : "Submit" }}</span>
         </button>

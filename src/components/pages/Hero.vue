@@ -14,7 +14,7 @@ import hero from "../../assets/hero.webp";
         <div class="absolute inset-0 flex items-center justify-center">
           <div class="text-center w-[70%]">
             <h3 class="font-bold text-5xl md:text-6xl  text-gray-100">
-              Knowledge From Home
+              The Origin of knowledge
             </h3>
           </div>
         </div>

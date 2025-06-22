@@ -61,6 +61,12 @@ const routes = [
     name: 'exam-success',
     component: () => import("../views/pages/PlacementSuccess.vue"),
   },
+    {
+    path: '/exam-start',
+    name: 'exam-start',
+    component: () => import("../views/pages/PlacementStart.vue"),
+  },
+  
 
   {
     path: "/:catchAll(.*)",

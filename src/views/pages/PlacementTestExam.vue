@@ -30,6 +30,7 @@ const showUnansweredMessage = ref("");
 const unansweredIndexes = ref([]);
 const mode = ref("all");
 let interval;
+const alertSound = new Audio(new URL("@/assets/alert.mp3", import.meta.url));
 
 const currentQuestion = computed(
   () => questions.value[currentQuestionIndex.value] || null
@@ -43,6 +44,7 @@ const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value <= 0) {
       clearInterval(interval);
+      alertSound.play();
       notyf.error("Time is up!");
       submitFinalExam();
       router.replace({ name: "placement-test" });
@@ -83,12 +85,12 @@ const saveAnswer = () => {
   }
 
   const i = unansweredIndexes.value.indexOf(currentQuestionIndex.value);
-  if (i !== -1) unansweredIndexes.value.splice(i, 1);
+  if (i !== -1 && option != null) {
+    unansweredIndexes.value.splice(i, 1);
+  }
 
-  // إذا خلص كل الأسئلة، ارجع لآخر سؤال
-  if (unansweredIndexes.value.length === 0 && mode.value === "filter") {
-    mode.value = "all";
-    currentQuestionIndex.value = questions.value.length - 1;
+  if (unansweredIndexes.value.length === 0) {
+    showUnansweredMessage.value = "";
   }
 
   sessionStorage.setItem("answers", JSON.stringify(answersArray.value));
@@ -156,12 +158,14 @@ const submitFinalExam = async () => {
   }, []);
 
   if (unanswered.length > 0) {
+    alertSound.play(); // 🔊
     unansweredIndexes.value = unanswered;
     showUnansweredMessage.value = "Please answer all questions.";
     mode.value = "filter";
     currentQuestionIndex.value = unanswered[0];
     return;
   }
+
   console.log("Submitting answers:", answersArray.value);
 
   isSubmitting.value = true;
@@ -199,7 +203,9 @@ onBeforeUnmount(() =>
 
     <!-- محتوى الامتحان -->
     <div class="relative z-10 max-w-4xl mx-auto p-6">
-      <div class="bg-white bg-opacity-90 shadow-xl rounded-2xl p-8 space-y-8 mt-20">
+      <div
+        class="bg-white bg-opacity-90 shadow-xl rounded-2xl p-8 space-y-8 mt-20"
+      >
         <!-- عنوان الامتحان والمؤقت -->
         <div class="text-center mb-4">
           <h2 class="text-3xl font-bold text-blue-900">{{ examInfo.name }}</h2>
@@ -231,7 +237,7 @@ onBeforeUnmount(() =>
           <div class="w-full bg-gray-200 h-2 rounded mb-6">
             <div
               class="bg-blue-600 h-full rounded transition-all duration-300"
-              :style="{ width: ((answeredCount / questions.length) * 100) + '%' }"
+              :style="{ width: (answeredCount / questions.length) * 100 + '%' }"
             ></div>
           </div>
 
@@ -243,21 +249,37 @@ onBeforeUnmount(() =>
             <select
               id="questionSelect"
               v-model="currentQuestionIndex"
-              class="px-4 py-2 border rounded"
+              :class="[
+                'px-4 py-2 border rounded transition',
+                showUnansweredMessage && unansweredIndexes.length > 0
+                  ? 'border-red-500 shake'
+                  : 'border-gray-300',
+              ]"
             >
               <option
                 v-for="(q, index) in questions"
                 :key="index"
                 :value="index"
+                :class="{
+                  'text-red-500 font-bold':
+                    showUnansweredMessage && unansweredIndexes.includes(index),
+                }"
               >
                 Question {{ index + 1 }}
               </option>
             </select>
           </div>
+          <!-- توضيح لون الأسئلة غير المُجابة -->
+          <div class="text-sm text-gray-600 text-right mb-4">
+            <span class="text-red-500 font-bold">Red</span> = Unanswered
+            question
+          </div>
 
           <!-- نص السؤال -->
           <div class="mb-6 mt-10">
-            <h3 class="text-xl font-semibold bg-primary py-2 px-4 min-h-[70px] flex justify-center items-center text-white rounded-md mb-4">
+            <h3
+              class="text-xl font-semibold bg-primary py-2 px-4 min-h-[70px] flex justify-center items-center text-white rounded-md mb-4"
+            >
               {{ currentQuestion.question_text }}
             </h3>
 
@@ -292,7 +314,13 @@ onBeforeUnmount(() =>
               </div>
             </div>
           </div>
-
+          <div
+            v-if="showUnansweredMessage"
+            class="text-red-600 bg-red-100 border border-red-300 px-4 py-3 rounded mt-4 text-center"
+          >
+            Please answer all questions. You'll find unanswered ones highlighted
+            in red in the question list.
+          </div>
           <!-- أزرار التنقل -->
           <div class="flex justify-between mt-8">
             <button
@@ -320,17 +348,29 @@ onBeforeUnmount(() =>
               <span v-else>Submit</span>
             </button>
           </div>
-
-          <!-- رسالة الأسئلة غير المُجابة -->
-          <div
-            v-if="showUnansweredMessage"
-            class="text-red-500 text-center mt-4"
-          >
-            {{ showUnansweredMessage }}
-          </div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
+<style scoped>
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+.shake {
+  animation: shake 0.4s ease-in-out;
+}
+</style>

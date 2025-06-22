@@ -22,15 +22,14 @@
         v-for="exam in exams"
         :key="exam.id"
         :value="exam.id"
-        :disabled="exam.id === startedExamId"
-        :class="{ 'text-gray-400': exam.id === startedExamId }"
+       
       >
         {{ exam.name }}
-        <span v-if="exam.id === startedExamId">(Completed)</span>
+       
       </option>
     </select>
 
-    <!-- Next Exam Button -->
+   
     <!-- Next Exam Button -->
     <button
       @click="handleNextExam"
@@ -57,7 +56,6 @@ const placementStore = usePlacementTestsStore();
 const placementExamStore = usePlacementTestsExamStore();
 const exams = ref([]);
 const selectedExamId = ref("");
-const startedExamId = ref(null);
 const router = useRouter();
 const loadingExam = ref(false);
 
@@ -65,9 +63,8 @@ onMounted(async () => {
   await placementStore.fetchPlacementTests();
   exams.value = placementStore.placementTests;
 
-  // ✅ Read the previously started exam ID
-  const storedId = localStorage.getItem("startedExamId");
-  if (storedId) startedExamId.value = Number(storedId);
+
+  
 });
 
 const handleNextExam = async () => {

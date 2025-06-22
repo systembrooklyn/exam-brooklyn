@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import apiClient from "../api/axiosInstance";
 import { handleError } from "./handleError";
 import { ref } from "vue";
-import { START_PLACEMENT, FINISH_PLACEMENT } from "../api/Api";
+import { START_PLACEMENT, FINISH_PLACEMENT, PLACEMENT_TESTS_SURVEY, PLACEMENT_TESTS } from "../api/Api";
 import Cookies from "js-cookie";
 import notyf from "@/components/global/notyf";
 
@@ -14,9 +14,11 @@ export const usePlacementTestsExamStore = defineStore(
     const exam = ref(null);
     const isFinished = ref(false);
     let autoSaveInterval = null;
+    const studentPlacement = ref(null);
 
     const examAnswers = ref([]);
-    async function fetchPlacementExam(testId, studentId) {
+    async function fetchPlacementExam(testId) {
+      const studentId = Cookies.get("st_id");
       loading.value = true;
       error.value = null;
       try {
@@ -89,10 +91,38 @@ export const usePlacementTestsExamStore = defineStore(
         );
         isFinished.value = true;
         clearInterval(autoSaveInterval);
-        attemptId && Cookies.remove("attempt_id"); // Clear attempt_id after submission
-        Cookies.remove("st_id");
       } catch (error) {
         console.error("Error submitting final exam:", error);
+      }
+    }
+
+const getStudentPlacement = async () => {
+  const st_id = Number(Cookies.get("st_id"));
+  console.log("Fetching student placement for ID:", st_id);
+
+  try {
+    const response = await apiClient.post(`${PLACEMENT_TESTS}/student`, { st_id }); // ✅ await هنا ضروري
+    studentPlacement.value = response.data.data; // تأكد من وجود البيانات
+    console.log("Student placement fetched successfully:", response.data);
+  } catch (error) {
+    console.error("Error fetching student placement:", error);
+    handleError(error);
+  }
+};
+
+
+    const saveSurveyAnswers = async (answers) => {
+      const st_id = Cookies.get("st_id");
+      try {
+        const response = await apiClient.post(PLACEMENT_TESTS_SURVEY, {
+          st_id: st_id,
+          answers: answers,
+        });
+        console.log("Survey answers saved successfully:", response.data);
+
+      } catch (error) {
+        console.error("Error saving survey answers:", error);
+        handleError(error);
       }
     }
 
@@ -101,7 +131,10 @@ export const usePlacementTestsExamStore = defineStore(
       error,
       exam,
       examAnswers,
+      studentPlacement,
       fetchPlacementExam,
+      getStudentPlacement,
+      saveSurveyAnswers,
       submitFinalExam,
       autoSaveAnswers,
       startAutoSave,

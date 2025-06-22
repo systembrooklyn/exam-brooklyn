@@ -13,6 +13,7 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   const placementTests = ref([]);
   const placementTest = ref(null); 
     const examQuestions = ref([]); 
+    const hasSurveyAnswers = ref(false);
 
  
   async function fetchPlacementTests() {
@@ -52,7 +53,8 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
       const response = await apiClient.post(GET_ST_BY_EMAIL,  {email} );
       console.log(`Fetched student by email :`, response.data);
       
-      student.value = response.data.data;
+      student.value = response.data;
+      hasSurveyAnswers.value = response.data.hasSurveyAnswers || false; // Check if student has survey answers
     } catch (e) {
       error.value = e.response ? e.response.data : e;
       handleError(e);
@@ -219,6 +221,7 @@ const addPlacementTestBasic = async (data) => {
     examQuestions,
     loading,
     error,
+    hasSurveyAnswers,
 
     // actions
     fetchPlacementTests,
