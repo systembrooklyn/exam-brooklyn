@@ -158,7 +158,7 @@ const submitFinalExam = async () => {
   }, []);
 
   if (unanswered.length > 0) {
-    alertSound.play(); // 🔊
+    alertSound.play();
     unansweredIndexes.value = unanswered;
     showUnansweredMessage.value = "Please answer all questions.";
     mode.value = "filter";
@@ -175,8 +175,21 @@ const submitFinalExam = async () => {
   isSubmitting.value = false;
   clearInterval(interval);
   quizStarted.value = false;
+
+  // ✅ تفريغ البيانات بعد الإرسال
+  studentStore.examAnswers = [];
+  answersArray.value = [];
+  selectedOptions.value = [];
+  currentQuestionIndex.value = null;
+  unansweredIndexes.value = [];
+  showUnansweredMessage.value = "";
+  sessionStorage.removeItem("answers");
+  sessionStorage.removeItem("attemptId");
+
+  // ✅ التوجيه إلى صفحة النجاح
   router.push("/exam-success");
 };
+
 
 const handleBeforeUnload = (e) => {
   e.preventDefault();
