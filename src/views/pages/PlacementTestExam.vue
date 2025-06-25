@@ -40,6 +40,8 @@ const isLastQuestion = computed(
 );
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
+let tenMinuteWarningGiven = false; // ✅ متغير لتفادي التكرار
+
 const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value <= 0) {
@@ -47,12 +49,21 @@ const startTimer = () => {
       alertSound.play();
       notyf.error("Time is up!");
       submitFinalExam();
-      router.replace({ name: "placement-test" });
+      studentStore.autoSaveAnswers(answersArray.value);
+      router.replace({ name: "exam-success" });
     } else {
       timeLeft.value = parseFloat((timeLeft.value - 0.01).toFixed(2));
+
+      // ✅ عرض تنبيه عند 10 دقائق
+      if (!tenMinuteWarningGiven && timeLeft.value <= 600) {
+        tenMinuteWarningGiven = true;
+        alertSound.play();
+        notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
+      }
     }
   }, 1000);
 };
+
 
 const loadSelectedOption = () => {
   if (!currentQuestion.value || !Array.isArray(studentStore.examAnswers))

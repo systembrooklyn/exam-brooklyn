@@ -229,6 +229,16 @@ onMounted(() => {
           />
         </div>
       </div>
+       <!-- Faculty -->
+      <div>
+        <label class="form-label">Faculty</label>
+        <input
+          v-model="form.faculity"
+          type="text"
+          class="form-input"
+          placeholder="Faculty name"
+        />
+      </div>
       <!-- Major -->
       <div>
         <label class="form-label">Major</label>
@@ -240,16 +250,7 @@ onMounted(() => {
         />
       </div>
 
-      <!-- Faculty -->
-      <div>
-        <label class="form-label">Faculty</label>
-        <input
-          v-model="form.faculity"
-          type="text"
-          class="form-input"
-          placeholder="Faculty name"
-        />
-      </div>
+     
 
       <!-- Grade -->
       <div>
@@ -302,7 +303,7 @@ onMounted(() => {
           v-model="form.marketing_code"
           type="text"
           class="form-input"
-          placeholder="Marketing Code"
+          placeholder="Scholarship Code"
         />
       </div>
 
