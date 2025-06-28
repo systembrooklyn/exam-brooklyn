@@ -112,7 +112,7 @@ const handleStart = () => {
   quizStarted.value = true;
   timeLeft.value = remainingTime.value;
 
-  // إجابات راجعة من السيرفر
+
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
   // تحميل الإجابات المُخزنة في selectedOptions و answersArray
@@ -134,7 +134,6 @@ const handleStart = () => {
   unansweredIndexes.value = questions.value
     .map((q, i) => (selectedOptions.value[i] == null ? i : null))
     .filter((i) => i !== null);
-
   startTimer();
   loadSelectedOption();
 };

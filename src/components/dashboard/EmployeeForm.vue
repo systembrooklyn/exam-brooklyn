@@ -51,9 +51,15 @@ import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.min.css";
 import { useRoleStore  } from "@/stores/roleStore";
 import { LucideUser, LucideMail } from "lucide-vue-next";
+import { onMounted } from "vue";
 
 
 const roleStore = useRoleStore();
+
+
+onMounted(() => {
+  roleStore.fetchRoles();
+});
 const props = defineProps({
   form: Object,
 });
