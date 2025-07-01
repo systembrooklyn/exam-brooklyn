@@ -41,7 +41,7 @@ onMounted(() => {
 
 
 <template>
-  <div class="overflow-x-auto mx-auto p-6 bg-white rounded shadow">
+  <div class="overflow-x-auto mx-auto p-2">
     <h1 class="text-2xl font-bold text-primary mb-6">All Exams</h1>
 
     <DataTable

@@ -51,10 +51,10 @@ function goToPage(page) {
 
 <template>
   <div class="p-6">
-    <h1 v-if="cardName" class="text-2xl text-center font-bold mb-10">
+    <!-- <h1 v-if="cardName" class="text-2xl text-center font-bold mb-10">
       Details:
       <span class="text-indigo-600">{{ cardName.toLocaleUpperCase() }}</span>
-    </h1>
+    </h1> -->
 
     <div v-if=" loading ">
       <div class="flex justify-center items-center">

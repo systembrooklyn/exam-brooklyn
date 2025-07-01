@@ -1,7 +1,7 @@
 <template>
   <div class="w-full overflow-x-auto bg-white rounded-lg shadow-md">
     <div>
-      <div class="flex flex-col p-2 py-6 m-h-screen">
+      <div class="flex flex-col pt-1 m-h-screen">
         <div class="bg-white items-center justify-between w-full flex rounded-full shadow-lg p-2 mb-5 sticky"
           style="top: 5px">
           <div>

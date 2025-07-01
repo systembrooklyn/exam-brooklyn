@@ -7,16 +7,16 @@
       colorClass,
     ]"
   >
-    <!-- أيقونة -->
+   
     <component :is="icon" class="w-12 h-12 shrink-0" />
 
-    <!-- محتوى -->
+    
     <div class="flex-1">
       <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
         {{ title }}
       </h3>
 
-      <!-- قيمة واحدة أو لائحة -->
+    
       <template v-if="Array.isArray(items)">
         <ul class="space-y-1 text-gray-700 dark:text-gray-300">
           <li v-for="(it, i) in items" :key="i">{{ it }}</li>
@@ -34,11 +34,11 @@
 <script setup>
 const props = defineProps({
   title: String,
-  /* يمكن أن يكون نصًا، رقمًا، أو Array لعرض قائمة */
+
   items: { type: [String, Number, Array], default: "" },
-  /* مكوّن أيقونة */
+
   icon: { type: [Object, Function], required: true },
-  /* كلاس Tailwind لألوان الخلفية/النص */
+ 
   colorClass: { type: String, default: "" },
 });
 </script>
