@@ -28,7 +28,7 @@ const hiddenColumnsByCard = {
   // Add more if needed
 };
 
-const statusOptions = ['pending', 'open', 'closed']; // عدلها حسب الحالات المتاحة
+const statusOptions = ["pending", "open", "closed"]; // عدلها حسب الحالات المتاحة
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";
@@ -48,9 +48,9 @@ const computedHeaders = computed(() => {
   if (!props.headers) return [];
 
   // لو الكارد ريكويست، خليه يحط created_at أول حاجة
-  if (props.cardName === 'Requests') {
-    const withoutCreatedAt = props.headers.filter(h => h !== 'created_at');
-    return ['created_at', ...withoutCreatedAt];
+  if (props.cardName === "Requests") {
+    const withoutCreatedAt = props.headers.filter((h) => h !== "created_at");
+    return ["created_at", ...withoutCreatedAt];
   }
 
   return props.headers;
@@ -121,129 +121,150 @@ function shouldShowColumn(col) {
       <table class="min-w-full border border-gray-300 text-center">
         <thead>
           <tr class="bg-gray-300 text-primary text-lg">
-            <template v-for="col in computedHeaders " :key="col">
+            <template v-for="col in computedHeaders" :key="col">
               <th
                 :key="col"
                 v-if="shouldShowColumn(col)"
                 class="border border-blue-300 px-4 py-3 capitalize"
               >
-                   {{
-      col === 'value'
-        ? 'Request'
-        : col === 'created_at'
-        ? 'Date'
-        : col.replace(/_/g, ' ')
-    }}
+                {{
+                  col === "value"
+                    ? "Request"
+                    : col === "created_at"
+                    ? "Date"
+                    : col.replace(/_/g, " ")
+                }}
               </th>
             </template>
           </tr>
         </thead>
         <tbody>
-       <tr v-for="(row, rowIndex) in paginatedData" :key="rowIndex" class="hover:bg-gray-50 ">
-  <template v-for="col in computedHeaders" :key="col">
-    <td v-if="shouldShowColumn(col)" class="border max-w-50 break-words border-gray-300 px-4 py-2">
-      <!-- Expanded Text in Requests -->
-      <template
-        v-if="props.cardName === 'Requests' &&
-          ['value', 'comment', 'manager_response', 'employee_response'].includes(col)"
-      >
-        <span class="block">
-          <span v-if="`${rowIndex}-${col}` === expandedCell.key">
-            {{ row[col] }}
-            <button
-              class="ml-2 text-sm text-indigo-600 underline"
-              @click="toggleExpand(rowIndex, col)"
-            >
-              Less
-            </button>
-          </span>
-          <span v-else class="w-40">
-            {{ row[col]?.slice(0, 20) }}
-            <span v-if="row[col]?.length > 40">
-              ...
-              <button
-                class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
-                @click="toggleExpand(rowIndex, col)"
+          <tr
+            v-for="(row, rowIndex) in paginatedData"
+            :key="rowIndex"
+            class="hover:bg-gray-50"
+          >
+            <template v-for="col in computedHeaders" :key="col">
+              <td
+                v-if="shouldShowColumn(col)"
+                class="border max-w-50 break-words border-gray-300 px-4 py-2"
               >
-                More
-              </button>
-            </span>
-          </span>
-        </span>
+                <!-- Expanded Text in Requests -->
+                <template
+                  v-if="
+                    props.cardName === 'Requests' &&
+                    [
+                      'value',
+                      'comment',
+                      'manager_response',
+                      'employee_response',
+                    ].includes(col)
+                  "
+                >
+                  <span class="block">
+                    <span v-if="`${rowIndex}-${col}` === expandedCell.key">
+                      {{ row[col] }}
+                      <button
+                        class="ml-2 text-sm text-indigo-600 underline"
+                        @click="toggleExpand(rowIndex, col)"
+                      >
+                        Less
+                      </button>
+                    </span>
+                    <span v-else class="w-40">
+                      {{ row[col]?.slice(0, 20) }}
+                      <span v-if="row[col]?.length > 40">
+                        ...
+                        <button
+                          class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
+                          @click="toggleExpand(rowIndex, col)"
+                        >
+                          More
+                        </button>
+                      </span>
+                    </span>
+                  </span>
 
-        <!-- ✅ Show related *_at under the field -->
-       <span v-if="col === 'employee_response'" class="text-sm text-gray-500 block mt-1">
-  {{ row.employee_response_at ? `At: ${formatDate(row.employee_response_at)}` : '' }}
-</span>
-<span v-if="col === 'manager_response'" class="text-sm text-gray-500 block mt-1">
-  {{ row.manager_response_at ? `At: ${formatDate(row.manager_response_at)}` : '' }}
-</span>
+                  <!-- ✅ Show related *_at under the field -->
+                  <span
+                    v-if="col === 'employee_response'"
+                    class="text-sm text-gray-500 block mt-1"
+                  >
+                    {{
+                      row.employee_response_at
+                        ? `At: ${formatDate(row.employee_response_at)}`
+                        : ""
+                    }}
+                  </span>
+                  <span
+                    v-if="col === 'manager_response'"
+                    class="text-sm text-gray-500 block mt-1"
+                  >
+                    {{
+                      row.manager_response_at
+                        ? `At: ${formatDate(row.manager_response_at)}`
+                        : ""
+                    }}
+                  </span>
+                </template>
+                <span
+                  v-else-if="col === 'status' && props.cardName === 'Requests'"
+                >
+                  <select
+                    v-model="row.status"
+                    @change="handleStatusChange(row)"
+                    class="bg-transparent w-full font-semibold focus:outline-none cursor-pointer text-green-600"
+                    :class="{
+                      'text-green-600': row.status === 'paid',
+                      'text-red-600': row.status === 'closed',
+                      'text-yellow-500': row.status === 'partialPaid',
+                    }"
+                  >
+                    <option
+                      v-for="status in statusOptions"
+                      :key="status"
+                      :value="status"
+                      class="text-black px-2 text-sm"
+                    >
+                      {{ status }}
+                    </option>
+                  </select>
+                </span>
 
+                <!-- Other fields -->
+                <span v-else-if="col === 'total_lec'">
+                  {{ row.type === "online" ? 0 : row[col] ?? "" }}
+                </span>
 
+                <span v-else-if="col === 'start_date'">
+                  {{ row.type === "class" ? formatDate(row[col]) : "_" }}
+                </span>
 
+                <span v-else-if="col === 'student_start'">
+                  {{ row.type === "online" ? formatDate(row[col]) : "_" }}
+                </span>
 
-      </template>
-      <span
-  v-else-if="col === 'status' && props.cardName === 'Requests'"
->
-  <select
-    v-model="row.status"
-    @change="handleStatusChange(row)"
-    class="bg-transparent w-full font-semibold
-      focus:outline-none cursor-pointer 
-      text-green-600"
-    :class="{
-      'text-green-600': row.status === 'paid',
-      'text-red-600': row.status === 'closed',
-      'text-yellow-500': row.status === 'partialPaid',
-    }"
-  >
-    <option
-      v-for="status in statusOptions"
-      :key="status"
-      :value="status"
-      class="text-black px-2 text-sm "
-    >
-      {{ status }}
-    </option>
-  </select>
-</span>
+                <span v-else-if="col === 'paid_date'">
+                  {{ row.status === "paid" ? row[col] : "-" }}
+                </span>
 
-      <!-- Other fields -->
-      <span v-else-if="col === 'total_lec'">
-        {{ row.type === 'online' ? 0 : row[col] ?? '' }}
-      </span>
+                <span
+                  v-else-if="col === 'status'"
+                  :class="{
+                    'text-green-600 font-semibold': row[col] === 'paid',
+                    'text-red-600 font-semibold': row[col] === 'unpaid',
+                    'text-yellow-500 font-semibold': row[col] === 'partialPaid',
+                  }"
+                >
+                  {{ row[col] }}
+                </span>
 
-      <span v-else-if="col === 'start_date'">
-        {{ row.type === 'class' ? formatDate(row[col]) : '_' }}
-      </span>
-
-      <span v-else-if="col === 'student_start'">
-        {{ row.type === 'online' ? formatDate(row[col]) : '_' }}
-      </span>
-
-      <span v-else-if="col === 'paid_date'">
-        {{ row.status === 'paid' ? row[col] : '-' }}
-      </span>
-
-      <span
-        v-else-if="col === 'status'"
-        :class="{
-          'text-green-600 font-semibold': row[col] === 'paid',
-          'text-red-600 font-semibold': row[col] === 'unpaid',
-          'text-yellow-500 font-semibold': row[col] === 'partialPaid',
-        }"
-      >
-        {{ row[col] }}
-      </span>
-
-      <span v-else>
-        {{ row[col] ?? '' }}
-      </span>
-    </td>
-  </template>
-</tr>
-
+                <span v-else>
+                  {{ row[col] ?? "" }}
+                </span>
+              </td>
+            </template>
+          </tr>
         </tbody>
       </table>
 
