@@ -7,16 +7,13 @@
       colorClass,
     ]"
   >
-   
     <component :is="icon" class="w-12 h-12 shrink-0" />
 
-    
     <div class="flex-1">
       <h3 class="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
         {{ title }}
       </h3>
 
-    
       <template v-if="Array.isArray(items)">
         <ul class="space-y-1 text-gray-700 dark:text-gray-300">
           <li v-for="(it, i) in items" :key="i">{{ it }}</li>
@@ -38,7 +35,7 @@ const props = defineProps({
   items: { type: [String, Number, Array], default: "" },
 
   icon: { type: [Object, Function], required: true },
- 
+
   colorClass: { type: String, default: "" },
 });
 </script>

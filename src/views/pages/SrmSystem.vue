@@ -18,7 +18,7 @@
         </p>
       </div>
 
-      <!-- Student Profile Card -->
+     
       <!-- Student Profile Card -->
 <div v-if="student" class="max-w-5xl mx-auto space-y-6">
   <!-- Basic Info -->
@@ -150,7 +150,7 @@ const tabs = [
   { name: "complaints", label: "Complaints" }, 
   { name: "payments", label: "Deadlines" },
   { name: "invoices", label: "Invoices" },
-  { name: "lectures", label: "Papers" },
+  { name: "documents", label: "Documents" },
   { name: "groups", label: "Groups" },
 ];
 
@@ -161,7 +161,16 @@ const selectTab = async (name, label) => {
   try {
     await studentStore.fetchDataStuden(name);
     data.value = studentStore.studentData || [];
-    headers.value = columnMap[name] || Object.keys(data.value[0] || {});
+    console.log("Fetched Data:", data.value);
+
+   headers.value =
+  columnMap[name]?.length > 0
+    ? columnMap[name]
+    : data.value.length > 0
+      ? Object.keys(data.value[0])
+      : [];
+
+    console.log("Headers:", headers.value);
   } catch (error) {
     console.error("Error fetching tab data:", error);
     data.value = [];         
