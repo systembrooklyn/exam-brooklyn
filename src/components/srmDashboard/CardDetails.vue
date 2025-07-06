@@ -14,6 +14,7 @@ const expandedCell = ref({});
 
 // 🧠 الأعمدة اللي عايز تخفيها لكل cardName
 const hiddenColumnsByCard = {
+
   Requests: [
     "manager_response_at",
     "employee_response_at",
@@ -24,9 +25,19 @@ const hiddenColumnsByCard = {
     "comment",
     "serial",
   ],
-  Invoices: [], // لو حبيت تخفي من Invoices بعدين
-  // Add more if needed
+
+  Invoices: [], 
+  Complaints:["id","created_at","updated_at", "serial", "employee_response_at", "manager_response_at","student_id"],
+    
 };
+
+const expandableColumns = [
+  "value",
+  "comment",
+  "manager_response",
+  "employee_response",
+];
+
 
 const statusOptions = ["pending", "open", "closed"]; // عدلها حسب الحالات المتاحة
 
@@ -56,24 +67,42 @@ const computedHeaders = computed(() => {
   return props.headers;
 });
 
+function displayValue(val) {
+  return val ?? "No Data Available";
+}
+
 const paginatedData = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
   return props.data ? props.data.slice(start, start + pageSize) : [];
 });
 
 const pageNumbers = computed(() => {
-  const pages = [];
   const total = totalPages.value;
-  if (total <= 5) {
+  const current = currentPage.value;
+  const pages = [];
+
+  if (total <= 2) {
     for (let i = 1; i <= total; i++) pages.push(i);
   } else {
-    if (currentPage.value <= 3) pages.push(1, 2, 3, "...", total);
-    else if (currentPage.value >= total - 2)
-      pages.push(1, "...", total - 2, total - 1, total);
-    else pages.push(1, "...", currentPage.value, "...", total);
+    pages.push(1); // Always show first page
+
+    if (current > 3) pages.push("...");
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (current < total - 2) pages.push("...");
+
+    pages.push(total); // Always show last page
   }
+
   return pages;
 });
+
 
 function handleStatusChange(row) {
   console.log("New status:", row.status);
@@ -150,20 +179,12 @@ function shouldShowColumn(col) {
                 class="border max-w-50 break-words border-gray-300 px-4 py-2"
               >
                 <!-- Expanded Text in Requests -->
-                <template
-                  v-if="
-                    props.cardName === 'Requests' &&
-                    [
-                      'value',
-                      'comment',
-                      'manager_response',
-                      'employee_response',
-                    ].includes(col)
-                  "
+             
+               <template v-if="expandableColumns.includes(col)"
                 >
                   <span class="block">
                     <span v-if="`${rowIndex}-${col}` === expandedCell.key">
-                      {{ row[col] }}
+                      {{ displayValue(row[col]) }}
                       <button
                         class="ml-2 text-sm text-indigo-600 underline"
                         @click="toggleExpand(rowIndex, col)"
@@ -171,9 +192,11 @@ function shouldShowColumn(col) {
                         Less
                       </button>
                     </span>
-                    <span v-else class="w-40">
-                      {{ row[col]?.slice(0, 20) }}
-                      <span v-if="row[col]?.length > 40">
+                    <span v-else>
+                      {{
+                        displayValue(row[col]).split(" ").slice(0, 3).join(" ")
+                      }}
+                      <span v-if="displayValue(row[col]).split(' ').length > 3">
                         ...
                         <button
                           class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
@@ -208,7 +231,7 @@ function shouldShowColumn(col) {
                   </span>
                 </template>
                 <span
-                  v-else-if="col === 'status' && props.cardName === 'Requests'"
+                  v-else-if="col === 'status' && props.cardName === 'Requests' ||col === 'status' && props.cardName === 'Complaints'"
                 >
                   <select
                     v-model="row.status"
@@ -245,7 +268,11 @@ function shouldShowColumn(col) {
                 </span>
 
                 <span v-else-if="col === 'paid_date'">
-                  {{ row.status === "paid" ? row[col] : "-" }}
+                  {{
+                    row.status === "paid"
+                      ? displayValue(row[col])
+                      : "No Data Available"
+                  }}
                 </span>
 
                 <span
@@ -258,9 +285,8 @@ function shouldShowColumn(col) {
                 >
                   {{ row[col] }}
                 </span>
-
                 <span v-else>
-                  {{ row[col] ?? "" }}
+                  {{ row[col] ?? "No Data Available" }}
                 </span>
               </td>
             </template>
@@ -270,40 +296,41 @@ function shouldShowColumn(col) {
 
       <!-- Pagination -->
       <div
-        v-if="cardName === 'Invoices'"
+        v-if="totalPages > 1"
         class="mt-6 flex justify-center items-center space-x-2"
       >
-        <button
-          @click="currentPage.value--"
-          :disabled="currentPage.value === 1"
-          class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-        >
-          Previous
-        </button>
+     <button
+  @click="goToPage(currentPage - 1)"
+  :disabled="currentPage === 1"
+  class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+>
+  Previous
+</button>
 
-        <button
-          v-for="page in pageNumbers"
-          :key="page"
-          @click="goToPage(page)"
-          class="px-3 py-1 border rounded"
-          :class="{
-            'bg-indigo-600 text-white': page === currentPage.value,
-            'bg-white text-gray-700 hover:bg-gray-100':
-              page !== currentPage.value,
-            'cursor-default': page === '...',
-          }"
-          :disabled="page === '...'"
-        >
-          {{ page }}
-        </button>
+ <button
+  v-for="page in pageNumbers"
+  :key="page"
+  @click="goToPage(page)"
+  class="px-3 py-1 border rounded"
+  :class="{
+    'bg-indigo-600 text-white font-bold rounded-full': page === currentPage,
+    'bg-white text-gray-700 hover:bg-gray-100': page !== currentPage,
+    'cursor-default': page === '...',
+  }"
+  :disabled="page === '...'"
+>
+  {{ page }}
+</button>
 
-        <button
-          @click="currentPage.value++"
-          :disabled="currentPage.value === totalPages.value"
-          class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-        >
-          Next
-        </button>
+
+
+    <button
+  @click="goToPage(currentPage + 1)"
+  :disabled="currentPage === totalPages"
+  class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+>
+  Next
+</button>
       </div>
     </div>
   </div>
