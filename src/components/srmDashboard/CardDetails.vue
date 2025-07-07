@@ -12,7 +12,7 @@ const currentPage = ref(1);
 const pageSize = 12;
 const expandedCell = ref({});
 
-// 🧠 الأعمدة اللي عايز تخفيها لكل cardName
+
 const hiddenColumnsByCard = {
 
   Requests: [
@@ -39,7 +39,7 @@ const expandableColumns = [
 ];
 
 
-const statusOptions = ["pending", "open", "closed"]; // عدلها حسب الحالات المتاحة
+// const statusOptions = ["pending", "open", "closed"]; 
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";
@@ -58,7 +58,7 @@ const totalPages = computed(
 const computedHeaders = computed(() => {
   if (!props.headers) return [];
 
-  // لو الكارد ريكويست، خليه يحط created_at أول حاجة
+  
   if (props.cardName === "Requests") {
     const withoutCreatedAt = props.headers.filter((h) => h !== "created_at");
     return ["created_at", ...withoutCreatedAt];
@@ -122,7 +122,7 @@ function toggleExpand(rowIndex, colName) {
   expandedCell.value = expandedCell.value.key === key ? {} : { key };
 }
 
-// ✨ الدالة اللي بتقول لو العمود ده المفروض يبان ولا لأ
+
 function shouldShowColumn(col) {
   const hiddenCols = hiddenColumnsByCard[props.cardName] || [];
   return !hiddenCols.includes(col);
@@ -230,7 +230,7 @@ function shouldShowColumn(col) {
                     }}
                   </span>
                 </template>
-                <span
+                <!-- <span
                   v-else-if="col === 'status' && props.cardName === 'Requests' ||col === 'status' && props.cardName === 'Complaints'"
                 >
                   <select
@@ -252,7 +252,7 @@ function shouldShowColumn(col) {
                       {{ status }}
                     </option>
                   </select>
-                </span>
+                </span> -->
 
                 <!-- Other fields -->
                 <span v-else-if="col === 'total_lec'">

@@ -20,9 +20,9 @@
 
      
       <!-- Student Profile Card -->
-<div v-if="student" class="max-w-5xl mx-auto space-y-6">
+<div v-if="student" class="min-w-5xl mx-auto space-y-6">
   <!-- Basic Info -->
-  <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+  <div class="bg- max-w-4xl mx-auto dark:bg-gray-800 p-6 rounded-2xl shadow-md">
     <h3
       class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
     >
@@ -82,9 +82,9 @@
   </div>
 
   <!-- Tabs Navigation -->
-  <div class="max-w-4xl mx-auto">
+  <div class=" mx-auto">
     <div
-      class="flex gap-4 border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
+      class="flex max-w-4xl gap-4 mx-auto border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
     >
       <button
         v-for="tab in tabs"
@@ -102,12 +102,15 @@
     </div>
 
     <!-- Table Section -->
-    <CardDetails
+<div class="min-w-4xl">
+      <CardDetails
       :cardName="cardName"
       :headers="headers"
       :data="data"
       :loading="loading"
     />
+</div>
+
   </div>
 </div>
 

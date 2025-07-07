@@ -94,7 +94,7 @@
           </div>
           <!-- Tooltip -->
         </div>
-        <div class="flex items-center space-x-2 mt-2">
+        <div class="flex items-center space-x-2 mt-4">
           <strong>Phones:</strong>
           <!-- Display phones as a list -->
           <span>{{ student?.phones?.join(" / ") }}</span>
@@ -110,7 +110,7 @@
             </div>
           </div>
         </div>
-        <div class="space-y-2 mt-2">
+        <div class="space-y-2 mt-4">
           <div class="flex items-center space-x-4">
             <p>
               <strong>Major:</strong> {{ student?.major || "No Available" }}
@@ -122,7 +122,7 @@
             </p>
           </div>
 
-          <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-4 mt-4">
             <p><strong>Grade:</strong> {{ student?.grade }}</p>
 
             <p>
