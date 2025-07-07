@@ -12,9 +12,7 @@ const currentPage = ref(1);
 const pageSize = 12;
 const expandedCell = ref({});
 
-
 const hiddenColumnsByCard = {
-
   Requests: [
     "manager_response_at",
     "employee_response_at",
@@ -26,9 +24,16 @@ const hiddenColumnsByCard = {
     "serial",
   ],
 
-  Invoices: [], 
-  Complaints:["id","created_at","updated_at", "serial", "employee_response_at", "manager_response_at","student_id"],
-    
+  Invoices: [],
+  Complaints: [
+    "id",
+    "created_at",
+    "updated_at",
+    "serial",
+    "employee_response_at",
+    "manager_response_at",
+    "student_id",
+  ],
 };
 
 const expandableColumns = [
@@ -38,8 +43,7 @@ const expandableColumns = [
   "employee_response",
 ];
 
-
-// const statusOptions = ["pending", "open", "closed"]; 
+// const statusOptions = ["pending", "open", "closed"];
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";
@@ -58,7 +62,6 @@ const totalPages = computed(
 const computedHeaders = computed(() => {
   if (!props.headers) return [];
 
-  
   if (props.cardName === "Requests") {
     const withoutCreatedAt = props.headers.filter((h) => h !== "created_at");
     return ["created_at", ...withoutCreatedAt];
@@ -103,7 +106,6 @@ const pageNumbers = computed(() => {
   return pages;
 });
 
-
 function handleStatusChange(row) {
   console.log("New status:", row.status);
   // هنا تقدر تبعت update للباك اند
@@ -121,7 +123,6 @@ function toggleExpand(rowIndex, colName) {
   const key = `${rowIndex}-${colName}`;
   expandedCell.value = expandedCell.value.key === key ? {} : { key };
 }
-
 
 function shouldShowColumn(col) {
   const hiddenCols = hiddenColumnsByCard[props.cardName] || [];
@@ -147,7 +148,120 @@ function shouldShowColumn(col) {
     </div>
 
     <div v-else>
-      <table class="min-w-full border border-gray-300 text-center">
+      <div class="space-y-4">
+        <div
+          v-for="(row, rowIndex) in paginatedData"
+          :key="rowIndex"
+          class="border rounded-lg shadow-md bg-gray-700 p-4 bg-white"
+        >
+          <!-- Student & Employee Names + Status -->
+          <div
+            class="flex justify-between items-center text-sm text-gray-600 mb-3"
+          >
+            <div class="flex items-center space-x-6">
+              <span> {{ row.field }}</span>
+              <span>{{ formatDate(row.created_at) }}</span>
+            </div>
+            <span
+              :class="{
+                'text-green-600': row.status === 'closed',
+                'text-yellow-600': row.status === 'pending',
+              }"
+            >
+              ● {{ row.status }}
+            </span>
+          </div>
+
+          <!-- Request Value -->
+          <div class="mb-4">
+            <div class="font-medium text-primary">
+              <template v-if="expandableColumns.includes('value')">
+                <span v-if="`${rowIndex}-value` === expandedCell.key">
+                  {{ displayValue(row.value) }}
+                  <button
+                    class="ml-2 text-sm text-indigo-600 underline"
+                    @click.stop="toggleExpand(rowIndex, 'value')"
+                  >
+                    Less
+                  </button>
+                </span>
+
+                <!-- Only show truncated text + More button if text is long enough -->
+                <span v-else>
+                  {{
+                    displayValue(row.value).split(" ").slice(0, 35).join(" ")
+                  }}
+
+                  <!-- Show "More" only if total words > 20 -->
+                  <span v-if="displayValue(row.value).split(' ').length > 20">
+                    ...
+                    <button
+                      class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
+                      @click.stop="toggleExpand(rowIndex, 'value')"
+                    >
+                      More
+                    </button>
+                  </span>
+                </span>
+              </template>
+
+              <!-- Fallback in case 'value' isn't expandable (shouldn't happen here) -->
+              <template v-else>
+                {{ displayValue(row.value) }}
+              </template>
+            </div>
+          </div>
+
+          <!-- Optional: Show Manager / Employee Response if exists -->
+          <div class="mt-3 pt-3 border-t border-gray-300">
+            <!-- <button
+        v-if="!expandedCell.key?.includes(rowIndex)"
+        class="text-sm text-indigo-600 underline"
+        @click.stop="toggleExpand(rowIndex, 'manager_response')"
+      >
+        Show Responses
+      </button> -->
+            <!-- <button
+        v-if="!expandedCell.key?.includes(rowIndex)"
+        class="text-sm text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full"
+        @click.stop="toggleExpand(rowIndex, 'manager_response')"
+      >
+        Show Responses
+      </button> -->
+
+            <div class="text-sm space-y-2">
+              <div v-if="row.manager_response" class="text-gray-800">
+                <strong class="text-indigo-400">Manager Response:</strong>
+                {{ row.manager_response }}
+                <span
+                  class="text-xs font-semibold text-black ml-2"
+                  v-if="row.manager_response_at"
+                >
+                  (At: {{ formatDate(row.manager_response_at) }})
+                </span>
+              </div>
+              <div v-if="row.employee_response" class="text-gray-800">
+                <strong class="text-indigo-400">Employee Response:</strong>
+                {{ row.employee_response }}
+                <span
+                  class="text-xs font-semibold text-black ml-2"
+                  v-if="row.employee_response_at"
+                >
+                  (At: {{ formatDate(row.employee_response_at) }})
+                </span>
+              </div>
+
+              <!-- <button
+          class="text-sm text-indigo-600 underline mt-2"
+          @click.stop="toggleExpand(rowIndex, 'manager_response')"
+        >
+          Hide Responses
+        </button> -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- <table class="min-w-full border border-gray-300 text-center">
         <thead>
           <tr class="bg-gray-300 text-primary text-lg">
             <template v-for="col in computedHeaders" :key="col">
@@ -178,7 +292,7 @@ function shouldShowColumn(col) {
                 v-if="shouldShowColumn(col)"
                 class="border max-w-50 break-words border-gray-300 px-4 py-2"
               >
-                <!-- Expanded Text in Requests -->
+                
              
                <template v-if="expandableColumns.includes(col)"
                 >
@@ -208,7 +322,7 @@ function shouldShowColumn(col) {
                     </span>
                   </span>
 
-                  <!-- ✅ Show related *_at under the field -->
+                  
                   <span
                     v-if="col === 'employee_response'"
                     class="text-sm text-gray-500 block mt-1"
@@ -230,31 +344,7 @@ function shouldShowColumn(col) {
                     }}
                   </span>
                 </template>
-                <!-- <span
-                  v-else-if="col === 'status' && props.cardName === 'Requests' ||col === 'status' && props.cardName === 'Complaints'"
-                >
-                  <select
-                    v-model="row.status"
-                    @change="handleStatusChange(row)"
-                    class="bg-transparent w-full font-semibold focus:outline-none cursor-pointer text-green-600"
-                    :class="{
-                      'text-green-600': row.status === 'paid',
-                      'text-red-600': row.status === 'closed',
-                      'text-yellow-500': row.status === 'partialPaid',
-                    }"
-                  >
-                    <option
-                      v-for="status in statusOptions"
-                      :key="status"
-                      :value="status"
-                      class="text-black px-2 text-sm"
-                    >
-                      {{ status }}
-                    </option>
-                  </select>
-                </span> -->
-
-                <!-- Other fields -->
+                
                 <span v-else-if="col === 'total_lec'">
                   {{ row.type === "online" ? 0 : row[col] ?? "" }}
                 </span>
@@ -292,45 +382,44 @@ function shouldShowColumn(col) {
             </template>
           </tr>
         </tbody>
-      </table>
+      </table> -->
 
       <!-- Pagination -->
       <div
         v-if="totalPages > 1"
         class="mt-6 flex justify-center items-center space-x-2"
       >
-     <button
-  @click="goToPage(currentPage - 1)"
-  :disabled="currentPage === 1"
-  class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
->
-  Previous
-</button>
+        <button
+          @click="goToPage(currentPage - 1)"
+          :disabled="currentPage === 1"
+          class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Previous
+        </button>
 
- <button
-  v-for="page in pageNumbers"
-  :key="page"
-  @click="goToPage(page)"
-  class="px-3 py-1 border rounded"
-  :class="{
-    'bg-indigo-600 text-white font-bold rounded-full': page === currentPage,
-    'bg-white text-gray-700 hover:bg-gray-100': page !== currentPage,
-    'cursor-default': page === '...',
-  }"
-  :disabled="page === '...'"
->
-  {{ page }}
-</button>
+        <button
+          v-for="page in pageNumbers"
+          :key="page"
+          @click="goToPage(page)"
+          class="px-3 py-1 border rounded"
+          :class="{
+            'bg-indigo-600 text-white font-bold rounded-full':
+              page === currentPage,
+            'bg-white text-gray-700 hover:bg-gray-100': page !== currentPage,
+            'cursor-default': page === '...',
+          }"
+          :disabled="page === '...'"
+        >
+          {{ page }}
+        </button>
 
-
-
-    <button
-  @click="goToPage(currentPage + 1)"
-  :disabled="currentPage === totalPages"
-  class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
->
-  Next
-</button>
+        <button
+          @click="goToPage(currentPage + 1)"
+          :disabled="currentPage === totalPages"
+          class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+        >
+          Next
+        </button>
       </div>
     </div>
   </div>

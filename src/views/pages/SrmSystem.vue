@@ -102,7 +102,7 @@
     </div>
 
     <!-- Table Section -->
-<div class="min-w-4xl">
+<div class="mx-auto main-w-5xl">
       <CardDetails
       :cardName="cardName"
       :headers="headers"
