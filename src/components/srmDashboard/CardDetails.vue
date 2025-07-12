@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from "vue";
+import Pagination from "./Pagination.vue";
 
 const props = defineProps({
   cardName: String,
@@ -9,7 +10,7 @@ const props = defineProps({
 });
 
 const currentPage = ref(1);
-const pageSize = 12;
+const pageSize = 5;
 const expandedCell = ref({});
 
 const hiddenColumnsByCard = {
@@ -133,259 +134,240 @@ function shouldShowColumn(col) {
 <template>
   <div class="p-6">
     <div v-if="loading" class="flex justify-center items-center">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"
-      ></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
     </div>
 
     <div v-else-if="!hasData">
-      <img
-        class="mx-auto h-80 mt-10"
-        src="@/assets/undraw_empty_4zx0.png"
-        alt="No Data"
-      />
+      <img class="mx-auto h-80 mt-10" src="@/assets/undraw_empty_4zx0.png" alt="No Data" />
       <p class="text-center mt-4 font-semibold text-gray-500">No Data Found</p>
     </div>
 
     <div v-else>
       <div class="space-y-4">
-        <div
-          v-for="(row, rowIndex) in paginatedData"
-          :key="rowIndex"
-          class="border rounded-lg shadow-md bg-gray-700 p-4 bg-white"
-        >
-          <!-- Student & Employee Names + Status -->
-          <div
-            class="flex justify-between items-center text-sm text-gray-600 mb-3"
-          >
-            <div class="flex items-center space-x-6">
-              <span> {{ row.field }}</span>
-              <span>{{ formatDate(row.created_at) }}</span>
+        <div v-for="(row, rowIndex) in paginatedData" :key="rowIndex" class="border rounded-lg shadow-md p-4 bg-white">
+          <!--Requests & Complaints   -->
+          <div v-if="cardName === 'Requests' || cardName === 'Complaints'"
+            class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-all duration-300">
+            <!-- Header: Name, Date, Status -->
+            <div class="flex justify-between items-center mb-4 pb-3 border-b">
+              <div class="flex items-center space-x-6">
+                <h4 class="font-semibold text-gray-800">{{ row.field }}</h4>
+                <span class="text-sm text-gray-500">{{
+                  formatDate(row.created_at)
+                }}</span>
+              </div>
+
+              <span :class="{
+                'bg-green-100 text-green-700': row.status === 'closed',
+                'bg-yellow-100 text-yellow-700': row.status === 'pending',
+              }" class="px-3 py-1 rounded-full text-sm font-medium capitalize">
+                {{ row.status }}
+              </span>
             </div>
-            <span
-              :class="{
-                'text-green-600': row.status === 'closed',
-                'text-yellow-600': row.status === 'pending',
-              }"
-            >
-              ● {{ row.status }}
-            </span>
-          </div>
 
-          <!-- Request Value -->
-          <div class="mb-4">
-            <div class="font-medium text-primary">
-              <template v-if="expandableColumns.includes('value')">
-                <span v-if="`${rowIndex}-value` === expandedCell.key">
-                  {{ displayValue(row.value) }}
-                  <button
-                    class="ml-2 text-sm text-indigo-600 underline"
-                    @click.stop="toggleExpand(rowIndex, 'value')"
-                  >
-                    Less
-                  </button>
-                </span>
-
-                <!-- Only show truncated text + More button if text is long enough -->
-                <span v-else>
-                  {{
-                    displayValue(row.value).split(" ").slice(0, 35).join(" ")
-                  }}
-
-                  <!-- Show "More" only if total words > 20 -->
-                  <span v-if="displayValue(row.value).split(' ').length > 20">
-                    ...
-                    <button
-                      class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
-                      @click.stop="toggleExpand(rowIndex, 'value')"
-                    >
-                      More
+            <!-- Request/Complaint Text -->
+            <div class="mb-5">
+              <div class="prose max-w-none text-gray-700">
+                <template v-if="expandableColumns.includes('value')">
+                  <span v-if="`${rowIndex}-value` === expandedCell.key">
+                    {{ displayValue(row.value) }}
+                    <button class="ml-2 text-sm text-indigo-600 hover:text-indigo-800 underline"
+                      @click.stop="toggleExpand(rowIndex, 'value')">
+                      Less
                     </button>
                   </span>
-                </span>
-              </template>
 
-              <!-- Fallback in case 'value' isn't expandable (shouldn't happen here) -->
-              <template v-else>
-                {{ displayValue(row.value) }}
-              </template>
+                  <span v-else>
+                    {{
+                      displayValue(row.value).split(" ").slice(0, 35).join(" ")
+                    }}
+                    <span v-if="displayValue(row.value).split(' ').length > 35">
+                      ...
+                      <button class="ml-1 text-sm text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
+                        @click.stop="toggleExpand(rowIndex, 'value')">
+                        More
+                      </button>
+                    </span>
+                  </span>
+                </template>
+
+                <template v-else>
+                  {{ displayValue(row.value) }}
+                </template>
+              </div>
+            </div>
+
+            <!-- Responses Section -->
+            <div class="mt-6 pt-4 border-t border-gray-200">
+              <div class="space-y-4 text-sm">
+                <!-- Manager Response -->
+                <div v-if="row.manager_response" class="bg-gray-50 p-3 rounded-md border-l-4 border-indigo-400">
+                  <strong class="text-indigo-600">Manager Response:</strong>
+                  <p class="mt-1 text-gray-800">{{ row.manager_response }}</p>
+                  <span v-if="row.manager_response_at" class="text-xs text-gray-500">
+                    At: {{ formatDate(row.manager_response_at) }}
+                  </span>
+                </div>
+
+                <!-- Employee Response -->
+                <div v-if="row.employee_response" class="bg-gray-50 p-3 rounded-md border-l-4 border-blue-400">
+                  <strong class="text-blue-600">Employee Response:</strong>
+                  <p class="mt-1 text-gray-800">{{ row.employee_response }}</p>
+                  <span v-if="row.employee_response_at" class="text-xs text-gray-500">
+                    At: {{ formatDate(row.employee_response_at) }}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Optional: Show Manager / Employee Response if exists -->
-          <div class="mt-3 pt-3 border-t border-gray-300">
-            <!-- <button
-        v-if="!expandedCell.key?.includes(rowIndex)"
-        class="text-sm text-indigo-600 underline"
-        @click.stop="toggleExpand(rowIndex, 'manager_response')"
-      >
-        Show Responses
-      </button> -->
-            <!-- <button
-        v-if="!expandedCell.key?.includes(rowIndex)"
-        class="text-sm text-indigo-600 bg-indigo-100 px-2 py-1 rounded-full"
-        @click.stop="toggleExpand(rowIndex, 'manager_response')"
-      >
-        Show Responses
-      </button> -->
-
-            <div class="text-sm space-y-2">
-              <div v-if="row.manager_response" class="text-gray-800">
-                <strong class="text-indigo-400">Manager Response:</strong>
-                {{ row.manager_response }}
-                <span
-                  class="text-xs font-semibold text-black ml-2"
-                  v-if="row.manager_response_at"
-                >
-                  (At: {{ formatDate(row.manager_response_at) }})
-                </span>
+          <!-- Deadlines -->
+          <div v-if="cardName === 'Deadlines'" class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
+            <!-- Header with Name, Date, and Status -->
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <span class="font-medium text-gray-500">Due Date:</span>
+                {{ formatDate(row.due_date) }}
               </div>
-              <div v-if="row.employee_response" class="text-gray-800">
-                <strong class="text-indigo-400">Employee Response:</strong>
-                {{ row.employee_response }}
-                <span
-                  class="text-xs font-semibold text-black ml-2"
-                  v-if="row.employee_response_at"
-                >
-                  (At: {{ formatDate(row.employee_response_at) }})
-                </span>
+              <span class="font-bold text-primary">{{
+                row.total_payment
+              }}</span>
+              <span class="px-3 py-1 rounded-full text-sm font-medium text-white bg-green-500">
+                {{ row.status }}
+              </span>
+            </div>
+
+            <!-- Amount Section -->
+            <div class="flex justify-between items-center space-x-4">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">Amount</h4>
+                <p class="text-xl font-bold text-indigo-600">
+                  {{ displayValue(row.amount) }} EGP
+                </p>
               </div>
 
-              <!-- <button
-          class="text-sm text-indigo-600 underline mt-2"
-          @click.stop="toggleExpand(rowIndex, 'manager_response')"
-        >
-          Hide Responses
-        </button> -->
+              <!-- Paid Amount -->
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">
+                  Paid Amount
+                </h4>
+                <p class="text-lg font-semibold text-green-600">
+                  {{ row.paid_amount }} EGP
+                </p>
+              </div>
+            </div>
+          </div>
+          <!-- invoices -->
+          <div v-if="cardName === 'Invoices'"
+            class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-all duration-300">
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 border-b pb-4">
+              <h3 class="text-xl font-semibold text-gray-800">
+                Invoice #{{ row.serial }}
+              </h3>
+              <div class="mt-2 md:mt-0 flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
+                  {{ row.type }}
+                </span>
+                <span class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+                  {{ row.pay_cat }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Top Info Row -->
+            <div class="flex items-center justify-between mb-5 text-sm text-gray-700">
+              <div>
+                <p class="text-gray-900">{{ formatDate(row.created_at) }}</p>
+              </div>
+
+              <div>
+                <p class="font-medium text-gray-500">Payment Method</p>
+                <p class="text-gray-900 capitalize">{{ row.pay_method }}</p>
+              </div>
+              <div>
+                <p class="text-gray-900 capitalize">{{ row.employee.name }}</p>
+              </div>
+            </div>
+
+            <!-- Amount Section -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+              <div>
+                <h4 class="text-sm font-medium text-gray-500 mb-1">Amount</h4>
+                <p class="text-2xl font-bold text-indigo-600">
+                  {{ displayValue(row.amount) }} EGP
+                </p>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-5">
+              <p class="font-medium text-gray-500 mb-1">Notes</p>
+              <p class="text-gray-800 italic bg-gray-50 p-3 rounded-md">
+                {{ row.notes }}
+              </p>
+            </div>
+
+            <!-- Employee Info -->
+          </div>
+          <!-- groups -->
+          <div v-if="cardName === 'Groups'"
+            class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-all duration-300">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-5 border-b pb-4">
+              <h3 class="text-xl font-bold text-indigo-800">{{ row.name }}</h3>
+              <div v-if="row.type === 'online'">
+                <p class="text-gray-500 text-sm font-medium">
+                  {{ formatDate(row.student_start) }}
+                </p>
+              </div>
+
+              <div v-else>
+                <p class="text-gray-500 text-sm font-medium">
+                  {{ formatDate(row.start_date) }}
+                </p>
+              </div>
+              <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 capitalize">
+                {{ row.type }}
+              </span>
+            </div>
+
+            <!-- Group Info Grid -->
+            <div class="flex justify-between items-center gap-5 text-sm text-gray-700">
+              <div>
+                <p class="font-medium text-gray-500">Code</p>
+                <p class="text-gray-900 font-semibold">{{ row.code }}</p>
+              </div>
+
+              <div>
+                <p class="font-medium text-gray-500">Total Lectures</p>
+                <p class="text-primary font-bold text-lg">
+                  {{ row.total_lec }}
+                </p>
+              </div>
+              <div>
+                <span :class="{
+                  'text-green-600': row.is_active,
+                  'text-red-600': !row.is_active,
+                }" class="inline-block mt-1 px-2 py-1 rounded text-sm font-medium" :style="{
+                    backgroundColor: row.is_active ? '#d1fae5' : '#fee2e2',
+                    color: row.is_active ? '#047857' : '#be123c',
+                  }">
+                  {{ row.is_active ? "Active" : "Inactive" }}
+                </span>
+              </div>
+
+              <!-- Conditional Display Based on Type -->
             </div>
           </div>
         </div>
       </div>
-      <!-- <table class="min-w-full border border-gray-300 text-center">
-        <thead>
-          <tr class="bg-gray-300 text-primary text-lg">
-            <template v-for="col in computedHeaders" :key="col">
-              <th
-                :key="col"
-                v-if="shouldShowColumn(col)"
-                class="border border-blue-300 px-4 py-3 capitalize"
-              >
-                {{
-                  col === "value"
-                    ? "Request"
-                    : col === "created_at"
-                    ? "Date"
-                    : col.replace(/_/g, " ")
-                }}
-              </th>
-            </template>
-          </tr>
-        </thead>
-        <tbody>
-          <tr
-            v-for="(row, rowIndex) in paginatedData"
-            :key="rowIndex"
-            class="hover:bg-gray-50"
-          >
-            <template v-for="col in computedHeaders" :key="col">
-              <td
-                v-if="shouldShowColumn(col)"
-                class="border max-w-50 break-words border-gray-300 px-4 py-2"
-              >
-                
-             
-               <template v-if="expandableColumns.includes(col)"
-                >
-                  <span class="block">
-                    <span v-if="`${rowIndex}-${col}` === expandedCell.key">
-                      {{ displayValue(row[col]) }}
-                      <button
-                        class="ml-2 text-sm text-indigo-600 underline"
-                        @click="toggleExpand(rowIndex, col)"
-                      >
-                        Less
-                      </button>
-                    </span>
-                    <span v-else>
-                      {{
-                        displayValue(row[col]).split(" ").slice(0, 3).join(" ")
-                      }}
-                      <span v-if="displayValue(row[col]).split(' ').length > 3">
-                        ...
-                        <button
-                          class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
-                          @click="toggleExpand(rowIndex, col)"
-                        >
-                          More
-                        </button>
-                      </span>
-                    </span>
-                  </span>
-
-                  
-                  <span
-                    v-if="col === 'employee_response'"
-                    class="text-sm text-gray-500 block mt-1"
-                  >
-                    {{
-                      row.employee_response_at
-                        ? `At: ${formatDate(row.employee_response_at)}`
-                        : ""
-                    }}
-                  </span>
-                  <span
-                    v-if="col === 'manager_response'"
-                    class="text-sm text-gray-500 block mt-1"
-                  >
-                    {{
-                      row.manager_response_at
-                        ? `At: ${formatDate(row.manager_response_at)}`
-                        : ""
-                    }}
-                  </span>
-                </template>
-                
-                <span v-else-if="col === 'total_lec'">
-                  {{ row.type === "online" ? 0 : row[col] ?? "" }}
-                </span>
-
-                <span v-else-if="col === 'start_date'">
-                  {{ row.type === "class" ? formatDate(row[col]) : "_" }}
-                </span>
-
-                <span v-else-if="col === 'student_start'">
-                  {{ row.type === "online" ? formatDate(row[col]) : "_" }}
-                </span>
-
-                <span v-else-if="col === 'paid_date'">
-                  {{
-                    row.status === "paid"
-                      ? displayValue(row[col])
-                      : "No Data Available"
-                  }}
-                </span>
-
-                <span
-                  v-else-if="col === 'status'"
-                  :class="{
-                    'text-green-600 font-semibold': row[col] === 'paid',
-                    'text-red-600 font-semibold': row[col] === 'unpaid',
-                    'text-yellow-500 font-semibold': row[col] === 'partialPaid',
-                  }"
-                >
-                  {{ row[col] }}
-                </span>
-                <span v-else>
-                  {{ row[col] ?? "No Data Available" }}
-                </span>
-              </td>
-            </template>
-          </tr>
-        </tbody>
-      </table> -->
 
       <!-- Pagination -->
-      <div
+      <!-- Pagination -->
+      <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
+        :page-numbers="pageNumbers" @update:current-page="goToPage" />
+      <!-- <div
         v-if="totalPages > 1"
         class="mt-6 flex justify-center items-center space-x-2"
       >
@@ -420,7 +402,7 @@ function shouldShowColumn(col) {
         >
           Next
         </button>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

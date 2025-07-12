@@ -20,7 +20,7 @@
 
      
       <!-- Student Profile Card -->
-<div v-if="student" class="min-w-5xl mx-auto space-y-6">
+<div v-if="student" class="max-w-5xl mx-auto space-y-6">
   <!-- Basic Info -->
   <div class="bg- max-w-4xl mx-auto dark:bg-gray-800 p-6 rounded-2xl shadow-md">
     <h3
@@ -84,7 +84,7 @@
   <!-- Tabs Navigation -->
   <div class=" mx-auto">
     <div
-      class="flex max-w-4xl gap-4 mx-auto border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
+      class="flex min-w-4xl gap-4 mx-auto border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
     >
       <button
         v-for="tab in tabs"
@@ -153,7 +153,7 @@ const tabs = [
   { name: "complaints", label: "Complaints" }, 
   { name: "payments", label: "Deadlines" },
   { name: "invoices", label: "Invoices" },
-  { name: "documents", label: "Documents" },
+  // { name: "documents", label: "Documents" },
   { name: "groups", label: "Groups" },
 ];
 
