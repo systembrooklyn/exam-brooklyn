@@ -41,7 +41,7 @@
       </p>
 
       <p v-if="student?.student?.marketing_code">
-        <strong>Marketing Code:</strong> {{ student.student.marketing_code }}
+        <strong>Scholarship Code:</strong> {{ student.student.marketing_code }}
       </p>
 
       <p v-if="reservationInfo.branch?.name">

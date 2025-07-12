@@ -107,11 +107,6 @@ const pageNumbers = computed(() => {
   return pages;
 });
 
-function handleStatusChange(row) {
-  console.log("New status:", row.status);
-  // هنا تقدر تبعت update للباك اند
-  // مثلاً axios.post('/api/update-status', { id: row.id, status: row.status })
-}
 
 const hasData = computed(() => props.data && props.data.length > 0);
 
@@ -262,9 +257,14 @@ function shouldShowColumn(col) {
             class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-all duration-300">
             <!-- Header -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 border-b pb-4">
-              <h3 class="text-xl font-semibold text-gray-800">
-                Invoice #{{ row.serial }}
-              </h3>
+
+              <div class="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
+                <h3 class="text-xl font-semibold text-gray-800">
+                  Invoice #{{ row.serial }}
+                </h3>
+                <p class="text-gray-700 text-sm">(at): {{ formatDate(row.created_at) }}</p>
+                <p class="text-gray-900 text-sm capitalize">(By):{{ row.employee.name }}</p>
+              </div>
               <div class="mt-2 md:mt-0 flex items-center space-x-3">
                 <span class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
                   {{ row.type }}
@@ -276,94 +276,79 @@ function shouldShowColumn(col) {
             </div>
 
             <!-- Top Info Row -->
-            <div class="flex items-center justify-between mb-5 text-sm text-gray-700">
-              <div>
-                <p class="text-gray-900">{{ formatDate(row.created_at) }}</p>
-              </div>
+            <div class="flex items-center justify-between  text-sm text-gray-700">
 
-              <div>
-                <p class="font-medium text-gray-500">Payment Method</p>
-                <p class="text-gray-900 capitalize">{{ row.pay_method }}</p>
-              </div>
-              <div>
-                <p class="text-gray-900 capitalize">{{ row.employee.name }}</p>
-              </div>
-            </div>
-
-            <!-- Amount Section -->
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
-              <div>
-                <h4 class="text-sm font-medium text-gray-500 mb-1">Amount</h4>
-                <p class="text-2xl font-bold text-indigo-600">
+              <div class="flex justify-center gap-2 items-center">
+                <span class="text-sm font-medium text-gray-500 mb-1">Amount</span>:
+                <p class="text-xl font-bold text-indigo-600">
                   {{ displayValue(row.amount) }} EGP
                 </p>
+                <p class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">{{ row.pay_method }}
+                </p>
+              </div>
+
+
+
+
+
+              <div class="flex justify-center gap-2  items-center">
+                <p class="font-medium text-gray-500 mb-1">Notes:</p>
+                <p class="text-gray-800 italic  bg-gray-50 p-2 rounded-md">
+                  {{ row.notes }}
+                </p>
+              </div>
+              <div>
+
               </div>
             </div>
 
+
+
             <!-- Notes -->
-            <div class="mb-5">
-              <p class="font-medium text-gray-500 mb-1">Notes</p>
-              <p class="text-gray-800 italic bg-gray-50 p-3 rounded-md">
-                {{ row.notes }}
-              </p>
-            </div>
+
 
             <!-- Employee Info -->
           </div>
           <!-- groups -->
-          <div v-if="cardName === 'Groups'"
-            class="bg-white p-6 rounded-lg shadow-md border border-gray-200 transition-all duration-300">
+          <div v-if="cardName === 'Groups'" class="bg-white transition-all duration-300">
             <!-- Header -->
-            <div class="flex justify-between items-center mb-5 border-b pb-4">
-              <h3 class="text-xl font-bold text-indigo-800">{{ row.name }}</h3>
-              <div v-if="row.type === 'online'">
-                <p class="text-gray-500 text-sm font-medium">
-                  {{ formatDate(row.student_start) }}
-                </p>
-              </div>
+            <div class="flex justify-between items-center ">
 
-              <div v-else>
-                <p class="text-gray-500 text-sm font-medium">
-                  {{ formatDate(row.start_date) }}
-                </p>
+
+              <div class="flex justify-between items-center gap-5 text-sm text-gray-700">
+                <h3 class="text-xl font-bold text-indigo-800">{{ row.name }}</h3>
+                <div v-if="row.type === 'online'">
+                  <p class="text-gray-500 text-sm font-medium">
+                    Start At:( {{ formatDate(row.student_start) }})
+                  </p>
+                </div>
+
+                <div v-else>
+                  <p class="text-gray-500 text-sm font-medium">
+                    Start At:({{ formatDate(row.start_date) }})
+                  </p>
+                </div>
+
+                <div>
+
+
+                </div>
+
+
+
               </div>
-              <span class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700 capitalize">
-                {{ row.type }}
-              </span>
+              <p class="text-primary font-bold text-lg">
+                lectures: [{{ row.total_lec }}]
+              </p>
             </div>
 
             <!-- Group Info Grid -->
-            <div class="flex justify-between items-center gap-5 text-sm text-gray-700">
-              <div>
-                <p class="font-medium text-gray-500">Code</p>
-                <p class="text-gray-900 font-semibold">{{ row.code }}</p>
-              </div>
 
-              <div>
-                <p class="font-medium text-gray-500">Total Lectures</p>
-                <p class="text-primary font-bold text-lg">
-                  {{ row.total_lec }}
-                </p>
-              </div>
-              <div>
-                <span :class="{
-                  'text-green-600': row.is_active,
-                  'text-red-600': !row.is_active,
-                }" class="inline-block mt-1 px-2 py-1 rounded text-sm font-medium" :style="{
-                    backgroundColor: row.is_active ? '#d1fae5' : '#fee2e2',
-                    color: row.is_active ? '#047857' : '#be123c',
-                  }">
-                  {{ row.is_active ? "Active" : "Inactive" }}
-                </span>
-              </div>
-
-              <!-- Conditional Display Based on Type -->
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Pagination -->
+
       <!-- Pagination -->
       <Pagination v-if="totalPages > 1" :current-page="currentPage" :total-pages="totalPages"
         :page-numbers="pageNumbers" @update:current-page="goToPage" />
