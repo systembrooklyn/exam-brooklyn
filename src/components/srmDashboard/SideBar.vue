@@ -2,8 +2,8 @@
   <div class="flex min-h-screen bg-gray-100">
     <!-- Sidebar -->
     <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col">
-      <div class="max-w-3xl mx-auto mb-10">
-        <div class="relative mt-6">
+      <div class="max-w-3xl mx-auto mb-5">
+        <div class="relative mt-3">
           <input
             v-model="studentId"
             @keyup.enter="searchStudent"
@@ -11,7 +11,7 @@
             placeholder="Enter Student ID..."
             class="w-full p-2 pl-12 rounded-xl shadow-md border border-[#6c63ff] focus:ring-non focus:px-10 focus:outline-none transition"
           />
-        
+
           <button
             @click="searchStudent"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#6c63ff] transition"
@@ -22,7 +22,7 @@
       </div>
 
       <!-- Profile -->
-      <div class="flex flex-col items-center py-3 border-b px-4 text-center">
+      <div class="flex flex-col pb-3 items-center  border-b px-4 text-center">
         <img
           :src="
             student?.ppUrl ||
@@ -30,8 +30,19 @@
           "
           class="w-24 h-24 rounded-full shadow-md"
         />
-        <div v-show="student.name && student.st_num && student.ID_number" class="text-center">
-          <h2 class="mt-3 text-xl font-bold text-gray-800">
+        
+               <span
+                v-if="student?.scholarship?.study_type"
+                  class="px-3 mt-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
+                >
+              {{ student?.scholarship?.study_type }}
+                </span>
+        <div
+          v-show="student.name && student.st_num && student.ID_number"
+          class="text-center"
+        >
+
+          <h2 class="mt-2 text-xl font-bold text-gray-800">
             {{ student?.name || "John Doe" }}
           </h2>
           <p class="text-sm text-gray-600">
@@ -72,7 +83,15 @@
       <!-- Contact Buttons -->
       <div
         class="py-4 border-b p-3"
-     v-if="student && (student.email || student.phones?.length || student.major || student.company || student.grade || student.faculity)"
+        v-if="
+          student &&
+          (student.email ||
+            student.phones?.length ||
+            student.major ||
+            student.company ||
+            student.grade ||
+            student.faculity)
+        "
       >
         <h3 class="font-bold text-center mb-3 text-indigo-400">
           General & Personal Information
@@ -130,8 +149,6 @@
               {{ student?.faculity || "No Available" }}
             </p>
           </div>
-
-         
         </div>
       </div>
 
@@ -150,7 +167,13 @@
     <MessageModal
       v-if="student"
       :type="modalType"
-   :recipient="modalType === 'share' ? student.email : (modalType === 'email' ? student.email : student.phones?.join(' / '))"
+      :recipient="
+        modalType === 'share'
+          ? student.email
+          : modalType === 'email'
+          ? student.email
+          : student.phones?.join(' / ')
+      "
       :visible="showModal"
       @update:visible="showModal = $event"
       @send="handleSend"
@@ -175,11 +198,10 @@ import NavItem from "./NavItem.vue";
 
 const studentId = ref("");
 const student = ref({});
-const studentAllData = ref(null); 
+const studentAllData = ref(null);
 import { useStudentStore } from "@/stores/studentStore";
 
-const emit = defineEmits(['student-selected']);
-
+const emit = defineEmits(["student-selected"]);
 
 const studentStore = useStudentStore();
 // Define the navigation items
@@ -201,16 +223,14 @@ const searchStudent = async () => {
     console.log("Selected Student:", student.value);
     console.log("Student ID:", studentId.value);
 
-    emit('student-selected', studentAllData.value);
+    emit("student-selected", studentAllData.value);
   } catch (error) {
-   
     student.value = {};
     studentAllData.value = null;
-emit('student-selected', studentAllData.value);
+    emit("student-selected", studentAllData.value);
     console.error("Error fetching student:", error);
   }
 };
-
 
 const openModal = (type) => {
   modalType.value = type;
@@ -223,12 +243,10 @@ const handleSend = (message) => {
       ? student.value.email
       : student.value.phones?.join(", ");
 
-
   alert(
     `${
       modalType.value === "email" ? "Email" : "SMS"
     } sent to ${recipient}:\n${message}`
   );
 };
-
 </script>

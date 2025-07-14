@@ -15,7 +15,9 @@
     <div>
       <DataTable :headers="[
         { label: 'Scholarship Name', key: 'name' },
-        { label: 'Courses', key: 'courses' }
+        { label: 'Courses', key: 'courses' },
+        { label: 'Type', key: 'study_type' }
+       
       ]" :items="filteredScholarships" :search="search" resourceType="scholarship" @edit="editScholarship"
         @delete="confirmDelete" :loading="scholarshipStore.loading" />
     </div>
@@ -47,7 +49,7 @@ const scholarshipStore = useScholarshipStore();
 const showModal = ref(false);
 const saving = ref(false);
 const isEditing = ref(false);
-const form = ref({ name: "", courses: [] });
+const form = ref({ name: "", courses: [], study_type: "" });
 const showDeleteAlert = ref(false);
 const scholarshipIdToDelete = ref(null);
 const search = ref("");

@@ -15,12 +15,12 @@
       </h3>
 
       <template v-if="Array.isArray(items)">
-        <ul class="space-y-1 text-gray-700 dark:text-gray-300">
+        <ul class="space-y-1 text-gray-700 dark:text-gray-300 ">
           <li v-for="(it, i) in items" :key="i">{{ it }}</li>
         </ul>
       </template>
       <template v-else>
-        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 cursor-pointer">
           {{ items }}
         </p>
       </template>

@@ -22,9 +22,9 @@
       <!-- Student Profile Card -->
 <div v-if="student" class="max-w-5xl mx-auto space-y-6">
   <!-- Basic Info -->
-  <div class="bg- max-w-4xl mx-auto dark:bg-gray-800 p-6 rounded-2xl shadow-md">
+  <div class="bg- max-w-4xl mx-auto dark:bg-gray-800 p-3 rounded-2xl shadow-md">
     <h3
-      class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 mt-3 text-center"
+      class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200  text-center"
     >
       Scholarship & Reserv Information
     </h3>
