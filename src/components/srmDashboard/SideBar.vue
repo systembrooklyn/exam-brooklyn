@@ -22,7 +22,13 @@
       </div>
 
       <!-- Profile -->
-      <div class="flex flex-col pb-3 items-center  border-b px-4 text-center">
+      <div class="flex flex-col pb-3 items-center border-b px-4 text-center">
+        <p
+          v-if="student?.scholar_status === 'canceled'"
+          class="mb-2 text-sm font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full inline-block"
+        >
+          ❌ This student has been canceled
+        </p>
         <img
           :src="
             student?.ppUrl ||
@@ -30,18 +36,17 @@
           "
           class="w-24 h-24 rounded-full shadow-md"
         />
-        
-               <span
-                v-if="student?.scholarship?.study_type"
-                  class="px-3 mt-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
-                >
-              {{ student?.scholarship?.study_type }}
-                </span>
+
+        <span
+          v-if="student?.scholarship?.study_type"
+          class="px-3 mt-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
+        >
+          {{ student?.scholarship?.study_type }}
+        </span>
         <div
           v-show="student.name && student.st_num && student.ID_number"
           class="text-center"
         >
-
           <h2 class="mt-2 text-xl font-bold text-gray-800">
             {{ student?.name || "John Doe" }}
           </h2>

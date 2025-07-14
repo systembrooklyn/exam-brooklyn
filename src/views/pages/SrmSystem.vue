@@ -39,9 +39,20 @@
       <p v-if="student?.student?.careerType">
         <strong>Career Type:</strong> {{ student.student.careerType }}
       </p>
+        <p
+          v-if="student?.student?.scholar_status"
+        
+        >
+        <strong>Status:</strong> {{ student?.student?.scholar_status }}
+        </p>
+      <p v-if="student?.student?.scholarship?.study_type">
+        <strong>Study Type:</strong>
+        {{ student.student.scholarship.study_type }}
+      </p>
+      
 
       <p v-if="student?.student?.marketing_code">
-        <strong>Scholarship Code:</strong> {{ student.student.marketing_code }}
+        <strong>Scholarship Code:</strong> {{ student.student.marketing_code || "N/A" }}
       </p>
 
       <p v-if="reservationInfo.branch?.name">
@@ -86,19 +97,20 @@
     <div
       class="flex min-w-4xl gap-4 mx-auto border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
     >
-      <button
-        v-for="tab in tabs"
-        :key="tab.name"
-        @click="selectTab(tab.name , tab.label)"
-        :class="[
-          'px-4 py-2 font-semibold',
-          cardName === tab.label
-            ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
-            : 'text-gray-500 hover:text-[#6c63ff]',
-        ]"
-      >
-        {{ tab.label }}
-      </button>
+   <button
+  v-for="tab in tabs"
+  :key="tab.name"
+  @click="selectTab(tab.name , tab.label)"
+  :class="[
+    'px-4 py-2 font-semibold',
+    cardName === tab.label
+      ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
+      : 'text-gray-500 hover:text-[#6c63ff]',
+  ]"
+>
+  {{ tab.label }} <span class=" text-primary">({{ tab.count || 0 }})</span>
+</button>
+
     </div>
 
     <!-- Table Section -->
@@ -143,19 +155,14 @@ const cardName = ref("");
 const data = ref([]);
 const loading = ref(false);
 const headers = ref([]);
+const tabs = ref([]);
+
 
 const reservationInfo = computed(() => {
   return student.value?.reservation?.[0] || {};
 });
 
-const tabs = [
-  { name: "requests", label: "Requests" },
-  { name: "complaints", label: "Complaints" }, 
-  { name: "payments", label: "Deadlines" },
-  { name: "invoices", label: "Invoices" },
-  // { name: "documents", label: "Documents" },
-  { name: "groups", label: "Groups" },
-];
+
 
 const selectTab = async (name, label) => {
   cardName.value = label;
@@ -188,7 +195,23 @@ watch(student, (newVal) => {
   if (newVal) {
     cardName.value = ""; 
     data.value = [];      
-    headers.value = [];   
+    headers.value = [];
+
+    // 🧠 التحقق من وجود counts
+    const counts = newVal?.counts || {};
+
+    // بناء التابات حسب counts
+    tabs.value = [
+      { name: "requests", label: "Requests", count: counts.requests || 0 },
+      { name: "payments", label: "Deadlines", count: counts.payments || 0 },
+      {
+    name: "groups",
+    label: "Groups",
+    count: `12/${counts.groups || 0}`
+  },
+      { name: "invoices", label: "Invoices", count: counts.invoices || 0 },
+      // { name: "documents", label: "Documents", count: counts.documents || 0 },
+    ];
   }
 });
 

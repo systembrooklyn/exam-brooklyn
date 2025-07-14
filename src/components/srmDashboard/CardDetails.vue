@@ -129,73 +129,146 @@ function shouldShowColumn(col) {
   <div class="">
     <!-- Loading Spinner -->
     <div v-if="loading" class="flex justify-center items-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"
+      ></div>
     </div>
 
     <!-- No Data Message -->
     <div v-else-if="!hasData">
-      <img class="mx-auto h-80 mt-10" src="@/assets/undraw_empty_4zx0.png" alt="No Data" />
+      <img
+        class="mx-auto h-80 mt-10"
+        src="@/assets/undraw_empty_4zx0.png"
+        alt="No Data"
+      />
       <p class="text-center mt-4 font-semibold text-gray-500">No Data Found</p>
     </div>
 
     <!-- Content -->
     <div v-else class="space-y-4">
-      
       <!-- ✅ Groups Table -->
-      <div v-if="cardName === 'Groups'" class="overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
-        <table class="min-w-full divide-y text-center divide-gray-200   bg-white">
+      <div
+        v-if="cardName === 'Groups'"
+        class="overflow-x-auto rounded-lg border border-gray-300 shadow-sm"
+      >
+        <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
           <thead class="bg-gray-100 py-3">
             <tr>
-              <th class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase">  Group Name</th>
-              <th class="px-6 py-3 text-left text-lg font-bold text-indigo-800  uppercase">Type</th>
-              <th class="px-6 py-3 text-left text-lg font-bold text-indigo-800  uppercase"> Start Date</th>
-              <th class="px-6 py-3 text-left text-lg font-bold text-indigo-800  uppercase"> otal Lectures</th>
+              <th class="px-6 py-3 text-lg font-bold text-indigo-800 uppercase">
+                Group Name
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Type
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Start Date
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Lectures
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
-            <tr v-for="(row, rowIndex) in paginatedData" :key="rowIndex" class="hover:bg-gray-50">
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ row.name }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600 capitalize">{{ row.type }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ row.type === 'online' ? formatDate(row.student_start) : formatDate(row.start_date) }}
+            <tr
+              v-for="(row, rowIndex) in paginatedData"
+              :key="rowIndex"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                {{ row.name }}
               </td>
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">{{ row.total_lec }}</td>
+              <td class="px-6 py-4 text-sm text-gray-600 capitalize">
+                {{ row.type }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{
+                  row.type === "online"
+                    ? formatDate(row.student_start)
+                    : formatDate(row.start_date)
+                }}
+              </td>
+              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+                {{ row.type === "online" ? "-" : row.total_lec || 0 }}
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <!-- ✅ Invoices Table -->
-      <div v-if="cardName === 'Invoices'" class="overflow-x-auto rounded-lg border  border-gray-300 shadow-sm">
-        <table class="min-w-full divide-y text-center divide-gray-200 border shadow-sm rounded-lg bg-white">
-          <thead class="bg-gray-100 py-4">
+      <div
+        v-if="cardName === 'Invoices'"
+        class="rounded-lg border border-gray-300 shadow-sm"
+      >
+        <table
+          class="min-w-full divide-y text-center divide-gray-200 border shadow-sm rounded-lg bg-white"
+        >
+          <thead class="bg-gray-100 text-center py-4">
             <tr>
-              <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Number</th>
-              <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase">Date</th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Serial
+              </th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Notes
+              </th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Date
+              </th>
               <!-- <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Type</th> -->
-              <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase">Amount</th>
-              <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase">Method </th>
-              <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Status</th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Amount
+              </th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Method
+              </th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
-  v-for="(row, rowIndex) in paginatedData"
-  :key="rowIndex"
-  :class="[
-    'hover:bg-gray-50',
-    row.serial?.toLowerCase().startsWith('r') ? 'bg-yellow-50' : ''
-  ]"
->
-
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ row.serial }}</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ formatDate(row.created_at) }}</td>
+              v-for="(row, rowIndex) in paginatedData"
+              :key="rowIndex"
+              :class="[
+                'hover:bg-gray-50',
+                row.serial?.toLowerCase().startsWith('r') ? 'bg-yellow-50' : '',
+              ]"
+            >
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                {{ row.serial }}
+              </td>
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                {{ row.notes }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ formatDate(row.created_at) }}
+              </td>
               <!-- <td class="px-6 py-4 text-sm text-gray-600 capitalize">{{ row.type }}</td> -->
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">{{ displayValue(row.amount) }} EGP</td>
-              <td class="px-6 py-4 text-sm text-gray-600">{{ row.pay_method }}</td>
-              <td class="px-6 py-4 text-sm">
-                <span class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+                {{ displayValue(row.amount) }} EGP
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ row.pay_method }}
+              </td>
+              <td
+                class="px-6 py-4 text-sm flex items-center justify-center gap-2"
+              >
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700"
+                >
                   {{ row.pay_cat }}
+                </span>
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
+                >
+                  {{ row.type }}
                 </span>
               </td>
             </tr>
@@ -204,12 +277,21 @@ function shouldShowColumn(col) {
       </div>
 
       <!-- ✅ Requests & Complaints -->
-      <div v-if="cardName === 'Requests' || cardName === 'Complaints'" class="space-y-4">
-        <div v-for="(row, rowIndex) in paginatedData" :key="rowIndex" class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+      <div
+        v-if="cardName === 'Requests' || cardName === 'Complaints'"
+        class="space-y-4"
+      >
+        <div
+          v-for="(row, rowIndex) in paginatedData"
+          :key="rowIndex"
+          class="bg-white p-6 rounded-lg shadow-md border border-gray-200"
+        >
           <div class="flex justify-between items-center mb-4 pb-3 border-b">
             <div class="flex items-center space-x-6">
               <h4 class="font-semibold text-gray-800">{{ row.field }}</h4>
-              <span class="text-sm text-gray-500">{{ formatDate(row.created_at) }}</span>
+              <span class="text-sm text-gray-500">{{
+                formatDate(row.created_at)
+              }}</span>
             </div>
             <span
               :class="{
@@ -226,13 +308,23 @@ function shouldShowColumn(col) {
             <template v-if="expandableColumns.includes('value')">
               <span v-if="`${rowIndex}-value` === expandedCell.key">
                 {{ displayValue(row.value) }}
-                <button class="ml-2 text-sm text-indigo-600 underline" @click.stop="toggleExpand(rowIndex, 'value')">Less</button>
+                <button
+                  class="ml-2 text-sm text-indigo-600 underline"
+                  @click.stop="toggleExpand(rowIndex, 'value')"
+                >
+                  Less
+                </button>
               </span>
               <span v-else>
                 {{ displayValue(row.value).split(" ").slice(0, 35).join(" ") }}
                 <span v-if="displayValue(row.value).split(' ').length > 35">
                   ...
-                  <button class="ml-1 text-sm text-indigo-600 underline cursor-pointer" @click.stop="toggleExpand(rowIndex, 'value')">More</button>
+                  <button
+                    class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
+                    @click.stop="toggleExpand(rowIndex, 'value')"
+                  >
+                    More
+                  </button>
                 </span>
               </span>
             </template>
@@ -242,15 +334,27 @@ function shouldShowColumn(col) {
           </div>
 
           <div class="space-y-4 text-sm border-t pt-4">
-            <div v-if="row.manager_response" class="bg-gray-50 p-3 rounded-md border-l-4 border-indigo-400">
+            <div
+              v-if="row.manager_response"
+              class="bg-gray-50 p-3 rounded-md border-l-4 border-indigo-400"
+            >
               <strong class="text-indigo-600">Manager Response:</strong>
               <p class="mt-1 text-gray-800">{{ row.manager_response }}</p>
-              <span v-if="row.manager_response_at" class="text-xs text-gray-500">At: {{ formatDate(row.manager_response_at) }}</span>
+              <span v-if="row.manager_response_at" class="text-xs text-gray-500"
+                >At: {{ formatDate(row.manager_response_at) }}</span
+              >
             </div>
-            <div v-if="row.employee_response" class="bg-gray-50 p-3 rounded-md border-l-4 border-blue-400">
+            <div
+              v-if="row.employee_response"
+              class="bg-gray-50 p-3 rounded-md border-l-4 border-blue-400"
+            >
               <strong class="text-blue-600">Employee Response:</strong>
               <p class="mt-1 text-gray-800">{{ row.employee_response }}</p>
-              <span v-if="row.employee_response_at" class="text-xs text-gray-500">At: {{ formatDate(row.employee_response_at) }}</span>
+              <span
+                v-if="row.employee_response_at"
+                class="text-xs text-gray-500"
+                >At: {{ formatDate(row.employee_response_at) }}</span
+              >
             </div>
           </div>
         </div>
@@ -258,22 +362,44 @@ function shouldShowColumn(col) {
 
       <!-- ✅ Deadlines -->
       <div v-if="cardName === 'Deadlines'" class="space-y-4">
-        <div v-for="(row, rowIndex) in paginatedData" :key="rowIndex" class="bg-white p-5 rounded-lg shadow-md border border-gray-200">
+        <div
+          v-for="(row, rowIndex) in paginatedData"
+          :key="rowIndex"
+          class="bg-white p-5 rounded-lg shadow-md border border-gray-200"
+        >
           <div class="flex justify-between items-center mb-4">
             <div>
-              <span class="font-medium text-gray-500">Due Date:</span> {{ formatDate(row.due_date) }}
+              <span class="font-medium text-gray-500">Due Date:</span>
+              {{ formatDate(row.due_date) }}
             </div>
             <span class="font-bold text-primary">{{ row.total_payment }}</span>
-            <span class="px-3 py-1 rounded-full text-sm font-medium text-white bg-green-500">{{ row.status }}</span>
+            <span
+              :class="[
+                'px-3 py-1 rounded-full text-sm font-medium text-white',
+                {
+                  'bg-green-500': row.status === 'paid',
+                  'bg-red-500': row.status === 'unpaid',
+                  'bg-yellow-400 text-black': row.status === 'partialPaid',
+                },
+              ]"
+            >
+              {{ row.status }}
+            </span>
           </div>
           <div class="flex justify-between items-center space-x-4">
             <div>
               <h4 class="text-sm font-medium text-gray-500 mb-1">Amount</h4>
-              <p class="text-xl font-bold text-indigo-600">{{ displayValue(row.amount) }} EGP</p>
+              <p class="text-xl font-bold text-indigo-600">
+                {{ displayValue(row.amount) }} EGP
+              </p>
             </div>
             <div>
-              <h4 class="text-sm font-medium text-gray-500 mb-1">Paid Amount</h4>
-              <p class="text-lg font-semibold text-green-600">{{ row.paid_amount }} EGP</p>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">
+                Paid Amount
+              </h4>
+              <p class="text-lg font-semibold text-green-600">
+                {{ row.paid_amount }} EGP
+              </p>
             </div>
           </div>
         </div>
@@ -290,4 +416,3 @@ function shouldShowColumn(col) {
     </div>
   </div>
 </template>
-
