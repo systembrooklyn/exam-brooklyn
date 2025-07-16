@@ -230,6 +230,9 @@ function shouldShowColumn(col) {
               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
                 Status
               </th>
+               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Employee
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -247,14 +250,14 @@ function shouldShowColumn(col) {
               <td class="px-6 py-4 text-sm font-semibold text-gray-900">
                 {{ row.notes }}
               </td>
-              <td class="px-6 py-4 text-sm text-gray-600">
+              <td class="px-6 py-4 text-sm text-gray-800">
                 {{ formatDate(row.created_at) }}
               </td>
               <!-- <td class="px-6 py-4 text-sm text-gray-600 capitalize">{{ row.type }}</td> -->
               <td class="px-6 py-4 text-sm font-bold text-indigo-700">
                 {{ displayValue(row.amount) }} EGP
               </td>
-              <td class="px-6 py-4 text-sm text-gray-600">
+              <td class="px-6 py-4 text-sm text-gray-800">
                 {{ row.pay_method }}
               </td>
               <td
@@ -270,6 +273,9 @@ function shouldShowColumn(col) {
                 >
                   {{ row.type }}
                 </span>
+              </td>
+               <td class="px-6 py-4 text-sm text-gray-800">
+                {{ row.employee.name }}
               </td>
             </tr>
           </tbody>

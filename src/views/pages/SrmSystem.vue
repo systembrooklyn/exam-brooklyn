@@ -197,12 +197,14 @@ watch(student, (newVal) => {
     data.value = [];      
     headers.value = [];
 
-    // 🧠 التحقق من وجود counts
+
     const counts = newVal?.counts || {};
 
-    // بناء التابات حسب counts
+ 
     tabs.value = [
       { name: "requests", label: "Requests", count: counts.requests || 0 },
+      {name:"complaints" , label: "Complaints", count: counts.complaints || 0},
+
       { name: "payments", label: "Deadlines", count: counts.payments || 0 },
       {
     name: "groups",
