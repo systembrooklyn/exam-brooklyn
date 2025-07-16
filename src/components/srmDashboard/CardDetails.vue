@@ -371,15 +371,38 @@ function shouldShowColumn(col) {
         <div
           v-for="(row, rowIndex) in paginatedData"
           :key="rowIndex"
-          class="bg-white p-5 rounded-lg shadow-md border border-gray-200"
+          class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
         >
-          <div class="flex justify-between items-center mb-4">
+        
+          <div class="flex justify-between items-center space-x-4">
             <div>
-              <span class="font-medium text-gray-500">Due Date:</span>
+             
+            
+           
+              <h4 class="text-md font-bold text-gray-800 mb-1">Amount</h4>
+              <p class="text-xl font-bold text-indigo-600">
+                {{ displayValue(row.amount) }} EGP
+              </p>
+               <div>
+                  <span class="font-medium text-gray-500 ">Due Date:</span>
               {{ formatDate(row.due_date) }}
+              </div>
             </div>
-            <span class="font-bold text-primary">{{ row.total_payment }}</span>
-            <span
+            <div>
+            
+              <h4 class="text-md font-bold text-gray-800 mb-1">
+                Paid Amount
+              </h4>
+              <p class="text-lg font-semibold text-green-600">
+                {{ row.paid_amount }} EGP
+              </p>
+                 <div>
+              <span class="font-medium text-gray-500">Paid on:</span>
+              {{ formatDate(row.paid_date) }}
+            </div>
+            </div>
+                   <div>
+                  <span
               :class="[
                 'px-3 py-1 rounded-full text-sm font-medium text-white',
                 {
@@ -392,22 +415,8 @@ function shouldShowColumn(col) {
               {{ row.status }}
             </span>
           </div>
-          <div class="flex justify-between items-center space-x-4">
-            <div>
-              <h4 class="text-sm font-medium text-gray-500 mb-1">Amount</h4>
-              <p class="text-xl font-bold text-indigo-600">
-                {{ displayValue(row.amount) }} EGP
-              </p>
-            </div>
-            <div>
-              <h4 class="text-sm font-medium text-gray-500 mb-1">
-                Paid Amount
-              </h4>
-              <p class="text-lg font-semibold text-green-600">
-                {{ row.paid_amount }} EGP
-              </p>
-            </div>
           </div>
+   
         </div>
       </div>
 
