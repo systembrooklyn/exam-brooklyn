@@ -29,13 +29,13 @@
         >
           ❌ This student has been canceled
         </p>
-        <img
+        <!-- <img
           :src="
             student?.ppUrl ||
             'https://st2.depositphotos.com/1531183/5770/v/950/depositphotos_57709697-stock-illustration-male-person-silhouette-profile-picture.jpg'
           "
           class="w-24 h-24 rounded-full shadow-md"
-        />
+        /> -->
 
         <span
           v-if="student?.scholarship?.study_type"

@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import Pagination from "./Pagination.vue";
+import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
 
 const props = defineProps({
   cardName: String,
@@ -12,6 +13,8 @@ const props = defineProps({
 const currentPage = ref(1);
 const pageSize = 5;
 const expandedCell = ref({});
+const sortOrder = ref("asc");
+const sortField = ref("created_at");
 
 const hiddenColumnsByCard = {
   Requests: [
@@ -56,6 +59,27 @@ function formatDate(dateStr) {
   });
 }
 
+// Sort function for data
+function sortData(data) {
+  if (!data || !sortField.value) return data;
+
+  return [...data].sort((a, b) => {
+    let valA = a[sortField.value];
+    let valB = b[sortField.value];
+
+    // خاص بجروبات: التفرقة بين online و offline
+    if (props.cardName === "Groups") {
+      valA = a.type === "online" ? a.student_start : a.start_date;
+      valB = b.type === "online" ? b.student_start : b.start_date;
+    }
+
+    const dateA = new Date(valA);
+    const dateB = new Date(valB);
+
+    return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
+  });
+}
+
 const totalPages = computed(
   () => Math.ceil(props.data?.length / pageSize) || 1
 );
@@ -76,9 +100,24 @@ function displayValue(val) {
 }
 
 const paginatedData = computed(() => {
+  const sorted = sortData(props.data);
+
+  if (props.cardName === "Groups") {
+    return sorted || [];
+  }
+
   const start = (currentPage.value - 1) * pageSize;
-  return props.data ? props.data.slice(start, start + pageSize) : [];
+  return sorted ? sorted.slice(start, start + pageSize) : [];
 });
+
+function toggleSort(field) {
+  if (sortField.value === field) {
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    sortField.value = field;
+    sortOrder.value = "asc";
+  }
+}
 
 const pageNumbers = computed(() => {
   const total = totalPages.value;
@@ -123,6 +162,13 @@ function shouldShowColumn(col) {
   const hiddenCols = hiddenColumnsByCard[props.cardName] || [];
   return !hiddenCols.includes(col);
 }
+
+watch(
+  () => props.cardName,
+  () => {
+    currentPage.value = 1;
+  }
+);
 </script>
 
 <template>
@@ -141,7 +187,7 @@ function shouldShowColumn(col) {
         src="@/assets/undraw_empty_4zx0.png"
         alt="No Data"
       />
-      <p class="text-center mt-4 font-semibold text-gray-500">No Data Found</p>
+      <p class="text-center mt-4 font-semibold text-gray-800">No Data Found</p>
     </div>
 
     <!-- Content -->
@@ -163,10 +209,16 @@ function shouldShowColumn(col) {
                 Type
               </th>
               <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+                class="px-6 py-3 flex gap-2 items-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
+                @click="toggleSort('start_date')"
               >
                 Start Date
+                <span>
+                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                  <ArrowDownUp v-else :size="16" />
+                </span>
               </th>
+
               <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
@@ -217,8 +269,15 @@ function shouldShowColumn(col) {
               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
                 Notes
               </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+              <th
+                class="px-6 py-3 flex gap-2 items-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
+                @click="toggleSort('created_at')"
+              >
                 Date
+                <span>
+                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                  <ArrowDownUp v-else :size="16" />
+                </span>
               </th>
               <!-- <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Type</th> -->
               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
@@ -228,9 +287,12 @@ function shouldShowColumn(col) {
                 Method
               </th>
               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Status
+                Type
               </th>
-               <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
+                Sub/Type
+              </th>
+              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
                 Employee
               </th>
             </tr>
@@ -260,21 +322,21 @@ function shouldShowColumn(col) {
               <td class="px-6 py-4 text-sm text-gray-800">
                 {{ row.pay_method }}
               </td>
-              <td
-                class="px-6 py-4 text-sm flex items-center justify-center gap-2"
-              >
-                <span
-                  class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700"
-                >
-                  {{ row.pay_cat }}
-                </span>
+              <td>
                 <span
                   class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
                 >
                   {{ row.type }}
                 </span>
               </td>
-               <td class="px-6 py-4 text-sm text-gray-800">
+              <td>
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700"
+                >
+                  {{ row.pay_cat }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-800">
                 {{ row.employee.name }}
               </td>
             </tr>
@@ -287,15 +349,27 @@ function shouldShowColumn(col) {
         v-if="cardName === 'Requests' || cardName === 'Complaints'"
         class="space-y-4"
       >
+        <!-- Sort Header for Requests / Complaints -->
+        <div
+          class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
+          @click="toggleSort('created_at')"
+        >
+          Sort by Date
+          <span>
+            <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+            <ArrowDownUp v-else :size="16" />
+          </span>
+        </div>
+
         <div
           v-for="(row, rowIndex) in paginatedData"
           :key="rowIndex"
-          class="bg-white p-6 rounded-lg shadow-md border border-gray-200"
+          class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
         >
           <div class="flex justify-between items-center mb-4 pb-3 border-b">
             <div class="flex items-center space-x-6">
               <h4 class="font-semibold text-gray-800">{{ row.field }}</h4>
-              <span class="text-sm text-gray-500">{{
+              <span class="text-sm text-gray-800">{{
                 formatDate(row.created_at)
               }}</span>
             </div>
@@ -342,23 +416,23 @@ function shouldShowColumn(col) {
           <div class="space-y-4 text-sm border-t pt-4">
             <div
               v-if="row.manager_response"
-              class="bg-gray-50 p-3 rounded-md border-l-4 border-indigo-400"
+              class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
             >
               <strong class="text-indigo-600">Manager Response:</strong>
               <p class="mt-1 text-gray-800">{{ row.manager_response }}</p>
-              <span v-if="row.manager_response_at" class="text-xs text-gray-500"
+              <span v-if="row.manager_response_at" class="text-xs text-gray-800"
                 >At: {{ formatDate(row.manager_response_at) }}</span
               >
             </div>
             <div
               v-if="row.employee_response"
-              class="bg-gray-50 p-3 rounded-md border-l-4 border-blue-400"
+              class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
             >
               <strong class="text-blue-600">Employee Response:</strong>
               <p class="mt-1 text-gray-800">{{ row.employee_response }}</p>
               <span
                 v-if="row.employee_response_at"
-                class="text-xs text-gray-500"
+                class="text-xs text-gray-800"
                 >At: {{ formatDate(row.employee_response_at) }}</span
               >
             </div>
@@ -368,61 +442,65 @@ function shouldShowColumn(col) {
 
       <!-- ✅ Deadlines -->
       <div v-if="cardName === 'Deadlines'" class="space-y-4">
+        <!-- Sort Header for Requests / Complaints -->
+        <div
+          class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
+          @click="toggleSort('due_date')"
+        >
+          Sort by Due Date
+          <span>
+            <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+            <ArrowDownUp v-else :size="16" />
+          </span>
+        </div>
+
         <div
           v-for="(row, rowIndex) in paginatedData"
           :key="rowIndex"
           class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
         >
-        
           <div class="flex justify-between items-center space-x-4">
             <div>
-             
-            
-           
               <h4 class="text-md font-bold text-gray-800 mb-1">Amount</h4>
               <p class="text-xl font-bold text-indigo-600">
                 {{ displayValue(row.amount) }} EGP
               </p>
-               <div>
-                  <span class="font-medium text-gray-500 ">Due Date:</span>
-              {{ formatDate(row.due_date) }}
+              <div>
+                <span class="font-medium text-gray-800">Due Date:</span>
+                {{ formatDate(row.due_date) }}
               </div>
             </div>
             <div>
-            
-              <h4 class="text-md font-bold text-gray-800 mb-1">
-                Paid Amount
-              </h4>
+              <h4 class="text-md font-bold text-gray-800 mb-1">Paid Amount</h4>
               <p class="text-lg font-semibold text-green-600">
                 {{ row.paid_amount }} EGP
               </p>
-                 <div>
-              <span class="font-medium text-gray-500">Paid on:</span>
-              {{ formatDate(row.paid_date) }}
+              <div>
+                <span class="font-medium text-gray-800">Paid on:</span>
+                {{ formatDate(row.paid_date) }}
+              </div>
             </div>
+            <div>
+              <span
+                :class="[
+                  'px-3 py-1 rounded-full text-sm font-medium text-white',
+                  {
+                    'bg-green-500': row.status === 'paid',
+                    'bg-red-500': row.status === 'unpaid',
+                    'bg-yellow-400 text-black': row.status === 'partialPaid',
+                  },
+                ]"
+              >
+                {{ row.status }}
+              </span>
             </div>
-                   <div>
-                  <span
-              :class="[
-                'px-3 py-1 rounded-full text-sm font-medium text-white',
-                {
-                  'bg-green-500': row.status === 'paid',
-                  'bg-red-500': row.status === 'unpaid',
-                  'bg-yellow-400 text-black': row.status === 'partialPaid',
-                },
-              ]"
-            >
-              {{ row.status }}
-            </span>
           </div>
-          </div>
-   
         </div>
       </div>
 
-      <!-- ✅ Pagination -->
+      <!-- Pagination -->
       <Pagination
-        v-if="totalPages > 1"
+        v-if="totalPages > 1 && cardName !== 'Groups'"
         :current-page="currentPage"
         :total-pages="totalPages"
         :page-numbers="pageNumbers"
