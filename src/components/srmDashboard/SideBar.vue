@@ -39,7 +39,7 @@
 
         <span
           v-if="student?.scholarship?.study_type"
-          class="px-3 mt-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
+          class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
         >
           {{ student?.scholarship?.study_type }}
         </span>
@@ -108,7 +108,7 @@
           <div class="relative group">
             <Mail
               @click="openModal('email')"
-              class="w-5 h-5 transition text-[#6c63ff] hover:text-blue-800"
+              class="w-5 h-5 transition cursor-pointer text-[#6c63ff] hover:text-blue-800"
             />
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
@@ -123,9 +123,9 @@
           <!-- Display phones as a list -->
           <span>{{ student?.phones?.join(" / ") }}</span>
           <div class="relative group">
-            <Phone
+            <MessageSquareText 
               @click="openModal('phone')"
-              class="w-5 h-5 transition text-green-500 hover:text-green-800"
+              class="w-5 h-5 transition text-green-500 cursor-pointer hover:text-green-800"
             />
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
@@ -198,6 +198,7 @@ import {
   QrCode,
   AppWindow,
   Search,
+  MessageSquareText,
 } from "lucide-vue-next";
 import NavItem from "./NavItem.vue";
 

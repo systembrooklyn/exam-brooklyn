@@ -209,7 +209,7 @@ watch(
                 Type
               </th>
               <th
-                class="px-6 py-3 flex gap-2 items-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
+                class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
                 @click="toggleSort('start_date')"
               >
                 Start Date
@@ -219,11 +219,11 @@ watch(
                 </span>
               </th>
 
-              <th
+              <!-- <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
                 Lectures
-              </th>
+              </th> -->
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -245,9 +245,9 @@ watch(
                     : formatDate(row.start_date)
                 }}
               </td>
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+              <!-- <td class="px-6 py-4 text-sm font-bold text-indigo-700">
                 {{ row.type === "online" ? "-" : row.total_lec || 0 }}
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>
@@ -366,14 +366,19 @@ watch(
           :key="rowIndex"
           class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
         >
-          <div class="flex justify-between items-center mb-4 pb-3 border-b">
+          <div class="flex justify-between items-center mb-2 ">
             <div class="flex items-center space-x-6">
-              <h4 class="font-semibold text-gray-800">{{ row.field }}</h4>
-              <span class="text-sm text-gray-800">{{
+              <!-- <h4 class="font-semibold text-gray-800">{{ row.field }}</h4> -->
+              <span class="text-sm font-semibold text-gray-800">{{
                 formatDate(row.created_at)
               }}</span>
             </div>
-            <span
+      <div class="flex items-center gap-2">
+          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
+             
+              {{ row.field }}
+            </span>
+              <span
               :class="{
                 'bg-green-100 text-green-700': row.status === 'closed',
                 'bg-yellow-100 text-yellow-700': row.status === 'pending',
@@ -381,10 +386,12 @@ watch(
               class="px-3 py-1 rounded-full text-sm font-medium capitalize"
             >
               {{ row.status }}
-            </span>
+            </span >
+          
+      </div>
           </div>
 
-          <div class="prose max-w-none text-gray-700 mb-4">
+          <div class="prose max-w-none text-gray-800 font-medium mb-4">
             <template v-if="expandableColumns.includes('value')">
               <span v-if="`${rowIndex}-value` === expandedCell.key">
                 {{ displayValue(row.value) }}
@@ -413,13 +420,13 @@ watch(
             </template>
           </div>
 
-          <div class="space-y-4 text-sm border-t pt-4">
+          <div class="space-y-4 text-sm  pt-2">
             <div
               v-if="row.manager_response"
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
             >
               <strong class="text-indigo-600">Manager Response:</strong>
-              <p class="mt-1 text-gray-800">{{ row.manager_response }}</p>
+              <p class=" text-gray-800">{{ row.manager_response }}</p>
               <span v-if="row.manager_response_at" class="text-xs text-gray-800"
                 >At: {{ formatDate(row.manager_response_at) }}</span
               >
@@ -429,7 +436,7 @@ watch(
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
             >
               <strong class="text-blue-600">Employee Response:</strong>
-              <p class="mt-1 text-gray-800">{{ row.employee_response }}</p>
+              <p class=" text-gray-800">{{ row.employee_response }}</p>
               <span
                 v-if="row.employee_response_at"
                 class="text-xs text-gray-800"
