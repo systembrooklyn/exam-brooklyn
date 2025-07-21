@@ -195,7 +195,7 @@ watch(
       <!-- ✅ Groups Table -->
       <div
         v-if="cardName === 'Groups'"
-        class="overflow-x-auto rounded-lg border border-gray-300 shadow-sm"
+        class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
       >
         <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
           <thead class="bg-gray-100 py-3">
@@ -219,11 +219,17 @@ watch(
                 </span>
               </th>
 
-              <!-- <th
+              <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
-                Lectures
-              </th> -->
+               Score
+              </th>
+                 <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+              Exam Date
+              </th>
+
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -245,9 +251,12 @@ watch(
                     : formatDate(row.start_date)
                 }}
               </td>
-              <!-- <td class="px-6 py-4 text-sm font-bold text-indigo-700">
-                {{ row.type === "online" ? "-" : row.total_lec || 0 }}
-              </td> -->
+              <td  class="px-6 py-4 text-sm font-bold text-indigo-700">
+                {{ row.final_score || "-"}}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ formatDate(row.exam_at) || "-"}}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -366,29 +375,29 @@ watch(
           :key="rowIndex"
           class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
         >
-          <div class="flex justify-between items-center mb-2 ">
+          <div class="flex justify-between items-center mb-2">
             <div class="flex items-center space-x-6">
               <!-- <h4 class="font-semibold text-gray-800">{{ row.field }}</h4> -->
               <span class="text-sm font-semibold text-gray-800">{{
                 formatDate(row.created_at)
               }}</span>
             </div>
-      <div class="flex items-center gap-2">
-          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium">
-             
-              {{ row.field }}
-            </span>
+            <div class="flex items-center gap-2">
               <span
-              :class="{
-                'bg-green-100 text-green-700': row.status === 'closed',
-                'bg-yellow-100 text-yellow-700': row.status === 'pending',
-              }"
-              class="px-3 py-1 rounded-full text-sm font-medium capitalize"
-            >
-              {{ row.status }}
-            </span >
-          
-      </div>
+                class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+              >
+                {{ row.field }}
+              </span>
+              <span
+                :class="{
+                  'bg-green-100 text-green-700': row.status === 'closed',
+                  'bg-yellow-100 text-yellow-700': row.status === 'pending',
+                }"
+                class="px-3 py-1 rounded-full text-sm font-medium capitalize"
+              >
+                {{ row.status }}
+              </span>
+            </div>
           </div>
 
           <div class="prose max-w-none text-gray-800 font-medium mb-4">
@@ -420,13 +429,13 @@ watch(
             </template>
           </div>
 
-          <div class="space-y-4 text-sm  pt-2">
+          <div class="space-y-4 text-sm pt-2">
             <div
               v-if="row.manager_response"
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
             >
               <strong class="text-indigo-600">Manager Response:</strong>
-              <p class=" text-gray-800">{{ row.manager_response }}</p>
+              <p class="text-gray-800">{{ row.manager_response }}</p>
               <span v-if="row.manager_response_at" class="text-xs text-gray-800"
                 >At: {{ formatDate(row.manager_response_at) }}</span
               >
@@ -436,7 +445,7 @@ watch(
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
             >
               <strong class="text-blue-600">Employee Response:</strong>
-              <p class=" text-gray-800">{{ row.employee_response }}</p>
+              <p class="text-gray-800">{{ row.employee_response }}</p>
               <span
                 v-if="row.employee_response_at"
                 class="text-xs text-gray-800"
@@ -448,7 +457,7 @@ watch(
       </div>
 
       <!-- ✅ Deadlines -->
-      <div v-if="cardName === 'Deadlines'" class="space-y-4">
+      <div v-if="cardName === 'Deadlines'" class="space-y-4 min-w-4xl">
         <!-- Sort Header for Requests / Complaints -->
         <div
           class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"

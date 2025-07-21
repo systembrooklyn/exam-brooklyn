@@ -95,27 +95,36 @@
 
         <!-- Tabs Navigation -->
         <div class="mx-auto">
-          <div
-            class="flex min-w-4xl gap-4 mx-auto border shadow shadow-[#6c63ff] rounded-2xl border-blue-400 justify-center font-bold text-lg dark:border-gray-600 mb-6"
-          >
-            <button
-              v-for="tab in tabs"
-              :key="tab.name"
-              @click="selectTab(tab.name, tab.label)"
-              :class="[
-                'px-4 py-2 font-semibold',
-                cardName === tab.label
-                  ? 'border-b-2 border-[#6c63ff] text-[#6c63ff]'
-                  : 'text-gray-500 hover:text-[#6c63ff]',
-              ]"
-            >
-              {{ tab.label }}
-              <span class="text-primary">({{ tab.count || 0 }})</span>
-            </button>
-          </div>
+        <div
+  class="flex justify-around min-w-full sm:min-w-md md:min-w-4xl gap-1 mx-auto mt-6 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20 transition-all duration-300"
+>
+  <button
+    v-for="tab in tabs"
+    :key="tab.name"
+    @click="selectTab(tab.name, tab.label)"
+    :class="[
+      'px-5 py-3 rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[100px]',
+      cardName === tab.label
+        ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
+        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]'
+    ]"
+  >
+    {{ tab.label }}
+    <span
+      :class="[
+        'text-xs px-2 py-0.5 rounded-full',
+        cardData === tab.label
+          ? 'bg-white/20 text-white'
+          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
+      ]"
+    >
+      {{ tab.count || 0 }}
+    </span>
+  </button>
+</div>
 
           <!-- Table Section -->
-          <div class="mx-auto main-w-5xl">
+          <div class="mx-auto min-w-5xl flex justify-center">
             <CardDetails
               :cardName="cardName"
               :headers="headers"
