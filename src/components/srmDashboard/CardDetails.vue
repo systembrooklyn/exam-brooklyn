@@ -218,18 +218,21 @@ watch(
                   <ArrowDownUp v-else :size="16" />
                 </span>
               </th>
-
               <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
-               Score
+                Score
               </th>
-                 <th
+              <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
-              Exam Date
+                Percentage
               </th>
-
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Exam Date
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -251,11 +254,29 @@ watch(
                     : formatDate(row.start_date)
                 }}
               </td>
-              <td  class="px-6 py-4 text-sm font-bold text-indigo-700">
-                {{ row.final_score || "-"}}
+
+              <!-- Score (الحساب من النسبة) -->
+              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+                {{
+                  row.final_score != null
+                    ? row.course.name.toLowerCase() === "project"
+                      ? row.final_score + " / 100"
+                      : (row.final_score * 50) / 100 + " / 50"
+                    : "-"
+                }}
               </td>
+
+              <!-- Percentage -->
               <td class="px-6 py-4 text-sm text-gray-600">
-                {{ formatDate(row.exam_at) || "-"}}
+                {{
+                  row.final_score != null
+                    ? row.final_score.toFixed(1) + "%"
+                    : "-"
+                }}
+              </td>
+
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ formatDate(row.exam_at) || "-" }}
               </td>
             </tr>
           </tbody>
