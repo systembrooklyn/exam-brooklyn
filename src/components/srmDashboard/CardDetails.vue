@@ -270,7 +270,7 @@ watch(
               <td class="px-6 py-4 text-sm text-gray-600">
                 {{
                   row.final_score != null
-                    ? row.final_score.toFixed(1) + "%"
+                    ? row.final_score + "%"
                     : "-"
                 }}
               </td>
