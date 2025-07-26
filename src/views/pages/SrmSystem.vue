@@ -95,33 +95,33 @@
 
         <!-- Tabs Navigation -->
         <div class="mx-auto">
-        <div
-  class="flex justify-around min-w-full sm:min-w-md md:min-w-4xl gap-1 mx-auto mt-6 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20 transition-all duration-300"
->
-  <button
-    v-for="tab in tabs"
-    :key="tab.name"
-    @click="selectTab(tab.name, tab.label)"
-    :class="[
-      'px-5 py-3 rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[100px]',
-      cardName === tab.label
-        ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
-        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]'
-    ]"
-  >
-    {{ tab.label }}
-    <span
-      :class="[
-        'text-xs px-2 py-0.5 rounded-full',
-        cardData === tab.label
-          ? 'bg-white/20 text-white'
-          : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200'
-      ]"
-    >
-      {{ tab.count || 0 }}
-    </span>
-  </button>
-</div>
+          <div
+            class="flex justify-around min-w-full sm:min-w-md md:min-w-4xl gap-1 mx-auto mt-6 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20 transition-all duration-300"
+          >
+            <button
+              v-for="tab in tabs"
+              :key="tab.name"
+              @click="selectTab(tab.name, tab.label)"
+              :class="[
+                'px-5 py-3 rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[100px]',
+                cardName === tab.label
+                  ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
+                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]',
+              ]"
+            >
+              {{ tab.label }}
+              <span
+                :class="[
+                  'text-xs px-2 py-0.5 rounded-full',
+                  cardName === tab.label
+                    ? 'bg-white/20 text-white'
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200',
+                ]"
+              >
+                {{ tab.count || 0 }}
+              </span>
+            </button>
+          </div>
 
           <!-- Table Section -->
           <div class="mx-auto min-w-5xl flex justify-center">
@@ -213,10 +213,10 @@ watch(student, (newVal) => {
       {
         name: "groups",
         label: "Groups",
-        count: `${counts.doneCourses|| 0}/${counts.groups || 0}`,
+        count: `${counts.doneCourses || 0}/${counts.groups || 0}`,
       },
-      { name: "invoices", label: "Invoices", count: counts.invoices || 0 },
-      // { name: "documents", label: "Documents", count: counts.documents || 0 },
+      { name: "attendance", label: "Attendance", count: counts.attendance },
+      { name: "invoices", label: "Invoices", count: counts.invoices },
     ];
   }
 });
@@ -234,5 +234,6 @@ const columnMap = {
   payments: ["amount", "paid_amount", "due_date", "paid_date", "status"],
   requests: [],
   lectures: ["name", "notes", "start_time", "end_time", "status"],
+  attendance: ["date", "group_name", "status"],
 };
 </script>

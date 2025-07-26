@@ -67,7 +67,6 @@ function sortData(data) {
     let valA = a[sortField.value];
     let valB = b[sortField.value];
 
-    // خاص بجروبات: التفرقة بين online و offline
     if (props.cardName === "Groups") {
       valA = a.type === "online" ? a.student_start : a.start_date;
       valB = b.type === "online" ? b.student_start : b.start_date;
@@ -102,7 +101,7 @@ function displayValue(val) {
 const paginatedData = computed(() => {
   const sorted = sortData(props.data);
 
-  if (props.cardName === "Groups") {
+  if (props.cardName === "Groups" || props.cardName === "Attendance") {
     return sorted || [];
   }
 
@@ -255,7 +254,6 @@ watch(
                 }}
               </td>
 
-              <!-- Score (الحساب من النسبة) -->
               <td class="px-6 py-4 text-sm font-bold text-indigo-700">
                 {{
                   row.final_score != null
@@ -268,11 +266,88 @@ watch(
 
               <!-- Percentage -->
               <td class="px-6 py-4 text-sm text-gray-600">
+                {{ row.final_score != null ? row.final_score + "%" : "-" }}
+              </td>
+
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ formatDate(row.exam_at) || "-" }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- ✅ Attendance Table -->
+      <div
+        v-if="cardName === 'Attendance'"
+        class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
+      >
+        <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
+          <thead class="bg-gray-100 py-3">
+            <tr>
+              <th class="px-6 py-3 text-lg font-bold text-indigo-800 uppercase">
+                Attendance Name
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Code
+              </th>
+              <th
+                class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
+                @click="toggleSort('start_date')"
+              >
+                Start Date
+                <span>
+                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                  <ArrowDownUp v-else :size="16" />
+                </span>
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Score
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Percentage
+              </th>
+              <th
+                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
+              >
+                Exam Date
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr
+              v-for="(row, rowIndex) in paginatedData"
+              :key="rowIndex"
+              class="hover:bg-gray-50"
+            >
+              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+                {{ row.course.name }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600 capitalize">
+                {{ row.course.code }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ formatDate(row.start_date) }}
+              </td>
+
+              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
                 {{
                   row.final_score != null
-                    ? row.final_score + "%"
+                    ? row.course.name.toLowerCase() === "project"
+                      ? row.final_score + " / 100"
+                      : (row.final_score * 50) / 100 + " / 50"
                     : "-"
                 }}
+              </td>
+
+              <!-- Percentage -->
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ row.final_score != null ? row.final_score + "%" : "-" }}
               </td>
 
               <td class="px-6 py-4 text-sm text-gray-600">
@@ -537,7 +612,9 @@ watch(
 
       <!-- Pagination -->
       <Pagination
-        v-if="totalPages > 1 && cardName !== 'Groups'"
+        v-if="
+          totalPages > 1 && cardName !== 'Groups' && cardName !== 'Attendance'
+        "
         :current-page="currentPage"
         :total-pages="totalPages"
         :page-numbers="pageNumbers"
