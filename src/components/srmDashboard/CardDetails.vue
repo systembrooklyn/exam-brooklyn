@@ -2,6 +2,7 @@
 import { ref, computed, watch } from "vue";
 import Pagination from "./Pagination.vue";
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
+import RequestFieldModal from "./RequestFieldModal.vue";
 
 const props = defineProps({
   cardName: String,
@@ -15,6 +16,7 @@ const pageSize = 5;
 const expandedCell = ref({});
 const sortOrder = ref("asc");
 const sortField = ref("created_at");
+const showRequestFieldModal = ref(true);
 
 const hiddenColumnsByCard = {
   Requests: [
@@ -197,16 +199,12 @@ watch(
         class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
       >
         <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
-          <thead class="bg-gray-100 py-3">
+          <thead
+            class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-6 [&>tr>th]:py-3"
+          >
             <tr>
-              <th class="px-6 py-3 text-lg font-bold text-indigo-800 uppercase">
-                Group Name
-              </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Type
-              </th>
+              <th>Group Name</th>
+              <th>Type</th>
               <th
                 class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
                 @click="toggleSort('start_date')"
@@ -217,7 +215,7 @@ watch(
                   <ArrowDownUp v-else :size="16" />
                 </span>
               </th>
-              <th
+              <!-- <th
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
                 Score
@@ -226,12 +224,7 @@ watch(
                 class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
               >
                 Percentage
-              </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Exam Date
-              </th>
+              </th> -->
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -254,7 +247,7 @@ watch(
                 }}
               </td>
 
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+              <!-- <td class="px-6 py-4 text-sm font-bold text-indigo-700">
                 {{
                   row.final_score != null
                     ? row.course.name.toLowerCase() === "project"
@@ -264,14 +257,10 @@ watch(
                 }}
               </td>
 
-              <!-- Percentage -->
+            
               <td class="px-6 py-4 text-sm text-gray-600">
                 {{ row.final_score != null ? row.final_score + "%" : "-" }}
-              </td>
-
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ formatDate(row.exam_at) || "-" }}
-              </td>
+              </td> -->
             </tr>
           </tbody>
         </table>
@@ -282,43 +271,31 @@ watch(
         class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
       >
         <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
-          <thead class="bg-gray-100 py-3">
+          <thead
+            class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-6 [&>tr>th]:py-3"
+          >
             <tr>
-              <th class="px-6 py-3 text-lg font-bold text-indigo-800 uppercase">
-                Attendance Name
-              </th>
+              <th>Module</th>
+              <th>Code</th>
               <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Code
-              </th>
-              <th
-                class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
                 @click="toggleSort('start_date')"
+                class="cursor-pointer select-none"
               >
-                Start Date
-                <span>
-                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-                  <ArrowDownUp v-else :size="16" />
-                </span>
+                <div class="flex items-center justify-center gap-2">
+                  Date
+                  <span>
+                    <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                    <ArrowDownUp v-else :size="16" />
+                  </span>
+                </div>
               </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Score
-              </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Percentage
-              </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Exam Date
-              </th>
+              <th>Score</th>
+              <th>Percentage</th>
+              <th>Exam Date</th>
+              <th>Lectures (6)</th>
             </tr>
           </thead>
+
           <tbody class="bg-white divide-y divide-gray-200">
             <tr
               v-for="(row, rowIndex) in paginatedData"
@@ -329,7 +306,7 @@ watch(
                 {{ row.course.name }}
               </td>
               <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-                {{ row.course.code }}
+                {{ row.code }}
               </td>
               <td class="px-6 py-4 text-sm text-gray-600">
                 {{ formatDate(row.start_date) }}
@@ -352,6 +329,9 @@ watch(
 
               <td class="px-6 py-4 text-sm text-gray-600">
                 {{ formatDate(row.exam_at) || "-" }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600">
+                {{ row.attended_lectures }}
               </td>
             </tr>
           </tbody>
@@ -407,8 +387,10 @@ watch(
               v-for="(row, rowIndex) in paginatedData"
               :key="rowIndex"
               :class="[
-                'hover:bg-gray-50',
-                row.serial?.toLowerCase().startsWith('r') ? 'bg-yellow-50' : '',
+                'hover:bg-gray-100',
+                row.serial?.toLowerCase().startsWith('r')
+                  ? 'bg-yellow-100'
+                  : '',
               ]"
             >
               <td class="px-6 py-4 text-sm font-semibold text-gray-900">
@@ -455,15 +437,23 @@ watch(
         class="space-y-4"
       >
         <!-- Sort Header for Requests / Complaints -->
-        <div
-          class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
-          @click="toggleSort('created_at')"
-        >
-          Sort by Date
-          <span>
-            <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-            <ArrowDownUp v-else :size="16" />
-          </span>
+        <div class="flex justify-between items-center">
+          <div
+            class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
+            @click="toggleSort('created_at')"
+          >
+            Sort by Date
+            <span>
+              <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+              <ArrowDownUp v-else :size="16" />
+            </span>
+          </div>
+          <button
+            @click="showRequestFieldModal = true"
+            class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
+          >
+            Add New Request
+          </button>
         </div>
 
         <div
@@ -477,6 +467,11 @@ watch(
               <span class="text-sm font-semibold text-gray-800">{{
                 formatDate(row.created_at)
               }}</span>
+
+   <span class="text-sm font-semibold text-gray-800">By: {{
+               row.employee.name
+              }}</span>
+
             </div>
             <div class="flex items-center gap-2">
               <span
@@ -530,17 +525,22 @@ watch(
               v-if="row.manager_response"
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
             >
-              <strong class="text-indigo-600">Manager Response:</strong>
+              <strong class="text-indigo-600">Manager Reply:</strong>
               <p class="text-gray-800">{{ row.manager_response }}</p>
-              <span v-if="row.manager_response_at" class="text-xs text-gray-800"
+             <div class="flex items-center gap-4 mt-2">
+               <span v-if="row.manager_response_at" class="text-xs text-gray-800"
                 >At: {{ formatDate(row.manager_response_at) }}</span
               >
+              <span class="text-xs text-gray-800 ">
+                By: {{ row.manager.name }}
+              </span>
+             </div>
             </div>
             <div
               v-if="row.employee_response"
               class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
             >
-              <strong class="text-blue-600">Employee Response:</strong>
+              <strong class="text-blue-600">Employee Reply:</strong>
               <p class="text-gray-800">{{ row.employee_response }}</p>
               <span
                 v-if="row.employee_response_at"
@@ -609,6 +609,12 @@ watch(
           </div>
         </div>
       </div>
+
+      <RequestFieldModal
+        v-if="showRequestFieldModal"
+       v-model="showRequestFieldModal"
+      
+      />
 
       <!-- Pagination -->
       <Pagination

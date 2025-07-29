@@ -94,9 +94,10 @@
         </div>
 
         <!-- Tabs Navigation -->
-        <div class="mx-auto">
-          <div
-            class="flex justify-around min-w-full sm:min-w-md md:min-w-4xl gap-1 mx-auto mt-6 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20 transition-all duration-300"
+        <div class="flex justify-center min-w-full">
+        <div>
+            <div
+            class="flex justify-around max-w-4xl sm:min-w-md md:min-w-4xl gap-1 mx-auto  mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20 transition-all duration-300"
           >
             <button
               v-for="tab in tabs"
@@ -122,16 +123,15 @@
               </span>
             </button>
           </div>
-
-          <!-- Table Section -->
-          <div class="mx-auto min-w-5xl flex justify-center">
-            <CardDetails
+           <CardDetails
               :cardName="cardName"
               :headers="headers"
               :data="data"
               :loading="loading"
             />
-          </div>
+        </div>
+
+       
         </div>
       </div>
     </div>
