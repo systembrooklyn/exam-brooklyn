@@ -19,10 +19,7 @@ const pageSize = props.cardName === "Invoices" ? 10 : 5;
 const expandedCell = ref({});
 const sortOrder = ref("asc");
 const sortField = ref("created_at");
-const showRequestFieldModal = ref(true);
-
-
-
+// const showRequestFieldModal = ref(true);
 
 const hiddenColumnsByCard = {
   Requests: [
@@ -454,12 +451,12 @@ watch(
               <ArrowDownUp v-else :size="16" />
             </span>
           </div>
-          <button
+          <!-- <button
             @click="showRequestFieldModal = true"
             class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
           >
             Add New Request
-          </button>
+          </button> -->
         </div>
 
         <div
@@ -474,10 +471,9 @@ watch(
                 formatDate(row.created_at)
               }}</span>
 
-   <span class="text-sm font-semibold text-gray-800">By: {{
-               row.employee.name
-              }}</span>
-
+              <span class="text-sm font-semibold text-gray-800"
+                >By: {{ row.employee.name }}</span
+              >
             </div>
             <div class="flex items-center gap-2">
               <span
@@ -533,14 +529,16 @@ watch(
             >
               <strong class="text-indigo-600">Manager Reply:</strong>
               <p class="text-gray-800">{{ row.manager_response }}</p>
-             <div class="flex items-center gap-4 mt-2">
-               <span v-if="row.manager_response_at" class="text-xs text-gray-800"
-                >At: {{ formatDate(row.manager_response_at) }}</span
-              >
-              <span class="text-xs text-gray-800 ">
-                By: {{ row.manager.name }}
-              </span>
-             </div>
+              <div class="flex items-center gap-4 mt-2">
+                <span
+                  v-if="row.manager_response_at"
+                  class="text-xs text-gray-800"
+                  >At: {{ formatDate(row.manager_response_at) }}</span
+                >
+                <span class="text-xs text-gray-800">
+                  By: {{ row.manager.name }}
+                </span>
+              </div>
             </div>
             <div
               v-if="row.employee_response"
@@ -618,8 +616,7 @@ watch(
 
       <RequestFieldModal
         v-if="showRequestFieldModal"
-       v-model="showRequestFieldModal"
-      
+        v-model="showRequestFieldModal"
       />
 
       <!-- Pagination -->
