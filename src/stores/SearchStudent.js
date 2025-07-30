@@ -23,6 +23,9 @@ export const useStudentStore = defineStore("studentStore", () => {
   try {
     const response = await apiClient.get(`${STUDENT}/${id}`);
     student.value = response.data.data;
+    localStorage.setItem("studentId", JSON.stringify(student.value.student.id));
+    console.log("Student ID:", student.value.student.id);
+    
     console.log("Student fetched successfully:", response.data);
     console.log("Fetched student:", student.value);
   } catch (err) {
