@@ -11,10 +11,16 @@ const props = defineProps({
 });
 
 const currentPage = ref(1);
-const pageSize = 5;
+console.log("Card Name:", props.cardName);
+
+const pageSize = props.cardName === "Invoices" ? 10 : 5;
+
 const expandedCell = ref({});
 const sortOrder = ref("asc");
 const sortField = ref("created_at");
+
+
+
 
 const hiddenColumnsByCard = {
   Requests: [

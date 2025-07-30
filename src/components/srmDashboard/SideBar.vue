@@ -98,17 +98,31 @@
             student.faculity)
         "
       >
-        <h3 class="font-bold text-center mb-3 text-indigo-400">
+        <h3 class="font-bold text-center mb-2 text-indigo-400">
           General & Personal Information
         </h3>
         <div class="flex items-center space-x-2">
+          <strong>Phones:</strong>
+          <!-- Display phones as a list -->
+          <span>{{ student?.phones?.join(" / ") }}</span>
+          <div class="relative group">
+            <MessageSquareText
+              class="w-5 h-5 transition text-green-500 cursor-not-allowed hover:text-green-800"
+            />
+            <div
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
+            >
+              Send SMS
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-2 mt-1">
           <strong>Email:</strong>
 
           <span>{{ student?.email }}</span>
           <div class="relative group">
             <Mail
-              @click="openModal('email')"
-              class="w-5 h-5 transition cursor-pointer text-[#6c63ff] hover:text-blue-800"
+              class="w-5 h-5 transition cursor-not-allowed text-[#6c63ff] hover:text-blue-800"
             />
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
@@ -118,54 +132,32 @@
           </div>
           <!-- Tooltip -->
         </div>
-        <div class="flex items-center space-x-2 mt-4">
-          <strong>Phones:</strong>
-          <!-- Display phones as a list -->
-          <span>{{ student?.phones?.join(" / ") }}</span>
-          <div class="relative group">
-            <MessageSquareText 
-              @click="openModal('phone')"
-              class="w-5 h-5 transition text-green-500 cursor-pointer hover:text-green-800"
-            />
-            <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
-              Send SMS
-            </div>
-          </div>
-        </div>
-        <div class="space-y-2 mt-4">
-          <div class="flex items-center space-x-4">
-            <p>
-              <strong>Major:</strong> {{ student?.major || "No Available" }}
-            </p>
 
-            <p>
-              <strong>Company:</strong>
-              {{ student?.company || "No Available" }}
-            </p>
-          </div>
+        <div class="space-y-2 mt-2">
+          <p>
+            <strong>Company:</strong>
+            {{ student?.company || "No Available" }}
+          </p>
+          <p><strong>Major:</strong> {{ student?.major || "No Available" }}</p>
 
-          <div class="flex items-center space-x-4 mt-4">
-            <p><strong>Grade:</strong> {{ student?.grade }}</p>
+          <p><strong>Grade:</strong> {{ student?.grade }}</p>
 
-            <p>
-              <strong>Faculty:</strong>
-              {{ student?.faculity || "No Available" }}
-            </p>
-          </div>
+          <p>
+            <strong>Faculty:</strong>
+            {{ student?.faculity || "No Available" }}
+          </p>
         </div>
       </div>
 
-      <!-- Navigation -->
-      <nav class="flex-1 px-4 pt-6 space-y-2">
+    
+      <!-- <nav class="flex-1 px-4 pt-6 space-y-2">
         <NavItem
           v-for="item in navItems"
           class="text-red"
           :key="item.label"
           v-bind="item"
         />
-      </nav>
+      </nav> -->
     </aside>
 
     <!-- Message Modal -->

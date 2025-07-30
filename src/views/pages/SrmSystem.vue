@@ -102,9 +102,12 @@
               v-for="tab in tabs"
               :key="tab.name"
               @click="selectTab(tab.name, tab.label)"
+              :disabled="loading && cardName !== tab.label"
               :class="[
                 'px-5 py-3 rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[100px]',
-                cardName === tab.label
+                loading && cardName !== tab.label
+                  ? 'opacity-50 cursor-not-allowed'
+                  : cardName === tab.label
                   ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]',
               ]"
