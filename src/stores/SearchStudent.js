@@ -50,8 +50,8 @@ const fetchDataStuden = async (name) => {
   } catch (err) {
     studentData.value = null;
     handleError(err);
-    error.value = err.response?.data?.message || "An error occurred while fetching student data.";
-    throw err; // ✅
+    // error.value = err.response?.data?.message || "An error occurred while fetching student data.";
+    // throw err; // ✅
   } finally {
     loading.value = false;
   }

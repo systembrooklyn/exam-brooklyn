@@ -1,7 +1,12 @@
 <script setup>
 import { ref, computed, watch } from "vue";
 import Pagination from "./Pagination.vue";
-import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
+import { useRequestStore } from "../../stores/srmStore/requestStore";
+import GroupsTable from "./tables/GroupsTable.vue";
+import AttendanceTable from "./tables/AttendanceTable.vue";
+import InvoicesTable from "./tables/InvoicesTable.vue";
+import Deadlines from "./tables/Deadlines.vue";
+import RequestsTable from "./tables/RequestsTable.vue";
 import RequestFieldModal from "./RequestFieldModal.vue";
 
 const props = defineProps({
@@ -12,57 +17,20 @@ const props = defineProps({
 });
 
 const currentPage = ref(1);
+
 console.log("Card Name:", props.cardName);
 
-const pageSize = props.cardName === "Invoices" ? 10 : 5;
+const pageSize = props.cardName == "Invoices" ? 10 : 5;
 
-const expandedCell = ref({});
 const sortOrder = ref("asc");
 const sortField = ref("created_at");
-// const showRequestFieldModal = ref(true);
+const showRequestFieldModal = ref(false);
 
-const hiddenColumnsByCard = {
-  Requests: [
-    "manager_response_at",
-    "employee_response_at",
-    "updated_at",
-    "id",
-    "student_id",
-    "type",
-    "comment",
-    "serial",
-  ],
-
-  Invoices: [],
-  Complaints: [
-    "id",
-    "created_at",
-    "updated_at",
-    "serial",
-    "employee_response_at",
-    "manager_response_at",
-    "student_id",
-  ],
-};
-
-const expandableColumns = [
-  "value",
-  "comment",
-  "manager_response",
-  "employee_response",
-];
-
-// const statusOptions = ["pending", "open", "closed"];
-
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
+function openModal() {
+  showRequestFieldModal.value = true;
 }
+
+console.log("showRequestFieldModal:", showRequestFieldModal.value);
 
 // Sort function for data
 function sortData(data) {
@@ -157,16 +125,6 @@ function goToPage(page) {
   currentPage.value = page;
 }
 
-function toggleExpand(rowIndex, colName) {
-  const key = `${rowIndex}-${colName}`;
-  expandedCell.value = expandedCell.value.key === key ? {} : { key };
-}
-
-function shouldShowColumn(col) {
-  const hiddenCols = hiddenColumnsByCard[props.cardName] || [];
-  return !hiddenCols.includes(col);
-}
-
 watch(
   () => props.cardName,
   () => {
@@ -176,7 +134,7 @@ watch(
 </script>
 
 <template>
-  <div class="">
+  <div class="px-4">
     <!-- Loading Spinner -->
     <div v-if="loading" class="flex justify-center items-center">
       <div
@@ -185,438 +143,84 @@ watch(
     </div>
 
     <!-- No Data Message -->
-    <div v-else-if="!hasData">
-      <img
-        class="mx-auto h-80 mt-10"
-        src="@/assets/undraw_empty_4zx0.png"
-        alt="No Data"
-      />
-      <p class="text-center mt-4 font-semibold text-gray-800">No Data Found</p>
+    <div v-else-if="!hasData" class="text-center">
+      <div
+        v-if="cardName === 'Requests' || cardName === 'Complains'"
+        class="mt-6 text-end p-3"
+      >
+        <button
+          @click="openModal"
+          class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
+        >
+          Add New {{ cardName }}
+        </button>
+      </div>
+
+      <div v-if="!hasData" class="text-center">
+        <img
+          class="mx-auto h-80 mt-10"
+          src="@/assets/undraw_empty_4zx0.png"
+          alt="No Data"
+        />
+        <p class="mt-4 font-semibold text-gray-800">No Data Found</p>
+      </div>
     </div>
 
     <!-- Content -->
     <div v-else class="space-y-4">
       <!-- ✅ Groups Table -->
-      <div
+      <GroupsTable
         v-if="cardName === 'Groups'"
-        class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
-      >
-        <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
-          <thead
-            class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-6 [&>tr>th]:py-3"
-          >
-            <tr>
-              <th>Group Name</th>
-              <th>Type</th>
-              <th
-                class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
-                @click="toggleSort('start_date')"
-              >
-                Start Date
-                <span>
-                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-                  <ArrowDownUp v-else :size="16" />
-                </span>
-              </th>
-              <!-- <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Score
-              </th>
-              <th
-                class="px-6 py-3 text-left text-lg font-bold text-indigo-800 uppercase"
-              >
-                Percentage
-              </th> -->
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="(row, rowIndex) in paginatedData"
-              :key="rowIndex"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                {{ row.name }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-                {{ row.type }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{
-                  row.type === "online"
-                    ? formatDate(row.student_start)
-                    : formatDate(row.start_date)
-                }}
-              </td>
+        :data="paginatedData"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+      />
 
-              <!-- <td class="px-6 py-4 text-sm font-bold text-indigo-700">
-                {{
-                  row.final_score != null
-                    ? row.course.name.toLowerCase() === "project"
-                      ? row.final_score + " / 100"
-                      : (row.final_score * 50) / 100 + " / 50"
-                    : "-"
-                }}
-              </td>
-
-            
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ row.final_score != null ? row.final_score + "%" : "-" }}
-              </td> -->
-            </tr>
-          </tbody>
-        </table>
-      </div>
       <!-- ✅ Attendance Table -->
-      <div
+      <AttendanceTable
         v-if="cardName === 'Attendance'"
-        class="overflow-x-auto min-w-5xl rounded-lg border border-gray-300 shadow-sm"
-      >
-        <table class="min-w-full divide-y text-center divide-gray-200 bg-white">
-          <thead
-            class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-6 [&>tr>th]:py-3"
-          >
-            <tr>
-              <th>Module</th>
-              <th>Code</th>
-              <th
-                @click="toggleSort('start_date')"
-                class="cursor-pointer select-none"
-              >
-                <div class="flex items-center justify-center gap-2">
-                  Date
-                  <span>
-                    <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-                    <ArrowDownUp v-else :size="16" />
-                  </span>
-                </div>
-              </th>
-              <th>Score</th>
-              <th>Percentage</th>
-              <th>Exam Date</th>
-              <th>Lectures (6)</th>
-            </tr>
-          </thead>
-
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="(row, rowIndex) in paginatedData"
-              :key="rowIndex"
-              class="hover:bg-gray-50"
-            >
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                {{ row.course.name }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-                {{ row.code }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ formatDate(row.start_date) }}
-              </td>
-
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
-                {{
-                  row.final_score != null
-                    ? row.course.name.toLowerCase() === "project"
-                      ? row.final_score + " / 100"
-                      : (row.final_score * 50) / 100 + " / 50"
-                    : "-"
-                }}
-              </td>
-
-              <!-- Percentage -->
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ row.final_score != null ? row.final_score + "%" : "-" }}
-              </td>
-
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ formatDate(row.exam_at) || "-" }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-600">
-                {{ row.attended_lectures }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        :data="paginatedData"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+      />
 
       <!-- ✅ Invoices Table -->
-      <div
+      <InvoicesTable
         v-if="cardName === 'Invoices'"
-        class="rounded-lg border border-gray-300 shadow-sm"
-      >
-        <table
-          class="min-w-full divide-y text-center divide-gray-200 border shadow-sm rounded-lg bg-white"
-        >
-          <thead class="bg-gray-100 text-center py-4">
-            <tr>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Serial
-              </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Notes
-              </th>
-              <th
-                class="px-6 py-3 flex gap-2 items-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
-                @click="toggleSort('created_at')"
-              >
-                Date
-                <span>
-                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-                  <ArrowDownUp v-else :size="16" />
-                </span>
-              </th>
-              <!-- <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Type</th> -->
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Amount
-              </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Method
-              </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Type
-              </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Sub/Type
-              </th>
-              <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
-                Employee
-              </th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
-            <tr
-              v-for="(row, rowIndex) in paginatedData"
-              :key="rowIndex"
-              :class="[
-                'hover:bg-gray-100',
-                row.serial?.toLowerCase().startsWith('r')
-                  ? 'bg-yellow-100'
-                  : '',
-              ]"
-            >
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                {{ row.serial }}
-              </td>
-              <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-                {{ row.notes }}
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-800">
-                {{ formatDate(row.created_at) }}
-              </td>
-              <!-- <td class="px-6 py-4 text-sm text-gray-600 capitalize">{{ row.type }}</td> -->
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
-                {{ displayValue(row.amount) }} EGP
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-800">
-                {{ row.pay_method }}
-              </td>
-              <td>
-                <span
-                  class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
-                >
-                  {{ row.type }}
-                </span>
-              </td>
-              <td>
-                <span
-                  class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700"
-                >
-                  {{ row.pay_cat }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-sm text-gray-800">
-                {{ row.employee.name }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        :data="paginatedData"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+      />
 
       <!-- ✅ Requests & Complaints -->
-      <div
-        v-if="cardName === 'Requests' || cardName === 'Complaints'"
-        class="space-y-4"
-      >
-        <!-- Sort Header for Requests / Complaints -->
-        <div class="flex justify-between items-center">
-          <div
-            class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
-            @click="toggleSort('created_at')"
-          >
-            Sort by Date
-            <span>
-              <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-              <ArrowDownUp v-else :size="16" />
-            </span>
-          </div>
-          <!-- <button
-            @click="showRequestFieldModal = true"
-            class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
-          >
-            Add New Request
-          </button> -->
-        </div>
-
-        <div
-          v-for="(row, rowIndex) in paginatedData"
-          :key="rowIndex"
-          class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
+      <div v-if="cardName === 'Requests' || cardName === 'Complains'">
+        <!-- <button
+          @click="showRequestFieldModal = true"
+          class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
         >
-          <div class="flex justify-between items-center mb-2">
-            <div class="flex items-center space-x-6">
-              <!-- <h4 class="font-semibold text-gray-800">{{ row.field }}</h4> -->
-              <span class="text-sm font-semibold text-gray-800">{{
-                formatDate(row.created_at)
-              }}</span>
-
-              <span class="text-sm font-semibold text-gray-800"
-                >By: {{ row.employee.name }}</span
-              >
-            </div>
-            <div class="flex items-center gap-2">
-              <span
-                class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
-              >
-                {{ row.field }}
-              </span>
-              <span
-                :class="{
-                  'bg-green-100 text-green-700': row.status === 'closed',
-                  'bg-yellow-100 text-yellow-700': row.status === 'pending',
-                }"
-                class="px-3 py-1 rounded-full text-sm font-medium capitalize"
-              >
-                {{ row.status }}
-              </span>
-            </div>
-          </div>
-
-          <div class="prose max-w-none text-gray-800 font-medium mb-4">
-            <template v-if="expandableColumns.includes('value')">
-              <span v-if="`${rowIndex}-value` === expandedCell.key">
-                {{ displayValue(row.value) }}
-                <button
-                  class="ml-2 text-sm text-indigo-600 underline"
-                  @click.stop="toggleExpand(rowIndex, 'value')"
-                >
-                  Less
-                </button>
-              </span>
-              <span v-else>
-                {{ displayValue(row.value).split(" ").slice(0, 35).join(" ") }}
-                <span v-if="displayValue(row.value).split(' ').length > 35">
-                  ...
-                  <button
-                    class="ml-1 text-sm text-indigo-600 underline cursor-pointer"
-                    @click.stop="toggleExpand(rowIndex, 'value')"
-                  >
-                    More
-                  </button>
-                </span>
-              </span>
-            </template>
-            <template v-else>
-              {{ displayValue(row.value) }}
-            </template>
-          </div>
-
-          <div class="space-y-4 text-sm pt-2">
-            <div
-              v-if="row.manager_response"
-              class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
-            >
-              <strong class="text-indigo-600">Manager Reply:</strong>
-              <p class="text-gray-800">{{ row.manager_response }}</p>
-              <div class="flex items-center gap-4 mt-2">
-                <span
-                  v-if="row.manager_response_at"
-                  class="text-xs text-gray-800"
-                  >At: {{ formatDate(row.manager_response_at) }}</span
-                >
-                <span class="text-xs text-gray-800">
-                  By: {{ row.manager.name }}
-                </span>
-              </div>
-            </div>
-            <div
-              v-if="row.employee_response"
-              class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
-            >
-              <strong class="text-blue-600">Employee Reply:</strong>
-              <p class="text-gray-800">{{ row.employee_response }}</p>
-              <span
-                v-if="row.employee_response_at"
-                class="text-xs text-gray-800"
-                >At: {{ formatDate(row.employee_response_at) }}</span
-              >
-            </div>
-          </div>
-        </div>
+          Add New {{ title }}
+        </button> -->
+        <RequestsTable
+          :title="cardName"
+          :data="paginatedData"
+          :sortOrder="sortOrder"
+          @toggleSort="toggleSort"
+         
+        />
       </div>
 
       <!-- ✅ Deadlines -->
-      <div v-if="cardName === 'Deadlines'" class="space-y-4 min-w-4xl">
-        <!-- Sort Header for Requests / Complaints -->
-        <div
-          class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
-          @click="toggleSort('due_date')"
-        >
-          Sort by Due Date
-          <span>
-            <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-            <ArrowDownUp v-else :size="16" />
-          </span>
-        </div>
-
-        <div
-          v-for="(row, rowIndex) in paginatedData"
-          :key="rowIndex"
-          class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
-        >
-          <div class="flex justify-between items-center space-x-4">
-            <div>
-              <h4 class="text-md font-bold text-gray-800 mb-1">Amount</h4>
-              <p class="text-xl font-bold text-indigo-600">
-                {{ displayValue(row.amount) }} EGP
-              </p>
-              <div>
-                <span class="font-medium text-gray-800">Due Date:</span>
-                {{ formatDate(row.due_date) }}
-              </div>
-            </div>
-            <div>
-              <h4 class="text-md font-bold text-gray-800 mb-1">Paid Amount</h4>
-              <p class="text-lg font-semibold text-green-600">
-                {{ row.paid_amount }} EGP
-              </p>
-              <div>
-                <span class="font-medium text-gray-800">Paid on:</span>
-                {{ formatDate(row.paid_date) }}
-              </div>
-            </div>
-            <div>
-              <span
-                :class="[
-                  'px-3 py-1 rounded-full text-sm font-medium text-white',
-                  {
-                    'bg-green-500': row.status === 'paid',
-                    'bg-red-500': row.status === 'unpaid',
-                    'bg-yellow-400 text-black': row.status === 'partialPaid',
-                  },
-                ]"
-              >
-                {{ row.status }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Deadlines
+        v-if="cardName === 'Deadlines'"
+        :data="paginatedData"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+      />
 
       <RequestFieldModal
-        v-if="showRequestFieldModal"
         v-model="showRequestFieldModal"
+        :type="cardName"
+        
       />
 
       <!-- Pagination -->

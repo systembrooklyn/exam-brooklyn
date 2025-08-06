@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="modelValue"
+    v-show="modelValue"
     class="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.5)]"
   >
     <div class="bg-white max-w-md w-full p-6 rounded-lg shadow-lg relative">
@@ -12,61 +12,50 @@
         &times;
       </button>
 
-      <h2 class="text-lg font-bold text-gray-800 mb-4">Add Request Field</h2>
+      <h2 class="text-lg font-bold text-gray-800 mb-4">Add {{ type }}</h2>
 
       <!-- Select -->
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-        <select
-          v-model="form.type"
-          class="w-full border focus:outline-none border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-indigo-500"
-        >
-          <option disabled value="">Select type</option>
-          <option value="request">request</option>
-          <option value="complain">complain</option>
-          <option value="edit">edit</option>
-        </select>
-      </div>
-
-      <!-- Field -->
       <div class="mb-4">
         <label class="block text-sm font-medium text-gray-700 mb-1"
           >Field</label
         >
-        <input
+        <select
           v-model="form.field"
-          type="text"
-          placeholder="Enter field"
           class="w-full border focus:outline-none border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-indigo-500"
-        />
+        >
+          <option disabled value="">Select</option>
+          <option value="Material">Material</option>
+          <option value="Payment">Payment</option>
+          <option value="Information">Information</option>
+          <option value="Accreditation">Accreditation</option>
+          <option value="Other">Other</option>
+        </select>
       </div>
 
       <!-- Value -->
       <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1"
-          >Value</label
-        >
-        <input
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          Massage
+        </label>
+        <textarea
           v-model="form.value"
-          type="text"
-          placeholder="Enter value"
-          class="w-full border focus:outline-none border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-indigo-500"
-        />
+          placeholder="Enter message"
+          class="w-full border focus:outline-none border-gray-300 rounded px-3 py-2 focus:ring-1 focus:ring-indigo-500 resize-y min-h-[100px]"
+        ></textarea>
       </div>
 
       <!-- Actions -->
       <div class="flex justify-end gap-2">
         <button
-          @click="$emit('update:modelValue', false)"
-          class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded"
-        >
-          Cancel
-        </button>
-        <button
           @click="submit"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded"
+          :disabled="loading"
+          class="bg-indigo-600 w-30 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-1 px-4 rounded-lg flex items-center justify-center gap-2"
         >
-          Save
+          <div
+            v-if="loading"
+            class="border-2 border-white border-t-transparent rounded-full w-5 h-5 animate-spin"
+          ></div>
+          <span>{{ loading ? "Saving..." : "Save" }}</span>
         </button>
       </div>
     </div>
@@ -74,50 +63,73 @@
 </template>
 
 <script setup>
-import { ref ,watch } from "vue";
+import { ref, watch ,defineEmits , defineProps} from "vue";
 import { useRequestStore } from "../../stores/srmStore/requestStore";
+import { inject } from 'vue'
 
 
+const emitter = inject('emitter')
 
 const requestStore = useRequestStore();
 
 const props = defineProps({
   modelValue: Boolean,
+  type: String,
 });
 
 const emit = defineEmits(["update:modelValue", "saved"]);
+
+
+
 const studentId = ref(localStorage.getItem("studentId"));
 
+const loading = ref(false);
+
 const form = ref({
-  student_id: studentId.value,
-  type: "request",
+  student_id: Number(studentId.value),
+  type: props.type ? props.type.toLowerCase().slice(0, -1) : "",
+
+
   field: "",
   value: "",
+  comment:"comment"
 });
 
 watch(
   () => props.modelValue,
   (val) => {
     if (val) {
-      form.value.student_id = props.studentId;
-      form.value.type = "request";
+      form.value.student_id = Number(studentId.value);
+      form.value.type = props.type ? props.type.toLowerCase().slice(0, -1) : "";
       form.value.field = "";
       form.value.value = "";
     }
   }
 );
 
+
 const submit = async () => {
-  console.log(form.value);
 
   if (form.value.field && form.value.value && form.value.type) {
+    loading.value = true;
     try {
-      const res = await requestStore.addRequest(form.value);
-      emit("saved", res.data);
+      await requestStore.addRequest(form.value);
+
+
       emit("update:modelValue", false);
+
+   
+      emitter.emit("refresh");
+
+    
+      emit("saved");
+
     } catch (error) {
       console.error("Error submitting request:", error);
+    } finally {
+      loading.value = false;
     }
   }
 };
+
 </script>

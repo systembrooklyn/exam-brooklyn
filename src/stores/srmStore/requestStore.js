@@ -1,12 +1,10 @@
 // 📁 src/stores/requestStore.js
 import { defineStore } from "pinia";
 import { ref } from "vue";
-
-
-
 import { REQUESTS } from "../../api/Api";
 import apiClient from "../../api/axiosInstance";
 import { handleError } from "../handleError";
+import notyf from "../../components/global/notyf";
 
 export const useRequestStore = defineStore("requestStore", () => {
   const requests = ref([]);
@@ -17,7 +15,7 @@ export const useRequestStore = defineStore("requestStore", () => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await apiClient.get(ALL_REQUESTS);
+      const response = await apiClient.get(REQUESTS);
       requests.value = response.data.data;
     } catch (err) {
       handleError(err);
@@ -27,9 +25,13 @@ export const useRequestStore = defineStore("requestStore", () => {
   };
 
   const addRequest = async (request) => {
+    console.log(request);
+
     try {
       const response = await apiClient.post(REQUESTS, request);
-      requests.value.push(response.data.data);
+      requests.value = response.data.data;
+      console.log(requests);
+
       notyf.success("Request added successfully");
     } catch (err) {
       handleError(err);
@@ -37,9 +39,13 @@ export const useRequestStore = defineStore("requestStore", () => {
   };
 
   const updateRequest = async (id, updatedData) => {
+    console.log("Updating request with ID:", id, "Data:", updatedData);
+
     try {
-      const response = await apiClient.put(`${ALL_REQUESTS}/${id}`, updatedData);
+      const response = await apiClient.put(`${REQUESTS}/${id}`, updatedData);
       const updatedRequest = response.data.data;
+      requests.value = updatedRequest;
+      console.log("Updated request:", updatedRequest);
 
       const index = requests.value.findIndex((r) => r.id === id);
       if (index !== -1) {
