@@ -9,7 +9,7 @@
             @keyup.enter="searchStudent"
             type="text"
             placeholder="Enter Student ID..."
-            class="w-full p-2 pl-12 rounded-xl shadow-md border border-[#6c63ff] focus:ring-non focus:px-10 focus:outline-none transition"
+            class="input-field pl-10 shadow-sm"
           />
 
           <button
@@ -87,7 +87,7 @@
 
       <!-- Contact Buttons -->
       <div
-        class="py-4 border-b p-3"
+        class="py-4 p-4 card mt-4"
         v-if="
           student &&
           (student.email ||
@@ -101,7 +101,7 @@
         <h3 class="font-bold text-center mb-2 text-indigo-400">
           General & Personal Information
         </h3>
-        <div class="flex items-center space-x-2">
+        <div class="flex items-center  space-x-2">
           <strong>Phones:</strong>
           <!-- Display phones as a list -->
           <span>{{ student?.phones?.join(" / ") }}</span>
@@ -197,7 +197,7 @@ import NavItem from "./NavItem.vue";
 const studentId = ref("");
 const student = ref({});
 const studentAllData = ref(null);
-import { useStudentStore } from "@/stores/studentStore";
+import { useStudentStore } from "@/stores/SearchStudent";
 
 const emit = defineEmits(["student-selected"]);
 

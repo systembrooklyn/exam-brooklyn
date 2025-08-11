@@ -29,8 +29,18 @@ export const useRequestStore = defineStore("requestStore", () => {
 
     try {
       const response = await apiClient.post(REQUESTS, request);
-      requests.value = response.data.data;
-      console.log(requests);
+      const payload = response.data?.data;
+      if (Array.isArray(payload)) {
+        requests.value = payload;
+      } else if (payload && typeof payload === 'object') {
+        if (!Array.isArray(requests.value)) requests.value = [];
+        const i = requests.value.findIndex((r) => r.id === payload.id);
+        if (i !== -1) {
+          requests.value[i] = payload;
+        } else {
+          requests.value.unshift(payload);
+        }
+      }
 
       notyf.success("Request added successfully");
     } catch (err) {
@@ -44,23 +54,30 @@ export const useRequestStore = defineStore("requestStore", () => {
     try {
       const response = await apiClient.put(`${REQUESTS}/${id}`, updatedData);
       const updatedRequest = response.data.data;
-      requests.value = updatedRequest;
       console.log("Updated request:", updatedRequest);
 
-      const index = requests.value.findIndex((r) => r.id === id);
-      if (index !== -1) {
-        requests.value[index] = updatedRequest;
+      if (!Array.isArray(requests.value)) {
+        requests.value = updatedRequest ? [updatedRequest] : [];
+      } else if (updatedRequest) {
+        const index = requests.value.findIndex((r) => r.id === (updatedRequest.id ?? id));
+        if (index !== -1) {
+          requests.value[index] = updatedRequest;
+        } else {
+          requests.value.unshift(updatedRequest);
+        }
       }
 
       notyf.success("Request updated successfully");
+      return updatedRequest;
     } catch (err) {
       handleError(err);
+      return null;
     }
   };
 
   const deleteRequest = async (id) => {
     try {
-      await apiClient.delete(`${ALL_REQUESTS}/${id}`);
+      await apiClient.delete(`${REQUESTS}/${id}`);
       requests.value = requests.value.filter((r) => r.id !== id);
       notyf.success("Request deleted successfully");
     } catch (err) {

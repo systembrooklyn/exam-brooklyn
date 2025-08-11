@@ -57,7 +57,7 @@ export const useStudentStore = defineStore("studentStore", () => {
       }
     } finally {
       loadingCourses.value = false;
-      otpSent.value = false;
+      // keep otpSent state as is for UI to reflect success state
     }
   };
 
@@ -91,10 +91,9 @@ export const useStudentStore = defineStore("studentStore", () => {
       }
     } catch (err) {
       handleError(err);
-      window.location.reload();
     } finally {
       loadingOtp.value = false;
-      otpSent.value = false;
+      // keep otpSent true after successful send; reset elsewhere if needed
     }
   };
 

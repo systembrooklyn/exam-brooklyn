@@ -104,7 +104,7 @@ const submitExam = async () => {
   <div class="flex justify-end mr-10">
     <button
       class="bg-primary text-white py-2 px-4 cursor-pointer mt-5 rounded"
-      @click="router.push({ name: 'examExel' })"
+      @click="router.push({ name: 'examExcel' })"
     >
       Import Exam Excel
     </button>

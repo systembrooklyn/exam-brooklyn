@@ -154,6 +154,7 @@ watch(
         >
           Add New {{ cardName }}
         </button>
+        
       </div>
 
       <div v-if="!hasData" class="text-center">
@@ -216,13 +217,6 @@ watch(
         :sortOrder="sortOrder"
         @toggleSort="toggleSort"
       />
-
-      <RequestFieldModal
-        v-model="showRequestFieldModal"
-        :type="cardName"
-        
-      />
-
       <!-- Pagination -->
       <Pagination
         v-if="
@@ -234,5 +228,10 @@ watch(
         @update:current-page="goToPage"
       />
     </div>
+    <!-- Always mount the modal so it works even when there's no data -->
+    <RequestFieldModal
+      v-model="showRequestFieldModal"
+      :type="cardName"
+    />
   </div>
 </template>

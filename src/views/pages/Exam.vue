@@ -1,24 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { Notyf } from "notyf";
-import "notyf/notyf.min.css";
+import notyf from "@/components/global/notyf";
 import { useStudentStore } from "../../stores/studentStore";
 import { useRouter } from "vue-router";
 
 const studentStore = useStudentStore();
 const router = useRouter();
-const notyf = new Notyf({
-  duration: 5000,
-  dismissible: true,
-  ripple: true,
-  position: { x: "center", y: "top" },
-});
+// use shared notyf instance
 
 if (!sessionStorage.getItem("attemptId")) {
   router.push("/home");
 }
 
 const examData = computed(() => studentStore.startExam?.data || {});
+// remaining_time is expected in seconds from backend
 const remainingTime = computed(() => examData.value?.remaining_time || 0);
 const exam = computed(() => examData.value?.exam || {});
 const questions = computed(() => exam.value?.questions || []);
@@ -55,23 +50,13 @@ const filteredQuestions = computed(() => {
 
 const startTimer = () => {
   interval = setInterval(() => {
-    let integerPart = Math.floor(timeLeft.value);
-    let decimalPart = Math.round((timeLeft.value - integerPart) * 100);
-
-    if (decimalPart > 0) {
-      decimalPart--;
-    } else if (integerPart > 0) {
-      integerPart--;
-      decimalPart = 99;
+    if (timeLeft.value > 0) {
+      timeLeft.value -= 1;
     } else {
       clearInterval(interval);
       notyf.error("Time is up! Exam ended.");
-
       router.replace({ name: "home" });
-      return;
     }
-
-    timeLeft.value = integerPart + decimalPart / 100;
   }, 1000);
 };
 
@@ -139,7 +124,7 @@ const handleStart = () => {
   currentQuestionIndex.value = 0;
 
   quizStarted.value = true;
-  timeLeft.value = remainingTime.value;
+  timeLeft.value = remainingTime.value; // seconds
   startTimer();
   loadSelectedOption();
 };
@@ -231,14 +216,9 @@ onBeforeUnmount(() => {
       <div class="text-xl font-semibold mb-8">
         Remaining time
         <span class="text-primary font-bold text-2xl dark:text-blue-500">
-          ({{ Math.floor(timeLeft) }}.{{
-            Math.round((timeLeft - Math.floor(timeLeft)) * 100)
-              .toString()
-              .padStart(2, "0")
-          }}
-          )
+          ({{ Math.floor(timeLeft / 60).toString().padStart(2, '0') }}:{{ (timeLeft % 60).toString().padStart(2, '0') }})
         </span>
-        Minute
+        mm:ss
       </div>
     </div>
 

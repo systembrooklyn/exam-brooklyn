@@ -6,6 +6,10 @@ import notyf from '@/components/global/notyf';
  * @param {Object} err - The error object caught from an API call
  */
 export function handleError(err) {
+  // Ensure error is visible in console for debugging
+  if (typeof console !== 'undefined') {
+    console.error('[API ERROR]', err?.response?.data || err);
+  }
   const errors = err?.response?.data?.errors;
   const singleMessage = err?.response?.data?.message || err?.message || 'An unexpected error occurred.';
 

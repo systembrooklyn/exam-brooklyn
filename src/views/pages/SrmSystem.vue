@@ -106,12 +106,12 @@
                 @click="selectTab(tab.name, tab.label)"
                 :disabled="loading && cardName !== tab.label"
                 :class="[
-                  'px-5 py-3  rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[100px]',
+                  'px-5 py-3  rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[120px] justify-center',
                   loading && cardName !== tab.label
                     ? 'opacity-50 cursor-not-allowed'
                     : cardName === tab.label
                     ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]',
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]',
                 ]"
               >
                 {{ tab.label }}
@@ -120,7 +120,7 @@
                     'text-xs px-2 py-0.5 rounded-full',
                     cardName === tab.label
                       ? 'bg-white/20 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200',
+                      : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200',
                   ]"
                 >
                   {{ tab.count || 0 }}
@@ -235,8 +235,12 @@ const columnMap = {
   lectures: ["name", "notes", "start_time", "end_time", "status"],
   attendance: ["date", "group_name", "status"],
 };
+// Ensure we clean up the listener safely
 onUnmounted(() => {
-  emitter.off("refresh", refreshHandler);
+  if (emitter && emitter.off) {
+    // Remove all 'refresh' listeners or keep a reference if needed
+    emitter.all?.delete?.("refresh");
+  }
 });
 
 </script>

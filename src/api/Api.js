@@ -1,4 +1,7 @@
-export const BASE_URL = "https://shark-app-s8ndy.ondigitalocean.app/api/";
+// Prefer environment variable when available; fallback to production API
+export const BASE_URL = (
+  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
+) || "https://shark-app-s8ndy.ondigitalocean.app/api/";
 
 export const STUDENT_ID = "student/courses";
 export const INSTRUCTORS = "course/instructors";

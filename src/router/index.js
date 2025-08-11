@@ -98,8 +98,8 @@ const routes = [
         component: () => import("@/views/dashboard/CreateExams.vue"),
       },
       {
-        path: "examExel",
-        name: "examExel",
+        path: "examExcel",
+        name: "examExcel",
         meta: { requiresPermission: "create-exams" },
         component: () => import("@/views/dashboard/ImportExamExcel.vue"),
       },
@@ -189,6 +189,7 @@ router.beforeEach((to, from, next) => {
     return next({ name: "login" });
   }
 
+  // Access control via dedicated map
   if (access) {
     if (access.blockedIfHas?.some((p) => userPermissions.includes(p))) {
       return next({ name: "dashboard" });
@@ -196,6 +197,12 @@ router.beforeEach((to, from, next) => {
     if (access.requires?.some((p) => !userPermissions.includes(p))) {
       return next({ name: "SystemsPage" });
     }
+  }
+
+  // Fallback: enforce meta.requiresPermission if defined
+  const required = to.meta?.requiresPermission;
+  if (required && !userPermissions.includes(required)) {
+    return next({ name: "SystemsPage" });
   }
 
   next();

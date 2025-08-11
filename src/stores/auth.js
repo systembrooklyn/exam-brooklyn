@@ -47,7 +47,11 @@ export const useAuthStore = defineStore("authStore", () => {
 
     if (savedToken && savedUser) {
       token.value = savedToken;
-      user.value = JSON.parse(decodeURIComponent(savedUser));
+      try {
+        user.value = JSON.parse(savedUser);
+      } catch (e) {
+        user.value = null;
+      }
       permissions.value = savedPermissions
         ? decryptPermissions(savedPermissions)
         : [];
@@ -65,7 +69,7 @@ export const useAuthStore = defineStore("authStore", () => {
       const response = await apiClient.post(LOGIN, { email, password });
       token.value = response.data.token;
 
-      Cookies.set("token", token.value, { expires: 7 });
+      Cookies.set("token", token.value, { expires: 7, path: "/" });
       await getUserByToken();
 
       notyf.success("Logged in successfully");
@@ -100,13 +104,13 @@ export const useAuthStore = defineStore("authStore", () => {
 
   const forgotPassword = async (email) => {
     forgotSuccess.value = null;
+    loading.value = true;
     try {
       const response = await apiClient.post(FORGOT_PASSWORD, { email });
       notyf.success(response.data.message);
       forgotSuccess.value = response.data.message;
     } catch (err) {
       handleError(err);
-      notyf.error(error.value);
       forgotSuccess.value = null;
     } finally {
       loading.value = false;

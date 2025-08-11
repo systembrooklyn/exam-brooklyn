@@ -7,7 +7,7 @@ import {
   UserPen,
   UsersRound,
 } from "lucide-vue-next";
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import { useRequestStore } from "@/stores/srmStore/requestStore";
 import RequestFieldModal from "../RequestFieldModal.vue";
 import ReplyRequestModal from "../ReplyRequestModal.vue";
@@ -30,6 +30,7 @@ const showRequestFieldModal = ref(false);
 const showReplyModal = ref(false);
 const selectedRequestId = ref(null);
 const requestStore = useRequestStore();
+const emitter = inject('emitter', null);
 
 const expandableColumns = [
   "value",
@@ -76,8 +77,17 @@ const updateRequestData = async ({ id, data, onSuccess, loadingRef }) => {
   if (loadingRef) loadingRef.value = id;
 
   try {
-    await requestStore.updateRequest(id, data);
-    if (onSuccess) onSuccess();
+    const updated = await requestStore.updateRequest(id, data);
+    if (updated) {
+      // Optimistically update the local row if available
+      const idx = props.data?.findIndex?.((r) => r.id === (updated.id ?? id));
+      if (idx !== -1) {
+        props.data[idx] = { ...props.data[idx], ...updated };
+      }
+      // Trigger a background refresh to sync from server
+      if (emitter) emitter.emit('refresh');
+      if (onSuccess) onSuccess();
+    }
   } catch (error) {
     console.error("Error updating request:", error);
   } finally {
@@ -104,6 +114,7 @@ const updateStatus = async (row) => {
         setTimeout(() => {
           if (successStatusId.value === row.id) successStatusId.value = null;
         }, 2000);
+        if (emitter) emitter.emit('refresh');
       },
     });
   } catch (error) {
