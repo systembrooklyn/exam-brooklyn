@@ -32,7 +32,7 @@
           v-if="loadingReply"
           class="border-2 border-white border-t-transparent rounded-full w-5 h-5 animate-spin"
         ></div>
-        <span>{{ loadingReply ? "Saving..." : "Save" }}</span>
+        <!-- <span>{{ loadingReply ? "Saving..." : "Save" }}</span> -->
       </button>
     </div>
   </div>
