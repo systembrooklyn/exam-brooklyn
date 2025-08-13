@@ -62,7 +62,7 @@ const route = useRoute();
 
 const open = ref(false);
 
-// ✅ يفتح تلقائيًا لو فيه ولد active
+
 onMounted(() => {
   if (props.item.children) {
     open.value = props.item.children.some(
@@ -71,7 +71,7 @@ onMounted(() => {
   }
 });
 
-// ✅ يحدد العنصر الـ active
+
 const isActive = computed(() => {
   if (props.item.route) {
     return route.name === props.item.route;

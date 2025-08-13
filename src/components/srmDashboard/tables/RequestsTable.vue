@@ -141,6 +141,15 @@ const handleReply = async ({ key, value }) => {
   loadingReply.value = false;
 };
 
+function truncateText(text) {
+  if (!text) return '';
+  const words = text.split(' ');
+  if (words.length > 25) {
+    return words.slice(0, 25).join(' ') + '...';
+  }
+  return text;
+}
+
 </script>
 
 <template>
@@ -217,40 +226,45 @@ const handleReply = async ({ key, value }) => {
         </div>
       </div>
 
+    
       <div class="flex justify-between items-center">
         <div class="prose max-w-none text-gray-800 font-medium mb-4">
           <template v-if="expandableColumns.includes('value')">
-            <span v-if="`${rowIndex}-value` === expandedCell.key">
-              {{ displayValue(row.value) }}
-              <button
-                class="ml-2 text-sm text-indigo-600 underline"
-                @click.stop="toggleExpand(rowIndex, 'value')"
+            <div class="mixed-text-container">
+              <div 
+                v-if="`${rowIndex}-value` === expandedCell.key"
+                class="mixed-text-content"
               >
-                Less
-              </button>
-            </span>
-            <span v-else>
-              {{ displayValue(row.value).split(" ").slice(0, 25).join(" ") }}
-              <span v-if="displayValue(row.value).split(' ').length > 35">
-                ...
+                {{ displayValue(row.value) }}
                 <button
+                  class="ml-2 text-sm text-indigo-600 underline"
+                  @click.stop="toggleExpand(rowIndex, 'value')"
+                >
+                  Less
+                </button>
+              </div>
+              <div 
+                v-else 
+                class="mixed-text-content"
+              >
+                {{ truncateText(displayValue(row.value)) }}
+                <button
+                  v-if="displayValue(row.value).split(' ').length > 35"
                   class="ml-1 text-sm text-indigo-600 underline"
                   @click.stop="toggleExpand(rowIndex, 'value')"
                 >
                   More
                 </button>
-              </span>
-            </span>
-          </template>
-          <template v-else>
-            {{ displayValue(row.value) }}
+              </div>
+            </div>
           </template>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2" style="direction: auto; unicode-bidi: plaintext;">
           <button
             v-if="!row.employee_response"
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
+            style="direction: auto; unicode-bidi: plaintext;"
           >
             Reply
             <MessageCircleReply size="15" />
@@ -259,6 +273,7 @@ const handleReply = async ({ key, value }) => {
             v-if="!row.manager_response"
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
+            style="direction: auto; unicode-bidi: plaintext;"
           >
             Manager Reply
             <MessageCircleReply size="15" />
@@ -266,13 +281,19 @@ const handleReply = async ({ key, value }) => {
         </div>
       </div>
 
+      <!-- تعديل جزء الردود -->
       <div class="space-y-4 text-sm pt-1">
+        <!-- Manager Reply -->
         <div
           v-if="row.manager_response"
-          class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-indigo-400"
+          class="bg-gray-50 p-2 rounded-md border-l-4 border-indigo-400"
         >
-          <strong class="text-indigo-600">Manager Reply:</strong>
-          <p class="text-gray-800">{{ row.manager_response }}</p>
+          <strong class="text-indigo-600 block mb-1">Manager Reply:</strong>
+          <div class="mixed-text-container">
+            <div class="mixed-text-content">
+              {{ row.manager_response }}
+            </div>
+          </div>
           <div class="flex items-center gap-4 mt-3">
             <span
               v-if="row.manager_response_at"
@@ -285,12 +306,18 @@ const handleReply = async ({ key, value }) => {
             </span>
           </div>
         </div>
+
+        <!-- Employee Reply -->
         <div
           v-if="row.employee_response"
-          class="bg-gray-50 pl-2 py-1 rounded-md border-l-4 border-blue-400"
+          class="bg-gray-50 p-2 rounded-md border-l-4 border-blue-400"
         >
-          <strong class="text-blue-600">Employee Reply:</strong>
-          <p class="text-gray-800">{{ row.employee_response }}</p>
+          <strong class="text-blue-600 block mb-1">Employee Reply:</strong>
+          <div class="mixed-text-container">
+            <div class="mixed-text-content">
+              {{ row.employee_response }}
+            </div>
+          </div>
           <div class="flex items-center gap-4 mt-3">
             <span
               v-if="row.employee_response_at"
@@ -319,3 +346,29 @@ const handleReply = async ({ key, value }) => {
     />
   </div>
 </template>
+
+<style>
+/* تحديث الأنماط */
+.mixed-text-container {
+  width: 100%;
+  margin: 0.25rem 0;
+}
+
+.mixed-text-content {
+  text-align: start;
+  direction: auto;
+  unicode-bidi: plaintext;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.5;
+  padding: 0.25rem 0;
+}
+
+/* تحسينات للشاشات الصغيرة */
+@media (max-width: 640px) {
+  .mixed-text-content {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+}
+</style>

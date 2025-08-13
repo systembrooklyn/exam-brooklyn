@@ -25,74 +25,7 @@
       <!-- Student Profile Card -->
       <div v-if="student" class="max-w-6xl mx-auto space-y-6">
         <!-- Basic Info -->
-        <div
-          class="bg- max-w-4xl mx-auto dark:bg-gray-800 p-3 rounded-2xl shadow-md"
-        >
-          <h3
-            class="text-lg font-semibold mb-2 text-[#6c63ff] dark:text-gray-200 text-center"
-          >
-            Scholarship & Reserv Information
-          </h3>
-          <div
-            class="grid grid-cols-3 pt-3 gap-4 text-gray-700 dark:text-gray-300"
-          >
-            <p v-if="studentInfo?.scholarship?.name">
-              <strong>Scholarship:</strong>
-              {{ student.student.scholarship.name }}
-            </p>
-
-            <p v-if="studentInfo?.careerType">
-              <strong>Career Type:</strong> {{ student.student.careerType }}
-            </p>
-            <p v-if="studentInfo?.scholar_status">
-              <strong>Status:</strong> {{ studentInfo?.scholar_status }}
-            </p>
-            <p v-if="studentInfo?.scholarship?.study_type">
-              <strong>Study Type:</strong>
-              {{ student.student.scholarship.study_type }}
-            </p>
-
-            <p v-if="studentInfo?.marketing_code">
-              <strong>Scholarship Code:</strong>
-              {{ student.student.marketing_code || "N/A" }}
-            </p>
-
-            <p v-if="reservationInfo.branch?.name">
-              <strong>Branch:</strong>
-              {{ reservationInfo.branch.name }}
-            </p>
-
-            <p v-if="reservationInfo.called_by?.name">
-              <strong>Called By:</strong>
-              {{ reservationInfo.called_by.name }}
-            </p>
-
-            <p v-if="reservationInfo.called_time">
-              <strong>Called Time:</strong>
-              {{ reservationInfo.called_time }}
-            </p>
-
-            <p v-if="reservationInfo.registered_by?.name">
-              <strong>Registered By:</strong>
-              {{ reservationInfo.registered_by.name }}
-            </p>
-
-            <p v-if="reservationInfo.registered_at">
-              <strong>Registered At:</strong>
-              {{ reservationInfo.registered_at }}
-            </p>
-
-            <p v-if="reservationInfo.reserved_by?.name">
-              <strong>Reservation By:</strong>
-              {{ reservationInfo.reserved_by.name }}
-            </p>
-
-            <p v-if="reservationInfo.reserved_time">
-              <strong>Reservation Time:</strong>
-              {{ reservationInfo.reserved_time }}
-            </p>
-          </div>
-        </div>
+      
 
         <!-- Tabs Navigation -->
         <div class="min-w-0">

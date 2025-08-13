@@ -1,85 +1,78 @@
 <template>
-  <div
-    class="overflow-x-auto max-w-5xl rounded-lg border border-gray-300 shadow-sm"
-  >
-    <table
-      class="min-w-full w-max divide-y text-center divide-gray-200 bg-white"
-    >
-      <thead
-        class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-6 [&>tr>th]:py-3"
-      >
-        <tr>
-          <th>Group Name</th>
-          <th>Type</th>
-          <th>Lectures (6)</th>
-          <th>Sender</th>
-          <th>Finger Print</th>
-
-          <th
-            class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
-            @click="$emit('toggleSort', 'start_date')"
-          >
-            Start Date
-            <span>
-              <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
-              <ArrowDownUp v-else :size="16" />
-            </span>
-          </th>
-          <th>Actual Date</th>
-          <th>End Date</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
-        <tr
-          v-for="(row, rowIndex) in data"
-          :key="rowIndex"
-          class="hover:bg-gray-50"
+  <div class="container mx-auto px-2 sm:px-4">
+    <div class="w-full overflow-x-auto rounded-lg border border-gray-300 shadow-sm">
+      <table class="w-full table-auto divide-y text-center divide-gray-200 bg-white">
+        <thead
+          class="bg-gray-100 py-3 text-center font-bold text-indigo-800 uppercase [&>tr>th]:whitespace-nowrap [&>tr>th]:px-2 sm:[&>tr>th]:px-4 [&>tr>th]:py-3"
         >
-          <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-            {{ row.name }}
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-            {{ row.type }}
-          </td>
+          <tr>
+            <th>Group Name</th>
+            
+            
+            <th>Sender</th>
+        
 
-          <td class="px-6 py-4 text-sm text-gray-600">
-            {{ row.total_lec ? row.total_lec : "-" }}
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-            {{ row.sender?.name || "-" }}
-          </td>
-
-          <td class="px-6 py-4 text-sm text-gray-600 capitalize">
-            {{ row.sender?.fingerPrint || "-" }}
-          </td>
-
-          <td class="px-6 py-4 text-sm text-gray-600">
-            {{
-              row.type === "online"
-                ? formatDate(row.student_start)
-                : formatDate(row.start_date)
-            }}
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600">
-            {{ row.act_date ? formatDate(row.act_date) : "-" }}
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600">
-            {{ row.end_date ? formatDate(row.end_date) : "-" }}
-          </td>
-          <td class="px-6 py-4 text-sm font-semibold text-white">
-            <span
-              :class="{
-                'bg-green-500 px-3 py-1 rounded-full': row.ended === 1,
-                'bg-red-500 px-3 py-1 rounded-full': row.ended === 0,
-              }"
+            <th
+              class="px-6 py-3 flex gap-2 items-center justify-center text-left text-lg font-bold text-indigo-800 uppercase cursor-pointer select-none"
+              @click="$emit('toggleSort', 'start_date')"
             >
-              {{ row.ended === 1 ? "Ended" : "Active" }}
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+              Start Date
+              <span>
+                <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                <ArrowDownUp v-else :size="16" />
+              </span>
+            </th>
+            <th>Actual Date</th>
+
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr
+            v-for="(row, rowIndex) in data"
+            :key="rowIndex"
+            class="hover:bg-gray-50"
+          >
+            <td class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900">
+              {{ row.name }} <p class="text-gray-600">({{ row.type }})</p>
+            </td>
+            
+
+            
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize">
+              {{ row.sender?.name  }}_{{ row.sender?.fingerPrint  }}
+            </td>
+
+         
+
+              <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+              {{
+                (() => {
+                const dateStr = row.type === "online" ? row.student_start : row.start_date;
+                const formatted = formatDate(dateStr);
+                // Check if the date is 01/01/1970 or invalid
+                return (formatted === "01/01/1970" || formatted === "-") ? "-" : formatted;
+                })()
+              }}
+              </td>
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+              {{ row.act_date ? row.act_date : "-" }}
+            </td>
+          
+            <td class="px-2 sm:px-4 py-3 text-sm font-semibold text-white">
+              <span
+                :class="{
+                  'bg-green-500 px-3 py-1 rounded-full': row.ended === 1,
+                  'bg-red-500 px-3 py-1 rounded-full': row.ended === 0,
+                }"
+              >
+                {{ row.ended === 1 ? "Ended" : "Active" }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 

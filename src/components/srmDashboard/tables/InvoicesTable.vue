@@ -51,18 +51,21 @@
           <td class="px-6 py-4 text-sm font-semibold text-gray-900">
             {{ data.serial }}
           </td>
-          <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-            <span>
+            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+            <span
+              class="break-words"
+              :style="{ direction: 'auto', unicodeBidi: 'plaintext' }"
+            >
               {{ isExpanded[dataIndex] ? data.notes : truncated(data.notes) }}
               <button
-                v-if="data.notes.length > 50"
-                @click="toggleExpand(dataIndex)"
-                class="text-blue-500 underline text-xs ml-2"
+              v-if="data.notes && data.notes.length > 50"
+              @click="toggleExpand(dataIndex)"
+              class="text-blue-500 underline text-xs ml-2"
               >
-                {{ isExpanded[dataIndex] ? "Less" : "More" }}
+              {{ isExpanded[dataIndex] ? "Less" : "More" }}
               </button>
             </span>
-          </td>
+            </td>
 
           <td class="px-6 py-4 text-sm text-gray-800">
             {{ data.created_at }}
@@ -101,7 +104,7 @@
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
 import { ref } from "vue";
 
-// حالة لتتبع كل صف إذا كان مفتوح ولا لأ
+
 const isExpanded = ref({});
 
 // دالة لتقطيع النص

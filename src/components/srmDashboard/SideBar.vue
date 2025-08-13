@@ -1,7 +1,7 @@
 <template>
-  <div class="flex min-h-screen bg-gray-100">
+   <div class="flex min-h-screen bg-gray-100">
     <!-- Sidebar -->
-    <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col">
+       <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
       <div class="max-w-3xl mx-auto mb-5">
         <div class="relative mt-3">
           <input
@@ -9,7 +9,7 @@
             @keyup.enter="searchStudent"
             type="text"
             placeholder="Enter Student ID..."
-            class="input-field pl-10 shadow-sm"
+            class="input-field pl-10 shadow-sm focus:"
           />
 
           <button
@@ -37,12 +37,20 @@
           class="w-24 h-24 rounded-full shadow-md"
         /> -->
 
-        <span
-          v-if="student?.scholarship?.study_type"
-          class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
-        >
-          {{ student?.scholarship?.study_type }}
-        </span>
+        <div class="flex justify-center gap-2">
+          <span
+            v-if="student?.scholarship?.study_type"
+            class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
+          >
+            {{ student?.scholarship?.study_type }}
+          </span>
+          <span
+            v-if="student?.scholar_status"
+            class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
+          >
+            {{ student?.scholar_status }}
+          </span>
+        </div>
         <div
           v-show="student.name && student.st_num && student.ID_number"
           class="text-center"
@@ -59,7 +67,7 @@
         </div>
         <div class="flex gap-3 mt-4">
           <div class="flex items-center space-x-2 relative group">
-            <Share2 color="red" @click="openModal('share')" />
+            <Share2 color="red" />
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
             >
@@ -84,10 +92,80 @@
           </div>
         </div>
       </div>
-
-      <!-- Contact Buttons -->
       <div
-        class="py-4 p-4 card mt-4"
+        v-if="studentAllData?.student?.scholarship || reservationInfo"
+        class="p-4 bg-white dark:bg-gray-800"
+      >
+        <h3 class="text-lg font-semibold mb-4 text-[#6c63ff] text-center">
+          Scholarship & Reservation Information
+        </h3>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700 dark:text-gray-300"
+        >
+          <p v-if="studentAllData?.student?.scholarship?.name">
+            <strong>Scholarship:</strong>
+            {{ studentAllData.student.scholarship.name }}
+          </p>
+
+          <p v-if="studentAllData?.student?.careerType">
+            <strong>Career Type:</strong>
+            {{ studentAllData.student.careerType }}
+          </p>
+
+          <p v-if="studentAllData?.student?.scholar_status">
+            <strong>Status:</strong> {{ studentAllData.student.scholar_status }}
+          </p>
+
+          <p v-if="studentAllData?.student?.scholarship?.study_type">
+            <strong>Study Type:</strong>
+            {{ studentAllData.student.scholarship.study_type }}
+          </p>
+
+          <p v-if="studentAllData?.student?.marketing_code">
+            <strong>Scholarship Code:</strong>
+            {{ studentAllData.student.marketing_code || "N/A" }}
+          </p>
+
+          <p v-if="reservationInfo?.branch?.name">
+            <strong>Branch:</strong>
+            {{ reservationInfo.branch.name }}
+          </p>
+
+          <p v-if="reservationInfo?.called_by?.name">
+            <strong>Called By:</strong>
+            {{ reservationInfo.called_by.name }}
+          </p>
+
+          <p v-if="reservationInfo?.called_time">
+            <strong>Called Time:</strong>
+            {{ reservationInfo.called_time }}
+          </p>
+
+          <p v-if="reservationInfo?.registered_by?.name">
+            <strong>Registered By:</strong>
+            {{ reservationInfo.registered_by.name }}
+          </p>
+
+          <p v-if="reservationInfo?.registered_at">
+            <strong>Registered At:</strong>
+            {{ reservationInfo.registered_at }}
+          </p>
+
+          <p v-if="reservationInfo?.reserved_by?.name">
+            <strong>Reservation By:</strong>
+            {{ reservationInfo.reserved_by.name }}
+          </p>
+
+          <p v-if="reservationInfo?.reserved_time">
+            <strong>Reservation Time:</strong>
+            {{ reservationInfo.reserved_time }}
+          </p>
+        </div>
+      </div>
+
+      <div
+        class="p-4"
         v-if="
           student &&
           (student.email ||
@@ -101,9 +179,8 @@
         <h3 class="font-bold text-center mb-2 text-indigo-400">
           General & Personal Information
         </h3>
-        <div class="flex items-center  space-x-2">
+        <div class="flex items-center space-x-2">
           <strong>Phones:</strong>
-          <!-- Display phones as a list -->
           <span>{{ student?.phones?.join(" / ") }}</span>
           <div class="relative group">
             <MessageSquareText
@@ -118,7 +195,6 @@
         </div>
         <div class="flex items-center space-x-2 mt-1">
           <strong>Email:</strong>
-
           <span>{{ student?.email }}</span>
           <div class="relative group">
             <Mail
@@ -130,7 +206,6 @@
               Send Email
             </div>
           </div>
-          <!-- Tooltip -->
         </div>
 
         <div class="space-y-2 mt-2">
@@ -139,9 +214,7 @@
             {{ student?.company || "No Available" }}
           </p>
           <p><strong>Major:</strong> {{ student?.major || "No Available" }}</p>
-
           <p><strong>Grade:</strong> {{ student?.grade }}</p>
-
           <p>
             <strong>Faculty:</strong>
             {{ student?.faculity || "No Available" }}
@@ -149,7 +222,8 @@
         </div>
       </div>
 
-    
+      <!-- Scholarship & Reservation Information -->
+
       <!-- <nav class="flex-1 px-4 pt-6 space-y-2">
         <NavItem
           v-for="item in navItems"

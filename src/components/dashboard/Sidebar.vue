@@ -48,7 +48,7 @@ function getRouteMeta(routeName) {
 
 const filteredItems = items
   .map(item => {
-    // لو فيه أطفال، فلترهم
+
     if (item.children) {
       const filteredChildren = item.children.filter(child => {
         const meta = getRouteMeta(child.route)

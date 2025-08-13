@@ -11,7 +11,9 @@
         <div
           class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white"
         >
-          <h2 class="text-base sm:text-lg font-semibold tracking-wide">Reply</h2>
+          <h2 class="text-base sm:text-lg font-semibold tracking-wide">
+            Reply
+          </h2>
           <button
             @click="$emit('update:modelValue', false)"
             aria-label="Close"
@@ -23,7 +25,8 @@
 
         <!-- Body -->
         <div class="px-5 pt-5 pb-2">
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+          <label
+            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
             >Your Message</label
           >
           <textarea
@@ -57,7 +60,6 @@
       </div>
     </div>
   </div>
-  
 </template>
 
 <script setup>
@@ -66,7 +68,7 @@ import { ref } from "vue";
 const props = defineProps({
   modelValue: Boolean,
   fieldKey: String,
-  loadingReply:Boolean,
+  loadingReply: Boolean,
 });
 
 const emit = defineEmits(["update:modelValue", "send-reply"]);
