@@ -1,21 +1,14 @@
 <template>
-   <div class="flex min-h-screen bg-gray-100">
+  <div class="flex min-h-screen bg-gray-100">
     <!-- Sidebar -->
-       <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
+    <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
       <div class="max-w-3xl mx-auto mb-5">
         <div class="relative mt-3">
-          <input
-            v-model="studentId"
-            @keyup.enter="searchStudent"
-            type="text"
-            placeholder="Enter Student ID..."
-            class="input-field pl-10 shadow-sm focus:"
-          />
+          <input v-model="studentId" @keyup.enter="searchStudent" type="text" placeholder="Enter Student ID..."
+            class="input-field pl-10 shadow-sm focus:" />
 
-          <button
-            @click="searchStudent"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#6c63ff] transition"
-          >
+          <button @click="searchStudent"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#6c63ff] transition">
             <Search class="w-5 h-5 font-bold cursor-pointer hover:w-6" />
           </button>
         </div>
@@ -23,10 +16,8 @@
 
       <!-- Profile -->
       <div class="flex flex-col pb-3 items-center border-b px-4 text-center">
-        <p
-          v-if="student?.scholar_status === 'canceled'"
-          class="mb-2 text-sm font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full inline-block"
-        >
+        <p v-if="student?.scholar_status === 'canceled'"
+          class="mb-2 text-sm font-semibold text-red-600 bg-red-100 px-3 py-1 rounded-full inline-block">
           ❌ This student has been canceled
         </p>
         <!-- <img
@@ -38,28 +29,33 @@
         /> -->
 
         <div class="flex justify-center gap-2">
-          <span
-            v-if="student?.scholarship?.study_type"
-            class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700"
-          >
+          <span v-if="student?.scholarship?.study_type"
+            class="px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-700">
             {{ student?.scholarship?.study_type }}
           </span>
-          <span
-            v-if="student?.scholar_status"
-            class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
-          >
+          <span v-if="student?.scholar_status"
+            class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
             {{ student?.scholar_status }}
           </span>
+          <span v-if="student?.careerType"
+            class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+            {{ student?.careerType }}
+          </span>
         </div>
-        <div
-          v-show="student.name && student.st_num && student.ID_number"
-          class="text-center"
-        >
+        <div v-show="student.name && student.st_num && student.ID_number" class="text-center">
           <h2 class="mt-2 text-xl font-bold text-gray-800">
             {{ student?.name || "John Doe" }}
           </h2>
           <p class="text-sm text-gray-600">
             <strong>Student No:</strong> {{ student?.st_num || "343455" }}
+          </p>
+          <p class="text-sm text-gray-600">
+            <strong>Scholarship:</strong>
+            {{ studentAllData?.student?.scholarship?.name }}
+          </p>
+          <p class="text-sm text-gray-600">
+            <strong>Scholarship Code:</strong>
+            {{ studentAllData?.student?.marketing_code }}
           </p>
           <p class="text-sm text-gray-600">
             <strong> ID:</strong> {{ student?.ID_number || "N/A" }}
@@ -69,40 +65,34 @@
           <div class="flex items-center space-x-2 relative group">
             <Share2 color="red" />
             <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
               Share
             </div>
           </div>
           <div class="flex items-center space-x-2 relative group">
             <QrCode color="green" />
             <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
               QR
             </div>
           </div>
           <div class="flex items-center space-x-2 relative group">
             <AppWindow color="blue" />
             <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
               App
             </div>
           </div>
         </div>
       </div>
-      <div
-        v-if="studentAllData?.student?.scholarship || reservationInfo"
-        class="p-4 bg-white dark:bg-gray-800"
-      >
+
+      <!-- data for scholarship & reservation info -->
+      <!-- <div v-if="studentAllData?.student?.scholarship || reservationInfo" class="p-4 bg-white dark:bg-gray-800">
         <h3 class="text-lg font-semibold mb-4 text-[#6c63ff] text-center">
           Scholarship & Reservation Information
         </h3>
 
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700 dark:text-gray-300"
-        >
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700 dark:text-gray-300">
           <p v-if="studentAllData?.student?.scholarship?.name">
             <strong>Scholarship:</strong>
             {{ studentAllData.student.scholarship.name }}
@@ -162,20 +152,17 @@
             {{ reservationInfo.reserved_time }}
           </p>
         </div>
-      </div>
+      </div> -->
 
-      <div
-        class="p-4"
-        v-if="
-          student &&
-          (student.email ||
-            student.phones?.length ||
-            student.major ||
-            student.company ||
-            student.grade ||
-            student.faculity)
-        "
-      >
+      <div class="p-4" v-if="
+        student &&
+        (student.email ||
+          student.phones?.length ||
+          student.major ||
+          student.company ||
+          student.grade ||
+          student.faculity)
+      ">
         <h3 class="font-bold text-center mb-2 text-indigo-400">
           General & Personal Information
         </h3>
@@ -183,12 +170,9 @@
           <strong>Phones:</strong>
           <span>{{ student?.phones?.join(" / ") }}</span>
           <div class="relative group">
-            <MessageSquareText
-              class="w-5 h-5 transition text-green-500 cursor-not-allowed hover:text-green-800"
-            />
+            <MessageSquareText class="w-5 h-5 transition text-green-500 cursor-not-allowed hover:text-green-800" />
             <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
               Send SMS
             </div>
           </div>
@@ -197,12 +181,9 @@
           <strong>Email:</strong>
           <span>{{ student?.email }}</span>
           <div class="relative group">
-            <Mail
-              class="w-5 h-5 transition cursor-not-allowed text-[#6c63ff] hover:text-blue-800"
-            />
+            <Mail class="w-5 h-5 transition cursor-not-allowed text-[#6c63ff] hover:text-blue-800" />
             <div
-              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
-            >
+              class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
               Send Email
             </div>
           </div>
@@ -235,20 +216,12 @@
     </aside>
 
     <!-- Message Modal -->
-    <MessageModal
-      v-if="student"
-      :type="modalType"
-      :recipient="
-        modalType === 'share'
-          ? student.email
-          : modalType === 'email'
-          ? student.email
-          : student.phones?.join(' / ')
-      "
-      :visible="showModal"
-      @update:visible="showModal = $event"
-      @send="handleSend"
-    />
+    <MessageModal v-if="student" :type="modalType" :recipient="modalType === 'share'
+      ? student.email
+      : modalType === 'email'
+        ? student.email
+        : student.phones?.join(' / ')
+      " :visible="showModal" @update:visible="showModal = $event" @send="handleSend" />
   </div>
 </template>
 
@@ -316,8 +289,7 @@ const handleSend = (message) => {
       : student.value.phones?.join(", ");
 
   alert(
-    `${
-      modalType.value === "email" ? "Email" : "SMS"
+    `${modalType.value === "email" ? "Email" : "SMS"
     } sent to ${recipient}:\n${message}`
   );
 };

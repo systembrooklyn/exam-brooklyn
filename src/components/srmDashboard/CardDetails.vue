@@ -20,7 +20,7 @@ const currentPage = ref(1);
 
 console.log("Card Name:", props.cardName);
 
-const pageSize = props.cardName == "Invoices" ? 10 : 5;
+const pageSize = computed(() => (props.cardName === "Invoices" ? 10 : 5));
 
 const sortOrder = ref("asc");
 const sortField = ref("created_at");
@@ -53,7 +53,7 @@ function sortData(data) {
 }
 
 const totalPages = computed(
-  () => Math.ceil(props.data?.length / pageSize) || 1
+  () => Math.ceil(props.data?.length / pageSize.value) || 1
 );
 
 const computedHeaders = computed(() => {
@@ -78,8 +78,8 @@ const paginatedData = computed(() => {
     return sorted || [];
   }
 
-  const start = (currentPage.value - 1) * pageSize;
-  return sorted ? sorted.slice(start, start + pageSize) : [];
+  const start = (currentPage.value - 1) * pageSize.value;
+  return sorted ? sorted.slice(start, start + pageSize.value) : [];
 });
 
 function toggleSort(field) {
@@ -137,61 +137,37 @@ watch(
   <div class="px-4">
     <!-- Loading Spinner -->
     <div v-if="loading" class="flex justify-center items-center">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"
-      ></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
     </div>
 
     <!-- No Data Message -->
     <div v-else-if="!hasData" class="text-center">
-      <div
-        v-if="cardName === 'Requests' || cardName === 'Complains'"
-        class="mt-6 text-end p-3"
-      >
-        <button
-          @click="openModal"
-          class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
-        >
+      <div v-if="cardName === 'Requests' || cardName === 'Complains'" class="mt-6 text-end p-3">
+        <button @click="openModal"
+          class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200">
           Add New {{ cardName }}
         </button>
-        
+
       </div>
 
       <div v-if="!hasData" class="text-center">
-        <img
-          class="mx-auto h-80 mt-10"
-          src="@/assets/undraw_empty_4zx0.png"
-          alt="No Data"
-        />
+        <img class="mx-auto h-80 mt-10" src="@/assets/undraw_empty_4zx0.png" alt="No Data" />
         <p class="mt-4 font-semibold text-gray-800">No Data Found</p>
       </div>
     </div>
 
     <!-- Content -->
-    <div v-else class="space-y-4">
+    <div v-else class="space-y-6">
       <!-- ✅ Groups Table -->
-      <GroupsTable
-        v-if="cardName === 'Groups'"
-        :data="paginatedData"
-        :sortOrder="sortOrder"
-        @toggleSort="toggleSort"
-      />
+      <GroupsTable v-if="cardName === 'Groups'" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
 
       <!-- ✅ Attendance Table -->
-      <AttendanceTable
-        v-if="cardName === 'Attendance'"
-        :data="paginatedData"
-        :sortOrder="sortOrder"
-        @toggleSort="toggleSort"
-      />
+      <AttendanceTable v-if="cardName === 'Attendance'" :data="paginatedData" :sortOrder="sortOrder"
+        @toggleSort="toggleSort" />
 
       <!-- ✅ Invoices Table -->
-      <InvoicesTable
-        v-if="cardName === 'Invoices'"
-        :data="paginatedData"
-        :sortOrder="sortOrder"
-        @toggleSort="toggleSort"
-      />
+      <InvoicesTable v-if="cardName === 'Invoices'" :data="paginatedData" :sortOrder="sortOrder"
+        @toggleSort="toggleSort" />
 
       <!-- ✅ Requests & Complaints -->
       <div v-if="cardName === 'Requests' || cardName === 'Complains'">
@@ -201,37 +177,19 @@ watch(
         >
           Add New {{ title }}
         </button> -->
-        <RequestsTable
-          :title="cardName"
-          :data="paginatedData"
-          :sortOrder="sortOrder"
-          @toggleSort="toggleSort"
-         
-        />
+        <RequestsTable :title="cardName" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
       </div>
 
       <!-- ✅ Deadlines -->
-      <Deadlines
-        v-if="cardName === 'Deadlines'"
-        :data="paginatedData"
-        :sortOrder="sortOrder"
-        @toggleSort="toggleSort"
-      />
+      <Deadlines v-if="cardName === 'Deadlines'" :data="paginatedData" :sortOrder="sortOrder"
+        @toggleSort="toggleSort" />
       <!-- Pagination -->
-      <Pagination
-        v-if="
-          totalPages > 1 && cardName !== 'Groups' && cardName !== 'Attendance'
-        "
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        :page-numbers="pageNumbers"
-        @update:current-page="goToPage"
-      />
+      <Pagination v-if="
+        totalPages > 1 && cardName !== 'Groups' && cardName !== 'Attendance'
+      " :current-page="currentPage" :total-pages="totalPages" :page-numbers="pageNumbers"
+        @update:current-page="goToPage" />
     </div>
     <!-- Always mount the modal so it works even when there's no data -->
-    <RequestFieldModal
-      v-model="showRequestFieldModal"
-      :type="cardName"
-    />
+    <RequestFieldModal v-model="showRequestFieldModal" :type="cardName" />
   </div>
 </template>

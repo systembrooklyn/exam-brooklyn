@@ -2,9 +2,7 @@
 <template>
   <div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Sidebar -->
-    <div
-      class="sticky top-0 h-screen w-[370px] shrink-0 z-10 bg-white dark:bg-gray-800 shadow-lg"
-    >
+    <div class="sticky top-0 h-screen w-[370px] shrink-0 z-10 bg-white dark:bg-gray-800 shadow-lg">
       <SideBar @student-selected="handleStudentSelected" />
     </div>
 
@@ -12,10 +10,7 @@
     <div class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6">
       <Loader :show="studentStore.loadingData" />
 
-      <div
-        v-if="!student"
-        class="text-center mt-20 text-gray-600 dark:text-gray-300"
-      >
+      <div v-if="!student" class="text-center mt-20 text-gray-600 dark:text-gray-300">
         <img src="@/assets/search.png" class="w-64 mx-auto mb-6 opacity-90" />
         <p class="text-lg">
           Start by entering the student's ID above to view detailed information.
@@ -25,48 +20,35 @@
       <!-- Student Profile Card -->
       <div v-if="student" class="max-w-6xl mx-auto space-y-6">
         <!-- Basic Info -->
-      
+
 
         <!-- Tabs Navigation -->
         <div class="min-w-0">
-          <div class="max-w-4xl mx-auto">
+          <div class="max-w-6xl mx-auto">
             <div
-              class="flex justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20"
-            >
-              <button
-                v-for="tab in tabs"
-                :key="tab.name"
-                @click="selectTab(tab.name, tab.label)"
-                :disabled="loading && cardName !== tab.label"
-                :class="[
+              class="flex justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20">
+              <button v-for="tab in tabs" :key="tab.name" @click="selectTab(tab.name, tab.label)"
+                :disabled="loading && cardName !== tab.label" :class="[
                   'px-5 py-3  rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[120px] justify-center',
                   loading && cardName !== tab.label
                     ? 'opacity-50 cursor-not-allowed'
                     : cardName === tab.label
                     ? 'bg-gradient-to-r from-[#6c63ff] to-[#5a52e0] text-white shadow-md'
                     : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff]',
-                ]"
-              >
+                ]">
                 {{ tab.label }}
-                <span
-                  :class="[
+                <span :class="[
                     'text-xs px-2 py-0.5 rounded-full',
                     cardName === tab.label
                       ? 'bg-white/20 text-white'
                       : 'bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200',
-                  ]"
-                >
+                  ]">
                   {{ tab.count || 0 }}
                 </span>
               </button>
             </div>
 
-            <CardDetails
-              :cardName="cardName"
-              :headers="headers"
-              :data="data"
-              :loading="loading"
-            />
+            <CardDetails :cardName="cardName" :headers="headers" :data="data" :loading="loading" />
           </div>
         </div>
       </div>
