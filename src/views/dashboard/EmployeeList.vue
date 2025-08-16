@@ -3,11 +3,16 @@
     <div class="flex justify-between items-center">
       <h1 class="text-2xl font-bold text-gray-800 mb-4">Users List</h1>
 
-    
-<div v-if="authStore.hasPermission('create-user')"
-@click="showForm = true" class="buttons">
-   <button class="btn"><span></span><p data-start="good luck!" data-text="ADD!" data-title="new User"></p></button>
-</div>
+      <div
+        v-if="authStore.hasPermission('create-user')"
+        @click="showForm = true"
+        class="buttons"
+      >
+        <button class="btn">
+          <span></span>
+          <p data-start="good luck!" data-text="ADD!" data-title="new User"></p>
+        </button>
+      </div>
     </div>
     <div>
       <DataTable
@@ -19,7 +24,6 @@
         :isEmployee="true"
         resourceType="user"
         :loading="employeesStore.loading"
-       
         @delete="showDeleteAlert"
         @edit="editEmployee"
       />
@@ -200,7 +204,7 @@ const cancelDelete = () => {
 
 const editEmployee = (employees) => {
   isEditing.value = true;
-(employees);
+  employees;
 
   formEmployee.value = { ...employees };
   showModal.value = true;
@@ -231,7 +235,6 @@ const closeLogin = () => {
   };
 };
 
-
 const saveEmployee = async () => {
   saving.value = true;
 
@@ -255,7 +258,6 @@ const saveEmployee = async () => {
     saving.value = false;
   }
 };
-
 
 async function handleLogin() {
   errors.value = {

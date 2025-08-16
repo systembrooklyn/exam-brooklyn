@@ -120,13 +120,14 @@ function cancelConfirm() {
       <!-- Submit Button -->
       <div class="md:col-span-2 text-center mt-6">
         <button
+          v-if="authStore.hasPermission('create-user')"                                                                                                                     
           type="submit"
           :disabled="loading || !email"
           class="bg-primary text-white py-3 px-10 cursor-pointer rounded-xl hover:bg-blue-700 transition flex justify-center items-center gap-2 mx-auto"
         >
           <Loader2 v-if="loading" class="animate-spin w-5 h-5" />
           <span v-if="!loading">Start Test</span>
-          <span v-else>Loading...</span>
+          <span v-else>Loading...</span>                                                                                                                                                        
         </button>
       </div>
     </form>

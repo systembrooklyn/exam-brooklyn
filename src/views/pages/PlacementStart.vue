@@ -51,12 +51,15 @@ onMounted(async () => {
         <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mt-4"></div>
       </div>
 
-      <!-- بعد الانتهاء من التحميل -->
+      
       <div v-else>
-        <!-- العنوان -->
-       
+        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">
+          Let's Start Your Exam
+        </h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-8">
+          Choose a module to begin your placement test.
+        </p>
 
-        <!-- حالة: لو فيه Modules -->
         <div v-if="placementExamStore.studentPlacement?.length > 0">
            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">
           Let's Start Your Exam
@@ -80,7 +83,7 @@ onMounted(async () => {
             </select>
           </div>
 
-          <!-- زرار البدء -->
+         
           <button
             :disabled="!selectedModule || loading"
             @click="startExam"

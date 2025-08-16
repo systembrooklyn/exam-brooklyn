@@ -26,15 +26,15 @@
 <script setup>
 import { RouterLink } from 'vue-router';
 import { computed } from 'vue';
-
-
-
 import onetask from '@/assets/exam.png';
 import dashboard from '@/assets/dashbord.jpeg';
 import reservation from '@/assets/reservation.jpeg';
 import Placement from '@/assets/plasment.jpeg';
 import srm from '@/assets/srm.png';
 import { useAuthStore } from '@/stores/auth';
+
+
+
 
 
 const systems = [
@@ -59,13 +59,13 @@ const systems = [
     name: "Reservation System",
     route: "/reservation",
     image: reservation ,
-    // requiresPermission: "view-reservation", 
+    requiresPermission: "view-reservation", 
   },
   {
     name: "Placement Test",
     route: "/placement-test",
     image: Placement ,
-    // requiresPermission: "view-placement-test", 
+    requiresPermission: "view-placementTest", 
   },
   {
     name: "SRM System",

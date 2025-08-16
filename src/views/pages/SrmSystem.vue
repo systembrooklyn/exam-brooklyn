@@ -21,14 +21,17 @@
       <div v-if="student" class="max-w-6xl mx-auto space-y-6">
         <!-- Basic Info -->
 
-
         <!-- Tabs Navigation -->
         <div class="min-w-0">
           <div class="max-w-6xl mx-auto">
             <div
               class="flex justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20">
-              <button v-for="tab in tabs" :key="tab.name" @click="selectTab(tab.name, tab.label)"
-                :disabled="loading && cardName !== tab.label" :class="[
+              <button 
+                v-for="tab in filteredTabs" 
+                :key="tab.name" 
+                @click="selectTab(tab.name, tab.label)"
+                :disabled="loading && cardName !== tab.label" 
+                :class="[
                   'px-5 py-3  rounded-xl font-medium text-lg sm:text-base transition-all duration-200 relative flex items-center gap-1 min-w-[120px] justify-center',
                   loading && cardName !== tab.label
                     ? 'opacity-50 cursor-not-allowed'
@@ -59,6 +62,7 @@
 <script setup>
 import { ref, inject, computed, watch, onUnmounted } from "vue";
 import { useStudentStore } from "@/stores/SearchStudent";
+import { useAuthStore } from "@/stores/auth";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
 import {
@@ -68,12 +72,12 @@ import {
   FileText,
   ArrowLeft
 } from "lucide-vue-next";
-
 import CardDetails from "../../components/srmDashboard/CardDetails.vue";
 
 const emitter = inject("emitter", null);
 
 const studentStore = useStudentStore();
+const authStore = useAuthStore();
 const student = ref(null);
 const cardName = ref("");
 const data = ref([]);
@@ -84,7 +88,32 @@ const tabs = ref([]);
 const studentInfo = computed(() => student.value?.student || {});
 const reservationInfo = computed(() => student.value?.reservation?.[0] || {});
 
+
+const tabPermissions = {
+  requests: '',
+  complaints: '', 
+  payments: 'view-payments',
+  groups: 'view-groups',
+  attendance: '',
+  invoices: ''
+};
+
+
+const filteredTabs = computed(() => {
+  return tabs.value.filter(tab => {
+    const permission = tabPermissions[tab.name];
+    return permission ? authStore.hasPermission(permission) : true;
+  });
+});
+
 const selectTab = async (name, label) => {
+
+  const permission = tabPermissions[name];
+  if (permission && !authStore.hasPermission(permission)) {
+    console.warn(`User does not have permission: ${permission}`);
+    return;
+  }
+
   cardName.value = label;
   loading.value = true;
 
@@ -109,7 +138,7 @@ const selectTab = async (name, label) => {
 
 if (emitter) {
   emitter.on("refresh", () => {
-    const currentTab = tabs.value.find((t) => t.label === cardName.value);
+    const currentTab = filteredTabs.value.find((t) => t.label === cardName.value);
     if (currentTab) {
       selectTab(currentTab.name, currentTab.label);
     }
@@ -133,7 +162,7 @@ watch(student, (newVal) => {
         label: "Groups",
         count: `${counts.doneCourses || 0}/${counts.groups || 0}`,
       },
-      { name: "attendance", label: "Attendance", count: counts.attendance },
+      { name: "attendance", label: "Attendance" },
       { name: "invoices", label: "Invoices", count: counts.invoices },
     ];
   }
@@ -150,6 +179,7 @@ const columnMap = {
   lectures: ["name", "notes", "start_time", "end_time", "status"],
   attendance: ["date", "group_name", "status"],
 };
+
 // Ensure we clean up the listener safely
 onUnmounted(() => {
   if (emitter && emitter.off) {
@@ -157,5 +187,4 @@ onUnmounted(() => {
     emitter.all?.delete?.("refresh");
   }
 });
-
 </script>

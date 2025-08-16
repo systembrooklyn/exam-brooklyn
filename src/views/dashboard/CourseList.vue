@@ -2,13 +2,13 @@
   <div class=" px-3">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-800">Course List</h1>
-      <!-- <button
+      <button
         v-if="authStore.hasPermission('create-courses')"
         @click="toggleForm"
         class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600"
       >
         + Add Course
-      </button> -->
+      </button>
       <!-- From Uiverse.io by Nawsome -->
       <div
         v-if="authStore.hasPermission('create-courses')"

@@ -40,7 +40,7 @@ const isLastQuestion = computed(
 );
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-let tenMinuteWarningGiven = false; // ✅ متغير لتفادي التكرار
+let tenMinuteWarningGiven = false; 
 
 const startTimer = () => {
   interval = setInterval(() => {
@@ -115,7 +115,7 @@ const handleStart = () => {
 
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
-  // تحميل الإجابات المُخزنة في selectedOptions و answersArray
+  
   restoredAnswers.forEach((answer) => {
     const qIndex = questions.value.findIndex((q) => q.id === answer.q_id);
     if (qIndex !== -1) {
@@ -127,10 +127,10 @@ const handleStart = () => {
     }
   });
 
-  // تخزين مؤقت في الذاكرة المؤقتة
+ 
   sessionStorage.setItem("answers", JSON.stringify(answersArray.value));
 
-  // لو فيه إجابات مفقودة بنحددها
+
   unansweredIndexes.value = questions.value
     .map((q, i) => (selectedOptions.value[i] == null ? i : null))
     .filter((i) => i !== null);
