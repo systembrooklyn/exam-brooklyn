@@ -34,38 +34,39 @@ console.log("showRequestFieldModal:", showRequestFieldModal.value);
 
 // Sort function for data
 function sortData(data) {
-  if (!data || !sortField.value) return data;
-
   return [...data].sort((a, b) => {
-    let valA = a[sortField.value];
-    let valB = b[sortField.value];
+    const dateA = a.type === "online" ? a.student_start : a.start_date;
+    const dateB = b.type === "online" ? b.student_start : b.start_date;
 
-    if (props.cardName === "Groups") {
-      valA = a.type === "online" ? a.student_start : a.start_date;
-      valB = b.type === "online" ? b.student_start : b.start_date;
+    const dA = new Date(dateA);
+    const dB = new Date(dateB);
+
+    const invalidA = isNaN(dA.getTime());
+    const invalidB = isNaN(dB.getTime());
+
+   
+    if (invalidA && !invalidB) return 1;
+    if (!invalidA && invalidB) return -1;
+    if (invalidA && invalidB) return 0;
+
+    if (sortField.value === "start_date") {
+      if (sortOrder.value === "asc") {
+        return dA - dB; // القديم فوق
+      } else {
+        return dB - dA; // الجديد فوق
+      }
     }
 
-    const dateA = new Date(valA);
-    const dateB = new Date(valB);
-
-    return sortOrder.value === "asc" ? dateA - dateB : dateB - dateA;
+    return 0;
   });
 }
+
 
 const totalPages = computed(
   () => Math.ceil(props.data?.length / pageSize.value) || 1
 );
 
-const computedHeaders = computed(() => {
-  if (!props.headers) return [];
 
-  if (props.cardName === "Requests") {
-    const withoutCreatedAt = props.headers.filter((h) => h !== "created_at");
-    return ["created_at", ...withoutCreatedAt];
-  }
-
-  return props.headers;
-});
 
 function displayValue(val) {
   return val ?? "No Data Available";
@@ -84,12 +85,15 @@ const paginatedData = computed(() => {
 
 function toggleSort(field) {
   if (sortField.value === field) {
+    // لو دوسنا على نفس العمود نقلب الاتجاه
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
+    // لو عمود جديد نبدأ بالقديم للأحدث
     sortField.value = field;
     sortOrder.value = "asc";
   }
 }
+
 
 const pageNumbers = computed(() => {
   const total = totalPages.value;
@@ -136,7 +140,7 @@ watch(
 <template>
   <div class="px-4">
     <!-- Loading Spinner -->
-    <div v-if="loading" class="flex justify-center items-center">
+    <div v-if="loading" class="flex justify-center  h-88 items-center">
       <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-500"></div>
     </div>
 

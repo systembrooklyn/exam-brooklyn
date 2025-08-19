@@ -11,6 +11,7 @@ import { ref, inject } from "vue";
 import { useRequestStore } from "@/stores/srmStore/requestStore";
 import RequestFieldModal from "../RequestFieldModal.vue";
 import ReplyRequestModal from "../ReplyRequestModal.vue";
+import formatDate from "../../global/FormDate";
 
 const props = defineProps({
   title: String,
@@ -30,7 +31,7 @@ const showRequestFieldModal = ref(false);
 const showReplyModal = ref(false);
 const selectedRequestId = ref(null);
 const requestStore = useRequestStore();
-const emitter = inject('emitter', null);
+const emitter = inject("emitter", null);
 
 const expandableColumns = [
   "value",
@@ -43,16 +44,6 @@ const emit = defineEmits(["toggleSort"]);
 
 function toggleSort(field) {
   emit("toggleSort", field);
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 }
 
 function displayValue(val) {
@@ -85,7 +76,7 @@ const updateRequestData = async ({ id, data, onSuccess, loadingRef }) => {
         props.data[idx] = { ...props.data[idx], ...updated };
       }
       // Trigger a background refresh to sync from server
-      if (emitter) emitter.emit('refresh');
+      if (emitter) emitter.emit("refresh");
       if (onSuccess) onSuccess();
     }
   } catch (error) {
@@ -110,11 +101,11 @@ const updateStatus = async (row) => {
       loadingRef: loadingStatusId, // ← مهم
       onSuccess: () => {
         // successStatusId.value = row.id;
-       loadingStatusId.value = null
+        loadingStatusId.value = null;
         setTimeout(() => {
           if (successStatusId.value === row.id) successStatusId.value = null;
         }, 2000);
-        if (emitter) emitter.emit('refresh');
+        if (emitter) emitter.emit("refresh");
       },
     });
   } catch (error) {
@@ -142,14 +133,13 @@ const handleReply = async ({ key, value }) => {
 };
 
 function truncateText(text) {
-  if (!text) return '';
-  const words = text.split(' ');
+  if (!text) return "";
+  const words = text.split(" ");
   if (words.length > 25) {
-    return words.slice(0, 25).join(' ') + '...';
+    return words.slice(0, 25).join(" ") + "...";
   }
   return text;
 }
-
 </script>
 
 <template>
@@ -226,12 +216,11 @@ function truncateText(text) {
         </div>
       </div>
 
-    
       <div class="flex justify-between items-center">
         <div class="prose max-w-none text-gray-800 font-medium mb-4">
           <template v-if="expandableColumns.includes('value')">
             <div class="mixed-text-container">
-              <div 
+              <div
                 v-if="`${rowIndex}-value` === expandedCell.key"
                 class="mixed-text-content"
               >
@@ -243,10 +232,7 @@ function truncateText(text) {
                   Less
                 </button>
               </div>
-              <div 
-                v-else 
-                class="mixed-text-content"
-              >
+              <div v-else class="mixed-text-content">
                 {{ truncateText(displayValue(row.value)) }}
                 <button
                   v-if="displayValue(row.value).split(' ').length > 35"
@@ -259,12 +245,15 @@ function truncateText(text) {
             </div>
           </template>
         </div>
-        <div class="flex items-center gap-2" style="direction: auto; unicode-bidi: plaintext;">
+        <div
+          class="flex items-center gap-2"
+          style="direction: auto; unicode-bidi: plaintext"
+        >
           <button
             v-if="!row.employee_response"
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
-            style="direction: auto; unicode-bidi: plaintext;"
+            style="direction: auto; unicode-bidi: plaintext"
           >
             Reply
             <MessageCircleReply size="15" />
@@ -273,7 +262,7 @@ function truncateText(text) {
             v-if="!row.manager_response"
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
-            style="direction: auto; unicode-bidi: plaintext;"
+            style="direction: auto; unicode-bidi: plaintext"
           >
             Manager Reply
             <MessageCircleReply size="15" />

@@ -60,6 +60,7 @@
 <script setup>
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
 import { ref, computed } from "vue";
+import formatDate from "../../global/FormDate";
 const props = defineProps({
   data: Array,
   sortOrder: String,
@@ -71,15 +72,7 @@ function toggleSort(field) {
   emit("toggleSort", field);
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
+
 
 function displayValue(value) {
   if (value === null || value === undefined) return "-";

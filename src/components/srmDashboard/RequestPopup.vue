@@ -25,19 +25,12 @@
 
 <script setup>
 import { defineProps } from "vue";
+import formatDate from "../global/FormDate";
 
 const props = defineProps({
   request: Object,
   visible: Boolean,
 });
 
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
+
 </script>

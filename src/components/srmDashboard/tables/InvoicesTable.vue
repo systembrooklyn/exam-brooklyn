@@ -125,15 +125,7 @@ const props = defineProps({
 
 console.log("Data received in InvoicesTable:", props.data);
 
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
-}
+
 
 function displayValue(value) {
   if (value === null || value === undefined) return "-";
