@@ -42,7 +42,7 @@
             {{ student?.careerType }}
           </span>
         </div>
-        <div v-show="student.name && student.st_num && student.ID_number" class="text-center">
+        <div v-show="student?.name && student?.st_num && student?.ID_number" class="text-center">
           <h2 class="mt-2 text-xl font-bold text-gray-800">
             {{ student?.name || "John Doe" }}
           </h2>

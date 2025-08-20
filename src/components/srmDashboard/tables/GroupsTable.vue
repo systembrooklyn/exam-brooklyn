@@ -78,12 +78,6 @@ import formatDate from "../../global/FormDate";
 
 const props = defineProps({
   data: Array,
-  sortOrder: String, 
+  sortOrder: String,
 });
-
-
-
-
-
-
 </script>

@@ -45,11 +45,12 @@
             </td>
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
               {{
-              row.start_date === "1970-01-01" || row.start_date === "1970"
-                ? "-"
-                : row.start_date ? row.start_date.split(" ")[0] : "-"
+                formatDate(row.start_date) === "01/01/1970"
+                  ? "-"
+                  : formatDate(row.start_date)
               }}
             </td>
+
             <td class="px-2 sm:px-4 py-3 text-sm font-bold text-indigo-700">
               {{
                 row.final_score != null
@@ -63,7 +64,7 @@
               {{ row.final_score != null ? row.final_score + "%" : "-" }}
             </td>
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
-              {{ row.exam_at || "-" }}
+              {{ formatDate(row.exam_at) || "-" }}
             </td>
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
               {{ row.attended_lectures }}
@@ -77,6 +78,7 @@
 
 <script setup>
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
+import formatDate from "../../global/FormDate";
 
 const props = defineProps({
   data: Array,

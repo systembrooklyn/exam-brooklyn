@@ -51,9 +51,9 @@ function sortData(data) {
 
     if (sortField.value === "start_date") {
       if (sortOrder.value === "asc") {
-        return dA - dB; // القديم فوق
+        return dA - dB; 
       } else {
-        return dB - dA; // الجديد فوق
+        return dB - dA;
       }
     }
 
@@ -85,10 +85,10 @@ const paginatedData = computed(() => {
 
 function toggleSort(field) {
   if (sortField.value === field) {
-    // لو دوسنا على نفس العمود نقلب الاتجاه
+  
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // لو عمود جديد نبدأ بالقديم للأحدث
+ 
     sortField.value = field;
     sortOrder.value = "asc";
   }
