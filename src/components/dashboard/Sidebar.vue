@@ -13,7 +13,12 @@
         
       </div>
       <ul class="space-y-2">
-        <SidebarItem v-for="item in filteredItems" :key="item.name" :item="item" />
+          <SidebarItem
+    v-for="item in activeItems"
+    :key="item.name"
+    :item="item"
+  />
+        
       </ul>
     </aside>
   </transition>
@@ -23,15 +28,19 @@
 import { ref, inject, onMounted } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 import { items } from './itemsLink'
+import { itemfinnance } from '../finnance-dahboard/sideItem'
 import { X } from 'lucide-vue-next'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { computed } from 'vue'
 
 
 
 const authStore = useAuthStore()
 const permissions = authStore.permissions || []
-const router = useRouter()
+const router = useRouter();
+const route = useRoute();
+
 
 
 const isSidebarOpen = ref(true)  // Initially, the sidebar is closed.
@@ -45,6 +54,7 @@ function getRouteMeta(routeName) {
   const route = router.getRoutes().find(r => r.name === routeName)
   return route?.meta || {}
 }
+
 
 const filteredItems = items
   .map(item => {
@@ -63,7 +73,12 @@ const filteredItems = items
   })
   .filter(Boolean)
 
-
+const activeItems = computed(() => {
+  if (route.path.startsWith('/finnance')) {
+    return itemfinnance
+  }
+  return items
+})
 onMounted(() => {
   if (emitter) {
     emitter.on('toggle-sidebar', (isOpen) => {

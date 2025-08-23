@@ -1,11 +1,11 @@
 <template>
-  <header class="bg-white shadow-md p-4 flex justify-between items-center rounded relative">
+  <header class="bg-white shadow-md p-4 flex justify-between items-center  relative">
 
     <button class="cursor-pointer" @click="toggleSidebar">
       <AlignLeft class="w-6 h-6" />
     </button>
 
-    <h1 class="text-lg ms-2 font-bold">Dashboard</h1>
+    <!-- <h1 class="text-lg ms-2 font-bold">Dashboard</h1> -->
 
     <div class="flex items-center gap-3 relative" @click="toggleMenu">
       <router-link to="/systems" class="text-primary hover:text-blue-800">
