@@ -11,7 +11,7 @@ import finnanceDashboard from "./finnance-dashboard";
 
 const routes = [
   { path: "/", name: "login", component: LogIn },
-  { path: "/home", name: "home", component: Home },
+  { path: "/home", name: "home", component: Home , meta: { requiresPermission: "start-exam" }},
   { path: "/examPage", name: "examPage", component: Exam },
   {
     path: "/reservation",

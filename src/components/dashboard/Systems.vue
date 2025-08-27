@@ -54,43 +54,45 @@ const systems = [
     name: "Exams Portal",
     route: "/home",
     image: onetask,
-    requiresPermission: "create-exams",
+    requiresPermission: "view-examPortalCard",
   },
   {
     name: "One Task System",
     link: "https://www.1task.net/",
     image:
       "https://ik.imagekit.io/ts7pphpbz3/Subheading%20(1)%20(1).png?ik-obj-version=9sTuepUtU27Iw3.FfIbdKOdc7MYL4WM0&updatedAt=1737223784202",
-  },
+   requiresPermission: "view-1taskCard",
+    },
+
   {
     name: "Dashboard",
     route: "/dashboard",
     image: dashboard,
-    requiresPermission: "view-dashboard",
+    requiresPermission: "view-dashboardCard",
   },
   {
     name: "Reservation System",
     route: "/reservation",
     image: reservation,
-    requiresPermission: "view-reservation",
+    requiresPermission: "view-reservationCard",
   },
   {
     name: "Placement Test",
     route: "/placement-test",
     image: Placement,
-    requiresPermission: "view-placementTest",
+    requiresPermission: "view-placementTestCard",
   },
   {
     name: "SRM System",
     route: "/srm",
     image: srm,
-    // requiresPermission: "view-placement-test",
+    requiresPermission: "view-srmCard",
   },
   {
     name: "finnance system",
     route: "/finnance",
     image: finnance,
-    // requiresPermission: "view-placement-test",
+    requiresPermission: "view-financeCard",
   },
 ];
 

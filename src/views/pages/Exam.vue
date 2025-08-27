@@ -6,31 +6,28 @@ import { useRouter } from "vue-router";
 
 const studentStore = useStudentStore();
 const router = useRouter();
-// use shared notyf instance
 
+// منع الدخول بدون attemptId
 if (!sessionStorage.getItem("attemptId")) {
   router.push("/home");
 }
 
 const examData = computed(() => studentStore.startExam?.data || {});
-// remaining_time is expected in seconds from backend
 const remainingTime = computed(() => examData.value?.remaining_time || 0);
 const exam = computed(() => examData.value?.exam || {});
 const questions = computed(() => exam.value?.questions || []);
 const previousAnswers = computed(() => examData.value?.answers || []);
 const showUnansweredMessage = ref("");
-// في script setup
-const currentQuestionIndex = ref(null);
 
+const currentQuestionIndex = ref(null);
 const answersArray = ref([]);
-const timeLeft = ref(remainingTime.value);
+const timeLeft = ref(0); // لن نحفظه في sessionStorage
 const selectedOptions = ref([]);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
 let interval;
 
 const mode = ref("all");
-
 const unansweredIndexes = ref([]);
 
 const currentQuestion = computed(
@@ -42,12 +39,7 @@ const isLastQuestion = computed(
 
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-const filteredQuestions = computed(() => {
-  return mode.value === "filter"
-    ? questions.value.filter((_, i) => unansweredIndexes.value.includes(i))
-    : questions.value;
-});
-
+// بدء المؤقت
 const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value > 0) {
@@ -55,11 +47,12 @@ const startTimer = () => {
     } else {
       clearInterval(interval);
       notyf.error("Time is up! Exam ended.");
-      router.replace({ name: "home" });
+      // لا نحول لـ home هنا مباشرة، نترك الطالب يُكمل إرسال الإجابات
     }
   }, 1000);
 };
 
+// حفظ الإجابة
 const saveAnswer = () => {
   if (
     selectedOptions.value[currentQuestionIndex.value] !== null &&
@@ -101,6 +94,7 @@ const saveAnswer = () => {
   }
 };
 
+// تحميل الإجابة المحفوظة
 const loadSelectedOption = () => {
   const savedAnswer = previousAnswers.value.find(
     (ans) => ans.q_id === currentQuestion.value?.id
@@ -120,15 +114,16 @@ const loadSelectedOption = () => {
   }
 };
 
+// بدء الامتحان
 const handleStart = () => {
   currentQuestionIndex.value = 0;
-
   quizStarted.value = true;
-  timeLeft.value = remainingTime.value; // seconds
+  timeLeft.value = remainingTime.value; // ← الوقت من السيرفر
   startTimer();
   loadSelectedOption();
 };
 
+// السؤال التالي
 const nextQuestion = async () => {
   saveAnswer();
   if (!isLastQuestion.value) {
@@ -139,6 +134,7 @@ const nextQuestion = async () => {
   }
 };
 
+// السؤال السابق
 const previousQuestion = () => {
   if (currentQuestionIndex.value > 0) {
     saveAnswer();
@@ -147,7 +143,10 @@ const previousQuestion = () => {
   }
 };
 
+// إرسال الامتحان النهائي
 const submitFinalExam = async () => {
+  if (isSubmitting.value) return;
+
   try {
     const unansweredQuestionIndexes = questions.value.reduce(
       (acc, question, index) => {
@@ -164,30 +163,32 @@ const submitFinalExam = async () => {
 
     if (unansweredQuestionIndexes.length > 0) {
       unansweredIndexes.value = unansweredQuestionIndexes.map((n) => n - 1);
-
       showUnansweredMessage.value = `Please answer all questions.`;
       mode.value = "filter";
       currentQuestionIndex.value = unansweredIndexes.value[0];
       return;
-    } else {
-      showUnansweredMessage.value = "";
     }
 
     saveAnswer();
-    const payload = { answers: answersArray.value };
+
     isSubmitting.value = true;
-    payload;
+    const payload = { answers: answersArray.value };
 
     await studentStore.submitFinalExam(payload);
+
     isSubmitting.value = false;
     clearInterval(interval);
     quizStarted.value = false;
-  } catch {
+    sessionStorage.removeItem("attemptId");
+    sessionStorage.removeItem("answers");
+    router.replace({ name: "ResultPage" });
+  } catch (error) {
     notyf.error("Error submitting final exam");
+    isSubmitting.value = false;
   }
 };
 
-// Handle before unload
+// منع الخروج المفاجئ
 const handleBeforeUnload = (e) => {
   e.preventDefault();
   sessionStorage.removeItem("attemptId");
@@ -196,49 +197,70 @@ const handleBeforeUnload = (e) => {
 };
 
 onMounted(() => {
+  // استعد الإجابات فقط
+  const savedAnswers = sessionStorage.getItem("answers");
+  if (savedAnswers) {
+    try {
+      answersArray.value = JSON.parse(savedAnswers);
+    } catch (e) {
+      console.warn("Failed to parse saved answers");
+    }
+  }
+
   window.addEventListener("beforeunload", handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
 });
-
-
 </script>
 
 <template>
-  <div class="quiz-container min-h-screen w-full">
-    <div class="text-center mb-10 dark:text-white">
-      <div>
-        <h2 class="font-bold mt-5 mb-5 text-">{{ exam.name }}</h2>
-      </div>
+  <div class="quiz-container  min-h-screen w-[100%]">
+    <div class="text-center dark:text-white">
+      <h2 class="font-bold text-primary text-2xl  p-3">{{ exam.name }}</h2>
 
-      <div class="text-xl font-semibold mb-8">
+      <div class="text-2xl font-semibold mb-3">
         Remaining time
-        <span class="text-primary font-bold text-2xl dark:text-blue-500">
-          ({{ Math.floor(timeLeft / 60).toString().padStart(2, '0') }}:{{ (timeLeft % 60).toString().padStart(2, '0') }})
+        <span class="text-primary font-bold dark:text-blue-500 text-xl ml-1">
+          {{
+            Math.floor(timeLeft / 60)
+              .toString()
+              .padStart(2, "0")
+          }}:{{
+            Math.floor(timeLeft % 60)
+              .toString()
+              .padStart(2, "0")
+          }}
         </span>
-        mm:ss
       </div>
     </div>
 
-    <!-- Show 'Start Exam' button initially -->
     <div v-if="!quizStarted && timeLeft > 0" class="text-center">
       <button @click="handleStart" class="buttonClass">Start</button>
     </div>
-    <div v-if="timeLeft <= 0" class="text-center">
+
+    <div v-else-if="timeLeft <= 0" class="text-center">
+      <p class="text-red-600 font-bold text-xl mb-4">Time is up!</p>
       <button @click="router.push('/home')" class="btn-start">Go Back</button>
     </div>
 
+    <!-- أثناء الامتحان -->
     <div v-if="quizStarted">
-      <div class="text-end mb-5 mt-4">
-        <label class="text-gray-700 font-medium block mb-2">Go to question:</label>
-        <select v-model="currentQuestionIndex" class="border px-4 py-2 rounded-md font-semibold"
-          @change="loadSelectedOption" :class="{
+      <div class="text-end mt-4">
+        <label class="text-gray-700 font-medium block mb-2"
+          >Go to question:</label
+        >
+        <select
+          v-model="currentQuestionIndex"
+          class="border px-4 py-2 rounded-md font-semibold"
+          @change="loadSelectedOption"
+          :class="{
             'border-red-500 text-red-600':
               unansweredIndexes.length > 0 && mode === 'filter',
             'border-indigo-500 text-indigo-700': mode !== 'filter',
-          }">
+          }"
+        >
           <option :value="null" disabled selected>
             {{
               mode === "filter" && unansweredIndexes.length > 0
@@ -246,67 +268,100 @@ onBeforeUnmount(() => {
                 : "Select a question"
             }}
           </option>
-
-          <option v-for="(index, idx) in mode === 'filter'
-            ? unansweredIndexes
-            : questions.map((_, i) => i)" :key="idx" :value="index">
+          <option
+            v-for="(index, idx) in mode === 'filter'
+              ? unansweredIndexes
+              : questions.map((_, i) => i)"
+            :key="idx"
+            :value="index"
+          >
             Question {{ index + 1 }}
           </option>
         </select>
       </div>
-      <div v-if="currentQuestion" class="question-container">
 
+      <div v-if="currentQuestion" class="shadow-md p-5 rounded-2xl">
         <h3
-          class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md  rounded-xl mb-5 bg-primary text-white">
+          class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md rounded-xl mb-5 bg-primary text-white"
+        >
           {{ currentQuestion.question_text }}
         </h3>
-        <div v-for="[key, option] in Object.entries(currentQuestion?.options || {}).filter(
-          ([_, value]) => value && value.trim() !== ''
-        )" :key="key" class="option dark:text-gray-300" :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
-          @click="selectedOptions[currentQuestionIndex] = key">
-          <input type="radio" :id="'option-' + key" v-model="selectedOptions[currentQuestionIndex]" :value="key"
-            style="opacity: 0; position: absolute" />
+        <div
+          v-for="[key, option] in Object.entries(
+            currentQuestion?.options || {}
+          ).filter(([_, value]) => value && value.trim() !== '')"
+          :key="key"
+          class="option dark:text-gray-300"
+          :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
+          @click="selectedOptions[currentQuestionIndex] = key"
+        >
+          <input
+            type="radio"
+            :id="'option-' + key"
+            v-model="selectedOptions[currentQuestionIndex]"
+            :value="key"
+            style="opacity: 0; position: absolute"
+          />
           <label :for="'option-' + key">{{ option }}</label>
         </div>
       </div>
-      <div class="text-center">
+
+      <div class="text-center mt-6">
         <button @click="previousQuestion" class="btn-prev">Previous</button>
         <button v-if="!isLastQuestion" @click="nextQuestion" class="btn-next">
-          next
+          Next
         </button>
-        <button v-if="isLastQuestion" @click="submitFinalExam" class="btn-next">
-          <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin-pulse"></i></span>
+        <button v-else @click="submitFinalExam" class="btn-next">
+          <span v-if="isSubmitting"
+            ><i class="fa-solid fa-circle-notch fa-spin-pulse"></i
+          ></span>
           <span v-else>Submit</span>
         </button>
       </div>
-      <div class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white">
+
+      <div
+        class="answered-counter text-center mt-3 text-lg font-medium dark:text-white"
+      >
         It has been answered
-        <span class="text-primary dark:text-blue-500 text-xl font-bold">({{ answeredCount }})</span>
+        <span class="text-primary dark:text-blue-500 text-xl font-bold"
+          >({{ answeredCount }})</span
+        >
         from
-        <span class="text-primary font-bold text-xl dark:text-blue-500">({{ questions.length }})</span>
+        <span class="text-primary font-bold text-xl dark:text-blue-500"
+          >({{ questions.length }})</span
+        >
         Questions
       </div>
     </div>
 
-    <div v-if="showUnansweredMessage" class="alert-message text-red-500 text-center mt-3">
+    <!-- رسالة الأسئلة الغير مجاب عليها -->
+    <div
+      v-if="showUnansweredMessage"
+      class="alert-message text-red-500 text-center mt-3"
+    >
       {{ showUnansweredMessage }}
     </div>
   </div>
 </template>
+
 <style scoped>
-.question-container {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  padding: 10px 50px;
+.quiz-container {
+  position: relative;
 }
 
-.quiz-container {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  padding: 10px;
-  border-radius: 8px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+.quiz-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../../assets/logo.png");
+  background-size: 50%; 
+  background-position: center;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .answered-counter {
@@ -340,13 +395,7 @@ onBeforeUnmount(() => {
   border-color: #689af1;
   color: #092c67;
   font-weight: bold;
-
 }
-
-/* .dark .selected {
-  background-color: #b5ccf3;
-  color: rgb(255, 255, 255);
-} */
 
 button {
   padding: 10px 50px;
@@ -378,10 +427,7 @@ button:disabled {
   font-weight: 500;
   font-size: 16px;
   border-color: rgba(9, 44, 103, 1);
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  border-radius: 10px;
   box-shadow: 0px 0px 0px 2px #9fb4f2;
   text-shadow: 0px 1px 0px rgba(136, 148, 179, 1);
   background: linear-gradient(rgb(120, 146, 194), rgba(9, 44, 103, 1));
@@ -391,49 +437,11 @@ button:disabled {
   background: linear-gradient(rgba(9, 44, 103, 1), rgb(120, 146, 194));
 }
 
-.selected-option {
-  background-color: #b0c3ee;
-  border-radius: 10px;
-  padding: 10px;
-  transition: background-color 0.3s ease-in-out;
-}
-
 .btn-prev {
   margin-right: 10px;
 }
 
-.pagination {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 15px;
-}
-
-.pagination button {
-  margin: 3px;
-  padding: 8px 12px;
-  border: 1px solid #092c67;
-  background-color: white;
-  color: #092c67;
-  cursor: pointer;
-  min-width: 40px;
-}
-
-.pagination button.active {
-  background-color: #092c67;
-  color: white;
+.alert-message {
   font-weight: bold;
-}
-
-.pagination button.answered {
-  background-color: #e0f0ff;
-  border-color: #4788f8;
-  color: #092c67;
-  font-weight: bold;
-}
-
-.dark .pagination button.answered {
-  background-color: #204b80;
-  color: white;
 }
 </style>

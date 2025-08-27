@@ -35,17 +35,17 @@ onMounted(async () => {
     <!-- Overlay -->
     <div class="absolute inset-0 bg-black opacity-80"></div>
 
-    <!-- Container محتوى الصفحة -->
+ 
     <div class="relative z-10 bg-white dark:bg-gray-900 p-8 rounded-xl shadow-2xl text-center max-w-xl mx-auto w-full transition-all">
       
-      <!-- صورة تمثيلية -->
+   
       <img 
         src="@/assets/logo.png" 
         alt="Exam Ready" 
         class="w-24 h-24 mx-auto mb-6 opacity-90"
       />
 
-      <!-- حالة التحميل -->
+    
       <div v-if="isLoading" class="text-gray-700 dark:text-gray-300">
         <p>Loading modules...</p>
         <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mt-4"></div>

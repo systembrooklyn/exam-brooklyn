@@ -3,21 +3,19 @@ import { onMounted, watch } from "vue";
 import { useStudentStore } from "../../stores/studentStore";
 import { IdCard, UserRound } from "lucide-vue-next";
 import { useCourseStore } from "@/stores/courseStore";
-import { ref } from "vue";
+
+import { useAuthStore } from "../../stores/auth";
 
 const studentStore = useStudentStore();
+const authStore = useAuthStore();
 
-let timeout = null;
-
-const showAllCourses = ref(false);
 const courseStore = useCourseStore();
 
-const handelSendOtp = () => {
+const handleSendOtp = () => {
   if (studentStore.studentId) {
     studentStore.sendOTP(studentStore.studentId);
   }
 };
-
 // watch(
 //   () => studentStore.studentId,
 //   (newId) => {
@@ -115,10 +113,7 @@ const submitForm = async () => {
         <div class="mb-5" v-if="studentStore.loadingCourses">
           <p class="text-sm text-gray-500">Loading modules...</p>
         </div>
-        <div
-          class="mb-5"
-          v-else-if="!showAllCourses && studentStore.courses.data"
-        >
+        <div class="mb-5" v-else-if="studentStore.courses.data">
           <label
             class="block text-sm font-medium dark:text-gray-300 text-gray-900"
           >
@@ -136,18 +131,10 @@ const submitForm = async () => {
                 {{ course.name }}
               </option>
             </select>
-
-            <!-- زرار يفتح السلكت الكامل -->
-            <button
-              @click="showAllCourses = true"
-              class="text-sm cursor-pointer w-[100px] text-indigo-600 hover:underline"
-            >
-              Show all
-            </button>
           </div>
         </div>
 
-        <div class="mb-5" v-if="studentStore.loadingCourses && showAllCourses">
+        <!-- <div class="mb-5" v-if="studentStore.loadingCourses && showAllCourses">
           <p class="text-sm text-gray-500">Loading all courses...</p>
         </div>
         <div class="mb-5" v-else-if="showAllCourses">
@@ -168,7 +155,6 @@ const submitForm = async () => {
               </option>
             </select>
 
-            <!-- زرار يرجّعك للسلكت الأصلي -->
             <button
               @click="showAllCourses = false"
               class="text-sm font-semibold text-gray-600 hover:underline"
@@ -176,7 +162,7 @@ const submitForm = async () => {
               Back
             </button>
           </div>
-        </div>
+        </div> -->
       </div>
 
       <div class="mb-5" v-if="studentStore.loadingInstructors">
@@ -207,37 +193,36 @@ const submitForm = async () => {
 
       <div
         class="mb-5 relative"
-        v-if="
-          !studentStore.otpSent &&
-          studentStore.selectedModule &&
-          studentStore.selectedInstructor
-        "
+        v-if="studentStore.selectedModule && studentStore.selectedInstructor"
       >
         <div class="flex justify-center">
           <button
-            @click="handelSendOtp"
+            @click="handleSendOtp"
             :disabled="
-              (studentStore.timer < 120 && studentStore.timer > 0) ||
+              studentStore.loadingOtp ||
+              !studentStore.studentId ||
+              !studentStore.selectedModule ||
+              !studentStore.selectedInstructor ||
               studentStore.otpSent ||
-              studentStore.studentId === ''
+              studentStore.timer > 0
             "
-            class="text-primary absolute top-4 z-10 right-3 cursor-pointer"
+            class="text-primary absolute top-4 z-10 right-3"
           >
-            <span v-if="studentStore.loadingOtp"
-              ><i class="fa-solid fa-circle-notch fa-spin-pulse"></i
-            ></span>
+            <span v-if="studentStore.loadingOtp">
+              <i class="fa-solid fa-circle-notch fa-spin-pulse"></i>
+            </span>
+            <span
+              v-else-if="studentStore.timer > 0"
+              class="text-sm font-bold text-primary"
+            >
+              Resend in {{ studentStore.timer }}s
+            </span>
             <span
               v-else
-              :class="{
-                'opacity-50 cursor-not-allowed ':
-                  (studentStore.timer < 120 && studentStore.timer > 0) ||
-                  studentStore.otpSent ||
-                  studentStore.studentId === '',
-              }"
-              class="relative text-sm font-bold border-b-1"
+              class="text-sm font-bold text-primary hover:underline cursor-pointer"
             >
-              Send OTP</span
-            >
+              Send OTP
+            </span>
           </button>
         </div>
 
@@ -246,13 +231,12 @@ const submitForm = async () => {
           <input
             type="text"
             v-model="studentStore.studentOTP"
-            :placeholder="`It will be sent after ${studentStore.timer} seconds`"
-            :disabled="
-              studentStore.otpSent ||
-              studentStore.studentId === '' ||
-              studentStore.timer === 120 ||
-              studentStore.timer === 0
+            :placeholder="
+              studentStore.timer > 0
+                ? `Enter your OTP `
+                : 'Enter OTP sent to your email'
             "
+            :disabled="!studentStore.otpSent"
             class="bg-gray-50 border border-gray-300 mt-3 w-full text-gray-900 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
@@ -262,10 +246,14 @@ const submitForm = async () => {
       </div>
 
       <button
-        v-show="studentStore.selectedModule && studentStore.selectedInstructor"
+        v-show="
+          studentStore.selectedModule &&
+          studentStore.selectedInstructor &&
+          authStore.hasPermission('start-exam')
+        "
         @click="submitForm"
         type="button"
-        class="btn-primary bg-primary flex items-center justify-center"
+        class="bg-primary w-full py-2 rounded-2xl text-white font-semibold cursor-pointer hover:bg-blue-900 flex items-center justify-center"
         :disabled="
           studentStore.loading &&
           !studentStore.selectedModule &&

@@ -9,7 +9,7 @@
       <NavBar />
 
       <!-- Content area -->
-      <main class="flex-1 px-1 bg-indigo-50">
+      <main class="flex-1 px-1 bg-indigo-50 pb-5">
         <router-view />
       </main>
     </div>

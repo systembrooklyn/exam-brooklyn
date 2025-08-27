@@ -1,11 +1,14 @@
 <template>
-  <div v-show="showModal"
-    class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-30 flex items-center justify-center z-50">
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[800px] overflow-auto max-h-[90vh] relative">
+  <div
+    v-show="showModal"
+    class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-30 flex items-center justify-center z-50"
+  >
+    <div
+      class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[80%] min-h-[90%] relative"
+    >
       <h2 class="text-2xl font-semibold text-gray-800 mb-4">
         {{ modalTitle }}
       </h2>
-
 
       <EmployeeForm v-if="isEmployee" :form="form" />
       <InstructorForm v-if="isInstructor" :form="form" />
@@ -14,18 +17,24 @@
       <RoleForm v-if="isRole" :form="form" />
       <ReservationsForm v-if="isReservation" :form="form" />
 
-
       <div class="flex justify-end gap-3 mt-6">
-        <button @click="saveData" :disabled="!hasChanges"
-          class="save-button min-w-[90px] flex justify-center items-center">
-          <span v-if="saving"
-            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"></span>
+        <button
+          @click="saveData"
+          :disabled="!hasChanges"
+          class="save-button min-w-[90px] flex justify-center items-center"
+        >
+          <span
+            v-if="saving"
+            class="animate-spin border-2 border-white border-t-transparent rounded-full w-4 h-4 mr-2"
+          ></span>
           Save
         </button>
       </div>
 
-      <button @click="closeModal"
-        class="absolute top-2 right-2 text-red-800 cursor-pointer hover:text-gray-600 hover:text-3xl text-2xl">
+      <button
+        @click="closeModal"
+        class="absolute top-2 right-2 text-red-800 cursor-pointer hover:text-gray-600 hover:text-3xl text-2xl"
+      >
         ×
       </button>
     </div>
@@ -40,7 +49,7 @@ import ScholarshipForm from "../dashboard/ScholarshipForm.vue";
 import CourseForm from "../dashboard/CourseForm.vue";
 import RoleForm from "../dashboard/RoleForm.vue";
 import ReservationsForm from "../dashboard/ReservationsForm.vue";
-import isEqual from 'lodash/isEqual';
+import isEqual from "lodash/isEqual";
 
 const props = defineProps({
   showModal: Boolean,
@@ -60,7 +69,6 @@ const emit = defineEmits(["closeModal", "saveData"]);
 const originalForm = ref({ ...props.form });
 
 const hasChanges = ref(false);
-
 
 watch(
   () => props.form,
@@ -84,11 +92,12 @@ const isSaveButtonDisabled = computed(() => {
   const form = props.form;
   const requiredFieldsValid =
     (form.name && form.student?.name && form.student?.email) ||
-    (props.isReservation && form.student?.ID_number && form.student?.careerType);
+    (props.isReservation &&
+      form.student?.ID_number &&
+      form.student?.careerType);
 
   return !hasChanges.value || !requiredFieldsValid;
 });
-
 
 watch(
   () => props.showModal,
@@ -99,7 +108,6 @@ watch(
     }
   }
 );
-
 
 const closeModal = () => emit("closeModal");
 const saveData = () => emit("saveData");
