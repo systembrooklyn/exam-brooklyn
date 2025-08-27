@@ -10,12 +10,14 @@
         {{ modalTitle }}
       </h2>
 
-      <EmployeeForm v-if="isEmployee" :form="form" />
+     <div class="">
+       <EmployeeForm v-if="isEmployee" :form="form" />
       <InstructorForm v-if="isInstructor" :form="form" />
       <CourseForm v-if="isCourse" :form="form" />
       <ScholarshipForm v-if="isScholarship" :form="form" />
       <RoleForm v-if="isRole" :form="form" />
       <ReservationsForm v-if="isReservation" :form="form" />
+     </div>
 
       <div class="flex justify-end gap-3 mt-6">
         <button

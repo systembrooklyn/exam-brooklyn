@@ -2,7 +2,7 @@
   <div>
     <div class="relative">
       <label class="block text-sm mb-1">Name</label>
-      <div class="flex items-center space-x-2">
+      <div class="flex items-center gap-2 mb-4">
         <LucideUser class="text-gray-500 w-5 h-5 absolute left-3" />
         <input
           v-model="form.name"
@@ -11,8 +11,7 @@
           placeholder="Enter name"
         />
       </div>
-    </div>
-    <div class="relative w-[95%]">
+       <div class="relative w-[97%]">
       <label class="block text-sm mb-1"
         >Permissions
         <span class="text-xs text-gray-400">(Optional)</span></label
@@ -32,6 +31,8 @@
         :append-to-body="true"
       />
     </div>
+    </div>
+   
   </div>
 </template>
 

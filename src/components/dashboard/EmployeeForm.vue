@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6 p-6">
+  <div class="">
     <!-- Name input -->
     <div class="relative">
       <label class="block text-sm mb-1">Name</label>
