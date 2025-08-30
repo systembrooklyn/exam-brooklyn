@@ -42,22 +42,30 @@ const isLastQuestion = computed(
 
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-const filteredQuestions = computed(() => {
-  return mode.value === "filter"
-    ? questions.value.filter((_, i) => unansweredIndexes.value.includes(i))
-    : questions.value;
-});
-
+// const filteredQuestions = computed(() => {
+//   return mode.value === "filter"
+//     ? questions.value.filter((_, i) => unansweredIndexes.value.includes(i))
+//     : questions.value;
+// });
+const seconds = ref(60)
 const startTimer = () => {
   interval = setInterval(() => {
-    if (timeLeft.value > 0) {
-      timeLeft.value -= 1; 
-    } else {
+    if (timeLeft.value === 0) {
       clearInterval(interval);
       notyf.error("Time is up! Exam ended.");
       router.replace({ name: "home" });
+      submitFinalExam({ answers: answersArray.value });
+    } else {
+      if (seconds.value === 0) {
+       
+        timeLeft.value -= 1;
+        seconds.value = 59;
+      } else {
+        
+        seconds.value -= 1;
+      }
     }
-  }, 60000); 
+  }, 1000); 
 };
 
 const saveAnswer = () => {
@@ -201,8 +209,9 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
-});
+  clearInterval(interval);
 
+});
 
 </script>
 
@@ -210,13 +219,13 @@ onBeforeUnmount(() => {
   <div class="quiz-container min-h-screen w-full">
     <div class="text-center mb-10 dark:text-white">
       <div>
-        <h2 class="font-bold mt-5 mb-5 text-">{{ exam.name }}</h2>
+        <h2 class="font-bold text-primary mt-5 mb-5 text-3xl">{{ exam.name }}</h2>
       </div>
 
       <div class="text-xl font-semibold mb-8">
         Remaining time
         <span class="text-primary font-bold text-2xl dark:text-blue-500">
-          {{ timeLeft.toFixed(0) }}
+          {{ timeLeft.toFixed(0) }}:{{ seconds }}
         </span>
         minutes   
       </div>
@@ -230,8 +239,10 @@ onBeforeUnmount(() => {
       <button @click="router.push('/home')" class="btn-start">Go Back</button>
     </div>
 
-    <div v-if="quizStarted">
-      <div class="text-end mb-5 mt-4">
+    <div v-if="quizStarted" class="max-w-[70%] mx-auto bg-gray-50 py-6 ">
+     
+      <div v-if="currentQuestion" class="question-container    ">
+ <div class="text-end mb-5 mt-4">
         <label class="text-gray-700 font-medium block mb-2">Go to question:</label>
         <select v-model="currentQuestionIndex" class="border px-4 py-2 rounded-md font-semibold"
           @change="loadSelectedOption" :class="{
@@ -254,8 +265,6 @@ onBeforeUnmount(() => {
           </option>
         </select>
       </div>
-      <div v-if="currentQuestion" class="question-container">
-
         <h3
           class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md  rounded-xl mb-5 bg-primary text-white">
           {{ currentQuestion.question_text }}
@@ -300,14 +309,25 @@ onBeforeUnmount(() => {
 }
 
 .quiz-container {
-  font-family: Arial, sans-serif;
-  margin: 20px;
-  padding: 10px;
-  border-radius: 8px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
+  position: relative;
+ 
 }
+
+.quiz-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("../../assets/logo.png");
+  background-size: 50%; 
+  background-position: center;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: -1;
+}
+
 
 .answered-counter {
   margin-top: 15px;

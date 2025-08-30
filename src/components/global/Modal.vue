@@ -4,7 +4,7 @@
     class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-30 flex items-center justify-center z-50"
   >
     <div
-      class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[80%] min-h-[90%] relative"
+      class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[70%] min-h-[90%] relative"
     >
       <h2 class="text-2xl font-semibold text-gray-800 mb-4">
         {{ modalTitle }}
