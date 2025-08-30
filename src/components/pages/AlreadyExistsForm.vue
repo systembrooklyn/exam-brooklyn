@@ -3,33 +3,21 @@ import { onMounted, watch } from "vue";
 import { useStudentStore } from "../../stores/studentStore";
 import { IdCard, UserRound } from "lucide-vue-next";
 import { useCourseStore } from "@/stores/courseStore";
-
-import { useAuthStore } from "../../stores/auth";
+import { ref } from "vue";
 
 const studentStore = useStudentStore();
-const authStore = useAuthStore();
+
+
+
 
 const courseStore = useCourseStore();
 
-const handleSendOtp = () => {
+const handelSendOtp = () => {
   if (studentStore.studentId) {
     studentStore.sendOTP(studentStore.studentId);
   }
 };
-// watch(
-//   () => studentStore.studentId,
-//   (newId) => {
-//     if (timeout) {
-//       clearTimeout(timeout);
-//     }
 
-//     if (newId) {
-//       timeout = setTimeout(() => {
-//         studentStore.fetchCourses();
-//       }, 500);
-//     }
-//   }
-// );
 
 onMounted(() => {
   courseStore.fetchCourses();
@@ -113,7 +101,10 @@ const submitForm = async () => {
         <div class="mb-5" v-if="studentStore.loadingCourses">
           <p class="text-sm text-gray-500">Loading modules...</p>
         </div>
-        <div class="mb-5" v-else-if="studentStore.courses.data">
+        <div
+          class="mb-5"
+          v-else-if="studentStore.courses.data"
+        >
           <label
             class="block text-sm font-medium dark:text-gray-300 text-gray-900"
           >
@@ -131,38 +122,12 @@ const submitForm = async () => {
                 {{ course.name }}
               </option>
             </select>
+
+          
           </div>
         </div>
 
-        <!-- <div class="mb-5" v-if="studentStore.loadingCourses && showAllCourses">
-          <p class="text-sm text-gray-500">Loading all courses...</p>
-        </div>
-        <div class="mb-5" v-else-if="showAllCourses">
-          <label
-            class="block text-sm font-medium dark:text-gray-300 text-gray-900"
-          >
-            Choose From All Courses:
-          </label>
-          <div class="flex items-center gap-2">
-            <select v-model="studentStore.selectedModule" class="input-field">
-              <option value="" disabled>Select a Course</option>
-              <option
-                v-for="course in courseStore.courses"
-                :key="course.id"
-                :value="course.id"
-              >
-                {{ course.name }}
-              </option>
-            </select>
-
-            <button
-              @click="showAllCourses = false"
-              class="text-sm font-semibold text-gray-600 hover:underline"
-            >
-              Back
-            </button>
-          </div>
-        </div> -->
+     
       </div>
 
       <div class="mb-5" v-if="studentStore.loadingInstructors">
@@ -193,36 +158,37 @@ const submitForm = async () => {
 
       <div
         class="mb-5 relative"
-        v-if="studentStore.selectedModule && studentStore.selectedInstructor"
+        v-if="
+          
+          studentStore.selectedModule &&
+          studentStore.selectedInstructor
+        "
       >
         <div class="flex justify-center">
           <button
-            @click="handleSendOtp"
+            @click="handelSendOtp"
             :disabled="
-              studentStore.loadingOtp ||
-              !studentStore.studentId ||
-              !studentStore.selectedModule ||
-              !studentStore.selectedInstructor ||
-              studentStore.otpSent ||
-              studentStore.timer > 0
+              (studentStore.timer < 120 && studentStore.timer > 0) ||
+              
+              studentStore.studentId === ''
             "
-            class="text-primary absolute top-4 z-10 right-3"
+            class="text-primary absolute top-4 z-10 right-3 cursor-pointer"
           >
-            <span v-if="studentStore.loadingOtp">
-              <i class="fa-solid fa-circle-notch fa-spin-pulse"></i>
-            </span>
-            <span
-              v-else-if="studentStore.timer > 0"
-              class="text-sm font-bold text-primary"
-            >
-              Resend in {{ studentStore.timer }}s
-            </span>
+            <span v-if="studentStore.loadingOtp"
+              ><i class="fa-solid fa-circle-notch fa-spin-pulse"></i
+            ></span>
             <span
               v-else
-              class="text-sm font-bold text-primary hover:underline cursor-pointer"
+              :class="{
+                'opacity-50 cursor-not-allowed ':
+                  (studentStore.timer < 120 && studentStore.timer > 0) ||
+                
+                  studentStore.studentId === '',
+              }"
+              class="relative text-sm font-bold border-b-1"
             >
-              Send OTP
-            </span>
+              Send OTP</span
+            >
           </button>
         </div>
 
@@ -231,13 +197,14 @@ const submitForm = async () => {
           <input
             type="text"
             v-model="studentStore.studentOTP"
-            :placeholder="
-              studentStore.timer > 0
-                ? `Enter your OTP `
-                : 'Enter OTP sent to your email'
+            :placeholder="`It will be sent after ${studentStore.timer} seconds`"
+            :disabled="
+              
+              studentStore.studentId === '' ||
+              studentStore.timer === 120 ||
+              studentStore.timer === 0
             "
-            :disabled="!studentStore.otpSent"
-            class="bg-gray-50 border border-gray-300 mt-3 w-full text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            class="bg-gray-50  border border-gray-300 mt-3 w-full text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
         <p :class="studentStore.otpMessageColor" class="mt-2">
@@ -246,14 +213,10 @@ const submitForm = async () => {
       </div>
 
       <button
-        v-show="
-          studentStore.selectedModule &&
-          studentStore.selectedInstructor &&
-          authStore.hasPermission('start-exam')
-        "
+        v-show="studentStore.selectedModule && studentStore.selectedInstructor"
         @click="submitForm"
         type="button"
-        class="bg-primary w-full py-2 rounded-2xl text-white font-semibold cursor-pointer hover:bg-blue-900 flex items-center justify-center"
+        class="  w-full py-2 rounded-2xl text-white hover:bg-blue-900 cursor-pointer bg-primary flex items-center justify-center"
         :disabled="
           studentStore.loading &&
           !studentStore.selectedModule &&
@@ -287,19 +250,7 @@ const submitForm = async () => {
   border-color: #007bff;
 }
 
-.btn-primary {
-  color: white;
-  padding: 10px 15px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  width: 100%;
-  text-align: center;
-}
 
-.btn-primary:hover {
-  background-color: #0056b3;
-}
 
 .loader {
   border: 4px solid #f3f3f3;

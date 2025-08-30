@@ -24,7 +24,7 @@ export const useStudentStore = defineStore("studentStore", () => {
   const otpMasg = ref("");
   const otpMessageColor = ref("#000000");
   const studentOTP = ref("");
-  const timer = ref(0); 
+  const timer = ref(120);
   const attemptId = ref(null);
   const errorMessages = ref("");
   const error = ref(null);
@@ -45,13 +45,10 @@ export const useStudentStore = defineStore("studentStore", () => {
 
   const fetchCourses = async () => {
     loadingCourses.value = true;
-    console.log("Fetching courses for student:", studentId.value);
-
     try {
       const response = await apiClient.get(`${STUDENT_ID}/${studentId.value}`);
       courses.value = response.data;
-      console.log(courses.value);
-
+      otpSent.value = true;
       errorMessages.value = "";
     } catch (error) {
       if (error.response?.status === 404) {
@@ -68,9 +65,7 @@ export const useStudentStore = defineStore("studentStore", () => {
     if (!selectedModule.value) return;
     loadingInstructors.value = true;
     try {
-      const response = await apiClient.get(
-        `${INSTRUCTORS}/${selectedModule.value}`
-      );
+      const response = await apiClient.get(`${INSTRUCTORS}/${selectedModule.value}`);
       instructors.value = response.data;
     } catch (error) {
       handleError(error);
@@ -102,23 +97,22 @@ export const useStudentStore = defineStore("studentStore", () => {
     }
   };
 
- const startCountdown = () => {
-  if (startTimer) clearInterval(startTimer);
-  timer.value = 120; // ← ابدأ العد من 120 فقط عند الإرسال
+  const startCountdown = () => {
+    if (startTimer) clearInterval(startTimer);
+    timer.value = 120;
 
-  startTimer = setInterval(() => {
-    if (timer.value > 0) {
-      timer.value--;
-    } else {
-      clearInterval(startTimer);
-      timer.value = 0;
-      otpSent.value = false;
-      studentOTP.value = "";
-      otpMasg.value = "OTP expired. You can request a new one.";
-      otpMessageColor.value = "text-red-500";
-    }
-  }, 1000);
-};
+    startTimer = setInterval(() => {
+      if (timer.value > 0) {
+        timer.value--;
+      } else {
+        clearInterval(startTimer);
+        timer.value = 120;
+        otpMasg.value = "OTP is expired.";
+        otpMessageColor.value = "text-red-500";
+      }
+    }, 1000);
+  };
+
   const submitForm = async () => {
     loading.value = true;
 
@@ -165,10 +159,7 @@ export const useStudentStore = defineStore("studentStore", () => {
       const answers = JSON.parse(answersFromStorage);
       const finalPayload = { answers };
 
-      await apiClient.post(
-        `${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`,
-        finalPayload
-      );
+      await apiClient.post(`${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`, finalPayload);
     } catch (error) {
       handleError(error);
     }
