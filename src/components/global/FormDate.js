@@ -1,12 +1,16 @@
-function formatDate(dateStr) {
+export default function formatDate(dateStr) {
   if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "-"; 
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
 
-export default formatDate;
+  const dateOnly = dateStr.split(" ")[0];
+  const d = new Date(dateOnly);
+
+  if (isNaN(d.getTime()) || d.getFullYear() < 2000) {
+    return "-";
+  }
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}

@@ -12,6 +12,8 @@ import { useRequestStore } from "@/stores/srmStore/requestStore";
 import RequestFieldModal from "../RequestFieldModal.vue";
 import ReplyRequestModal from "../ReplyRequestModal.vue";
 import formatDate from "../../global/FormDate";
+import { useAuthStore } from "../../../stores/auth";
+
 
 const props = defineProps({
   title: String,
@@ -20,6 +22,8 @@ const props = defineProps({
   loading: Boolean,
   sortOrder: String,
 });
+
+const { hasPermission } = useAuthStore();
 
 const loadingReply = ref(false);
 const replyKey = ref("emp_res");
@@ -156,6 +160,7 @@ function truncateText(text) {
         </span>
       </div>
       <button
+        v-if="hasPermission('create-studentRequest')"
         @click="showRequestFieldModal = true"
         class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
       >
@@ -250,7 +255,7 @@ function truncateText(text) {
           style="direction: auto; unicode-bidi: plaintext"
         >
           <button
-            v-if="!row.employee_response"
+            v-if="!row.employee_response && hasPermission('emp-reply')"
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
             style="direction: auto; unicode-bidi: plaintext"
@@ -259,18 +264,18 @@ function truncateText(text) {
             <MessageCircleReply size="15" />
           </button>
           <button
-            v-if="!row.manager_response"
+            v-if="!row.manager_response && hasPermission('mng-reply')"
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
             style="direction: auto; unicode-bidi: plaintext"
           >
-            Manager Reply
+             Reply
             <MessageCircleReply size="15" />
           </button>
         </div>
       </div>
 
-      <!-- تعديل جزء الردود -->
+     
       <div class="space-y-4 text-sm pt-1">
         <!-- Manager Reply -->
         <div

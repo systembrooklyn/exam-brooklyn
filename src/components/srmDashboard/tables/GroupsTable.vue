@@ -26,17 +26,22 @@
             <th>Actual Send Date <br />by system</th>
             <th>Sender <br />by srm</th>
             <th>Send at</th>
-
-            <!-- <th>Status</th> -->
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           <tr
-            v-for="(row, rowIndex) in data"
+            v-for="(row, rowIndex) in sortedData"
             :key="rowIndex"
             class="hover:bg-gray-50"
           >
-            <td class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900">
+            <td
+              class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900"
+              :class="
+                row.name.toLowerCase().includes('ai')
+                  ? 'text-yellow-100'
+                  : 'text-gray-900'
+              "
+            >
               {{ row.name.replace(" Group ", " - ") }}
               <p class="text-gray-600">({{ row.type }})</p>
             </td>
@@ -46,16 +51,12 @@
                 (() => {
                   const dateStr =
                     row.type === "online" ? row.student_start : row.start_date;
-                  const formatted = formatDate(dateStr);
-                  // Check if the date is 01/01/1970 or invalid
-                  return formatted === "01/01/1970" || formatted === "-"
-                    ? "-"
-                    : formatted;
+                  return formatDate(dateStr);
                 })()
               }}
             </td>
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
-              {{ row.act_date ? row.act_date : "-" }}
+              {{ formatDate(row.act_date) }}
             </td>
 
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize">
@@ -75,9 +76,17 @@
 <script setup>
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
 import formatDate from "../../global/FormDate";
+import { useDateSort } from "../../global/useDateSort";
+import { computed } from "vue";
 
 const props = defineProps({
   data: Array,
   sortOrder: String,
 });
+
+const { sortByDate } = useDateSort();
+
+const sortedData = computed(() =>
+  sortByDate(props.data, "start_date", props.sortOrder)
+);
 </script>

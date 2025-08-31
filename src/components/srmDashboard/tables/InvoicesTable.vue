@@ -1,7 +1,7 @@
 <template>
     <div class="overflow-x-auto w-full rounded-lg border border-gray-300 shadow-sm">
     <table
-      class="w-max min-w-full divide-y text-center divide-gray-200 border shadow-sm rounded-lg bg-white"
+      class="w-max min-w-full text-center divide-y  divide-gray-200 border shadow-sm rounded-lg bg-white"
     >
       <thead class="bg-gray-100 text-center py-4">
         <tr>
@@ -107,7 +107,7 @@ import { ref } from "vue";
 
 const isExpanded = ref({});
 
-// دالة لتقطيع النص
+// دالة طيع النصلتق
 function truncated(text) {
   if (!text) return "-";
   return text.length > 50 ? text.substring(0, 50) + "..." : text;

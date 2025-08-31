@@ -12,13 +12,14 @@
           <tr>
             <th>Module</th>
             <th>Code</th>
+            <!-- Start Date -->
             <th
               @click="toggleSort('start_date')"
               class="cursor-pointer select-none"
             >
               <div class="flex items-center justify-center gap-2">
                 Start Date
-                <span>
+                <span v-if="sortField === 'start_date'">
                   <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
                   <ArrowDownUp v-else :size="16" />
                 </span>
@@ -26,14 +27,26 @@
             </th>
             <th>Score</th>
             <th>Percentage</th>
-            <th>end Date</th>
+            <!-- End Date (exam_at) -->
+            <th
+              @click="toggleSort('exam_at')"
+              class="cursor-pointer select-none"
+            >
+              <div class="flex items-center justify-center gap-2">
+                End Date
+                <span v-if="sortField === 'exam_at'">
+                  <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+                  <ArrowDownUp v-else :size="16" />
+                </span>
+              </div>
+            </th>
             <th>Lectures (6)</th>
           </tr>
         </thead>
 
         <tbody class="bg-white divide-y divide-gray-200">
           <tr
-            v-for="(row, rowIndex) in data"
+            v-for="(row, rowIndex) in sortedData"
             :key="rowIndex"
             class="hover:bg-gray-50"
           >
@@ -45,9 +58,7 @@
             </td>
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
               {{
-                formatDate(row.start_date) === "01/01/1970"
-                  ? "-"
-                  : formatDate(row.start_date)
+                 formatDate(row.start_date)
               }}
             </td>
 
@@ -79,15 +90,31 @@
 <script setup>
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
 import formatDate from "../../global/FormDate";
+import { useDateSort } from "../../global/useDateSort";
+import { ref, computed } from "vue";
 
 const props = defineProps({
   data: Array,
-  sortOrder: String,
+  sortOrder: String, // البداية: "asc"
 });
 
-const emit = defineEmits(["toggleSort"]);
+const { sortByDate } = useDateSort();
+
+const sortField = ref("start_date");
+const sortOrder = ref(props.sortOrder || "asc");
 
 function toggleSort(field) {
-  emit("toggleSort", field);
+  if (sortField.value === field) {
+    // قلب الاتجاه لو ضغطنا على نفس العمود
+    sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+  } else {
+    // غير العمود
+    sortField.value = field;
+    sortOrder.value = "asc";
+  }
 }
+
+const sortedData = computed(() =>
+  sortByDate(props.data, sortField.value, sortOrder.value)
+);
 </script>
