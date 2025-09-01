@@ -27,7 +27,7 @@
             <div
               class="flex justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20">
               <button 
-                v-for="tab in filteredTabs" 
+                v-for="tab in tabs" 
                 :key="tab.name" 
                 @click="selectTab(tab.name, tab.label)"
                 :disabled="loading && cardName !== tab.label" 
@@ -99,12 +99,12 @@ const tabPermissions = {
 };
 
 
-const filteredTabs = computed(() => {
-  return tabs.value.filter(tab => {
-    const permission = tabPermissions[tab.name];
-    return permission ? authStore.hasPermission(permission) : true;
-  });
-});
+// const filteredTabs = computed(() => {
+//   return tabs.value.filter(tab => {
+//     const permission = tabPermissions[tab.name];
+//     return permission ? authStore.hasPermission(permission) : true;
+//   });
+// });
 
 const selectTab = async (name, label) => {
 

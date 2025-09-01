@@ -207,15 +207,9 @@ async function handleForgotPassword() {
 </template>
 
 <style scoped>
-* {
-  box-sizing: border-box;
-}
 
-body {
-  margin: 0;
-  background: #f6fffd;
-  /* font-family: Tahoma, sans-serif; */
-}
+
+
 
 .wrapper {
   width: 100%;
@@ -224,12 +218,13 @@ body {
   justify-content: center;
   align-items: center;
   perspective: 800px;
+
 }
 
 .rec-prism {
   width: 100%;
-  max-width: 320px;
-  height: 400px;
+  max-width: 420px;
+  height: 500px;
   position: relative;
   transform-style: preserve-3d;
   transition: transform 0.6s ease-in-out;

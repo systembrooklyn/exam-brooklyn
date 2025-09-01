@@ -23,7 +23,7 @@ const showUnansweredMessage = ref("");
 const currentQuestionIndex = ref(null);
 
 const answersArray = ref([]);
-const timeLeft = ref(remainingTime.value);
+const timeLeft = ref(remainingTime.value == 120 ?remainingTime.value - 1   : remainingTime.value);
 const selectedOptions = ref([]);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
@@ -56,7 +56,7 @@ const startTimer = () => {
       router.replace({ name: "home" });
       submitFinalExam({ answers: answersArray.value });
     } else {
-      if (seconds.value === 0) {
+      if (seconds.value === 0 ) {
        
         timeLeft.value -= 1;
         seconds.value = 59;
@@ -318,15 +318,17 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 200px;
+  height: 200px;
   background-image: url("../../assets/logo.png");
-  background-size: 50%; 
-  background-position: center;
+  background-size: 100%;
+  background-position: top left; 
+  margin-left: 5%;
   opacity: 0.3;
   pointer-events: none;
   z-index: -1;
 }
+
 
 
 .answered-counter {

@@ -7,12 +7,13 @@ import {
   UserPen,
   UsersRound,
 } from "lucide-vue-next";
-import { ref, inject } from "vue";
+import { ref, inject, watch } from "vue";
 import { useRequestStore } from "@/stores/srmStore/requestStore";
 import RequestFieldModal from "../RequestFieldModal.vue";
 import ReplyRequestModal from "../ReplyRequestModal.vue";
 import formatDate from "../../global/FormDate";
 import { useAuthStore } from "../../../stores/auth";
+import { useDateSort } from "../../global/useDateSort";
 
 
 const props = defineProps({
@@ -20,11 +21,36 @@ const props = defineProps({
   headers: Array,
   data: Array,
   loading: Boolean,
-  sortOrder: String,
+
 });
 
+const emit = defineEmits(["toggleSort"]);
 const { hasPermission } = useAuthStore();
+const { sortByDate } = useDateSort();
 
+// ----------------- Local State -----------------
+const sortedData = ref([...props.data]); 
+const sortField = ref("created_at");
+const sortOrderLocal = ref( "desc");
+
+
+watch(
+  () => props.data,
+  (newData) => {
+    sortedData.value = sortByDate(newData, sortField.value, sortOrderLocal.value);
+  },
+  { immediate: true }
+);
+
+// ----------------- Sorting -----------------
+function toggleSort(field) {
+  sortField.value = field;
+  sortOrderLocal.value = sortOrderLocal.value === "asc" ? "desc" : "asc";
+  sortedData.value = sortByDate(props.data, sortField.value, sortOrderLocal.value);
+  emit("toggleSort", field);
+}
+
+// ----------------- Other State -----------------
 const loadingReply = ref(false);
 const replyKey = ref("emp_res");
 const successStatusId = ref(null);
@@ -37,19 +63,9 @@ const selectedRequestId = ref(null);
 const requestStore = useRequestStore();
 const emitter = inject("emitter", null);
 
-const expandableColumns = [
-  "value",
-  "comment",
-  "manager_response",
-  "employee_response",
-];
+const expandableColumns = ["value", "comment", "manager_response", "employee_response"];
 
-const emit = defineEmits(["toggleSort"]);
-
-function toggleSort(field) {
-  emit("toggleSort", field);
-}
-
+// ----------------- Helpers -----------------
 function displayValue(val) {
   return val ?? "No Data Available";
 }
@@ -74,12 +90,10 @@ const updateRequestData = async ({ id, data, onSuccess, loadingRef }) => {
   try {
     const updated = await requestStore.updateRequest(id, data);
     if (updated) {
-      // Optimistically update the local row if available
       const idx = props.data?.findIndex?.((r) => r.id === (updated.id ?? id));
       if (idx !== -1) {
         props.data[idx] = { ...props.data[idx], ...updated };
       }
-      // Trigger a background refresh to sync from server
       if (emitter) emitter.emit("refresh");
       if (onSuccess) onSuccess();
     }
@@ -102,9 +116,8 @@ const updateStatus = async (row) => {
     await updateRequestData({
       id: row.id,
       data: { status: row.status },
-      loadingRef: loadingStatusId, // ← مهم
+      loadingRef: loadingStatusId,
       onSuccess: () => {
-        // successStatusId.value = row.id;
         loadingStatusId.value = null;
         setTimeout(() => {
           if (successStatusId.value === row.id) successStatusId.value = null;
@@ -129,7 +142,7 @@ const handleReply = async ({ key, value }) => {
     data: { [key]: value },
     loadingRef: null,
     onSuccess: () => {
-      showReplyModal.value = false; // ← إغلاق المودال هنا ✅
+      showReplyModal.value = false;
     },
   });
 
@@ -148,6 +161,7 @@ function truncateText(text) {
 
 <template>
   <div class="space-y-4">
+    <!-- Header -->
     <div class="flex justify-between items-center">
       <div
         class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
@@ -155,7 +169,7 @@ function truncateText(text) {
       >
         Sort by Date
         <span>
-          <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+          <ArrowUpDown v-if="sortOrderLocal === 'asc'" :size="16" />
           <ArrowDownUp v-else :size="16" />
         </span>
       </div>
@@ -168,8 +182,9 @@ function truncateText(text) {
       </button>
     </div>
 
+    <!-- Requests List -->
     <div
-      v-for="(row, rowIndex) in data"
+      v-for="(row, rowIndex) in sortedData"
       :key="rowIndex"
       class="bg-white p-3 rounded-lg shadow-md border border-gray-200"
     >
@@ -178,13 +193,11 @@ function truncateText(text) {
           <span class="text-sm font-semibold text-gray-800">{{
             formatDate(row.created_at)
           }}</span>
-
-          <span
-            class="text-sm font-semibold text-gray-800 flex items-center gap-1"
-          >
+          <span class="text-sm font-semibold text-gray-800 flex items-center gap-1">
             <UserPen size="15" /> {{ row.employee?.name }}
           </span>
         </div>
+
         <div class="flex items-center gap-2">
           <span
             class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
@@ -193,6 +206,7 @@ function truncateText(text) {
           </span>
           <div class="relative inline-block min-w-[120px] text-center">
             <select
+              v-if="hasPermission('view-status')"
               v-model="row.status"
               @change="updateStatus(row)"
               :class="[
@@ -221,6 +235,7 @@ function truncateText(text) {
         </div>
       </div>
 
+      <!-- Row Content -->
       <div class="flex justify-between items-center">
         <div class="prose max-w-none text-gray-800 font-medium mb-4">
           <template v-if="expandableColumns.includes('value')">
@@ -250,32 +265,28 @@ function truncateText(text) {
             </div>
           </template>
         </div>
-        <div
-          class="flex items-center gap-2"
-          style="direction: auto; unicode-bidi: plaintext"
-        >
+
+        <div class="flex items-center gap-2" style="direction: auto; unicode-bidi: plaintext">
           <button
-            v-if="!row.employee_response && hasPermission('emp-reply')"
+            v-if="!row.employee_response || hasPermission('emp-reply')"
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
-            style="direction: auto; unicode-bidi: plaintext"
           >
             Reply
             <MessageCircleReply size="15" />
           </button>
           <button
-            v-if="!row.manager_response && hasPermission('mng-reply')"
+            v-if="!row.manager_response || hasPermission('mng-reply')"
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
-            style="direction: auto; unicode-bidi: plaintext"
           >
-             Reply
+            Reply
             <MessageCircleReply size="15" />
           </button>
         </div>
       </div>
 
-     
+      <!-- Replies -->
       <div class="space-y-4 text-sm pt-1">
         <!-- Manager Reply -->
         <div
@@ -284,9 +295,7 @@ function truncateText(text) {
         >
           <strong class="text-indigo-600 block mb-1">Manager Reply:</strong>
           <div class="mixed-text-container">
-            <div class="mixed-text-content">
-              {{ row.manager_response }}
-            </div>
+            <div class="mixed-text-content">{{ row.manager_response }}</div>
           </div>
           <div class="flex items-center gap-4 mt-3">
             <span
@@ -308,29 +317,22 @@ function truncateText(text) {
         >
           <strong class="text-blue-600 block mb-1">Employee Reply:</strong>
           <div class="mixed-text-container">
-            <div class="mixed-text-content">
-              {{ row.employee_response }}
-            </div>
+            <div class="mixed-text-content">{{ row.employee_response }}</div>
           </div>
           <div class="flex items-center gap-4 mt-3">
             <span
               v-if="row.employee_response_at"
               class="text-xs text-gray-800 flex items-center gap-1"
             >
-              <Clock size="13" />
-              {{ formatDate(row.employee_response_at) }}
+              <Clock size="13" /> {{ formatDate(row.employee_response_at) }}
             </span>
           </div>
         </div>
       </div>
     </div>
 
-    <RequestFieldModal
-      v-if="showRequestFieldModal"
-      v-model="showRequestFieldModal"
-      :type="title"
-    />
-
+    <!-- Modals -->
+    <RequestFieldModal v-if="showRequestFieldModal" v-model="showRequestFieldModal" :type="title" />
     <ReplyRequestModal
       v-if="showReplyModal"
       v-model="showReplyModal"
@@ -342,12 +344,10 @@ function truncateText(text) {
 </template>
 
 <style>
-/* تحديث الأنماط */
 .mixed-text-container {
   width: 100%;
   margin: 0.25rem 0;
 }
-
 .mixed-text-content {
   text-align: start;
   direction: auto;
@@ -357,8 +357,6 @@ function truncateText(text) {
   line-height: 1.5;
   padding: 0.25rem 0;
 }
-
-/* تحسينات للشاشات الصغيرة */
 @media (max-width: 640px) {
   .mixed-text-content {
     font-size: 0.875rem;

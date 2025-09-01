@@ -25,7 +25,7 @@
 
             <th>Actual Send Date <br />by system</th>
             <th>Sender <br />by srm</th>
-            <th>Send at</th>
+            <th>Sent at</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -33,14 +33,15 @@
             v-for="(row, rowIndex) in sortedData"
             :key="rowIndex"
             class="hover:bg-gray-50"
+             :class="
+                row.name.toLowerCase().includes('ai')
+                  ? 'bg-yellow-100'
+                  : ''
+              "
           >
             <td
               class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900"
-              :class="
-                row.name.toLowerCase().includes('ai')
-                  ? 'text-yellow-100'
-                  : 'text-gray-900'
-              "
+             
             >
               {{ row.name.replace(" Group ", " - ") }}
               <p class="text-gray-600">({{ row.type }})</p>
@@ -64,7 +65,7 @@
             </td>
 
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
-              {{ "-" }}
+              {{ formatDate(row.sent_at) }}
             </td>
           </tr>
         </tbody>

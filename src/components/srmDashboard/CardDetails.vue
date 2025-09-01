@@ -170,7 +170,7 @@ watch(
         @toggleSort="toggleSort" />
 
       <!-- ✅ Invoices Table -->
-      <InvoicesTable v-if="cardName === 'Invoices'" :data="paginatedData" :sortOrder="sortOrder"
+      <InvoicesTable v-if="cardName === 'Invoices'" :data="paginatedData" 
         @toggleSort="toggleSort" />
 
       <!-- ✅ Requests & Complaints -->
@@ -181,7 +181,7 @@ watch(
         >
           Add New {{ title }}
         </button> -->
-        <RequestsTable :title="cardName" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
+        <RequestsTable :title="cardName" :data="paginatedData"  @toggleSort="toggleSort" />
       </div>
 
       <!-- ✅ Deadlines -->

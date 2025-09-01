@@ -1,7 +1,7 @@
 <template>
-    <div class="overflow-x-auto w-full rounded-lg border border-gray-300 shadow-sm">
+  <div class="overflow-x-auto w-full rounded-lg border border-gray-300 shadow-sm">
     <table
-      class="w-max min-w-full text-center divide-y  divide-gray-200 border shadow-sm rounded-lg bg-white"
+      class="w-max min-w-full text-center divide-y divide-gray-200 border shadow-sm rounded-lg bg-white"
     >
       <thead class="bg-gray-100 text-center py-4">
         <tr>
@@ -17,11 +17,10 @@
           >
             Date
             <span>
-              <ArrowUpDown v-if="sortOrder === 'asc'" :size="16" />
+              <ArrowUpDown v-if="sortOrderLocal === 'asc'" :size="16" />
               <ArrowDownUp v-else :size="16" />
             </span>
           </th>
-          <!-- <th class="px-6 py-3 text-left text-md font-bold text-indigo-800  uppercase"> Type</th> -->
           <th class="px-6 py-3 text-md font-bold text-indigo-800 uppercase">
             Amount
           </th>
@@ -41,58 +40,57 @@
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         <tr
-          v-for="(data, dataIndex) in data"
-          :key="dataIndex"
+          v-for="(row, rowIndex) in sortedData"
+          :key="rowIndex"
           :class="[
             'hover:bg-gray-100',
-            data.serial?.toLowerCase().startsWith('r') ? 'bg-yellow-100' : '',
+            row.serial?.toLowerCase().startsWith('r') ? 'bg-yellow-100' : '',
           ]"
         >
           <td class="px-6 py-4 text-sm font-semibold text-gray-900">
-            {{ data.serial }}
+            {{ row.serial }}
           </td>
-            <td class="px-6 py-4 text-sm font-semibold text-gray-900">
+          <td class="px-6 py-4 text-sm font-semibold text-gray-900">
             <span
               class="break-words"
               :style="{ direction: 'auto', unicodeBidi: 'plaintext' }"
             >
-              {{ isExpanded[dataIndex] ? data.notes : truncated(data.notes) }}
+              {{ isExpanded[rowIndex] ? row.notes : truncated(row.notes) }}
               <button
-              v-if="data.notes && data.notes.length > 50"
-              @click="toggleExpand(dataIndex)"
-              class="text-blue-500 underline text-xs ml-2"
+                v-if="row.notes && row.notes.length > 50"
+                @click="toggleExpand(rowIndex)"
+                class="text-blue-500 underline text-xs ml-2"
               >
-              {{ isExpanded[dataIndex] ? "Less" : "More" }}
+                {{ isExpanded[rowIndex] ? "Less" : "More" }}
               </button>
             </span>
-            </td>
+          </td>
 
           <td class="px-6 py-4 text-sm text-gray-800">
-            {{ data.created_at }}
+            {{ row.created_at }}
           </td>
-          <!-- <td class="px-6 py-4 text-sm text-gray-600 capitalize">{{ data.type }}</td> -->
           <td class="px-6 py-4 text-sm font-bold text-indigo-700">
-            {{ displayValue(data.amount) }} EGP
+            {{ displayValue(row.amount) }} EGP
           </td>
           <td class="px-6 py-4 text-sm text-gray-800">
-            {{ data.pay_method }}
+            {{ row.pay_method }}
           </td>
           <td>
             <span
               class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700"
             >
-              {{ data.type }}
+              {{ row.type }}
             </span>
           </td>
           <td>
             <span
               class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700"
             >
-              {{ data.pay_cat }}
+              {{ row.pay_cat }}
             </span>
           </td>
           <td class="px-6 py-4 text-sm text-gray-800">
-            {{ data.employee.name }}
+            {{ row.employee.name }}
           </td>
         </tr>
       </tbody>
@@ -102,18 +100,16 @@
 
 <script setup>
 import { ArrowDownUp, ArrowUpDown } from "lucide-vue-next";
-import { ref } from "vue";
-
+import { ref, watch } from "vue";
+import { useDateSort } from "../../global/useDateSort";
 
 const isExpanded = ref({});
 
-// دالة طيع النصلتق
 function truncated(text) {
   if (!text) return "-";
   return text.length > 50 ? text.substring(0, 50) + "..." : text;
 }
 
-// تبديل بين إظهار الكل أو جزء
 function toggleExpand(index) {
   isExpanded.value[index] = !isExpanded.value[index];
 }
@@ -123,17 +119,31 @@ const props = defineProps({
   sortOrder: String,
 });
 
-console.log("Data received in InvoicesTable:", props.data);
-
-
+const emit = defineEmits(["toggleSort"]);
 
 function displayValue(value) {
   if (value === null || value === undefined) return "-";
   return parseFloat(value).toFixed(2);
 }
-const emit = defineEmits(["toggleSort"]);
+
+// 🟢 استخدام useDateSort
+const { sortByDate } = useDateSort();
+const sortOrderLocal = ref("desc"); // ← يبدأ من الأحدث
+const sortedData = ref([]);
+
+// ترتيب أولي
+watch(
+  () => props.data,
+  (newData) => {
+    sortedData.value = sortByDate(newData, "created_at", sortOrderLocal.value);
+  },
+  { immediate: true }
+);
 
 function toggleSort(field) {
+  sortOrderLocal.value =
+    sortOrderLocal.value === "asc" ? "desc" : "asc";
+  sortedData.value = sortByDate(props.data, field, sortOrderLocal.value);
   emit("toggleSort", field);
 }
 </script>

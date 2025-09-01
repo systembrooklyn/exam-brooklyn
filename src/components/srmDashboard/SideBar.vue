@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <aside class="w-110 bg-white shadow-lg shadow-blue-300 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
       <div class="max-w-3xl mx-auto mb-5">
-        <div class="relative mt-3">
+        <div class="relative mt-5">
           <input v-model="studentId" @keyup.enter="searchStudent" type="text" placeholder="Enter Student ID..."
             class="input-field pl-10 shadow-sm focus:" />
 
