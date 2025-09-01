@@ -15,13 +15,11 @@ import formatDate from "../../global/FormDate";
 import { useAuthStore } from "../../../stores/auth";
 import { useDateSort } from "../../global/useDateSort";
 
-
 const props = defineProps({
   title: String,
   headers: Array,
   data: Array,
   loading: Boolean,
-
 });
 
 const emit = defineEmits(["toggleSort"]);
@@ -29,15 +27,18 @@ const { hasPermission } = useAuthStore();
 const { sortByDate } = useDateSort();
 
 // ----------------- Local State -----------------
-const sortedData = ref([...props.data]); 
+const sortedData = ref([...props.data]);
 const sortField = ref("created_at");
-const sortOrderLocal = ref( "desc");
-
+const sortOrderLocal = ref("desc");
 
 watch(
   () => props.data,
   (newData) => {
-    sortedData.value = sortByDate(newData, sortField.value, sortOrderLocal.value);
+    sortedData.value = sortByDate(
+      newData,
+      sortField.value,
+      sortOrderLocal.value
+    );
   },
   { immediate: true }
 );
@@ -46,7 +47,11 @@ watch(
 function toggleSort(field) {
   sortField.value = field;
   sortOrderLocal.value = sortOrderLocal.value === "asc" ? "desc" : "asc";
-  sortedData.value = sortByDate(props.data, sortField.value, sortOrderLocal.value);
+  sortedData.value = sortByDate(
+    props.data,
+    sortField.value,
+    sortOrderLocal.value
+  );
   emit("toggleSort", field);
 }
 
@@ -63,7 +68,12 @@ const selectedRequestId = ref(null);
 const requestStore = useRequestStore();
 const emitter = inject("emitter", null);
 
-const expandableColumns = ["value", "comment", "manager_response", "employee_response"];
+const expandableColumns = [
+  "value",
+  "comment",
+  "manager_response",
+  "employee_response",
+];
 
 // ----------------- Helpers -----------------
 function displayValue(val) {
@@ -193,7 +203,9 @@ function truncateText(text) {
           <span class="text-sm font-semibold text-gray-800">{{
             formatDate(row.created_at)
           }}</span>
-          <span class="text-sm font-semibold text-gray-800 flex items-center gap-1">
+          <span
+            class="text-sm font-semibold text-gray-800 flex items-center gap-1"
+          >
             <UserPen size="15" /> {{ row.employee?.name }}
           </span>
         </div>
@@ -206,9 +218,9 @@ function truncateText(text) {
           </span>
           <div class="relative inline-block min-w-[120px] text-center">
             <select
-              
               v-model="row.status"
               @change="hasPermission('view-status') && updateStatus(row)"
+              :disabled="!hasPermission('view-status')"
               :class="[
                 row.status === 'closed'
                   ? 'bg-green-100 text-green-700'
@@ -217,6 +229,9 @@ function truncateText(text) {
                   : 'bg-gray-100 text-gray-700',
                 'w-full text-center cursor-pointer px-3 py-1 rounded-full text-sm font-medium capitalize appearance-none pr-6',
                 'focus:outline-none focus:ring-0 ',
+                !hasPermission('view-status')
+                  ? 'opacity-50 cursor-not-allowed'
+                  : '',
               ]"
             >
               <option value="pending">Pending</option>
@@ -266,7 +281,10 @@ function truncateText(text) {
           </template>
         </div>
 
-        <div class="flex items-center gap-2" style="direction: auto; unicode-bidi: plaintext">
+        <div
+          class="flex items-center gap-2"
+          style="direction: auto; unicode-bidi: plaintext"
+        >
           <button
             v-if="!row.employee_response && hasPermission('emp-reply')"
             @click="openModel(row.id, 'emp_res')"
@@ -332,7 +350,11 @@ function truncateText(text) {
     </div>
 
     <!-- Modals -->
-    <RequestFieldModal v-if="showRequestFieldModal" v-model="showRequestFieldModal" :type="title" />
+    <RequestFieldModal
+      v-if="showRequestFieldModal"
+      v-model="showRequestFieldModal"
+      :type="title"
+    />
     <ReplyRequestModal
       v-if="showReplyModal"
       v-model="showReplyModal"
