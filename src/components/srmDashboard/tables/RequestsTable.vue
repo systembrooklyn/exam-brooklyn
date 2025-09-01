@@ -268,7 +268,7 @@ function truncateText(text) {
 
         <div class="flex items-center gap-2" style="direction: auto; unicode-bidi: plaintext">
           <button
-            v-if="!row.employee_response || hasPermission('emp-reply')"
+            v-if="!row.employee_response && hasPermission('emp-reply')"
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
           >
@@ -276,7 +276,7 @@ function truncateText(text) {
             <MessageCircleReply size="15" />
           </button>
           <button
-            v-if="!row.manager_response || hasPermission('mng-reply')"
+            v-if="!row.manager_response && hasPermission('mng-reply')"
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
           >
