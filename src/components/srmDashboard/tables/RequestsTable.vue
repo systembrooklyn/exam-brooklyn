@@ -206,9 +206,9 @@ function truncateText(text) {
           </span>
           <div class="relative inline-block min-w-[120px] text-center">
             <select
-              v-if="hasPermission('view-status')"
+              
               v-model="row.status"
-              @change="updateStatus(row)"
+              @change="hasPermission('view-status') && updateStatus(row)"
               :class="[
                 row.status === 'closed'
                   ? 'bg-green-100 text-green-700'
