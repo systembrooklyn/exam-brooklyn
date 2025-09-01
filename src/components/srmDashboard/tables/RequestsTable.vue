@@ -290,7 +290,7 @@ function truncateText(text) {
             @click="openModel(row.id, 'emp_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
           >
-            Reply
+            Employee Reply
             <MessageCircleReply size="15" />
           </button>
           <button
@@ -298,7 +298,7 @@ function truncateText(text) {
             @click="openModel(row.id, 'mng_res')"
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
           >
-            Reply
+           Manager Reply
             <MessageCircleReply size="15" />
           </button>
         </div>
