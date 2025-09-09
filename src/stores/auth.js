@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, onBeforeMount } from "vue";
+import { ref } from "vue";
 import Cookies from "js-cookie";
 import { useRouter } from "vue-router";
 import notyf from "@/components/global/notyf";
@@ -10,58 +10,40 @@ import {
   RESET_PASSWORD,
   USER_BY_TOKEN,
 } from "../api/Api";
-import CryptoJS from "crypto-js";
 import { handleError } from "./handleError";
 
 export const useAuthStore = defineStore("authStore", () => {
   const token = ref(null);
   const user = ref(null);
+  const permissions = ref([]);
   const loading = ref(false);
   const error = ref(null);
   const forgotSuccess = ref("");
   const router = useRouter();
-  const permissions = ref([]);
 
-  const secretKey = "secret-key-123";
-
-  const encryptPermissions = (perms) => {
-    const stringified = JSON.stringify(perms);
-    return CryptoJS.AES.encrypt(stringified, secretKey).toString();
-  };
-
-  const decryptPermissions = (encrypted) => {
-    try {
-      const bytes = CryptoJS.AES.decrypt(encrypted, secretKey);
-      const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
-      return JSON.parse(decryptedData);
-    } catch (error) {
-      handleError(error);
-      return [];
-    }
-  };
-
-  const restoreUserFromCookies = () => {
+  // ✅ جلب التوكن من الكوكيز
+  const restoreTokenFromCookies = () => {
     const savedToken = Cookies.get("token");
-    const savedUser = Cookies.get("user");
-    const savedPermissions = Cookies.get("permissions");
-
-    if (savedToken && savedUser) {
+    if (savedToken) {
       token.value = savedToken;
-      try {
-        user.value = JSON.parse(savedUser);
-      } catch (e) {
-        user.value = null;
-      }
-      permissions.value = savedPermissions
-        ? decryptPermissions(savedPermissions)
-        : [];
     }
   };
 
-  onBeforeMount(() => {
-    restoreUserFromCookies();
-  });
+  // ✅ API: جلب بيانات المستخدم + permissions
+  const getUserByToken  = async () => {
+    if (!token.value) return;
+    try {
+      const response = await apiClient.get(USER_BY_TOKEN, {
+        headers: { Authorization: `Bearer ${token.value}` },
+      });
+      user.value = response.data.User;
+      permissions.value = response.data.permissions || [];
+    } catch (err) {
+      logout(); // لو التوكن بايظ أو منتهي
+    }
+  };
 
+  // ✅ Login
   const login = async (email, password) => {
     loading.value = true;
     error.value = null;
@@ -69,8 +51,11 @@ export const useAuthStore = defineStore("authStore", () => {
       const response = await apiClient.post(LOGIN, { email, password });
       token.value = response.data.token;
 
+      // خزّن التوكن بس
       Cookies.set("token", token.value, { expires: 7, path: "/" });
-      await getUserByToken();
+
+      // هات بيانات المستخدم
+      await getUserByToken ();
 
       notyf.success("Logged in successfully");
       router.push("/systems");
@@ -81,6 +66,7 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
+  // ✅ Logout
   const logout = async () => {
     loading.value = true;
     try {
@@ -95,13 +81,12 @@ export const useAuthStore = defineStore("authStore", () => {
       loading.value = false;
 
       Cookies.remove("token");
-      Cookies.remove("user");
-      Cookies.remove("permissions");
 
       router.push({ name: "login" });
     }
   };
 
+  // ✅ Forgot password
   const forgotPassword = async (email) => {
     forgotSuccess.value = null;
     loading.value = true;
@@ -117,15 +102,14 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
+  // ✅ Reset password
   const resetPassword = async (form) => {
     loading.value = true;
     error.value = null;
 
     try {
       const response = await apiClient.post(RESET_PASSWORD, form, {
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       notyf.success("Password reset successfully");
@@ -137,41 +121,32 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
-  const getUserByToken = async () => {
-    try {
-      const response = await apiClient.get(USER_BY_TOKEN);
-      user.value = response.data.User;
-      permissions.value = response.data.permissions;
-
-      Cookies.set("user", JSON.stringify(user.value), {
-        expires: 7,
-        path: "/",
-      });
-      Cookies.set("permissions", encryptPermissions(permissions.value), {
-        expires: 7,
-        path: "/",
-      });
-    } catch (error) {
-      handleError(error);
-    }
-  };
-
+  // ✅ hasPermission
   const hasPermission = (permissionName) => {
     return permissions.value.includes(permissionName);
+  };
+
+  // ✅ InitAuth: يتنده مرة واحدة في main.js
+  const initAuth = async () => {
+    restoreTokenFromCookies();
+    if (token.value) {
+      await getUserByToken ();
+    }
   };
 
   return {
     token,
     user,
+    permissions,
     loading,
     error,
-    getUserByToken,
+    forgotSuccess,
     login,
     logout,
     forgotPassword,
     resetPassword,
-    forgotSuccess,
-    permissions,
+    getUserByToken ,
     hasPermission,
+    initAuth,
   };
 });

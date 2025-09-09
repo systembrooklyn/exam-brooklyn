@@ -2,16 +2,21 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/pages/Home.vue";
 import Exam from "../views/pages/Exam.vue";
 import LogIn from "../views/pages/LogIn.vue";
-import dashboard from "../components/dashboard/Dashboard.vue";
 import { useAuthStore } from "../stores/auth";
 import accessControl from "./access-control";
+
 // dashboard
 import dashboardRoutes from "./dashboard";
 import finnanceDashboard from "./finnance-dashboard";
 
 const routes = [
   { path: "/", name: "login", component: LogIn },
-  { path: "/home", name: "home", component: Home , meta: { requiresPermission: "start-exam" }},
+  { 
+    path: "/home", 
+    name: "home", 
+    component: Home, 
+    meta: { requiresPermission: "start-exam" } 
+  },
   { path: "/examPage", name: "examPage", component: Exam },
   {
     path: "/reservation",
@@ -33,7 +38,6 @@ const routes = [
     name: "reservation-success",
     component: () => import("../views/pages/ReservationSuccess.vue"),
   },
-
   {
     path: "/result",
     name: "ResultPage",
@@ -59,28 +63,25 @@ const routes = [
     name: "placement-exam",
     component: () => import("../views/pages/PlacementTestExam.vue"),
   },
-   {
-    path: '/exam-success',
-    name: 'exam-success',
+  {
+    path: "/exam-success",
+    name: "exam-success",
     component: () => import("../views/pages/PlacementSuccess.vue"),
   },
-    {
-    path: '/exam-start',
-    name: 'exam-start',
+  {
+    path: "/exam-start",
+    name: "exam-start",
     component: () => import("../views/pages/PlacementStart.vue"),
   },
-  
-
   {
     path: "/:catchAll(.*)",
     name: "error",
     component: () => import("@/views/pages/Error404.vue"),
   },
   // dashboard
-   dashboardRoutes,
-  //  finnance-dashboard
+  dashboardRoutes,
+  // finance-dashboard
   finnanceDashboard,
-
 ];
 
 const router = createRouter({
@@ -91,8 +92,6 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   const isAuthenticated = !!authStore.token;
-  const userPermissions = authStore.permissions || [];
-  const access = accessControl[to.name];
 
   if (to.path === "/" && isAuthenticated) {
     return next({ name: "SystemsPage" });
@@ -105,19 +104,20 @@ router.beforeEach((to, from, next) => {
     return next({ name: "login" });
   }
 
-  // Access control via dedicated map
+  // ✅ Access control via access-control.js
+  const access = accessControl[to.name];
   if (access) {
-    if (access.blockedIfHas?.some((p) => userPermissions.includes(p))) {
+    if (access.blockedIfHas?.some((p) => authStore.hasPermission(p))) {
       return next({ name: "dashboard" });
     }
-    if (access.requires?.some((p) => !userPermissions.includes(p))) {
+    if (access.requires?.some((p) => !authStore.hasPermission(p))) {
       return next({ name: "SystemsPage" });
     }
   }
 
-  // Fallback: enforce meta.requiresPermission if defined
+  // ✅ Meta-based permission check
   const required = to.meta?.requiresPermission;
-  if (required && !userPermissions.includes(required)) {
+  if (required && !authStore.hasPermission(required)) {
     return next({ name: "SystemsPage" });
   }
 

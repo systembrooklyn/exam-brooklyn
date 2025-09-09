@@ -14,8 +14,10 @@ import {
   BookOpen,
   GraduationCap,
 } from "lucide-vue-next"; // Adjust the path as necessary
+import { useAuthStore } from "../../stores/auth";
 
 const placementTestsStore = usePlacementTestsStore();
+const authStore = useAuthStore();
 
 const email = ref("");
 const router = useRouter();
