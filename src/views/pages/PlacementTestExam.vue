@@ -47,7 +47,6 @@ const startTimer = () => {
       studentStore
         .submitFinalExam(answersArray.value, true)
         .then(() => {
-        
           router.replace({ name: "exam-success" });
         })
         .catch((err) => {
@@ -134,6 +133,12 @@ const handleStart = () => {
   startTimer();
   loadSelectedOption();
 };
+const allAnswered = computed(() => {
+  return (
+    questions.value.length > 0 &&
+    questions.value.every((_, i) => selectedOptions.value[i] != null)
+  );
+});
 
 const nextQuestion = async () => {
   saveAnswer();
@@ -278,7 +283,7 @@ onBeforeUnmount(() =>
               </option>
             </select>
           </div>
-          <!-- توضيح لون الأسئلة غير المُجابة -->
+
           <div class="text-sm text-gray-600 text-right mb-4">
             <span class="text-red-500 font-bold">Red</span> = Unanswered
             question
@@ -330,7 +335,6 @@ onBeforeUnmount(() =>
             Please answer all questions. You'll find unanswered ones highlighted
             in red in the question list.
           </div>
-          <!-- أزرار التنقل -->
           <div class="flex justify-between mt-8">
             <button
               @click="previousQuestion"
@@ -340,22 +344,24 @@ onBeforeUnmount(() =>
               Previous
             </button>
 
-            <button
-              v-if="!isLastQuestion"
-              @click="nextQuestion"
-              class="px-5 py-2 rounded-lg font-semibold transition bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Next
-            </button>
+            <div class="flex gap-3">
+              <button
+                v-if="!isLastQuestion"
+                @click="nextQuestion"
+                class="px-5 py-2 rounded-lg font-semibold transition bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Next
+              </button>
 
-            <button
-              v-if="isLastQuestion"
-              @click="submitFinalExam"
-              class="px-5 py-2 rounded-lg font-semibold transition bg-green-600 text-white hover:bg-green-700"
-            >
-              <span v-if="isSubmitting">Submitting...</span>
-              <span v-else>Submit</span>
-            </button>
+              <button
+                v-if="isLastQuestion || allAnswered"
+                @click="submitFinalExam"
+                class="px-5 py-2 rounded-lg font-semibold transition bg-green-600 text-white hover:bg-green-700"
+              >
+                <span v-if="isSubmitting">Submitting...</span>
+                <span v-else>Submit</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

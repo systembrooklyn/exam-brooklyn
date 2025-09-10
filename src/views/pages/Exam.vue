@@ -47,7 +47,7 @@ const answeredCount = computed(() => studentStore.examAnswers.length);
 //     ? questions.value.filter((_, i) => unansweredIndexes.value.includes(i))
 //     : questions.value;
 // });
-const seconds = ref(60)
+const seconds = ref(60);
 const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value === 0) {
@@ -57,15 +57,13 @@ const startTimer = () => {
       submitFinalExam({ answers: answersArray.value });
     } else {
       if (seconds.value === 0) {
-       
         timeLeft.value -= 1;
         seconds.value = 59;
       } else {
-        
         seconds.value -= 1;
       }
     }
-  }, 1000); 
+  }, 1000);
 };
 
 const saveAnswer = () => {
@@ -195,6 +193,13 @@ const submitFinalExam = async () => {
   }
 };
 
+const allAnswered = computed(() => {
+  return (
+    questions.value.length > 0 &&
+    questions.value.every((_, i) => selectedOptions.value[i] != null)
+  );
+});
+
 // Handle before unload
 const handleBeforeUnload = (e) => {
   e.preventDefault();
@@ -210,16 +215,16 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
   clearInterval(interval);
-
 });
-
 </script>
 
 <template>
   <div class="quiz-container min-h-screen w-full">
     <div class="text-center mb-10 dark:text-white">
       <div>
-        <h2 class="font-bold text-primary mt-5 mb-5 text-3xl">{{ exam.name }}</h2>
+        <h2 class="font-bold text-primary mt-5 mb-5 text-3xl">
+          {{ exam.name }}
+        </h2>
       </div>
 
       <div class="text-xl font-semibold mb-8">
@@ -227,7 +232,7 @@ onBeforeUnmount(() => {
         <span class="text-primary font-bold text-2xl dark:text-blue-500">
           {{ timeLeft.toFixed(0) }}:{{ seconds }}
         </span>
-        minutes   
+        minutes
       </div>
     </div>
 
@@ -239,65 +244,103 @@ onBeforeUnmount(() => {
       <button @click="router.push('/home')" class="btn-start">Go Back</button>
     </div>
 
-    <div v-if="quizStarted" class="max-w-[70%] mx-auto bg-gray-50 py-6 ">
-     
-      <div v-if="currentQuestion" class="question-container    ">
- <div class="text-end mb-5 mt-4">
-        <label class="text-gray-700 font-medium block mb-2">Go to question:</label>
-        <select v-model="currentQuestionIndex" class="border px-4 py-2 rounded-md font-semibold"
-          @change="loadSelectedOption" :class="{
-            'border-red-500 text-red-600':
-              unansweredIndexes.length > 0 && mode === 'filter',
-            'border-indigo-500 text-indigo-700': mode !== 'filter',
-          }">
-          <option :value="null" disabled selected>
-            {{
-              mode === "filter" && unansweredIndexes.length > 0
-                ? "Unanswered questions"
-                : "Select a question"
-            }}
-          </option>
+    <div v-if="quizStarted" class="max-w-[70%] mx-auto bg-gray-50 py-6">
+      <div v-if="currentQuestion" class="question-container">
+        <div class="text-end mb-5 mt-4">
+          <label class="text-gray-700 font-medium block mb-2"
+            >Go to question:</label
+          >
+          <select
+            v-model="currentQuestionIndex"
+            class="border px-4 py-2 rounded-md font-semibold"
+            @change="loadSelectedOption"
+            :class="{
+              'border-red-500 text-red-600':
+                unansweredIndexes.length > 0 && mode === 'filter',
+              'border-indigo-500 text-indigo-700': mode !== 'filter',
+            }"
+          >
+            <option :value="null" disabled selected>
+              {{
+                mode === "filter" && unansweredIndexes.length > 0
+                  ? "Unanswered questions"
+                  : "Select a question"
+              }}
+            </option>
 
-          <option v-for="(index, idx) in mode === 'filter'
-            ? unansweredIndexes
-            : questions.map((_, i) => i)" :key="idx" :value="index">
-            Question {{ index + 1 }}
-          </option>
-        </select>
-      </div>
+            <option
+              v-for="(index, idx) in mode === 'filter'
+                ? unansweredIndexes
+                : questions.map((_, i) => i)"
+              :key="idx"
+              :value="index"
+            >
+              Question {{ index + 1 }}
+            </option>
+          </select>
+        </div>
         <h3
-          class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md  rounded-xl mb-5 bg-primary text-white">
+          class="text-lg font-semibold text-center min-h-[100px] flex items-center justify-center border p-3 shadow-md rounded-xl mb-5 bg-primary text-white"
+        >
           {{ currentQuestion.question_text }}
         </h3>
-        <div v-for="[key, option] in Object.entries(currentQuestion?.options || {}).filter(
-          ([_, value]) => value && value.trim() !== ''
-        )" :key="key" class="option dark:text-gray-300" :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
-          @click="selectedOptions[currentQuestionIndex] = key">
-          <input type="radio" :id="'option-' + key" v-model="selectedOptions[currentQuestionIndex]" :value="key"
-            style="opacity: 0; position: absolute" />
+        <div
+          v-for="[key, option] in Object.entries(
+            currentQuestion?.options || {}
+          ).filter(([_, value]) => value && value.trim() !== '')"
+          :key="key"
+          class="option dark:text-gray-300"
+          :class="{ selected: selectedOptions[currentQuestionIndex] === key }"
+          @click="selectedOptions[currentQuestionIndex] = key"
+        >
+          <input
+            type="radio"
+            :id="'option-' + key"
+            v-model="selectedOptions[currentQuestionIndex]"
+            :value="key"
+            style="opacity: 0; position: absolute"
+          />
           <label :for="'option-' + key">{{ option }}</label>
         </div>
       </div>
       <div class="text-center">
         <button @click="previousQuestion" class="btn-prev">Previous</button>
+
         <button v-if="!isLastQuestion" @click="nextQuestion" class="btn-next">
-          next
+          Next
         </button>
-        <button v-if="isLastQuestion" @click="submitFinalExam" class="btn-next">
-          <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin-pulse"></i></span>
+
+        <button
+          v-if="isLastQuestion || allAnswered"
+          @click="submitFinalExam"
+          class="btn-next"
+        >
+          <span v-if="isSubmitting">
+            <i class="fa-solid fa-circle-notch fa-spin-pulse"></i>
+          </span>
           <span v-else>Submit</span>
         </button>
       </div>
-      <div class="answered-counter text-center  mt-3 text-lg font-medium dark:text-white">
+
+      <div
+        class="answered-counter text-center mt-3 text-lg font-medium dark:text-white"
+      >
         It has been answered
-        <span class="text-primary dark:text-blue-500 text-xl font-bold">({{ answeredCount }})</span>
+        <span class="text-primary dark:text-blue-500 text-xl font-bold"
+          >({{ answeredCount }})</span
+        >
         from
-        <span class="text-primary font-bold text-xl dark:text-blue-500">({{ questions.length }})</span>
+        <span class="text-primary font-bold text-xl dark:text-blue-500"
+          >({{ questions.length }})</span
+        >
         Questions
       </div>
     </div>
 
-    <div v-if="showUnansweredMessage" class="alert-message text-red-500 text-center mt-3">
+    <div
+      v-if="showUnansweredMessage"
+      class="alert-message text-red-500 text-center mt-3"
+    >
       {{ showUnansweredMessage }}
     </div>
   </div>
@@ -310,7 +353,6 @@ onBeforeUnmount(() => {
 
 .quiz-container {
   position: relative;
- 
 }
 
 .quiz-container::before {
@@ -321,13 +363,12 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   background-image: url("../../assets/logo.png");
-  background-size: 50%; 
+  background-size: 50%;
   background-position: center;
   opacity: 0.3;
   pointer-events: none;
   z-index: -1;
 }
-
 
 .answered-counter {
   margin-top: 15px;
@@ -360,7 +401,6 @@ onBeforeUnmount(() => {
   border-color: #689af1;
   color: #092c67;
   font-weight: bold;
-
 }
 
 /* .dark .selected {
