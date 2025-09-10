@@ -59,8 +59,8 @@ const startTimer = () => {
 
       if (!tenMinuteWarningGiven && timeLeft.value <= 600) {
         tenMinuteWarningGiven = true;
-        alertSound.play();
-        notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
+        // alertSound.play();
+        // notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
       }
     }
   }, 1000);
