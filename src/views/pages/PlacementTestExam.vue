@@ -34,25 +34,32 @@ const isLastQuestion = computed(
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
 let tenMinuteWarningGiven = false;
-
+const seconds = ref(60);
 const startTimer = () => {
   interval = setInterval(() => {
-    if (timeLeft.value <= 0) {
+    if (timeLeft.value === 0) {
       clearInterval(interval);
       alertSound.play();
       notyf.error("Time is up!");
 
-      submitFinalExam().then(() => {
-        studentStore.autoSaveAnswers(answersArray.value);
-        router.replace({ name: "exam-success" });
-      });
-    } else {
-      timeLeft.value = parseFloat((timeLeft.value - 0.01).toFixed(2));
+      studentStore.autoSaveAnswers(answersArray.value);
 
-      if (!tenMinuteWarningGiven && timeLeft.value <= 600) {
-        tenMinuteWarningGiven = true;
-        // alertSound.play();
-        notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
+      studentStore
+        .submitFinalExam(answersArray.value, true)
+        .then(() => {
+        
+          router.replace({ name: "exam-success" });
+        })
+        .catch((err) => {
+          console.error("Auto submit failed:", err);
+          notyf.error("Failed to auto-submit exam, please try again.");
+        });
+    } else {
+      if (seconds.value === 0) {
+        timeLeft.value -= 1;
+        seconds.value = 59;
+      } else {
+        seconds.value -= 1;
       }
     }
   }, 1000);
@@ -104,8 +111,7 @@ const handleStart = () => {
   currentQuestionIndex.value = 0;
   quizStarted.value = true;
   timeLeft.value = remainingTime.value;
-  console.log(remainingTime.value , 'time left' , timeLeft.value );
-  
+  console.log(remainingTime.value, "time left", timeLeft.value);
 
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
@@ -221,10 +227,8 @@ onBeforeUnmount(() =>
           <div class="text-lg mt-2">
             Time Remaining:
             <span class="font-semibold text-blue-600">
-              {{ Math.floor(timeLeft) }}:{{
-                Math.round((timeLeft - Math.floor(timeLeft)) * 100)
-                  .toString()
-                  .padStart(2, "0")
+              {{ timeLeft.toFixed(0) }}:{{
+                timeLeft <= 0 ? "00" : seconds.toString().padStart(2, "0")
               }}
             </span>
           </div>
@@ -365,10 +369,12 @@ onBeforeUnmount(() =>
   100% {
     transform: translateX(0);
   }
+
   20%,
   60% {
     transform: translateX(-5px);
   }
+
   40%,
   80% {
     transform: translateX(5px);
