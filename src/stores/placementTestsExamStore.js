@@ -2,7 +2,12 @@ import { defineStore } from "pinia";
 import apiClient from "../api/axiosInstance";
 import { handleError } from "./handleError";
 import { ref } from "vue";
-import { START_PLACEMENT, FINISH_PLACEMENT, PLACEMENT_TESTS_SURVEY, PLACEMENT_TESTS } from "../api/Api";
+import {
+  START_PLACEMENT,
+  FINISH_PLACEMENT,
+  PLACEMENT_TESTS_SURVEY,
+  PLACEMENT_TESTS,
+} from "../api/Api";
 import Cookies from "js-cookie";
 import notyf from "@/components/global/notyf";
 
@@ -43,8 +48,10 @@ export const usePlacementTestsExamStore = defineStore(
     }
 
     async function autoSaveAnswers(answers) {
+      console.log('done  answers');
+      
       const attemptId = Cookies.get("attempt_id");
-      if (!attemptId || isFinished.value) return; // لا ترسل لو الامتحان انتهى
+      if (!attemptId || isFinished.value) return;
 
       const formattedAnswers = answers.map((ans) => ({
         q_id: ans.q_id,
@@ -62,11 +69,11 @@ export const usePlacementTestsExamStore = defineStore(
     }
 
     function startAutoSave(answersRef) {
-      if (autoSaveInterval) clearInterval(autoSaveInterval); // تأكد مفيش تكرار
+      if (autoSaveInterval) clearInterval(autoSaveInterval); 
       autoSaveInterval = setInterval(() => {
         sessionStorage.setItem("answers", JSON.stringify(answersRef.value));
         autoSaveAnswers(answersRef.value);
-      }, 2 * 60 * 1000); // كل دقيقتين
+      }, 2 * 60 * 1000); 
     }
 
     // placementTestsExamStore.js
@@ -96,20 +103,21 @@ export const usePlacementTestsExamStore = defineStore(
       }
     }
 
-const getStudentPlacement = async () => {
-  const st_id = Number(Cookies.get("st_id"));
-  console.log("Fetching student placement for ID:", st_id);
+    const getStudentPlacement = async () => {
+      const st_id = Number(Cookies.get("st_id"));
+  
 
-  try {
-    const response = await apiClient.post(`${PLACEMENT_TESTS}/student`, { st_id }); // ✅ await هنا ضروري
-    studentPlacement.value = response.data.data; // تأكد من وجود البيانات
-    console.log("Student placement fetched successfully:", response.data);
-  } catch (error) {
-    console.error("Error fetching student placement:", error);
-    handleError(error);
-  }
-};
-
+      try {
+        const response = await apiClient.post(`${PLACEMENT_TESTS}/student`, {
+          st_id,
+        }); 
+        studentPlacement.value = response.data.data; 
+        // console.log("Student placement fetched successfully:", response.data);
+      } catch (error) {
+        console.error("Error fetching student placement:", error);
+        handleError(error);
+      }
+    };
 
     const saveSurveyAnswers = async (answers) => {
       const st_id = Cookies.get("st_id");
@@ -119,12 +127,11 @@ const getStudentPlacement = async () => {
           answers: answers,
         });
         console.log("Survey answers saved successfully:", response.data);
-
       } catch (error) {
         console.error("Error saving survey answers:", error);
         handleError(error);
       }
-    }
+    };
 
     return {
       loading,

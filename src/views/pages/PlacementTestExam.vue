@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { usePlacementTestsExamStore } from "@/stores/placementTestsExamStore";
 import { useRouter } from "vue-router";
+
 import { Notyf } from "notyf";
 import "notyf/notyf.min.css";
 
@@ -40,21 +41,22 @@ const isLastQuestion = computed(
 );
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-let tenMinuteWarningGiven = false; 
+let tenMinuteWarningGiven = false;
 
 const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value <= 0) {
       clearInterval(interval);
       alertSound.play();
-      notyf.error("Time is up!");
-      submitFinalExam();
-      studentStore.autoSaveAnswers(answersArray.value);
-      router.replace({ name: "exam-success" });
+      Notyf.error("Time is up!");
+
+      submitFinalExam().then(() => {
+        studentStore.autoSaveAnswers(answersArray.value);
+        router.replace({ name: "exam-success" });
+      });
     } else {
       timeLeft.value = parseFloat((timeLeft.value - 0.01).toFixed(2));
 
-      // ✅ عرض تنبيه عند 10 دقائق
       if (!tenMinuteWarningGiven && timeLeft.value <= 600) {
         tenMinuteWarningGiven = true;
         alertSound.play();
@@ -63,7 +65,6 @@ const startTimer = () => {
     }
   }, 1000);
 };
-
 
 const loadSelectedOption = () => {
   if (!currentQuestion.value || !Array.isArray(studentStore.examAnswers))
@@ -112,10 +113,8 @@ const handleStart = () => {
   quizStarted.value = true;
   timeLeft.value = remainingTime.value;
 
-
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
-  
   restoredAnswers.forEach((answer) => {
     const qIndex = questions.value.findIndex((q) => q.id === answer.q_id);
     if (qIndex !== -1) {
@@ -127,9 +126,7 @@ const handleStart = () => {
     }
   });
 
- 
   sessionStorage.setItem("answers", JSON.stringify(answersArray.value));
-
 
   unansweredIndexes.value = questions.value
     .map((q, i) => (selectedOptions.value[i] == null ? i : null))
@@ -157,6 +154,7 @@ const previousQuestion = () => {
 };
 
 const submitFinalExam = async () => {
+  console.log("finishing exam...done");
   const unanswered = questions.value.reduce((acc, q, i) => {
     if (
       selectedOptions.value[i] === null ||
@@ -186,7 +184,6 @@ const submitFinalExam = async () => {
   clearInterval(interval);
   quizStarted.value = false;
 
-  // ✅ تفريغ البيانات بعد الإرسال
   studentStore.examAnswers = [];
   answersArray.value = [];
   selectedOptions.value = [];
@@ -196,10 +193,8 @@ const submitFinalExam = async () => {
   sessionStorage.removeItem("answers");
   sessionStorage.removeItem("attemptId");
 
-  // ✅ التوجيه إلى صفحة النجاح
   router.push("/exam-success");
 };
-
 
 const handleBeforeUnload = (e) => {
   e.preventDefault();
@@ -217,19 +212,16 @@ onBeforeUnmount(() =>
 
 <template>
   <div class="relative min-h-screen bg-gray-100 overflow-hidden">
-    <!-- صورة الخلفية -->
     <img
       src="@/assets/hero.webp"
       alt="Background"
       class="absolute inset-0 w-full h-full object-cover opacity-10 z-0"
     />
 
-    <!-- محتوى الامتحان -->
     <div class="relative z-10 max-w-4xl mx-auto p-6">
       <div
         class="bg-white bg-opacity-90 shadow-xl rounded-2xl p-8 space-y-8 mt-20"
       >
-        <!-- عنوان الامتحان والمؤقت -->
         <div class="text-center mb-4">
           <h2 class="text-3xl font-bold text-blue-900">{{ examInfo.name }}</h2>
           <div class="text-lg mt-2">
@@ -244,7 +236,6 @@ onBeforeUnmount(() =>
           </div>
         </div>
 
-        <!-- زر بدء الامتحان -->
         <div v-if="!quizStarted" class="text-center">
           <button
             @click="handleStart"
@@ -254,9 +245,7 @@ onBeforeUnmount(() =>
           </button>
         </div>
 
-        <!-- عرض الامتحان -->
         <div v-if="quizStarted && currentQuestion">
-          <!-- Progress Bar -->
           <div class="w-full bg-gray-200 h-2 rounded mb-6">
             <div
               class="bg-blue-600 h-full rounded transition-all duration-300"
@@ -264,7 +253,6 @@ onBeforeUnmount(() =>
             ></div>
           </div>
 
-          <!-- الانتقال بين الأسئلة -->
           <div class="mb-4 flex items-center justify-end">
             <label for="questionSelect" class="mr-2 font-medium text-gray-700">
               Go to Question:

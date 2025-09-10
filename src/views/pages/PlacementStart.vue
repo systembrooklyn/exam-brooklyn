@@ -53,12 +53,7 @@ onMounted(async () => {
 
       
       <div v-else>
-        <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">
-          Let's Start Your Exam
-        </h2>
-        <p class="text-gray-600 dark:text-gray-400 mb-8">
-          Choose a module to begin your placement test.
-        </p>
+   
 
         <div v-if="placementExamStore.studentPlacement?.length > 0">
            <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white mb-3">
