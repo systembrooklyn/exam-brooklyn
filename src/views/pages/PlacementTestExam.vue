@@ -2,18 +2,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import { usePlacementTestsExamStore } from "@/stores/placementTestsExamStore";
 import { useRouter } from "vue-router";
-
-import { Notyf } from "notyf";
-import "notyf/notyf.min.css";
+import notyf from "@/components/global/notyf";
 
 const studentStore = usePlacementTestsExamStore();
 const router = useRouter();
-
-const notyf = new Notyf({
-  duration: 4000,
-  dismissible: true,
-  position: { x: "center", y: "top" },
-});
 
 const examData = computed(() => studentStore.exam?.data || {});
 const questions = computed(() => examData.value.ptest?.questions || []);
@@ -48,7 +40,7 @@ const startTimer = () => {
     if (timeLeft.value <= 0) {
       clearInterval(interval);
       alertSound.play();
-      Notyf.error("Time is up!");
+      notyf.error("Time is up!");
 
       submitFinalExam().then(() => {
         studentStore.autoSaveAnswers(answersArray.value);
@@ -60,7 +52,7 @@ const startTimer = () => {
       if (!tenMinuteWarningGiven && timeLeft.value <= 600) {
         tenMinuteWarningGiven = true;
         // alertSound.play();
-        // notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
+        notyf.warning("⚠️ Hurry up! Only 10 minutes left.");
       }
     }
   }, 1000);
@@ -112,6 +104,8 @@ const handleStart = () => {
   currentQuestionIndex.value = 0;
   quizStarted.value = true;
   timeLeft.value = remainingTime.value;
+  console.log(remainingTime.value , 'time left' , timeLeft.value );
+  
 
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
