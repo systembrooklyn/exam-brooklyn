@@ -1,11 +1,8 @@
 <!-- SimpleTable.vue -->
 <template>
-  <div > 
-    <div
-      class="bg-white min-w-[700px] rounded-2xl shadow-lg " 
-    >
-  
-      <div v-if="searchable" class="p-4">
+  <div class="w-[calc(100vw-300px)] h-full">
+    <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
+      <div v-if="searchable" class="p-4 flex-shrink-0">
         <div
           class="w-full flex items-center gap-2 border shadow-md border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus-within:ring-1 focus-within:ring-indigo-500"
         >
@@ -19,84 +16,86 @@
         </div>
       </div>
 
-     
-      <div v-if="loading" class="flex justify-center items-center py-20">
+      <div v-if="loading" class="flex justify-center items-center py-20 flex-1">
         <div
           class="animate-spin border-4 border-indigo-500 border-t-transparent rounded-full w-10 h-10"
         ></div>
       </div>
 
-      <div v-else>
-       
-        <table class=" w-full  text-center">
-          <thead>
-            <tr>
-              <th
-                v-for="header in headers"
-                :key="header.key"
-                class="px-4 py-3 text-center text-primary text-lg bg-indigo-100 font-bold whitespace-nowrap"
-              >
-                {{ header.label }}
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <!-- Data Rows -->
-            <tr
-              v-for="(item, index) in paginatedData"
-              :key="getRowKey(item, index)"
-              class="hover:bg-gray-50"
-            >
-              <td
-                v-for="header in headers"
-                :key="header.key"
-                :class="[ 
-                  'px-6 py-4 text-gray-600 whitespace-nowrap',
-                  index !== paginatedData.length - 1 ? 'border-b' : '',
-                ]"
-              >
-                <!-- Custom Cell Slot -->
-                <slot
-                  :name="`cell-${header.key}`"
-                  :item="item"
-                  :value="getValueByPath(item, header.key)"
-                  :header="header"
-                  :index="index"
+      <div v-else class="flex-1 overflow-hidden">
+        <!-- Table Container with Horizontal Scroll -->
+        <div class="w-full h-full overflow-x-auto overflow-y-auto">
+          <table class="w-full min-w-full text-center">
+            <thead class="sticky top-0 z-10">
+              <tr>
+                <th
+                  v-for="header in headers"
+                  :key="header.key"
+                  class="px-4 py-3 text-center text-primary text-lg bg-indigo-100 font-bold whitespace-nowrap"
                 >
-                  <span>{{ getValueByPath(item, header.key) }}</span>
-                </slot>
-              </td>
-            </tr>
+                  {{ header.label }}
+                </th>
+              </tr>
+            </thead>
 
-            <!-- No Search Results -->
-            <tr v-if="filteredData.length === 0 && search.length > 0">
-              <td
-                :colspan="totalColumns"
-                class="px-6 py-4 text-center font-bold text-gray-700"
+            <tbody>
+              <!-- Data Rows -->
+              <tr
+                v-for="(item, index) in paginatedData"
+                :key="getRowKey(item, index)"
+                class="hover:bg-gray-50"
               >
-                <slot name="no-search-results" :search="search">
-                  No results found for "{{ search }}".
-                </slot>
-              </td>
-            </tr>
+                <td
+                  v-for="header in headers"
+                  :key="header.key"
+                  :class="[
+                    'px-4 py-4 text-gray-600 whitespace-nowrap',
+                    index !== paginatedData.length - 1 ? 'border-b' : '',
+                  ]"
+                >
+                  <!-- Custom Cell Slot -->
+                  <slot
+                    :name="`cell-${header.key}`"
+                    :item="item"
+                    :value="getValueByPath(item, header.key)"
+                    :header="header"
+                    :index="index"
+                  >
+                    <span>{{ getValueByPath(item, header.key) }}</span>
+                  </slot>
+                </td>
+              </tr>
 
-            <!-- No Data -->
-            <tr v-if="filteredData.length === 0 && !search.length && !loading">
-              <td
-                :colspan="totalColumns"
-                class="px-6 py-4 text-center font-bold text-gray-600"
+              <!-- No Search Results -->
+              <tr v-if="filteredData.length === 0 && search.length > 0">
+                <td
+                  :colspan="totalColumns"
+                  class="px-6 py-4 text-center font-bold text-gray-700"
+                >
+                  <slot name="no-search-results" :search="search">
+                    No results found for "{{ search }}".
+                  </slot>
+                </td>
+              </tr>
+
+              <!-- No Data -->
+              <tr
+                v-if="filteredData.length === 0 && !search.length && !loading"
               >
-                <slot name="no-data"> No data found. </slot>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+                <td
+                  :colspan="totalColumns"
+                  class="px-6 py-4 text-center font-bold text-gray-600"
+                >
+                  <slot name="no-data"> No data found. </slot>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    
-    <div class="mt-4">
+    <div class="mt-4 flex-shrink-0">
       <Pagination
         :="currentPage"
         :total-pages="totalPages"
@@ -106,7 +105,6 @@
     </div>
   </div>
 </template>
-
 
 <script setup>
 import { Search } from "lucide-vue-next";
