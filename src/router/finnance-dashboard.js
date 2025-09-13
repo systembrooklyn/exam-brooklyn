@@ -31,5 +31,15 @@ export default  {
         name: "after-1-week",
         component: () => import("@/views/finnance/FinnanceAfter1Week.vue"),
       }
+      ,{
+        path: "acceptance-date",
+        name: "acceptance-date",
+        component: () => import("@/views/finnance/AcceptanceDate.vue"),
+      },
+      {
+        path: "acceptance-unpaid",
+        name: "acceptance-unpaid",
+        component: () => import("@/views/finnance/AcceptanceUnpaid.vue"),
+      }
     ],
   };

@@ -23,7 +23,7 @@ const showUnansweredMessage = ref("");
 const currentQuestionIndex = ref(null);
 
 const answersArray = ref([]);
-const timeLeft = ref(remainingTime.value);
+const timeLeft = ref(remainingTime.value - 1); // in seconds
 const selectedOptions = ref([]);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
@@ -32,6 +32,7 @@ let interval;
 const mode = ref("all");
 
 const unansweredIndexes = ref([]);
+console.log(timeLeft.value);
 
 const currentQuestion = computed(
   () => questions.value[currentQuestionIndex.value] || null
@@ -127,6 +128,7 @@ const loadSelectedOption = () => {
 };
 
 const handleStart = () => {
+  
   currentQuestionIndex.value = 0;
 
   quizStarted.value = true;
@@ -182,7 +184,7 @@ const submitFinalExam = async () => {
     saveAnswer();
     const payload = { answers: answersArray.value };
     isSubmitting.value = true;
-    payload;
+    console.log(payload);
 
     await studentStore.submitFinalExam(payload);
     isSubmitting.value = false;
@@ -230,7 +232,7 @@ onBeforeUnmount(() => {
       <div class="text-xl font-semibold mb-8">
         Remaining time
         <span class="text-primary font-bold text-2xl dark:text-blue-500">
-          {{ timeLeft.toFixed(0) }}:{{ seconds }}
+          {{ timeLeft.toFixed(0) }}:{{ timeLeft == 0 ? "00" : seconds }}
         </span>
         minutes
       </div>
@@ -312,6 +314,7 @@ onBeforeUnmount(() => {
 
         <button
           v-if="isLastQuestion || allAnswered"
+          :disabled="isSubmitting"
           @click="submitFinalExam"
           class="btn-next"
         >

@@ -1,7 +1,7 @@
 <template>
   <li>
     <div
-      class="w-full p-3 cursor-pointer flex items-center justify-between hover:bg-gray-100 transition-all duration-300"
+      class="w-[230px] p-3 cursor-pointer flex items-center justify-between hover:bg-gray-100 transition-all duration-300"
       :class="{ 'bg-indigo-100 text-indigo-600 font-semibold': isActive }"
       @click="toggle"
     >
