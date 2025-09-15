@@ -9,7 +9,7 @@
       <NavBar />
 
       <!-- Content area -->
-      <main class=" p-4 bg-gray-50">
+      <main class=" p-4 ">
         <router-view />
       </main>
     </div>
