@@ -25,7 +25,7 @@
 
             <th>Actual Send Date <br />by system</th>
             <th>Sender <br />by srm</th>
-            <th>Send at</th>
+            <th>Sent at</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -64,7 +64,7 @@
             </td>
 
             <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
-              {{ "-" }}
+              {{ formatDate(row.sent_at) || "-"}}
             </td>
           </tr>
         </tbody>
