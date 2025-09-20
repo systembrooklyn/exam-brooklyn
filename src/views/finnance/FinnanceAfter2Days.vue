@@ -15,7 +15,7 @@ const headers = [
   { key: 'student.name', label: 'Name', class: 'bg-blue-50' },
   { key: 'student.email', label: 'Email', class: 'bg-indigo-50' },
   { key: 'student.phones', label: 'Phone', class: 'bg-gray-50' },
-  { key: 'student.scholar_status', label: 'Study Type', class: 'bg-amber-50' }
+  { key: 'student.StudyType', label: 'Study Type', class: 'bg-amber-50' }
 ]
 
 

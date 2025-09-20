@@ -2,7 +2,7 @@
 <template>
   <div class="w-[calc(100vw-300px)]">
     <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
-      <!-- Search Input -->
+   
       <div v-if="searchable" class="p-4 flex-shrink-0">
         <div
           class="w-full flex items-center gap-2 border shadow-md border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus-within:ring-1 focus-within:ring-indigo-500"
@@ -35,7 +35,33 @@
                   :key="header.key"
                   class="px-4 py-3 text-center text-primary text-lg bg-indigo-100 font-bold whitespace-nowrap"
                 >
-                  {{ header.label }}
+                  <div class="flex items-center justify-center gap-2">
+                    {{ header.label }}
+
+                    <button
+                      v-if="
+                        ['student.email', 'student.phones'].includes(header.key)
+                      "
+                      @click="copyColumn(header.key)"
+                      class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                      title="Copy all"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 16h8m-8-4h8m-8-4h8m-2-4H6a2 2 0 00-2 2v12a2 2 0 002 2h8l6-6V6a2 2 0 00-2-2z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </th>
               </tr>
             </thead>
@@ -115,6 +141,7 @@
 import { Search } from "lucide-vue-next";
 import { ref, computed } from "vue";
 import Pagination from "../pages/Pagination.vue";
+import notyf from "../../components/global/notyf";
 
 const props = defineProps({
   data: { type: Array, required: true },
@@ -181,6 +208,17 @@ const formatValue = (value, key) => {
     return value && !isNaN(value) ? Number(value).toFixed(1) : "0.0";
   }
   return value || "-";
+};
+const copyColumn = async (key) => {
+  try {
+    const values = (props.data || []).map((item) => getValueByPath(item, key));
+    const textToCopy = values.join("\n"); 
+    await navigator.clipboard.writeText(textToCopy);
+    console.log(`Copied all ${key}:`, textToCopy);
+    notyf.success(`Copied all ${key.replace("student.", "")}`);
+  } catch (err) {
+    console.error("Failed to copy column:", err);
+  }
 };
 
 const getValueByPath = (obj, path) =>
