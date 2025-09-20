@@ -1,7 +1,7 @@
 <template>
   <div class="pagination flex justify-center items-center gap-2 mt-8">
     <!-- Previous -->
-    <button @click="previousPage" :disabled="currentPage === 0" class="btn-prev">
+    <button @click="previousPage" :disabled="currentPage === 1" class="btn-prev">
       Previous
     </button>
 
@@ -9,8 +9,8 @@
     <button
       v-for="n in visiblePageNumbers"
       :key="n"
-      @click="goToPage(n - 1)"
-      :class="['page-btn', { active: currentPage === n - 1 }]"
+      @click="goToPage(n)"
+      :class="['page-btn', { active: currentPage === n }]"
     >
       {{ n }}
     </button>
@@ -19,18 +19,18 @@
     <template v-if="showLast">
       <span class="dots">...</span>
       <button
-        @click="goToPage(totalQuestions - 1)"
+        @click="goToPage(totalPages)"
         class="page-btn"
-        :class="{ active: currentPage === totalQuestions - 1 }"
+        :class="{ active: currentPage === totalPages }"
       >
-        {{ totalQuestions }}
+        {{ totalPages }}
       </button>
     </template>
 
     <!-- Next -->
     <button
       @click="nextPage"
-      :disabled="currentPage === totalQuestions - 1"
+      :disabled="currentPage === totalPages"
       class="btn-next"
     >
       Next
@@ -39,51 +39,52 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 
 const props = defineProps({
   currentPage: { type: Number, required: true },
   questionsPerPage: { type: Number, required: true },
   totalQuestions: { type: Number, required: true },
+  totalPages: { type: Number, required: true },
   goToPage: { type: Function, required: true },
-})
+});
 
-const visibleStart = ref(0)
+const visibleStart = ref(1);
 
 const visiblePageNumbers = computed(() => {
-  const pages = []
-  const maxPages = Math.min(3, props.totalQuestions - 1) 
+  const pages = [];
+  const maxPages = Math.min(3, props.totalPages); 
   for (let i = 0; i < maxPages; i++) {
-    const pageNum = visibleStart.value + i + 1
-    if (pageNum < props.totalQuestions) pages.push(pageNum)
+    const pageNum = visibleStart.value + i;
+    if (pageNum <= props.totalPages) pages.push(pageNum);
   }
-  return pages
-})
+  return pages;
+});
 
 const showLast = computed(() => {
-  const lastVisible = visibleStart.value + 3
-  return props.totalQuestions > 4 && lastVisible < props.totalQuestions
-})
+  const lastVisible = visibleStart.value + 2;
+  return props.totalPages > 3 && lastVisible < props.totalPages;
+});
 
 const nextPage = () => {
-  if (props.currentPage < props.totalQuestions - 1) {
-    const newPage = props.currentPage + 1
-    props.goToPage(newPage)
-    if (newPage >= visibleStart.value + 3 && newPage < props.totalQuestions - 1) {
-      visibleStart.value++
+  if (props.currentPage < props.totalPages) {
+    const newPage = props.currentPage + 1;
+    props.goToPage(newPage);
+    if (newPage > visibleStart.value + 2 && newPage < props.totalPages) {
+      visibleStart.value++;
     }
   }
-}
+};
 
 const previousPage = () => {
-  if (props.currentPage > 0) {
-    const newPage = props.currentPage - 1
-    props.goToPage(newPage)
+  if (props.currentPage > 1) {
+    const newPage = props.currentPage - 1;
+    props.goToPage(newPage);
     if (newPage < visibleStart.value) {
-      visibleStart.value = Math.max(0, visibleStart.value - 1)
+      visibleStart.value = Math.max(1, visibleStart.value - 1);
     }
   }
-}
+};
 </script>
 
 <style scoped>

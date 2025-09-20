@@ -35,3 +35,4 @@ export const START_PLACEMENT = "ptestStart";
 export const FINISH_PLACEMENT = "ptest";
 export const PLACEMENT_TESTS_SURVEY = "saveSurveyAnswers";
 export const REQUESTS = "studentRequestEmp";
+export const DEADLINES = "deadlines";

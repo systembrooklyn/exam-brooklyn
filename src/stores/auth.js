@@ -21,7 +21,7 @@ export const useAuthStore = defineStore("authStore", () => {
   const forgotSuccess = ref("");
   const router = useRouter();
 
-  // ✅ جلب التوكن من الكوكيز
+
   const restoreTokenFromCookies = () => {
     const savedToken = Cookies.get("token");
     if (savedToken) {
@@ -29,7 +29,7 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
-  // ✅ API: جلب بيانات المستخدم + permissions
+ 
   const getUserByToken  = async () => {
     if (!token.value) return;
     try {
@@ -51,10 +51,10 @@ export const useAuthStore = defineStore("authStore", () => {
       const response = await apiClient.post(LOGIN, { email, password });
       token.value = response.data.token;
 
-      // خزّن التوكن بس
+    
       Cookies.set("token", token.value, { expires: 7, path: "/" });
 
-      // هات بيانات المستخدم
+      
       await getUserByToken ();
 
       notyf.success("Logged in successfully");
@@ -66,7 +66,7 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
-  // ✅ Logout
+
   const logout = async () => {
     loading.value = true;
     try {
@@ -121,12 +121,11 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
-  // ✅ hasPermission
   const hasPermission = (permissionName) => {
     return permissions.value.includes(permissionName);
   };
 
-  // ✅ InitAuth: يتنده مرة واحدة في main.js
+
   const initAuth = async () => {
     restoreTokenFromCookies();
     if (token.value) {

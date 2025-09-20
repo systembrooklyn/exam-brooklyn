@@ -1,6 +1,6 @@
 <!-- SimpleTable.vue -->
 <template>
-  <div class="w-[calc(100vw-300px)] h-full">
+  <div class="w-[calc(100vw-300px)]">
     <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
       <div v-if="searchable" class="p-4 flex-shrink-0">
         <div
@@ -53,7 +53,7 @@
                     index !== paginatedData.length - 1 ? 'border-b' : '',
                   ]"
                 >
-                  <!-- Custom Cell Slot -->
+                  
                   <slot
                     :name="`cell-${header.key}`"
                     :item="item"
@@ -61,12 +61,12 @@
                     :header="header"
                     :index="index"
                   >
-                    <span>{{ getValueByPath(item, header.key) }}</span>
+                    <span>{{ getValueByPath(item, header.key) || '-'}}</span>
                   </slot>
                 </td>
               </tr>
 
-              <!-- No Search Results -->
+             
               <tr v-if="filteredData.length === 0 && search.length > 0">
                 <td
                   :colspan="totalColumns"
@@ -78,7 +78,7 @@
                 </td>
               </tr>
 
-              <!-- No Data -->
+          
               <tr
                 v-if="filteredData.length === 0 && !search.length && !loading"
               >
@@ -97,10 +97,12 @@
 
     <div class="mt-4 flex-shrink-0">
       <Pagination
-        :="currentPage"
-        :total-pages="totalPages"
-        :page-numbers="pageNumbers"
-        @update:current-page="goToPage"
+        :currentPage="currentPage"
+        :questionsPerPage="itemsPerPage"
+        :totalQuestions="filteredData.length"
+        :totalPages="totalPages"
+        :pageNumbers="pageNumbers"
+        :goToPage="goToPage"
       />
     </div>
   </div>
@@ -137,7 +139,25 @@ const filteredData = computed(() => {
   );
 });
 
-const paginatedData = computed(() => filteredData.value);
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredData.value.slice(start, end);
+});
+;
+const currentPage = ref(1);
+
+const pageNumbers = ref(1);
+const itemsPerPage = ref(10);
+const totalPages = computed(() =>
+  Math.ceil(filteredData.value.length / itemsPerPage.value)
+);
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page;
+  }
+};
 
 const totalColumns = computed(
   () => props.headers.length + (props.showActions ? 1 : 0)

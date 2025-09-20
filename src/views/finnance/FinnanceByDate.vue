@@ -1,40 +1,42 @@
 <script setup >
-import { ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import FinnanceTable from '../../components/finnance-dahboard/FinnanceTable.vue';
+import { useDeadlinesStore } from '../../stores/srmStore/DeadlinesStore';
 
 const loading = ref(false);
+const deadlinesStore = useDeadlinesStore();
+
+onMounted(async () => {
+  loading.value = true;
+  const data = { fresh: 0 };
+  try {
+    await deadlinesStore.fetchDeadlines(data);
+    console.log('Deadlines fetched:', deadlinesStore.deadlines);
+    console.log('Grouped Deadlines by Date:', deadlinesStore.groupedByDate);
+  } catch (error) {
+    console.error('Error fetching deadlines:', error);
+  } finally {
+    loading.value = false;
+  }
+});
 
 const myHeaders = [
   { key: 'date', label: 'Date' },
   { key: 'budget', label: 'Budget' },
   { key: 'paid', label: 'Paid' },
-  { key: 'upaid', label: 'Upaid' },
+  { key: 'unpaid', label: 'Unpaid' },   // ✅ خليتها unpaid مش upaid
   { key: 'cancellation', label: 'Cancellation' }
 ]
-const myData = [
- { date: '7/30/2025', budget: 4472, paid: 2250, upaid: 2222, cancellation: 564564},
-  { date: '8/1/2025', budget: 6263, paid: 6263, upaid: 64646, cancellation: 6464},
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-  { date: '8/2/2025', budget: 28913, paid: 28913, upaid: 6546, cancellation: 4285 },
-]
 
-
-
+// نربط الجدول مباشرة بالـ computed من الـ store
+const tableData = computed(() => deadlinesStore.groupedByDate);
 </script>
 
 <template>
-  <h1 class="text-2xl font-bold mb-3">Finance  - By Date</h1>
+  <h1 class="text-2xl font-bold mb-3">Finance - By Date</h1>
   <FinnanceTable
-    :data="myData"
+    :data="tableData"
     :headers="myHeaders"
     :loading="loading"
-    @edit="editItem"
-    @delete="deleteItem"
   />
 </template>
-    
-   
