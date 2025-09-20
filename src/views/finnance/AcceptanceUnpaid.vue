@@ -1,8 +1,8 @@
-<script setup lang="ts">
+<script setup >
 import { ref, computed } from "vue"
 import FinnanceTable from "../../components/finnance-dahboard/FinnanceTable.vue"
 
-// 🟢 headers من الصورة
+
 const headers = [
   { key: "name", label: "Name", class: "bg-blue-50" },
   { key: "email", label: "Email", class: "bg-indigo-50" },
@@ -11,7 +11,7 @@ const headers = [
   { key: "deadlineAmount", label: "Deadline Amount", class: "bg-pink-50" }
 ]
 
-// 🟢 مثال بيانات من الصورة
+
 const data = [
   {
     id: 1,

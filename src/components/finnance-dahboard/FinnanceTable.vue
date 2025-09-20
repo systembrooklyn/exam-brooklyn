@@ -2,6 +2,7 @@
 <template>
   <div class="w-[calc(100vw-300px)]">
     <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
+      <!-- Search Input -->
       <div v-if="searchable" class="p-4 flex-shrink-0">
         <div
           class="w-full flex items-center gap-2 border shadow-md border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus-within:ring-1 focus-within:ring-indigo-500"
@@ -16,14 +17,15 @@
         </div>
       </div>
 
+      <!-- Loader -->
       <div v-if="loading" class="flex justify-center items-center py-20 flex-1">
         <div
           class="animate-spin border-4 border-indigo-500 border-t-transparent rounded-full w-10 h-10"
         ></div>
       </div>
 
+      <!-- Table -->
       <div v-else class="flex-1 overflow-hidden">
-        <!-- Table Container with Horizontal Scroll -->
         <div class="w-full h-full overflow-x-auto overflow-y-auto">
           <table class="w-full min-w-full text-center">
             <thead class="sticky top-0 z-10">
@@ -48,12 +50,11 @@
                 <td
                   v-for="header in headers"
                   :key="header.key"
-                  :class="[
+                  :class="[ 
                     'px-4 py-4 text-gray-600 whitespace-nowrap',
                     index !== paginatedData.length - 1 ? 'border-b' : '',
                   ]"
                 >
-                  
                   <slot
                     :name="`cell-${header.key}`"
                     :item="item"
@@ -61,12 +62,12 @@
                     :header="header"
                     :index="index"
                   >
-                    <span>{{ getValueByPath(item, header.key) || '-'}}</span>
+                    <span>{{ getValueByPath(item, header.key) || '-' }}</span>
                   </slot>
                 </td>
               </tr>
 
-             
+              <!-- No Search Results -->
               <tr v-if="filteredData.length === 0 && search.length > 0">
                 <td
                   :colspan="totalColumns"
@@ -78,14 +79,15 @@
                 </td>
               </tr>
 
-          
+              <!-- No Data -->
               <tr
                 v-if="filteredData.length === 0 && !search.length && !loading"
               >
                 <td
                   :colspan="totalColumns"
-                  class="px-6 py-4 text-center font-bold text-gray-600"
+                  class="px-6 py-4 text-center font-bold flex justify-center items-center text-gray-600"
                 >
+                  <img src="../../assets/undraw_empty_4zx0.png" alt="No data" />
                   <slot name="no-data"> No data found. </slot>
                 </td>
               </tr>
@@ -95,8 +97,10 @@
       </div>
     </div>
 
+    <!-- Pagination -->
     <div class="mt-4 flex-shrink-0">
       <Pagination
+        v-if="isPagination && totalPages > 1"
         :currentPage="currentPage"
         :questionsPerPage="itemsPerPage"
         :totalQuestions="filteredData.length"
@@ -119,17 +123,21 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   searchable: { type: Boolean, default: true },
   searchPlaceholder: { type: String, default: "Search..." },
-  showActions: { type: Boolean, default: true },
+  isPagination: { type: Boolean, default: true },
+  sortOrder: { type: String, default: "asc" } 
 });
 
-const emit = defineEmits(["edit", "delete"]);
-
 const search = ref("");
+const currentPage = ref(1);
+const pageNumbers = ref(1);
+const itemsPerPage = ref(10);
 
 const filteredData = computed(() => {
-  if (!search.value) return props.data;
+  const data = props.data || [];
+  if (!search.value) return data;
+
   const searchQuery = search.value.toLowerCase();
-  return props.data.filter((item) =>
+  return data.filter((item) =>
     props.headers.some((header) => {
       const value = getValueByPath(item, header.key);
       return (
@@ -139,16 +147,26 @@ const filteredData = computed(() => {
   );
 });
 
+const sortedData = computed(() => {
+  const order = props.sortOrder;
+  return [...filteredData.value].sort((a, b) => {
+    const aVal = new Date(getValueByPath(a, "date"));
+    const bVal = new Date(getValueByPath(b, "date"));
+
+    if (aVal < bVal) return order === "asc" ? -1 : 1;
+    if (aVal > bVal) return order === "asc" ? 1 : -1;
+    return 0;
+  });
+});
+
+
 const paginatedData = computed(() => {
+  const data = sortedData.value || [];
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
-  return filteredData.value.slice(start, end);
+  return data.slice(start, end);
 });
-;
-const currentPage = ref(1);
 
-const pageNumbers = ref(1);
-const itemsPerPage = ref(10);
 const totalPages = computed(() =>
   Math.ceil(filteredData.value.length / itemsPerPage.value)
 );
@@ -159,9 +177,7 @@ const goToPage = (page) => {
   }
 };
 
-const totalColumns = computed(
-  () => props.headers.length + (props.showActions ? 1 : 0)
-);
+const totalColumns = computed(() => props.headers.length);
 
 const getValueByPath = (obj, path) =>
   path

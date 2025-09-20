@@ -1,4 +1,4 @@
-<script setup >
+<script setup>
 import { onMounted, ref, computed } from 'vue';
 import FinnanceTable from '../../components/finnance-dahboard/FinnanceTable.vue';
 import { useDeadlinesStore } from '../../stores/srmStore/DeadlinesStore';
@@ -11,8 +11,6 @@ onMounted(async () => {
   const data = { fresh: 0 };
   try {
     await deadlinesStore.fetchDeadlines(data);
-    console.log('Deadlines fetched:', deadlinesStore.deadlines);
-    console.log('Grouped Deadlines by Date:', deadlinesStore.groupedByDate);
   } catch (error) {
     console.error('Error fetching deadlines:', error);
   } finally {
@@ -20,15 +18,16 @@ onMounted(async () => {
   }
 });
 
+
 const myHeaders = [
   { key: 'date', label: 'Date' },
   { key: 'budget', label: 'Budget' },
   { key: 'paid', label: 'Paid' },
-  { key: 'unpaid', label: 'Unpaid' },   // ✅ خليتها unpaid مش upaid
-  { key: 'cancellation', label: 'Cancellation' }
-]
+  { key: 'unpaid', label: 'Unpaid' },
+  { key: 'cancellation', label: 'Cancellation' },
+];
 
-// نربط الجدول مباشرة بالـ computed من الـ store
+
 const tableData = computed(() => deadlinesStore.groupedByDate);
 </script>
 
@@ -38,5 +37,6 @@ const tableData = computed(() => deadlinesStore.groupedByDate);
     :data="tableData"
     :headers="myHeaders"
     :loading="loading"
+    :isPagination="false"
   />
 </template>
