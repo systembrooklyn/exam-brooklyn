@@ -61,10 +61,10 @@ const filteredData = computed(() => {
 const loading = ref(false)
 
 
-const editDeadline = (row: any) => {
+const editDeadline = (row) => {
   console.log("Edit deadline:", row)
 }
-const deleteDeadline = (id: number) => {
+const deleteDeadline = (id) => {
   console.log("Delete deadline:", id)
 }
 </script>

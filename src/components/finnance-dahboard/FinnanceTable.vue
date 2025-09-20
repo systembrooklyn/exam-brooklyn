@@ -41,7 +41,6 @@
             </thead>
 
             <tbody>
-              <!-- Data Rows -->
               <tr
                 v-for="(item, index) in paginatedData"
                 :key="getRowKey(item, index)"
@@ -50,7 +49,7 @@
                 <td
                   v-for="header in headers"
                   :key="header.key"
-                  :class="[ 
+                  :class="[
                     'px-4 py-4 text-gray-600 whitespace-nowrap',
                     index !== paginatedData.length - 1 ? 'border-b' : '',
                   ]"
@@ -62,7 +61,9 @@
                     :header="header"
                     :index="index"
                   >
-                    <span>{{ getValueByPath(item, header.key) || '-' }}</span>
+                    <span>{{
+                      formatValue(getValueByPath(item, header.key), header.key)
+                    }}</span>
                   </slot>
                 </td>
               </tr>
@@ -79,7 +80,6 @@
                 </td>
               </tr>
 
-              <!-- No Data -->
               <tr
                 v-if="filteredData.length === 0 && !search.length && !loading"
               >
@@ -97,7 +97,6 @@
       </div>
     </div>
 
-    <!-- Pagination -->
     <div class="mt-4 flex-shrink-0">
       <Pagination
         v-if="isPagination && totalPages > 1"
@@ -124,7 +123,7 @@ const props = defineProps({
   searchable: { type: Boolean, default: true },
   searchPlaceholder: { type: String, default: "Search..." },
   isPagination: { type: Boolean, default: true },
-  sortOrder: { type: String, default: "asc" } 
+  sortOrder: { type: String, default: "asc" },
 });
 
 const search = ref("");
@@ -159,7 +158,6 @@ const sortedData = computed(() => {
   });
 });
 
-
 const paginatedData = computed(() => {
   const data = sortedData.value || [];
   const start = (currentPage.value - 1) * itemsPerPage.value;
@@ -178,6 +176,12 @@ const goToPage = (page) => {
 };
 
 const totalColumns = computed(() => props.headers.length);
+const formatValue = (value, key) => {
+  if (["amount", "paid_amount", "unpaid"].includes(key)) {
+    return value && !isNaN(value) ? Number(value).toFixed(1) : "0.0";
+  }
+  return value || "-";
+};
 
 const getValueByPath = (obj, path) =>
   path

@@ -1,43 +1,40 @@
-<script setup lang="ts">
+<script setup >
+import { ref  , onMounted ,computed } from 'vue';
 import FinnanceTable from '../../components/finnance-dahboard/FinnanceTable.vue';
+import { useDeadlinesStore } from '../../stores/srmStore/DeadlinesStore';
+
+
+
+const deadlinesStore = useDeadlinesStore();
+
+
+
+const loading = ref(false);
 
 const headers = [
   { key: 'amount', label: 'Amount', class: 'bg-yellow-50' },
-  { key: 'date', label: 'Date', class: 'bg-orange-50' },
-  { key: 'studentNo', label: 'Student No', class: 'bg-yellow-50' },
-  { key: 'paidAmount', label: 'Paid Amount', class: 'bg-green-50' },
-  { key: 'upaid', label: 'Upaid', class: 'bg-red-50' },
-  { key: 'name', label: 'Name', class: 'bg-blue-50' },
-  { key: 'email', label: 'Email', class: 'bg-indigo-50' },
-  { key: 'phone', label: 'Phone', class: 'bg-gray-50' },
-  { key: 'studyType', label: 'Study Type', class: 'bg-amber-50' }
+  { key: 'due_date', label: 'Date', class: 'bg-orange-50' },
+  { key: 'student.st_num', label: 'Student No', class: 'bg-yellow-50' },
+  { key: 'paid_amount', label: 'Paid Amount', class: 'bg-green-50' },
+  { key: 'unpaid', label: 'Unpaid', class: 'bg-red-50' },
+  { key: 'student.name', label: 'Name', class: 'bg-blue-50' },
+  { key: 'student.email', label: 'Email', class: 'bg-indigo-50' },
+  { key: 'student.phones', label: 'Phone', class: 'bg-gray-50' },
+  { key: 'student.scholar_status', label: 'Study Type', class: 'bg-amber-50' }
 ]
-const data = [
-  {
-    id: 1,
-    amount: 5000,
-    date: '2025-08-01',
-    studentNo: 'STU-001',
-    paidAmount: 3000,
-    upaid: 2000,
-    name: 'Ahmed Ali',
-    email: 'ahmed@test.com',
-    phone: '+20123456789',
-    studyType: 'Full-Time'
-  },
-  {
-    id: 2,
-    amount: 8000,
-    date: '2025-08-02',
-    studentNo: 'STU-002',
-    paidAmount: 8000,
-    upaid: 0,
-    name: 'Sara Mohamed',
-    email: 'sara@test.com',
-    phone: '+20123456780',
-    studyType: 'Part-Time'
+
+onMounted(async () => {
+  loading.value = true;
+  const data = { fresh: 0 , status: 'unpaid'};
+  try {
+    await deadlinesStore.fetchDeadlines(data);
+  } catch (error) {
+    console.error('Error fetching deadlines:', error);
+  } finally {
+    loading.value = false;
   }
-]
+});
+const tableData = computed(() => deadlinesStore.deadlines);
 
 </script>
 
@@ -45,11 +42,10 @@ const data = [
     <h1 class="">Unpaid Invoices</h1>
 
     <FinnanceTable
-      :data="data"
+      :data="tableData"
       :headers="headers"
       :loading="loading"
-      @edit="editInvoice"
-      @delete="deleteInvoice"
+    
     />
    
 </template>
