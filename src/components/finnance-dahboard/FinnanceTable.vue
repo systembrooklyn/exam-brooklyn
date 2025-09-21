@@ -2,7 +2,7 @@
 <template>
   <div class="w-[calc(100vw-300px)]">
     <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
-   
+      <!-- Search Input -->
       <div v-if="searchable" class="p-4 flex-shrink-0">
         <div
           class="w-full flex items-center gap-2 border shadow-md border-gray-300 rounded-lg px-3 py-2 bg-gray-50 focus-within:ring-1 focus-within:ring-indigo-500"
@@ -46,20 +46,10 @@
                       class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
                       title="Copy all"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="w-5 h-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M8 16h8m-8-4h8m-8-4h8m-2-4H6a2 2 0 00-2 2v12a2 2 0 002 2h8l6-6V6a2 2 0 00-2-2z"
-                        />
-                      </svg>
+                      <BookCopy
+                        size="17"
+                        class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                      />
                     </button>
                   </div>
                 </th>
@@ -76,8 +66,15 @@
                   v-for="header in headers"
                   :key="header.key"
                   :class="[
-                    'px-4 py-4 text-gray-600 whitespace-nowrap',
+                    'px-4 py-4 whitespace-nowrap',
                     index !== paginatedData.length - 1 ? 'border-b' : '',
+                    props.highlightKeys.includes(header.key)
+                      ? 'text-red-600 font-bold'
+                      : props.highlightDateKeys.includes(header.key) &&
+                        props.dateKey &&
+                        isPastDate(getValueByPath(item, props.dateKey))
+                      ? 'text-red-600 font-bold'
+                      : 'text-gray-600',
                   ]"
                 >
                   <slot
@@ -138,7 +135,7 @@
 </template>
 
 <script setup>
-import { Search } from "lucide-vue-next";
+import { BookCopy, Search } from "lucide-vue-next";
 import { ref, computed } from "vue";
 import Pagination from "../pages/Pagination.vue";
 import notyf from "../../components/global/notyf";
@@ -151,6 +148,10 @@ const props = defineProps({
   searchPlaceholder: { type: String, default: "Search..." },
   isPagination: { type: Boolean, default: true },
   sortOrder: { type: String, default: "asc" },
+  sortKey: { type: String, default: "date" },
+  dateKey: { type: String, default: null },
+  highlightKeys: { type: Array, default: () => [] },
+  highlightDateKeys: { type: Array, default: () => [] },
 });
 
 const search = ref("");
@@ -175,9 +176,11 @@ const filteredData = computed(() => {
 
 const sortedData = computed(() => {
   const order = props.sortOrder;
+  const key = props.sortKey;
+
   return [...filteredData.value].sort((a, b) => {
-    const aVal = new Date(getValueByPath(a, "date"));
-    const bVal = new Date(getValueByPath(b, "date"));
+    const aVal = new Date(getValueByPath(a, key));
+    const bVal = new Date(getValueByPath(b, key));
 
     if (aVal < bVal) return order === "asc" ? -1 : 1;
     if (aVal > bVal) return order === "asc" ? 1 : -1;
@@ -187,6 +190,11 @@ const sortedData = computed(() => {
 
 const paginatedData = computed(() => {
   const data = sortedData.value || [];
+
+  if (!props.isPagination) {
+    return data;
+  }
+
   const start = (currentPage.value - 1) * itemsPerPage.value;
   const end = start + itemsPerPage.value;
   return data.slice(start, end);
@@ -203,28 +211,45 @@ const goToPage = (page) => {
 };
 
 const totalColumns = computed(() => props.headers.length);
+
 const formatValue = (value, key) => {
+  if (Array.isArray(value)) {
+    return value.join(", ");
+  }
   if (["amount", "paid_amount", "unpaid"].includes(key)) {
-    return value && !isNaN(value) ? Number(value).toFixed(1) : "0.0";
+    return value && !isNaN(value) ? Number(value).toLocaleString() : "0";
   }
   return value || "-";
 };
+
+const isPastDate = (value) => {
+  if (!value) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const valDate = new Date(value);
+  return valDate <= today;
+};
+
 const copyColumn = async (key) => {
   try {
     const values = (props.data || []).map((item) => getValueByPath(item, key));
-    const textToCopy = values.join("\n"); 
+    const textToCopy = values.join("\n");
     await navigator.clipboard.writeText(textToCopy);
-    console.log(`Copied all ${key}:`, textToCopy);
     notyf.success(`Copied all ${key.replace("student.", "")}`);
   } catch (err) {
     console.error("Failed to copy column:", err);
   }
 };
 
-const getValueByPath = (obj, path) =>
-  path
-    .split(".")
-    .reduce((o, key) => (o && o[key] !== undefined ? o[key] : ""), obj) || "";
+// Helper: Get nested value
+const getValueByPath = (obj, path) => {
+  if (!path) return "";
+  return (
+    path
+      .split(".")
+      .reduce((o, key) => (o && o[key] !== undefined ? o[key] : ""), obj) || ""
+  );
+};
 
 const getRowKey = (item, index) => item.id || index;
 </script>

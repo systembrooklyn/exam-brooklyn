@@ -38,5 +38,8 @@ const tableData = computed(() => deadlinesStore.groupedByDate);
     :headers="myHeaders"
     :loading="loading"
     :isPagination="false"
+     :sortKey="'date'"
+      sort-order="asc"
+   
   />
 </template>

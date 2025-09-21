@@ -1,51 +1,59 @@
-<script setup >
-import { ref  , onMounted ,computed } from 'vue';
-import FinnanceTable from '../../components/finnance-dahboard/FinnanceTable.vue';
-import { useDeadlinesStore } from '../../stores/srmStore/DeadlinesStore';
-
-
+<script setup>
+import { ref, onMounted, computed } from "vue";
+import FinnanceTable from "../../components/finnance-dahboard/FinnanceTable.vue";
+import { useDeadlinesStore } from "../../stores/srmStore/DeadlinesStore";
 
 const deadlinesStore = useDeadlinesStore();
-
-
 
 const loading = ref(false);
 
 const headers = [
-  { key: 'amount', label: 'Amount', class: 'bg-yellow-50' },
-  { key: 'due_date', label: 'Date', class: 'bg-orange-50' },
-  { key: 'student.st_num', label: 'Student No', class: 'bg-yellow-50' },
-  { key: 'paid_amount', label: 'Paid Amount', class: 'bg-green-50' },
-  { key: 'unpaid', label: 'Unpaid', class: 'bg-red-50' },
-  { key: 'student.name', label: 'Name', class: 'bg-blue-50' },
-  { key: 'student.email', label: 'Email', class: 'bg-indigo-50' },
-  { key: 'student.phones', label: 'Phone', class: 'bg-gray-50' },
-  { key: 'student.StudyType', label: 'Study Type', class: 'bg-amber-50' }
-]
+  { key: "amount", label: "Amount" },
+  { key: "due_date", label: "Date" },
+  { key: "student.st_num", label: "Student No" },
+  { key: "paid_amount", label: "Paid Amount" },
+  { key: "unpaid", label: "Unpaid" },
+  { key: "student.name", label: "Name" },
+  { key: "student.email", label: "Email" },
+  { key: "student.phones", label: "Phone" },
+  { key: "student.StudyType", label: "Study Type" },
+];
 
 onMounted(async () => {
   loading.value = true;
-  const data = { fresh: 0 , status: 'unpaid'};
+  const data = { fresh: 0, status: "unpaid" };
   try {
     await deadlinesStore.fetchDeadlines(data);
   } catch (error) {
-    console.error('Error fetching deadlines:', error);
+    console.error("Error fetching deadlines:", error);
   } finally {
     loading.value = false;
   }
 });
-const tableData = computed(() => deadlinesStore.deadlines);
 
+const tableData = computed(() => {
+  return deadlinesStore.deadlines.map((item) => {
+    const amount = Number(item.amount) || 0;
+    const paid = Number(item.paid_amount) || 0;
+
+    return {
+      ...item,
+      unpaid: amount - paid,
+    };
+  });
+});
 </script>
 
 <template>
-    <h1 class="">Unpaid Invoices</h1>
+  <h1 class="text-2xl font-bold mb-4">Unpaid Invoices</h1>
 
-    <FinnanceTable
-      :data="tableData"
-      :headers="headers"
-      :loading="loading"
-    
-    />
-   
+  <FinnanceTable
+    :data="tableData"
+    :headers="headers"
+    :loading="loading"
+    sort-order="asc"
+    :dateKey="'due_date'"
+    :highlightKeys="['unpaid']"
+    :highlightDateKeys="['amount']" 
+  />
 </template>
