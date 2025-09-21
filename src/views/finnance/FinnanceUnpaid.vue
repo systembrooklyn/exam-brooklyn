@@ -21,7 +21,7 @@ const headers = [
 
 onMounted(async () => {
   loading.value = true;
-  const data = { fresh: 0, status: "unpaid" };
+  const data = { fresh: 0, status: ["unpaid", "partialPaid"] };
   try {
     await deadlinesStore.fetchDeadlines(data);
   } catch (error) {

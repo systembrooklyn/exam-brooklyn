@@ -21,7 +21,7 @@ const fetchData = async () => {
   loading.value = true;
   const data = {
     fresh: 1,
-    status: "unpaid",
+    status: ["unpaid", "partialPaid"],
     from: selectedDate.value || null,
     to: selectedDate.value || null,
   };
