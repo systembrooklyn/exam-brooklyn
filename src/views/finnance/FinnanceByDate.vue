@@ -1,7 +1,7 @@
 <script setup>
 import { onMounted, ref, computed } from 'vue';
 import FinnanceTable from '../../components/finnance-dahboard/FinnanceTable.vue';
-import { useDeadlinesStore } from '../../stores/srmStore/DeadlinesStore';
+import { useDeadlinesStore } from "../../stores/finnance/DeadlinesStore";
 
 const loading = ref(false);
 const deadlinesStore = useDeadlinesStore();
