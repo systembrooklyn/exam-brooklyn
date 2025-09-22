@@ -1,12 +1,11 @@
-<script setup >
-import { onMounted , computed , ref} from "vue";
+<script setup>
+import { onMounted, computed, ref } from "vue";
 import FinnanceTable from "../../components/finnance-dahboard/FinnanceTable.vue";
-import { useDeadlinesStore } from "../../stores/srmStore/DeadlinesStore";
-
+import { useDeadlinesStore } from "../../stores/finnance/DeadlinesStore";
 
 const loading = ref(false);
 const deadlinesStore = useDeadlinesStore();
-
+const deadlines = computed(() => deadlinesStore.deadlines);
 const headers = [
   { key: "amount", label: "Amount", class: "bg-yellow-50" },
   { key: "due_date", label: "Date", class: "bg-orange-50" },
@@ -25,26 +24,21 @@ const getAfterOneWeek = () => {
   return today.toISOString().split("T")[0];
 };
 
-
 onMounted(async () => {
   loading.value = true;
 
   const afterOneWeek = getAfterOneWeek();
   const data = { fresh: 0, from: afterOneWeek, to: afterOneWeek };
 
-  try {
-    await deadlinesStore.fetchDeadlines(data);
-    console.log("Deadlines fetched:", deadlinesStore.deadlines);
-  } catch (error) {
-    console.error("Error fetching deadlines:", error);
-  } finally {
-    loading.value = false;
-  }
+  await deadlinesStore.fetchDeadlines(data);
+  console.log("Deadlines fetched:", deadlinesStore.deadlines);
+
+  loading.value = false;
 });
 
-
 const tableData = computed(() => {
-  return deadlinesStore.deadlines.map((item) => {
+  if (!Array.isArray(deadlines.value)) return [];
+  return deadlines.value.map((item) => {
     const amount = Number(item.amount) || 0;
     const paid = Number(item.paid_amount) || 0;
 

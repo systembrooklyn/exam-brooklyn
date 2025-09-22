@@ -1,45 +1,49 @@
 <template>
-  <div class="pagination flex justify-center items-center gap-2 mt-8">
-    <!-- Previous -->
-    <button @click="previousPage" :disabled="currentPage === 1" class="btn-prev">
-      Previous
-    </button>
+ <div class="pagination flex justify-center items-center gap-2 mt-8 mb-4">
+  <!-- Previous -->
+  <button @click="previousPage" :disabled="currentPage === 1" class="btn-prev">
+    Previous
+  </button>
 
-    <!-- Visible Page Numbers -->
+  <!-- Show First page button and dots if needed -->
+  <template v-if="showFirst">
+    <button @click="goToPage(1)" :class="['page-btn', { active: currentPage === 1 }]">
+      1
+    </button>
+    <span class="dots">...</span>
+  </template>
+
+  <!-- Visible Page Numbers -->
+  <button
+    v-for="n in visiblePageNumbers"
+    :key="n"
+    @click="goToPage(n)"
+    :class="['page-btn', { active: currentPage === n }]"
+  >
+    {{ n }}
+  </button>
+
+  <!-- Dots + Last Number -->
+  <template v-if="showLast">
+    <span class="dots">...</span>
     <button
-      v-for="n in visiblePageNumbers"
-      :key="n"
-      @click="goToPage(n)"
-      :class="['page-btn', { active: currentPage === n }]"
+      @click="goToPage(totalPages)"
+      :class="['page-btn', { active: currentPage === totalPages }]"
     >
-      {{ n }}
+      {{ totalPages }}
     </button>
+  </template>
 
-    <!-- Dots + Last Number -->
-    <template v-if="showLast">
-      <span class="dots">...</span>
-      <button
-        @click="goToPage(totalPages)"
-        class="page-btn"
-        :class="{ active: currentPage === totalPages }"
-      >
-        {{ totalPages }}
-      </button>
-    </template>
+  <!-- Next -->
+  <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-next">
+    Next
+  </button>
+</div>
 
-    <!-- Next -->
-    <button
-      @click="nextPage"
-      :disabled="currentPage === totalPages"
-      class="btn-next"
-    >
-      Next
-    </button>
-  </div>
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 const props = defineProps({
   currentPage: { type: Number, required: true },
@@ -49,11 +53,29 @@ const props = defineProps({
   goToPage: { type: Function, required: true },
 });
 
+
 const visibleStart = ref(1);
+
+
+watch(
+  () => props.currentPage,
+  (newPage) => {
+    if (props.totalPages <= 5) {
+      visibleStart.value = 1;
+    } else if (newPage <= 3) {
+      visibleStart.value = 1;
+    } else if (newPage >= props.totalPages - 2) {
+      visibleStart.value = props.totalPages - 4;
+    } else {
+      visibleStart.value = newPage - 2;
+    }
+  },
+  { immediate: true }
+);
 
 const visiblePageNumbers = computed(() => {
   const pages = [];
-  const maxPages = Math.min(3, props.totalPages); 
+  const maxPages = Math.min(5, props.totalPages);
   for (let i = 0; i < maxPages; i++) {
     const pageNum = visibleStart.value + i;
     if (pageNum <= props.totalPages) pages.push(pageNum);
@@ -61,30 +83,21 @@ const visiblePageNumbers = computed(() => {
   return pages;
 });
 
-const showLast = computed(() => {
-  const lastVisible = visibleStart.value + 2;
-  return props.totalPages > 3 && lastVisible < props.totalPages;
-});
+const showFirst = computed(() => visibleStart.value > 1);
+const showLast = computed(() => visibleStart.value + 4 < props.totalPages);
 
 const nextPage = () => {
   if (props.currentPage < props.totalPages) {
-    const newPage = props.currentPage + 1;
-    props.goToPage(newPage);
-    if (newPage > visibleStart.value + 2 && newPage < props.totalPages) {
-      visibleStart.value++;
-    }
+    props.goToPage(props.currentPage + 1);
   }
 };
 
 const previousPage = () => {
   if (props.currentPage > 1) {
-    const newPage = props.currentPage - 1;
-    props.goToPage(newPage);
-    if (newPage < visibleStart.value) {
-      visibleStart.value = Math.max(1, visibleStart.value - 1);
-    }
+    props.goToPage(props.currentPage - 1);
   }
 };
+
 </script>
 
 <style scoped>

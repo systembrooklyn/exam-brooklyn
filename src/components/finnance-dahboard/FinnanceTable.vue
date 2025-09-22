@@ -1,4 +1,3 @@
-<!-- SimpleTable.vue -->
 <template>
   <div class="w-[calc(100vw-300px)]">
     <div class="bg-white rounded-2xl shadow-lg w-full h-full flex flex-col">
@@ -24,112 +23,96 @@
         ></div>
       </div>
 
-      <!-- Table -->
+      <!-- Table or No Data -->
       <div v-else class="flex-1 overflow-hidden">
         <div class="w-full h-full overflow-x-auto overflow-y-auto">
-          <table class="w-full min-w-full text-center">
-            <thead class="sticky top-0 z-10">
-              <tr>
-                <th
-                  v-for="header in headers"
-                  :key="header.key"
-                  class="px-4 py-3 text-center text-primary text-lg bg-indigo-100 font-bold whitespace-nowrap"
-                >
-                  <div class="flex items-center justify-center gap-2">
-                    {{ header.label }}
-
-                    <button
-                      v-if="
-                        ['student.email', 'student.phones'].includes(header.key)
-                      "
-                      @click="copyColumn(header.key)"
-                      class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                      title="Copy all"
-                    >
-                      <BookCopy
-                        size="17"
-                        class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
-                      />
-                    </button>
-                  </div>
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr
-                v-for="(item, index) in paginatedData"
-                :key="getRowKey(item, index)"
-                class="hover:bg-gray-50"
-              >
-                <td
-                  v-for="header in headers"
-                  :key="header.key"
-                  :class="[
-                    'px-4 py-4 whitespace-nowrap',
-                    index !== paginatedData.length - 1 ? 'border-b' : '',
-                    props.highlightKeys.includes(header.key)
-                      ? 'text-red-600 font-bold'
-                      : props.highlightDateKeys.includes(header.key) &&
-                        props.dateKey &&
-                        isPastDate(getValueByPath(item, props.dateKey))
-                      ? 'text-red-600 font-bold'
-                      : 'text-gray-600',
-                  ]"
-                >
-                  <slot
-                    :name="`cell-${header.key}`"
-                    :item="item"
-                    :value="getValueByPath(item, header.key)"
-                    :header="header"
-                    :index="index"
+          <template v-if="filteredData.length > 0">
+            <table class="w-full min-w-full text-center">
+              <thead class="sticky top-0 z-10">
+                <tr>
+                  <th
+                    v-for="header in headers"
+                    :key="header.key"
+                    class="px-4 py-3 text-center text-primary text-lg bg-indigo-100 font-bold whitespace-nowrap"
                   >
-                    <span>{{
-                      formatValue(getValueByPath(item, header.key), header.key)
-                    }}</span>
-                  </slot>
-                </td>
-              </tr>
+                    <div class="flex items-center justify-center gap-2">
+                      {{ header.label }}
 
-              <!-- No Search Results -->
-              <tr v-if="filteredData.length === 0 && search.length > 0">
-                <td
-                  :colspan="totalColumns"
-                  class="px-6 py-4 text-center font-bold text-gray-700"
-                >
-                  <slot name="no-search-results" :search="search">
-                    No results found for "{{ search }}".
-                  </slot>
-                </td>
-              </tr>
+                      <button
+                        v-if="
+                          ['student.email', 'student.phones'].includes(
+                            header.key
+                          )
+                        "
+                        @click="copyColumn(header.key)"
+                        class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                        title="Copy all"
+                      >
+                        <BookCopy
+                          size="17"
+                          class="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                        />
+                      </button>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
 
-              <tr
-                v-if="filteredData.length === 0 && !search.length && !loading"
-              >
-                <td
-                  :colspan="totalColumns"
-                  class="px-6 py-4 text-center font-bold flex justify-center items-center text-gray-600"
+              <tbody>
+                <tr
+                  v-for="(item, index) in paginatedData"
+                  :key="getRowKey(item, index)"
+                  class="hover:bg-gray-50"
                 >
-                  <img src="../../assets/undraw_empty_4zx0.png" alt="No data" />
-                  <slot name="no-data"> No data found. </slot>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+                  <td
+                    v-for="header in headers"
+                    :key="header.key"
+                    :class="[
+                      'px-4 py-4 whitespace-nowrap',
+                      index !== paginatedData.length - 1 ? 'border-b' : '',
+                      props.highlightKeys.includes(header.key) &&
+                      isPastDate(getValueByPath(item, 'due_date'))
+                        ? 'text-red-600 font-bold'
+                        : 'text-gray-600',
+                    ]"
+                  >
+                    <slot
+                      :name="`cell-${header.key}`"
+                      :item="item"
+                      :value="getValueByPath(item, header.key)"
+                      :header="header"
+                      :index="index"
+                    >
+                      <span>{{
+                        formatValue(
+                          getValueByPath(item, header.key),
+                          header.key
+                        )
+                      }}</span>
+                    </slot>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="mt-4 flex-shrink-0">
+              <Pagination
+                v-if="isPagination && totalPages > 1"
+                :currentPage="currentPage"
+                :questionsPerPage="itemsPerPage"
+                :totalQuestions="filteredData.length"
+                :totalPages="totalPages"
+                :pageNumbers="pageNumbers"
+                :goToPage="goToPage"
+              />
+            </div>
+          </template>
+
+          <div v-else class="flex flex-col items-center gap-4 py-3">
+            <img src="../../assets/undraw_empty_4zx0.png" alt="No data" />
+            <p class="text-gray-600 text-lg">No data available.</p>
+          </div>
         </div>
       </div>
-    </div>
-
-    <div class="mt-4 flex-shrink-0">
-      <Pagination
-        v-if="isPagination && totalPages > 1"
-        :currentPage="currentPage"
-        :questionsPerPage="itemsPerPage"
-        :totalQuestions="filteredData.length"
-        :totalPages="totalPages"
-        :pageNumbers="pageNumbers"
-        :goToPage="goToPage"
-      />
     </div>
   </div>
 </template>
@@ -224,10 +207,24 @@ const formatValue = (value, key) => {
 
 const isPastDate = (value) => {
   if (!value) return false;
+
+  let parsed = value;
+  if (typeof value === "string") {
+    if (value.includes("/")) {
+      const [day, month, year] = value.split("/");
+      parsed = `${year}-${month}-${day}`;
+    } else if (value.includes("T")) {
+      parsed = value.split("T")[0];
+    }
+  }
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const valDate = new Date(value);
-  return valDate <= today;
+
+  const valDate = new Date(parsed);
+  valDate.setHours(0, 0, 0, 0);
+
+  return valDate.getTime() <= today.getTime();
 };
 
 const copyColumn = async (key) => {

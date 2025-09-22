@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import FinnanceTable from "../../components/finnance-dahboard/FinnanceTable.vue";
-import { useDeadlinesStore } from "../../stores/srmStore/DeadlinesStore";
+import { useDeadlinesStore } from "../../stores/finnance/DeadlinesStore";
 
 const deadlinesStore = useDeadlinesStore();
 
@@ -47,13 +47,14 @@ const tableData = computed(() => {
 <template>
   <h1 class="text-2xl font-bold mb-4">Unpaid Invoices</h1>
 
-  <FinnanceTable
-    :data="tableData"
-    :headers="headers"
-    :loading="loading"
-    sort-order="asc"
-    :dateKey="'due_date'"
-    :highlightKeys="['unpaid']"
-    :highlightDateKeys="['amount']" 
-  />
+<FinnanceTable
+  :data="tableData"
+  :headers="headers"
+  :loading="loading"
+  :sortOrder="'asc'"
+  :sortKey="'due_date'"
+  :dateKey="'due_date'"
+  :highlightKeys="['unpaid']"
+/>
+
 </template>

@@ -1,21 +1,25 @@
+
 import { defineStore } from "pinia";
 import { DEADLINES } from "../../api/Api";
 import apiClient from "../../api/axiosInstance";
-import { handleError } from "../handleError";
 import { ref, computed } from "vue";
+import { handleError } from "../handleError";
 
 export const useDeadlinesStore = defineStore("deadlines", () => {
   const deadlines = ref([]);
+  const error = ref(null);
 
   const fetchDeadlines = async (data) => {
+    error.value = null;
     try {
       const response = await apiClient.post(DEADLINES, data);
       deadlines.value = response.data.data;
-    } catch (error) {
-      handleError(error);
+    } catch (err) {
+    handleError(err);
+      deadlines.value = [];
+      console.error("Error fetching deadlines:", err);
     }
   };
-
  
   const groupedByDate = computed(() => {
   const result = {};
