@@ -2,7 +2,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { STUDENT } from "../api/Api";
+import { STUDENT, STUDENT_SEARCH } from "../api/Api";
 import { handleError } from "./handleError";
 
 export const useStudentStore = defineStore("studentStore", () => {
@@ -12,6 +12,7 @@ export const useStudentStore = defineStore("studentStore", () => {
   const studentId = ref(null);
   const studentData = ref(null);
   const loadingData = ref(false);
+  const studentsList = ref([]);
 
  const fetchStudent = async (id) => {
   studentId.value = id;
@@ -37,7 +38,27 @@ export const useStudentStore = defineStore("studentStore", () => {
   }
 };
 
-
+const fetchStudentByOther = async (value) => {
+  console.log(`Fetching student with value: ${value}`);
+     
+  loading.value = true;
+  error.value = null;
+   
+  try {
+    const response = await apiClient.post(STUDENT_SEARCH, { value: value });
+    studentsList.value = response.data.data;
+    console.log("Student fetched successfully:", response.data.data);
+    
+    // ✅ ارجع الـ response
+    return response;
+  } catch (err) {
+    studentsList.value = null;
+    handleError(err);
+    throw err; // ✅ ارمي الخطأ عشان الكومبونينت يتعامل معاه
+  } finally {
+    loading.value = false;
+  }
+};
 
 const fetchDataStuden = async (name) => {
   loading.value = true;
@@ -50,8 +71,6 @@ const fetchDataStuden = async (name) => {
   } catch (err) {
     studentData.value = null;
     handleError(err);
-    // error.value = err.response?.data?.message || "An error occurred while fetching student data.";
-    // throw err; // ✅
   } finally {
     loading.value = false;
   }
@@ -62,7 +81,9 @@ const fetchDataStuden = async (name) => {
   return {
     student,
     fetchDataStuden,
+    fetchStudentByOther,
     studentData,
+    studentsList,
     loading,
     error,
     fetchStudent,

@@ -36,3 +36,4 @@ export const FINISH_PLACEMENT = "ptest";
 export const PLACEMENT_TESTS_SURVEY = "saveSurveyAnswers";
 export const REQUESTS = "studentRequestEmp";
 export const DEADLINES = "deadlines";
+export const STUDENT_SEARCH = "students/search"
