@@ -19,11 +19,10 @@ const exam = computed(() => examData.value?.exam || {});
 const questions = computed(() => exam.value?.questions || []);
 const previousAnswers = computed(() => examData.value?.answers || []);
 const showUnansweredMessage = ref("");
-// في script setup
 const currentQuestionIndex = ref(null);
 
 const answersArray = ref([]);
-const timeLeft = ref(remainingTime.value - 1); // in seconds
+const timeLeft = ref(remainingTime.value - 1);
 const selectedOptions = ref([]);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
@@ -128,7 +127,6 @@ const loadSelectedOption = () => {
 };
 
 const handleStart = () => {
-  
   currentQuestionIndex.value = 0;
 
   quizStarted.value = true;
@@ -308,10 +306,17 @@ onBeforeUnmount(() => {
       <div class="text-center">
         <button @click="previousQuestion" class="btn-prev">Previous</button>
 
-        <button v-if="!isLastQuestion" @click="nextQuestion" class="btn-next">
+        <button
+          @click="nextQuestion"
+          class="btn-next"
+          :disabled="isLastQuestion"
+          :class="{ 'bg-gray-400 cursor-not-allowed': isLastQuestion }"
+        >
           Next
         </button>
+      </div>
 
+      <div class="flex items-center justify-center">
         <button
           v-if="isLastQuestion || allAnswered"
           :disabled="isSubmitting"
