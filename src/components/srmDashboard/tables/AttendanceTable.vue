@@ -49,35 +49,40 @@
             v-for="(row, rowIndex) in sortedData"
             :key="rowIndex"
             class="hover:bg-gray-50"
+            :class="
+              row.course.name.toLowerCase().includes('ai')
+                ? 'bg-yellow-100'
+                : ''
+            "
           >
-            <td class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900">
+            <td class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900 whitespace-nowrap">
               {{ row.course.name }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize whitespace-nowrap">
               {{ row.code }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{
                  formatDate(row.start_date)
               }}
             </td>
 
-            <td class="px-2 sm:px-4 py-3 text-sm font-bold text-indigo-700">
+            <td class="px-2 sm:px-4 py-3 text-sm font-bold text-indigo-700 whitespace-nowrap">
               {{
                 row.final_score != null
                   ? row.course.name.toLowerCase() === "project"
                     ? row.final_score + " / 100"
-                    : (row.final_score * 50) / 100 + " / 50"
+                    : row.final_score + " / 50"
                   : "-"
               }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
-              {{ row.final_score != null ? row.final_score + "%" : "-" }}
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+              {{ row.final_score != null ? ((row.final_score / 50) * 100).toFixed(1) + "%" : "-" }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{ formatDate(row.exam_at) || "-" }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{ row.attended_lectures }}
             </td>
           </tr>
@@ -105,10 +110,10 @@ const sortOrder = ref(props.sortOrder || "asc");
 
 function toggleSort(field) {
   if (sortField.value === field) {
-    // قلب الاتجاه لو ضغطنا على نفس العمود
+   
     sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
   } else {
-    // غير العمود
+  
     sortField.value = field;
     sortOrder.value = "asc";
   }
@@ -117,4 +122,6 @@ function toggleSort(field) {
 const sortedData = computed(() =>
   sortByDate(props.data, sortField.value, sortOrder.value)
 );
+console.log(sortedData.value)
+
 </script>

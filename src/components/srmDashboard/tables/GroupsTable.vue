@@ -33,20 +33,20 @@
             v-for="(row, rowIndex) in sortedData"
             :key="rowIndex"
             class="hover:bg-gray-50"
+            :class="
+              row.name.toLowerCase().includes('ai')
+                ? 'bg-yellow-100'
+                : ''
+            "
           >
             <td
-              class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900"
-              :class="
-                row.name.toLowerCase().includes('ai')
-                  ? 'text-yellow-100'
-                  : 'text-gray-900'
-              "
+              class="px-2 sm:px-4 py-3 text-sm font-semibold text-gray-900 whitespace-nowrap"
             >
               {{ row.name.replace(" Group ", " - ") }}
-              <p class="text-gray-600">({{ row.type }})</p>
+              <span class="text-gray-600"> ({{ row.type }})</span>
             </td>
 
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{
                 (() => {
                   const dateStr =
@@ -55,15 +55,15 @@
                 })()
               }}
             </td>
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{ formatDate(row.act_date) }}
             </td>
 
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 capitalize whitespace-nowrap">
               {{ row.sender?.name }}_{{ row.sender?.fingerPrint }}
             </td>
 
-            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+            <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
               {{ formatDate(row.sent_at) || "-"}}
             </td>
           </tr>
@@ -88,5 +88,8 @@ const { sortByDate } = useDateSort();
 
 const sortedData = computed(() =>
   sortByDate(props.data, "start_date", props.sortOrder)
+
+ 
 );
+
 </script>
