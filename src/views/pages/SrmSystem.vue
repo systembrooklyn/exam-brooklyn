@@ -162,7 +162,7 @@ watch(student, (newVal) => {
         label: "Groups",
         count: `${counts.doneCourses || 0}/${counts.groups || 0}`,
       },
-      { name: "attendance", label: "Attendance" },
+      { name: "attendance", label: "Attendance" , count: counts.doneCourses || 0 },
       { name: "invoices", label: "Invoices", count: counts.invoices },
     ];
   }
