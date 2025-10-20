@@ -49,6 +49,12 @@ const routes = [
     component: () => import("../views/dashboard/SystemsPage.vue"),
   },
   {
+    path: "/groups",
+    name: "groups",
+    component: () => import("../views/GroupsPage.vue"),
+    meta: { requiresPermission: "" }
+  },
+  {
     path: "/password-reset",
     name: "password-reset",
     component: () => import("../views/pages/password-reset.vue"),

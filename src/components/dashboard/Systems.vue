@@ -48,6 +48,7 @@ import Placement from "@/assets/plasment.jpeg";
 import srm from "@/assets/srm.png";
 import finnance from "@/assets/finnance.png";
 import { useAuthStore } from "@/stores/auth";
+import groupsIcon from "@/assets/user-round.png";
 
 const systems = [
   {
@@ -93,6 +94,12 @@ const systems = [
     route: "/finnance",
     image: finnance,
     requiresPermission: "view-financeCard",
+  },
+  {
+    name: "Groups Management",
+    route: "/groups",
+    image: groupsIcon,
+    requiresPermission: "",
   },
 ];
 
