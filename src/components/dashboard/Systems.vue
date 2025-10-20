@@ -99,7 +99,7 @@ const systems = [
     name: "Groups Management",
     route: "/groups",
     image: groupsIcon,
-    requiresPermission: "",
+    requiresPermission: "view-dashboardCard",
   },
 ];
 
