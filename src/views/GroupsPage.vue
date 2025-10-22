@@ -35,7 +35,7 @@
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Search by student ID..."
+              placeholder="Group ID..."
               class="w-80 pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
             />
             <button 
