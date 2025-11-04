@@ -38,3 +38,5 @@ export const REQUESTS = "studentRequestEmp";
 export const DEADLINES = "deadlines";
 export const STUDENT_SEARCH = "students/search"
 export const GROUP_BY_CODE = "groupByCode";
+export const SEND_STUDEND_MAIL = "sendStudentMail"
+export const SEND_STUDEND_SMS = "studentSrmSmsMessage"

@@ -35,26 +35,21 @@
 
         <div class="mt-3 flex items-center gap-2">
           <label class="flex items-center cursor-pointer">
-            <!-- Hidden Checkbox -->
             <input type="checkbox" v-model="searchByOther" class="sr-only" />
-
-            <!-- Background -->
             <div
               class="relative w-12 h-6 bg-gray-300 rounded-full transition-colors duration-300"
               :class="{ 'bg-indigo-500': searchByOther }"
             >
-              <!-- Circle with Dynamic Position -->
               <div
                 class="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-all duration-300"
                 :class="searchByOther ? 'left-6' : 'left-0.5'"
               ></div>
             </div>
-
             <span class="ml-3 text-sm text-gray-700">
               Search by
-              <span class="font-semibold text-indigo-500"
-                >Phone / Email / ID</span
-              >
+              <span class="font-semibold text-indigo-500">
+                Phone / Email / ID
+              </span>
             </span>
           </label>
         </div>
@@ -88,6 +83,7 @@
             {{ student?.careerType }}
           </span>
         </div>
+
         <div
           v-show="student?.name && student?.st_num && student?.ID_number"
           class="text-center"
@@ -110,6 +106,7 @@
             <strong> ID:</strong> {{ student?.ID_number || "N/A" }}
           </p>
         </div>
+
         <div class="flex gap-3 mt-4">
           <div class="flex items-center space-x-2 relative group">
             <Share2 color="red" />
@@ -119,14 +116,20 @@
               Share
             </div>
           </div>
+
           <div class="flex items-center space-x-2 relative group">
-            <QrCode color="green" />
+            <QrCode
+              color="green"
+              class="cursor-pointer hover:scale-110 transition"
+              @click="showConfirmModal = true"
+            />
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
             >
-              QR
+              Send QR
             </div>
           </div>
+
           <div class="flex items-center space-x-2 relative group">
             <AppWindow color="blue" />
             <div
@@ -158,8 +161,10 @@
           <span>{{ student?.phones?.join(" / ") }}</span>
           <div class="relative group">
             <MessageSquareText
-              class="w-5 h-5 transition text-green-500 cursor-not-allowed hover:text-green-800"
+              class="w-5 h-5 transition text-green-500 cursor-pointer hover:text-green-800"
+              @click="showSmsModal = true"
             />
+
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
             >
@@ -172,8 +177,10 @@
           <span>{{ student?.email }}</span>
           <div class="relative group">
             <Mail
-              class="w-5 h-5 transition cursor-not-allowed text-[#6c63ff] hover:text-blue-800"
+              class="w-5 h-5 transition cursor-pointer text-[#6c63ff] hover:text-blue-800"
+              @click="showEmailModal = true"
             />
+
             <div
               class="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-300 text-primary font-bold text-sm px-2 w-25 text-center py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none z-10"
             >
@@ -197,21 +204,57 @@
       </div>
     </aside>
 
-    <!-- Message Modal -->
-    <MessageModal
-      v-if="student"
-      :type="modalType"
-      :recipient="
-        modalType === 'share'
-          ? student.email
-          : modalType === 'email'
-          ? student.email
-          : student.phones?.join(' / ')
-      "
-      :visible="showModal"
-      @update:visible="showModal = $event"
-      @send="handleSend"
-    />
+    <div
+      v-if="showConfirmModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    >
+      <div
+        class="bg-white p-6 rounded-lg shadow-xl border border-indigo-500 text-center max-w-md"
+      >
+        <h3 class="text-lg font-semibold text-gray-800 mb-3">
+          Are you sure you want to send the QR code?
+        </h3>
+        <p class="text-gray-600 mb-4">
+          The QR code will be sent via email to {{ student?.email }}
+        </p>
+        <div class="flex justify-center gap-3 mt-3">
+          <button
+            @click="sendQrEmail"
+            class="bg-indigo-600 cursor-pointer hover:bg-indigo-700 text-white px-4 py-2 rounded-lg"
+          >
+            yes
+          </button>
+          <button
+            @click="showConfirmModal = false"
+            class="bg-gray-300 hover:bg-gray-400 cursor-pointer text-gray-800 px-4 py-2 rounded-lg"
+          >
+            No
+          </button>
+        </div>
+      </div>
+    </div>
+
+<SendMessageModal
+  v-if="showEmailModal"
+  :visible="showEmailModal"
+  type="email"
+  :recipient="student?.email"
+  :loading="messageStore.loading"
+  @send="handleEmailSend"
+  @close="showEmailModal = false"
+/>
+
+<SendMessageModal
+  v-if="showSmsModal"
+  :visible="showSmsModal"
+  type="sms"
+  :recipient="student?.phones?.join(' / ')"
+  :loading="messageStore.loading"
+  @send="handleSmsSend"
+  @close="showSmsModal = false"
+/>
+
+
 
     <StudentPickerModal
       v-model:visible="showPicker"
@@ -223,35 +266,39 @@
 
 <script setup>
 import { ref } from "vue";
-import MessageModal from "./MessageModal.vue";
+import StudentPickerModal from "./StudentPickerModal.vue";
+import { useStudentStore } from "@/stores/SearchStudent";
 
 import {
-  LayoutDashboard,
   Mail,
-  Phone,
   Share2,
   QrCode,
   AppWindow,
   Search,
   MessageSquareText,
 } from "lucide-vue-next";
-import NavItem from "./NavItem.vue";
+import { useStudentMessageStore } from "../../stores/srmStore/studentMessageStore";
+import notyf from "@/components/global/notyf";
+import SendMessageModal from "./SendMessageModal.vue";
 
 const studentId = ref("");
 const student = ref({});
 const studentAllData = ref(null);
-import { useStudentStore } from "@/stores/SearchStudent";
-import StudentPickerModal from "./StudentPickerModal.vue";
-
-const emit = defineEmits(["student-selected"]);
-
-const studentStore = useStudentStore();
 const searchByOther = ref(false);
 const showPicker = ref(false);
 const studentsList = ref([]);
-const showModal = ref(false);
 const modalType = ref("email");
 const isLoading = ref(false);
+const showConfirmModal = ref(false);
+const showEmailModal = ref(false);
+const emailBody = ref("");
+const showSmsModal = ref(false);
+const smsBody = ref("");
+
+const studentStore = useStudentStore();
+const messageStore = useStudentMessageStore();
+
+const emit = defineEmits(["student-selected"]);
 
 const searchStudent = async () => {
   try {
@@ -267,23 +314,16 @@ const searchStudent = async () => {
   }
 };
 
-
 const searchStudentByOther = async () => {
   try {
-    isLoading.value = true; 
+    isLoading.value = true;
     await studentStore.fetchStudentByOther(studentId.value);
-
     studentsList.value = studentStore.studentsList;
-
-    if (studentsList.value.length > 0) {
-      showPicker.value = true;
-    } else {
-      console.warn("No students found");
-    }
+    showPicker.value = studentsList.value.length > 0;
   } catch (error) {
     console.error("Error fetching student by other:", error);
   } finally {
-    isLoading.value = false; 
+    isLoading.value = false;
   }
 };
 
@@ -295,15 +335,8 @@ const handlePickStudent = (picked) => {
 };
 
 const handleSearch = () => {
-  if (searchByOther.value) {
-    searchStudentByOther();
-  } else {
-    searchStudent();
-  }
-};
-const openModal = (type) => {
-  modalType.value = type;
-  showModal.value = true;
+  if (searchByOther.value) searchStudentByOther();
+  else searchStudent();
 };
 
 const handleSend = (message) => {
@@ -311,11 +344,59 @@ const handleSend = (message) => {
     modalType.value === "email" || modalType.value === "share"
       ? student.value.email
       : student.value.phones?.join(", ");
-
   alert(
     `${
       modalType.value === "email" ? "Email" : "SMS"
     } sent to ${recipient}:\n${message}`
   );
 };
+
+const sendQrEmail = async () => {
+  try {
+    showConfirmModal.value = false;
+    if (!studentId.value) {
+      notyf.error("No student selected");
+      return;
+    }
+
+    const payload = { st_num: studentId.value };
+    console.log(payload);
+
+    await messageStore.sendMail(payload);
+    notyf.success("Send QR successfully");
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+
+const handleEmailSend = async (message) => {
+  try {
+    if (!studentId.value) return notyf.error("No student selected");
+
+    const payload = { st_num: studentId.value, emailBody: message };
+    await messageStore.sendMail(payload);
+    notyf.success("Email sent successfully!");
+    showEmailModal.value = false;
+  } catch (error) {
+    notyf.error("Failed to send email");
+    console.error(error);
+  }
+};
+
+const handleSmsSend = async (message) => {
+  try {
+    if (!studentId.value) return notyf.error("No student selected");
+
+    const payload = { st_num: studentId.value, body: message };
+    await messageStore.sendSms(payload);
+    notyf.success("SMS sent successfully!");
+    showSmsModal.value = false;
+  } catch (error) {
+    notyf.error("Failed to send SMS");
+    console.error(error);
+  }
+};
+
 </script>

@@ -39,7 +39,7 @@ export const useAuthStore = defineStore("authStore", () => {
       user.value = response.data.User;
       permissions.value = response.data.permissions || [];
     } catch (err) {
-      logout(); // لو التوكن بايظ أو منتهي
+      logout();
     }
   };
 
