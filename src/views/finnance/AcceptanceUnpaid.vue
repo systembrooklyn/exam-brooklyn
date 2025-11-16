@@ -40,7 +40,6 @@ const tableData = computed(() => deadlinesStore.deadlines);
 </script>
 
 <template>
-  <h1 class="text-2xl font-bold mb-3">Unpaid Invoices</h1>
 
   <div class="flex gap-2 mb-4">
     <input

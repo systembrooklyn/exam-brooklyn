@@ -87,7 +87,6 @@ const loading = ref(false)
 
 <template>
   <div>
-   <h1 class="text-2xl font-bold mb-4">Acceptance Date</h1>
     <div class="flex gap-4 mb-6">
       <div class="flex flex-col">
         <label class="font-semibold text-gray-600">From:</label>

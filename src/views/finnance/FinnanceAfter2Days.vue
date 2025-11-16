@@ -51,7 +51,7 @@ const tableData = computed(() => {
 </script>
 
 <template>
-  <h1 class="text-2xl font-bold mb-4">Invoices After 2 Days</h1>
+
 
   <FinnanceTable :data="tableData" :headers="headers" :loading="loading" />
 </template>

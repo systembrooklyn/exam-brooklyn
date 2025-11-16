@@ -37,6 +37,9 @@
                   >
                     <div class="flex items-center justify-center gap-2">
                       {{ header.label }}
+                      <span v-if="totalLabels.includes(header.label)">
+                        ({{ getColumnTotalByLabel(header.label) }})
+                      </span>
 
                       <button
                         v-if="
@@ -157,6 +160,21 @@ const filteredData = computed(() => {
   );
 });
 
+const totalLabels = ["Budget", "Amount", "Paid", "Paid Amount", "Unpaid"];
+
+const getColumnTotalByLabel = (label) => {
+  const header = props.headers.find((h) => h.label === label);
+  if (!header) return 0;
+
+  const key = header.key;
+
+  const values = filteredData.value.map(
+    (item) => Number(getValueByPath(item, key)) || 0
+  );
+
+  return values.reduce((a, b) => a + b, 0);
+};
+
 const sortedData = computed(() => {
   const order = props.sortOrder;
   const key = props.sortKey;
@@ -200,7 +218,7 @@ const formatValue = (value, key) => {
     return value.join(", ");
   }
   if (["amount", "paid_amount", "unpaid"].includes(key)) {
-    return value && !isNaN(value) ? Number(value).toLocaleString() : "0";
+    return value && !isNaN(value) ? Number(value) : 0;
   }
   return value || "-";
 };
