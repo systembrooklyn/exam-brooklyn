@@ -12,7 +12,6 @@
           <tr>
             <th>Module</th>
             <th>Code</th>
-            <!-- Start Date -->
             <th
               @click="toggleSort('start_date')"
               class="cursor-pointer select-none"
@@ -27,7 +26,6 @@
             </th>
             <th>Score</th>
             <th>Percentage</th>
-            <!-- End Date (exam_at) -->
             <th
               @click="toggleSort('exam_at')"
               class="cursor-pointer select-none"
@@ -100,7 +98,7 @@ import { ref, computed } from "vue";
 
 const props = defineProps({
   data: Array,
-  sortOrder: String, // البداية: "asc"
+  sortOrder: String,
 });
 
 const { sortByDate } = useDateSort();

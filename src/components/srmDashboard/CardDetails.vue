@@ -7,6 +7,7 @@ import AttendanceTable from "./tables/AttendanceTable.vue";
 import InvoicesTable from "./tables/InvoicesTable.vue";
 import Deadlines from "./tables/Deadlines.vue";
 import RequestsTable from "./tables/RequestsTable.vue";
+import PapersTable from "./tables/PapersTable.vue";
 import RequestFieldModal from "./RequestFieldModal.vue";
 
 const props = defineProps({
@@ -160,40 +161,34 @@ watch(
       </div>
     </div>
 
-    <!-- Content -->
-    <div v-else class="space-y-6">
-      <!-- ✅ Groups Table -->
-      <GroupsTable v-if="cardName === 'Groups'" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
 
-      <!-- ✅ Attendance Table -->
+    <div v-else class="space-y-6">
+  
+    <GroupsTable v-if="cardName === 'Groups'" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
+     
       <AttendanceTable v-if="cardName === 'Attendance'" :data="paginatedData" :sortOrder="sortOrder"
         @toggleSort="toggleSort" />
 
-      <!-- ✅ Invoices Table -->
+    
       <InvoicesTable v-if="cardName === 'Invoices'" :data="paginatedData" :sortOrder="sortOrder"
         @toggleSort="toggleSort" />
 
-      <!-- ✅ Requests & Complaints -->
+   
       <div v-if="cardName === 'Requests' || cardName === 'Complains'">
-        <!-- <button
-          @click="showRequestFieldModal = true"
-          class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold py-2 px-4 rounded-xl shadow-md transition duration-200"
-        >
-          Add New {{ title }}
-        </button> -->
+
         <RequestsTable :title="cardName" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
       </div>
-
-      <!-- ✅ Deadlines -->
       <Deadlines v-if="cardName === 'Deadlines'" :data="paginatedData" :sortOrder="sortOrder"
         @toggleSort="toggleSort" />
-      <!-- Pagination -->
+
+      <PapersTable v-if="cardName === 'Papers'" :data="paginatedData" />
+    
       <Pagination v-if="
         totalPages > 1 && cardName !== 'Groups' && cardName !== 'Attendance'
       " :current-page="currentPage" :total-pages="totalPages" :page-numbers="pageNumbers"
         @update:current-page="goToPage" />
     </div>
-    <!-- Always mount the modal so it works even when there's no data -->
+
     <RequestFieldModal v-model="showRequestFieldModal" :type="cardName" />
   </div>
 </template>

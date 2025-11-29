@@ -1,12 +1,9 @@
-<!-- src/pages/StudentProfile.vue  (أو SrmSystem.vue) -->
 <template>
   <div class="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-    <!-- Sidebar -->
     <div class="sticky top-0 h-screen w-[370px] shrink-0 z-10 bg-white dark:bg-gray-800 shadow-lg">
       <SideBar @student-selected="handleStudentSelected" />
     </div>
 
-    <!-- Main Content -->
     <div class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6">
       <Loader :show="studentStore.loadingData" />
 
@@ -17,11 +14,8 @@
         </p>
       </div>
 
-      <!-- Student Profile Card -->
       <div v-if="student" class="max-w-6xl mx-auto space-y-6">
-        <!-- Basic Info -->
-
-        <!-- Tabs Navigation -->
+    
         <div class="min-w-0">
           <div class="max-w-6xl mx-auto">
             <div
@@ -119,7 +113,8 @@ const selectTab = async (name, label) => {
 
   try {
     await studentStore.fetchDataStuden(name);
-    data.value = studentStore.studentData || [];
+    const fetchedData = studentStore.studentData;
+    data.value = Array.isArray(fetchedData) ? fetchedData : (fetchedData ? [fetchedData] : []);
 
     headers.value =
       columnMap[name]?.length > 0
@@ -164,6 +159,7 @@ watch(student, (newVal) => {
       },
       { name: "attendance", label: "Attendance" , count: counts.doneCourses || 0 },
       { name: "invoices", label: "Invoices", count: counts.invoices },
+      { name: "documents", label: "Papers", count: counts.documents || 0 },
     ];
   }
 });
@@ -180,10 +176,8 @@ const columnMap = {
   attendance: ["date", "group_name", "status"],
 };
 
-// Ensure we clean up the listener safely
 onUnmounted(() => {
   if (emitter && emitter.off) {
-    // Remove all 'refresh' listeners or keep a reference if needed
     emitter.all?.delete?.("refresh");
   }
 });

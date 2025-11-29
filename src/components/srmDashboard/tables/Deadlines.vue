@@ -1,6 +1,5 @@
 <template>
   <div class="space-y-4 min-w-4xl">
-    <!-- Sort Header for Requests / Complaints -->
     <div
       class="flex items-center gap-2 text-indigo-800 font-bold text-lg cursor-pointer select-none"
       @click="toggleSort('due_date')"
