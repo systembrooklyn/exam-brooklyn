@@ -142,7 +142,15 @@
             <span v-else class="text-gray-400">-</span>
           </td>
           <td class="px-6 py-4 text-sm text-gray-800">
-            {{ row.arch_num || "-" }}
+            <div v-if="Array.isArray(row.arch_num) && row.arch_num.length > 0" class="flex flex-col gap-1">
+              <span v-for="(num, i) in row.arch_num" :key="i">
+                {{ num }}
+              </span>
+            </div>
+            <span v-else-if="row.arch_num && !Array.isArray(row.arch_num)">
+              {{ row.arch_num }}
+            </span>
+            <span v-else class="text-gray-400">-</span>
           </td>
         </tr>
       </tbody>
