@@ -51,7 +51,5 @@ const tableData = computed(() => {
 </script>
 
 <template>
-
-
   <FinnanceTable :data="tableData" :headers="headers" :loading="loading" />
 </template>

@@ -1,6 +1,6 @@
 <script setup>
-import NavBar from '@/components/dashboard/NavBar.vue';
+import NavBar from "@/components/dashboard/NavBar.vue";
 </script>
 <template>
-    <NavBar />
+  <NavBar />
 </template>

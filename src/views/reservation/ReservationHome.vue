@@ -1,0 +1,3 @@
+<template>
+    ref="reference"
+</template>

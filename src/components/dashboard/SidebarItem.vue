@@ -2,14 +2,14 @@
   <li>
     <div
       class="w-[230px] p-3 cursor-pointer flex items-center justify-between hover:bg-gray-100 transition-all duration-300"
-      :class="{ 'bg-indigo-100 text-indigo-600 font-semibold': isActive }"
+      :class="{ 'bg-indigo-100 text-indigo-600 font-semibold rounded-2xl': isActive }"
       @click="toggle"
     >
       <div class="flex items-center gap-2">
         <component
           :is="item.icon"
           class="w-5 h-5 text-indigo-400"
-          :class="{ 'text-indigo-600': isActive }"
+          :class="{ 'text-indigo-600 ': isActive }"
           v-if="item.icon"
         />
         <span class="text-sm">{{ item.name }}</span>

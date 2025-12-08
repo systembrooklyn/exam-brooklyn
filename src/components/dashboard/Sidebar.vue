@@ -1,24 +1,18 @@
 <template>
   <transition name="slide">
-    <aside
-      v-if="isSidebarOpen"  
-      class="fixed md:static md:block w-64 min-h-screen bg-white shadow-lg z-50"
-      :style="{ transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' }"
-    >
-    <X   @click="isSidebarOpen = false" class="cursor-pointer md:hidden absolute top-4 w-4 h-4 right-4 hover:text-gray-400"/>
+    <aside v-if="isSidebarOpen" class="fixed md:static md:block w-64 min-h-screen bg-white shadow-lg z-50"
+      :style="{ transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' }">
+      <X @click="isSidebarOpen = false"
+        class="cursor-pointer md:hidden absolute top-4 w-4 h-4 right-4 hover:text-gray-400" />
       <div class="p-4 font-bold pb-8 pt-8 text-xl flex justify-between items-center">
-       
+
         <h1 class="font-bold text-primary">Brooklyn</h1>
         <img src="../../assets/logo.png" class="h-10" alt="" />
-        
+
       </div>
       <ul class="space-y-2">
-          <SidebarItem
-    v-for="item in activeItems"
-    :key="item.name"
-    :item="item"
-  />
-        
+        <SidebarItem v-for="item in activeItems" :key="item.name" :item="item" />
+
       </ul>
     </aside>
   </transition>
@@ -33,6 +27,7 @@ import { X } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { computed } from 'vue'
+import { itemReservation } from '../Reservation/itemReservation'
 
 
 
@@ -43,7 +38,7 @@ const route = useRoute();
 
 
 
-const isSidebarOpen = ref(true)  // Initially, the sidebar is closed.
+const isSidebarOpen = ref(true)  
 const emitter = inject('emitter')
 
 function hasPermission(permissionName) {
@@ -76,6 +71,10 @@ const filteredItems = items
 const activeItems = computed(() => {
   if (route.path.startsWith('/finnance')) {
     return itemfinnance
+    
+  }
+    if (route.path.startsWith('/reservation')) {
+    return itemReservation
   }
   return items
 })
@@ -92,11 +91,13 @@ onMounted(() => {
 
 <style scoped>
 /* Apply smooth transition on transform */
-.slide-enter-active, .slide-leave-active {
+.slide-enter-active,
+.slide-leave-active {
   transition: transform 0.5s ease-in-out;
 }
 
-.slide-enter-from, .slide-leave-to {
+.slide-enter-from,
+.slide-leave-to {
   transform: translateX(-100%);
 }
 </style>

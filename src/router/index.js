@@ -8,21 +8,17 @@ import accessControl from "./access-control";
 // dashboard
 import dashboardRoutes from "./dashboard";
 import finnanceDashboard from "./finnance-dashboard";
+import Reservation from "./Reservation";
 
 const routes = [
   { path: "/", name: "login", component: LogIn },
-  { 
-    path: "/home", 
-    name: "home", 
-    component: Home, 
-    meta: { requiresPermission: "start-exam" } 
+  {
+    path: "/home",
+    name: "home",
+    component: Home,
+    meta: { requiresPermission: "start-exam" },
   },
   { path: "/examPage", name: "examPage", component: Exam },
-  {
-    path: "/reservation",
-    name: "reservation",
-    component: () => import("../views/pages/Reservation.vue"),
-  },
   {
     path: "/srm",
     name: "srm",
@@ -33,11 +29,7 @@ const routes = [
     name: "placement-test",
     component: () => import("../views/pages/PlacementTest.vue"),
   },
-  {
-    path: "/reservationSuccess",
-    name: "reservation-success",
-    component: () => import("../views/pages/ReservationSuccess.vue"),
-  },
+
   {
     path: "/result",
     name: "ResultPage",
@@ -52,7 +44,7 @@ const routes = [
     path: "/groups",
     name: "groups",
     component: () => import("../views/GroupsPage.vue"),
-    meta: { requiresPermission: "" }
+    meta: { requiresPermission: "" },
   },
   {
     path: "/password-reset",
@@ -88,6 +80,8 @@ const routes = [
   dashboardRoutes,
   // finance-dashboard
   finnanceDashboard,
+  // reservation
+  Reservation,
 ];
 
 const router = createRouter({
