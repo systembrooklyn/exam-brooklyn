@@ -1,158 +1,118 @@
-<template>
-  <div class="w-full p-4 grid grid-cols-12 gap-4">
-
-    <!-- LEFT SECTION (Student Info Form) -->
-    <div class="col-span-8 space-y-4">
-
-      <!-- First Row: Update + Last Update Time -->
-      <div class="flex items-center justify-between border-b pb-2">
-        <div class="flex items-center gap-2">
-          <span class="text-blue-500 text-3xl">🔄</span>
-          <span class="font-semibold text-lg">Update</span>
-        </div>
-
-        <div class="text-right">
-          <p class="text-xs text-gray-500">Last Update</p>
-          <p class="text-sm font-semibold">{{ lastUpdate }}</p>
-        </div>
-      </div>
-
-      <!-- Grade + Scholarship + Student Type -->
-      <div class="grid grid-cols-3 gap-2">
-        <InputField label="Grade" v-model="form.grade" disabled />
-        <InputField label="Scholarship" v-model="form.scholarship" disabled />
-        <SelectField
-          label="Student Type"
-          :options="['Engineer', 'Non Engineer']"
-          v-model="form.studentType"
-        />
-      </div>
-
-      <hr />
-
-      <!-- Study Type + Payment Method -->
-      <div class="grid grid-cols-3 gap-2">
-        <SelectField
-          label="Study Type"
-          :options="['Online','In Class']"
-          v-model="form.studyType"
-        />
-
-        <InputField label="" disabled />
-
-        <SelectField
-          label="Payment Method"
-          :options="['2 months','3 months','4 months']"
-          v-model="form.paymentMethod"
-        />
-      </div>
-
-      <hr />
-
-      <!-- Papers Section -->
-      <div class="grid grid-cols-3 gap-2 p-3 border rounded bg-blue-50">
-        <SelectField label="ID" :options="['Yes','No']" v-model="form.paperId" disabled />
-        <SelectField label="Certificate" :options="['Yes','No']" v-model="form.paperCert" disabled />
-        <SelectField label="HR" :options="['Yes','No']" v-model="form.paperHr" disabled />
-      </div>
-
-      <InputField label="Nationality" v-model="form.nationality" />
-
-      <!-- Offers Section -->
-      <div class="border rounded p-2">
-        <div class="bg-blue-900 text-white px-3 py-1 mb-2">Offers</div>
-        <SelectField
-          label="Top student"
-          :options="['Yes','No']"
-          v-model="form.topStudentOffer"
-        />
-      </div>
-    </div>
-
-    <!-- RIGHT SECTION (Notes + Submit) -->
-    <div class="col-span-4 space-y-4">
-
-      <!-- Amount -->
-      <div>
-        <label class="text-sm font-medium">Amount</label>
-        <input
-          type="number"
-          v-model="form.amount"
-          class="w-full border rounded px-3 py-2"
-        />
-      </div>
-
-      <!-- Notes -->
-      <div>
-        <label class="text-sm font-medium">Notes</label>
-        <textarea
-          v-model="form.notes"
-          rows="10"
-          class="w-full border rounded p-3"
-        ></textarea>
-      </div>
-
-      <!-- Submit -->
-      <button
-        @click="submitForm"
-        class="w-full bg-red-600 text-white py-3 rounded text-lg font-bold hover:bg-red-700 transition"
-      >
-        SUBMIT ▶
-      </button>
-
-      <button
-        class="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 transition"
-      >
-        Temporary Receipt
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup>
-import { reactive, ref } from "vue";
-import InputField from "@/components/Reservation/InputField.vue";
-import SelectField from "@/components/Reservation/SelectField.vue";
+import { ref, computed } from 'vue';
+import StudentInfoPanel from '@/components/Reservation/StudentInfoPanel.vue';
+import ModulesTable from '@/components/Reservation/ModulesTable.vue';
+import FinalCasePanel from '@/components/Reservation/FinalCasePanel.vue';
+import ActionButtons from '@/components/Reservation/ActionButtons.vue';
 
-/* --------------------
-   RECEIVED FROM WAITING LIST
------------------------*/
-const props = defineProps({
-  student: Object,
+
+// ---------------------- GLOBAL STATE --------------------
+const form = ref({
+  name: '',
+  grade: '',
+  scholarship: '',
+  studentType: '',
+  studyType: '',
+  paymentMethod: '',
+  papers: [],
+  nationality: '',
+  offers: '',
+  finalCase: '',
+  finalAmount: '',
+  notes: ''
 });
 
-/* --------------------
-   FORM DATA
------------------------*/
-const form = reactive({
-  name: props.student?.name || "",
-  grade: props.student?.grade || "",
-  scholarship: props.student?.scholarshipType || "",
-  studentType: "",
-  studyType: "",
-  paymentMethod: "",
-  paperId: props.student?.papers?.id || "Yes",
-  paperCert: props.student?.papers?.certificate || "Yes",
-  paperHr: props.student?.papers?.hr || "Yes",
-  nationality: "",
-  topStudentOffer: "",
-  amount: "",
-  notes: "",
-});
+// Dynamic modules (يتغيروا حسب الاختيارات)
+const modules = ref([
+  {
+    name: "Administration & Management",
+    code: "5006",
+    startDate: "27/12/2025",
+    day: "Sat",
+    time: "10 to 3",
+    amount: 3000,
+    deadline: "26 Dec 2025"
+  },
+  {
+    name: "Strategic Planning",
+    code: "5007",
+    startDate: "28/12/2025",
+    day: "Sun",
+    time: "12 to 4",
+    amount: 3500,
+    deadline: "27 Dec 2025"
+  },
+  {
+    name: "Financial Accounting",
+    code: "5008",
+    startDate: "29/12/2025",
+    day: "Mon",
+    time: "09 to 2",
+    amount: 4000,
+    deadline: "28 Dec 2025"
+  },
+  {
+    name: "Human Resources",
+    code: "5009",
+    startDate: "30/12/2025",
+    day: "Tue",
+    time: "11 to 3",
+    amount: 3200,
+    deadline: "29 Dec 2025"
+  },
+  {
+    name: "Marketing Principles",
+    code: "5010",
+    startDate: "31/12/2025",
+    day: "Wed",
+    time: "10 to 1",
+    amount: 2800,
+    deadline: "30 Dec 2025"
+  },
+  {
+    name: "Business Ethics",
+    code: "5011",
+    startDate: "01/01/2026",
+    day: "Thu",
+    time: "09 to 12",
+    amount: 2500,
+    deadline: "31 Dec 2025"
+  },
+  {
+    name: "Project Management",
+    code: "5012",
+    startDate: "02/01/2026",
+    day: "Fri",
+    time: "14 to 18",
+    amount: 4500,
+    deadline: "01 Jan 2026"
+  }
+]);
 
-const lastUpdate = "03/10/2025 17:33:21";
-
-/* --------------------
-   SUBMIT
------------------------*/
+// Submit
 const submitForm = () => {
-  console.log("Submitting Form:", JSON.parse(JSON.stringify(form)));
-  alert("Form Submitted");
+  console.log("Final Data:", form.value);
 };
 </script>
 
-<!-- Reusable Small Inputs -->
-<script>
-export default {}
-</script>
+<template>
+  <div class="p-4 grid grid-cols-12 gap-4">
 
+    <!-- LEFT PANEL -->
+    <div class="col-span-3">
+      <StudentInfoPanel v-model="form" />
+    </div>
+
+    <!-- TABLE -->
+    <div class="col-span-6">
+      <ModulesTable :modules="modules" />
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="col-span-3 space-y-4">
+      <FinalCasePanel v-model="form" />
+      <ActionButtons @submit="submitForm" />
+    </div>
+
+  </div>
+</template>
