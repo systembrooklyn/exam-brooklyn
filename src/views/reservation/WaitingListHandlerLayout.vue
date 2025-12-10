@@ -1,21 +1,7 @@
 <template>
   <div class="grid grid-cols-12 gap-4 w-full p-4">
 
-    <!-- LEFT: Waiting List Column -->
-    <div class="col-span-3 border-r pr-2">
-      <h3 class="font-semibold text-lg mb-3">Waiting List</h3>
-
-      <div
-        v-for="student in students"
-        :key="student.id"
-        @click="toggleStudent(student)"
-        class="p-3 mb-2 cursor-pointer rounded border transition
-               hover:bg-blue-100"
-        :class="isSelected(student) ? 'bg-blue-200 border-blue-400' : 'bg-white'"
-      >
-        {{ student.name }}
-      </div>
-    </div>
+ 
 
     <!-- RIGHT: Main Handler Panel -->
     <div class="col-span-9">
@@ -41,9 +27,6 @@ const students = ref([
 
 const selectedStudents = ref([]);
 
-const isSelected = (student) => {
-  return selectedStudents.value.some(s => s.id === student.id);
-};
 
 const toggleStudent = (s) => {
   const index = selectedStudents.value.findIndex(existing => existing.id === s.id);
@@ -55,8 +38,7 @@ const toggleStudent = (s) => {
 };
 
 const addStudent = (s) => {
-  if (!isSelected(s)) {
-    selectedStudents.value.push(s);
-  }
+  // Enforce single selection from the dropdown as requested
+  selectedStudents.value = [s];
 };
 </script>
