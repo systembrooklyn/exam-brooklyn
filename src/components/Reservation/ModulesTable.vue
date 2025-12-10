@@ -13,7 +13,7 @@ defineProps({
 
     <!-- Table Container -->
     <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
+      <table class="w-full text-center border-collapse">
         <thead>
           <tr class="bg-gray-50 border-b border-gray-200">
 
