@@ -3,6 +3,22 @@
     <h2 class="text-center font-semibold text-2xl mb-6 text-indigo-600">Waiting List Handler</h2>
 
     <div class="flex flex-col md:flex-row gap-6">
+       <!-- RIGHT: Selected Student Display -->
+      <div class="w-full md:w-1/2 border-r pr-0 md:pr-6 border-gray-200">
+        <h3 class="font-medium text-xl text-indigo-800 mb-3 border-b pb-2">Selected Student</h3>
+        
+        <div v-if="selectedStudents.length > 0" class="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+          <div class="flex items-center gap-3 mb-2">
+            <div>
+              <p class="font-bold text-lg text-gray-900">{{ selectedStudents[0].name }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div v-else class="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-xl border border-dashed border-gray-300">
+          No student selected
+        </div>
+      </div>
       
       <!-- LEFT: Inputs & Controls -->
       <div class="w-full md:w-1/2">
@@ -38,7 +54,7 @@
         <div class="flex flex-col gap-3 mt-6">
           <button
             @click="handleScholarship"
-            class="flex items-center justify-between px-6 py-3 border rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition shadow-md"
+            class="flex items-center justify-center gap-2 px-6 py-3 border rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition shadow-md"
           >
             <span>Scholarship Handle</span>
             <span class="bg-white text-green-600 text-sm font-bold px-2 py-0.5 rounded-full">GO</span>
@@ -46,7 +62,7 @@
 
           <button
             @click="handleOther"
-            class="flex items-center justify-between px-6 py-3 border rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow-md"
+            class="flex items-center justify-center gap-2 px-6 py-3 border rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition shadow-md"
           >
             <span>Other Handle</span>
             <span class="bg-white text-red-600 text-sm font-bold px-2 py-0.5 rounded-full">GO</span>
@@ -54,40 +70,7 @@
         </div>
       </div>
 
-      <!-- RIGHT: Selected Student Display -->
-      <div class="w-full md:w-1/2 border-l pl-0 md:pl-6 border-gray-200">
-        <h3 class="font-medium text-xl text-indigo-800 mb-3 border-b pb-2">Selected Student</h3>
-        
-        <div v-if="selectedStudents.length > 0" class="bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
-          <div class="flex items-center gap-3 mb-2">
-            <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-lg">
-              {{ selectedStudents[0].name.charAt(0) }}
-            </div>
-            <div>
-              <p class="font-bold text-lg text-gray-900">{{ selectedStudents[0].name }}</p>
-              <p class="text-sm text-gray-500">ID: {{ selectedStudents[0].id }}</p>
-            </div>
-          </div>
-          <div class="mt-3">
-             <span 
-              v-if="selectedStudents[0].scholarship" 
-              class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full font-semibold"
-            >
-              Scholarship Student
-            </span>
-             <span 
-              v-else 
-              class="inline-block bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full font-semibold"
-            >
-              Regular Student
-            </span>
-          </div>
-        </div>
-
-        <div v-else class="h-32 flex items-center justify-center text-gray-400 italic bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          No student selected
-        </div>
-      </div>
+     
 
     </div>
   </div>
@@ -95,6 +78,7 @@
 
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 
 const props = defineProps({
   selectedStudents: {
@@ -106,6 +90,8 @@ const props = defineProps({
     default: () => []
   },
 });
+
+const router = useRouter();
 
 const emit = defineEmits(["studentChanged"]);
 
@@ -129,7 +115,7 @@ const handleScholarship = () => {
     students: props.selectedStudents,
     branch: branch.value,
   });
-  alert(`Processing Scholarship for ${props.selectedStudents.length} students! Check console.`);
+   router.push({ name: "waiting-list-table" });
 };
 
 const handleOther = () => {
@@ -139,6 +125,6 @@ const handleOther = () => {
     students: props.selectedStudents,
     branch: branch.value
   });
-  alert(`Processing Other Handle for ${props.selectedStudents.length} students! Check console.`);
+  router.push({ name: "waiting-list-table" });
 };
 </script>
