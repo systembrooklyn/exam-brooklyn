@@ -5,23 +5,42 @@
       <span v-if="required" class="text-red-500 ml-1">*</span>
     </label>
     
-    <div class="flex flex-wrap gap-2 p-4 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 min-h-[60px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
+    <div class="flex flex-wrap gap-2 p-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
       <!-- Email Tags -->
       <div
-        v-for="(email, index) in emails"
+        v-for="(email, index) in displayedEmails"
         :key="index"
-        class="flex items-center gap-2 px-3 py-1.5 border  text-blue-500 rounded-xl text-sm font-medium  hover:shadow-lg transition-all group"
+        class="flex items-center gap-2 px-3 py-1.5 border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 rounded-lg text-sm font-medium transition-all group"
       >
         <span>{{ email }}</span>
         <button
           type="button"
           @click="removeEmail(index)"
-          class="hover:bg-white/20 cursor-pointer rounded-full p-1 transition-colors"
+          class="hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full p-0.5 transition-colors"
           title="Remove"
         >
           <X :size="14" />
         </button>
       </div>
+      
+      <!-- Expand/Collapse Button -->
+      <button
+        v-if="hiddenCount > 0 && !isExpanded"
+        type="button"
+        @click="toggleExpand"
+        class="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      >
+        <span>+{{ hiddenCount }} more</span>
+      </button>
+
+      <button
+        v-if="isExpanded && emails.length > MAX_VISIBLE_EMAILS"
+        type="button"
+        @click="toggleExpand"
+        class="flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+      >
+        <span>Show less</span>
+      </button>
       
       <!-- Input Field -->
       <input
@@ -29,6 +48,7 @@
         @keydown.enter.prevent="addEmail"
         @keydown.tab.prevent="addEmail"
         @blur="addEmail"
+        @paste="handlePaste"
         type="email"
         :placeholder="emails.length === 0 ? placeholder : ''"
         class="flex-1 min-w-[200px] outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
@@ -115,6 +135,44 @@ const addEmail = () => {
 const removeEmail = (index) => {
   emails.value = emails.value.filter((_, i) => i !== index);
 };
+const handlePaste = (event) => {
+  event.preventDefault();
+  const pastedText = event.clipboardData.getData('text');
+  
+  if (!pastedText) return;
+
+  // Split by common delimiters: comma, space, newline, semicolon
+  const rawEmails = pastedText.split(/[\s,;\n]+/);
+  
+  const validEmails = rawEmails
+    .map(email => email.trim())
+    .filter(email => email.length > 0 && validateEmail(email));
+
+  // Add unique valid emails that aren't already in the list
+  const newEmails = validEmails.filter(email => !emails.value.includes(email));
+  
+  if (newEmails.length > 0) {
+    emails.value = [...emails.value, ...newEmails];
+    error.value = '';
+  }
+  currentEmail.value = '';
+};
+
+// Collapsible logic
+const isExpanded = ref(false);
+const MAX_VISIBLE_EMAILS = 3;
+
+const displayedEmails = computed(() => {
+  if (isExpanded.value) return emails.value;
+  return emails.value.slice(0, MAX_VISIBLE_EMAILS);
+});
+
+const hiddenCount = computed(() => Math.max(0, emails.value.length - MAX_VISIBLE_EMAILS));
+
+const toggleExpand = () => {
+  isExpanded.value = !isExpanded.value;
+};
+
 </script>
 
 <style scoped>

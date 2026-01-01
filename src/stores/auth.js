@@ -43,7 +43,7 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
-  // ✅ Login
+ 
   const login = async (email, password) => {
     loading.value = true;
     error.value = null;
