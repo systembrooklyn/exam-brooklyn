@@ -150,25 +150,32 @@ const validateForm = () => {
 };
 
 const handleSubmit = async () => {
+  console.log('handleSubmit called, validating form...');
   if (!validateForm()) {
+    console.log('Form validation failed');
     return;
   }
 
+  console.log('Form validation passed, setting loading=true');
   loading.value = true;
 
   try {
-    const response = await sendMultipleCustomMail({
+    const payload = {
       to: formData.value.to,
       cc: formData.value.cc,
       bcc: formData.value.bcc,
       subject: formData.value.subject,
       body: formData.value.body,
       attachments: formData.value.attachments
-    });
+    };
+    console.log('Calling sendMultipleCustomMail with payload:', payload);
 
-    notyf.success('Message sent successfully');
+    const response = await sendMultipleCustomMail(payload);
+    
+    console.log('API response received:', response);
+    notyf.success('Email sent successfully! ✉️');
 
-    // Clear form
+    // Clear ALL form fields including CC and BCC
     formData.value = {
       to: [],
       cc: [],
@@ -179,9 +186,14 @@ const handleSubmit = async () => {
     };
   } catch (error) {
     console.error('Error sending email:', error);
-    const errorMessage = error.response?.data?.message || 'Failed to send message';
+    if (error.response) {
+      console.log('Error response data:', error.response.data);
+      console.log('Error response status:', error.response.status);
+    }
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to send email';
     notyf.error(errorMessage);
   } finally {
+    console.log('Finally block executed, setting loading=false');
     loading.value = false;
   }
 };

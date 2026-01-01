@@ -48,14 +48,31 @@ export const sendMultipleCustomMail = async (emailData) => {
 
   // Get token from cookies
   const token = Cookies.get("token");
+  console.log(
+    "Token retrieved:",
+    token ? "Yes (length: " + token.length + ")" : "No"
+  );
 
-  // Make API request
-  const response = await axios.post(`${BASE_URL}sendMultipleMail`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const url = `${BASE_URL}sendMultipleMail`;
+  console.log("Making POST request to:", url);
 
-  return response.data;
+  // Debug FormData entries
+  for (let pair of formData.entries()) {
+    console.log("FormData:", pair[0], pair[1]);
+  }
+
+  try {
+    // Make API request
+    const response = await axios.post(url, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("Axios response:", response);
+    return response.data;
+  } catch (error) {
+    console.error("Axios error in service:", error);
+    throw error;
+  }
 };

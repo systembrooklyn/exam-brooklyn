@@ -10,13 +10,13 @@
       <div
         v-for="(email, index) in emails"
         :key="index"
-        class="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg text-sm font-medium shadow-md hover:shadow-lg transition-all group"
+        class="flex items-center gap-2 px-3 py-1.5 border  text-blue-500 rounded-xl text-sm font-medium  hover:shadow-lg transition-all group"
       >
         <span>{{ email }}</span>
         <button
           type="button"
           @click="removeEmail(index)"
-          class="hover:bg-white/20 rounded-full p-1 transition-colors"
+          class="hover:bg-white/20 cursor-pointer rounded-full p-1 transition-colors"
           title="Remove"
         >
           <X :size="14" />
