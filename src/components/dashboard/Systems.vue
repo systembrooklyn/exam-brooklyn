@@ -49,6 +49,7 @@ import srm from "@/assets/srm.png";
 import finnance from "@/assets/finnance.png";
 import { useAuthStore } from "@/stores/auth";
 import groupsIcon from "@/assets/user-round.png";
+import emailIcon from "@/assets/email.png";
 
 const systems = [
   {
@@ -99,6 +100,12 @@ const systems = [
     name: "Groups Management",
     route: "/groups",
     image: groupsIcon,
+    requiresPermission: "view-dashboardCard",
+  },
+  {
+    name: "Send Multiple Custom Mail",
+    route: "send-email",
+    image: emailIcon,
     requiresPermission: "view-dashboardCard",
   },
 ];
