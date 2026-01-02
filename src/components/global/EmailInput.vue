@@ -41,6 +41,18 @@
       >
         <span>Show less</span>
       </button>
+
+      <!-- Clear All Button -->
+      <button
+        v-if="emails.length > 0"
+        type="button"
+        @click="clearAll"
+        class="flex items-center gap-1 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-sm font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors ml-auto"
+        title="Clear all emails"
+      >
+        <Trash2 :size="14" />
+        <span>Clear All</span>
+      </button>
       
       <!-- Input Field -->
       <input
@@ -68,12 +80,24 @@
       <Info :size="12" />
       Press Enter or Tab to add email
     </p>
+
+    <!-- Confirmation Modal -->
+    <SweetAlert2Modal
+      v-if="showDeleteAlert"
+      :title="'Clear all emails?'"
+      :text="'This action will remove all added emails. This cannot be undone.'"
+      :confirmButtonText="'Yes, clear all!'"
+      :cancelButtonText="'Cancel'"
+      @confirm="confirmClear"
+      @cancel="cancelClear"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { X, AlertCircle, Info } from 'lucide-vue-next';
+import { X, AlertCircle, Info, Trash2 } from 'lucide-vue-next';
+import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 
 const props = defineProps({
   modelValue: {
@@ -98,6 +122,7 @@ const emit = defineEmits(['update:modelValue']);
 
 const currentEmail = ref('');
 const error = ref('');
+const showDeleteAlert = ref(false);
 
 const emails = computed({
   get: () => props.modelValue,
@@ -109,17 +134,31 @@ const validateEmail = (email) => {
   return emailRegex.test(email);
 };
 
+const extractEmails = (text) => {
+  if (!text) return [];
+  // Match email pattern globally
+  const matches = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/gi);
+  if (!matches) return [];
+  return matches.filter(email => validateEmail(email));
+};
+
 const addEmail = () => {
-  const email = currentEmail.value.trim();
+  let email = currentEmail.value.trim();
   
   if (!email) {
     error.value = '';
     return;
   }
   
+  // Try to clean/extract if simple validation fails
   if (!validateEmail(email)) {
-    error.value = 'Please enter a valid email address';
-    return;
+    const extracted = extractEmails(email);
+    if (extracted.length === 1) {
+      email = extracted[0];
+    } else {
+       error.value = 'Please enter a valid email address';
+       return;
+    }
   }
   
   if (emails.value.includes(email)) {
@@ -135,18 +174,29 @@ const addEmail = () => {
 const removeEmail = (index) => {
   emails.value = emails.value.filter((_, i) => i !== index);
 };
+
+const clearAll = () => {
+  showDeleteAlert.value = true;
+};
+
+const confirmClear = () => {
+  emails.value = [];
+  error.value = '';
+  showDeleteAlert.value = false;
+};
+
+const cancelClear = () => {
+  showDeleteAlert.value = false;
+};
+
 const handlePaste = (event) => {
   event.preventDefault();
   const pastedText = event.clipboardData.getData('text');
   
   if (!pastedText) return;
 
-  // Split by common delimiters: comma, space, newline, semicolon
-  const rawEmails = pastedText.split(/[\s,;\n]+/);
-  
-  const validEmails = rawEmails
-    .map(email => email.trim())
-    .filter(email => email.length > 0 && validateEmail(email));
+  // Extract all valid emails from pasted text
+  const validEmails = extractEmails(pastedText);
 
   // Add unique valid emails that aren't already in the list
   const newEmails = validEmails.filter(email => !emails.value.includes(email));
