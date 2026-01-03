@@ -106,7 +106,7 @@ const systems = [
     name: "Send Multiple Custom Mail",
     route: "send-email",
     image: emailIcon,
-    requiresPermission: "view-dashboardCard",
+    requiresPermission: "view-srmCard",
   },
 ];
 
