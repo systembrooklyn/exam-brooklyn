@@ -31,25 +31,65 @@
                 label="To"
                 placeholder="Add recipients..."
                 :required="true"
-              />
+              >
+                <template #actions>
+                  <button
+                    v-if="!showCc"
+                    type="button"
+                    @click="showCc = true"
+                    class="text-md font-semibold text-blue-500 underline hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                  >
+                    Cc
+                  </button>
+                  <button
+                    v-if="!showBcc"
+                    type="button"
+                    @click="showBcc = true"
+                    class="text-md font-semibold text-blue-500 underline hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+                  >
+                    Bcc
+                  </button>
+                </template>
+              </EmailInput>
               
-              <div class="flex gap-4">
-                <div class="flex-1">
-                  <EmailInput
-                    v-model="formData.cc"
-                    label="CC"
-                    placeholder="Add CC..."
-                    :required="false"
-                  />
-                </div>
-                <div class="flex-1">
-                  <EmailInput
-                    v-model="formData.bcc"
-                    label="BCC"
-                    placeholder="Add BCC..."
-                    :required="false"
-                  />
-                </div>
+              <div v-if="showCc" class="animate-fade-in">
+                <EmailInput
+                  v-model="formData.cc"
+                  label="Cc"
+                  placeholder="Add carbon copy recipients..."
+                  :required="false"
+                >
+                  <template #actions>
+                    <button
+                      type="button"
+                      @click="showCc = false; formData.cc = []"
+                      class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                      title="Remove CC"
+                    >
+                      <X :size="16" />
+                    </button>
+                  </template>
+                </EmailInput>
+              </div>
+
+              <div v-if="showBcc" class="animate-fade-in">
+                <EmailInput
+                  v-model="formData.bcc"
+                  label="Bcc"
+                  placeholder="Add blind carbon copy recipients..."
+                  :required="false"
+                >
+                  <template #actions>
+                    <button
+                      type="button"
+                      @click="showBcc = false; formData.bcc = []"
+                      class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                      title="Remove BCC"
+                    >
+                      <X :size="16" />
+                    </button>
+                  </template>
+                </EmailInput>
               </div>
             </div>
 
@@ -94,8 +134,8 @@
                 </button>
                 <button
                   type="submit"
-                  :disabled="loading"
-                  class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5"
+                  :disabled="loading || !isFormValid"
+                  class="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5 disabled:hover:translate-y-0 text-sm sm:text-base cursor-pointer"
                 >
                   <Send :size="18" v-if="!loading" />
                   <Loader2 :size="18" class="animate-spin" v-else />
@@ -111,8 +151,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { Mail, Send, Loader2 } from 'lucide-vue-next';
+import { ref, computed } from 'vue';
+import { Mail, Send, Loader2, X } from 'lucide-vue-next';
 import EmailInput from '@/components/global/EmailInput.vue';
 import RichTextEditor from '@/components/global/RichTextEditor.vue';
 import AttachmentUploader from '@/components/global/AttachmentUploader.vue';
@@ -120,6 +160,8 @@ import { sendMultipleCustomMail } from '@/api/emailService';
 import notyf from '@/components/global/notyf';
 
 const loading = ref(false);
+const showCc = ref(false);
+const showBcc = ref(false);
 
 const formData = ref({
   to: [],
@@ -128,6 +170,15 @@ const formData = ref({
   subject: '',
   body: '',
   attachments: []
+});
+
+const isFormValid = computed(() => {
+  const hasTo = formData.value.to && formData.value.to.length > 0;
+  const hasSubject = formData.value.subject && formData.value.subject.trim().length > 0;
+  const hasBody = formData.value.body && 
+                 formData.value.body.trim().length > 0 && 
+                 formData.value.body !== '<p></p>';
+  return hasTo && hasSubject && hasBody;
 });
 
 const validateForm = () => {
@@ -200,6 +251,10 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
 /* Custom Scrollbar for the page if needed */
 ::-webkit-scrollbar {
   width: 8px;

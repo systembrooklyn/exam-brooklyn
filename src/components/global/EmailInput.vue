@@ -1,9 +1,14 @@
 <template>
   <div class="space-y-3">
-    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-      {{ label }}
-      <span v-if="required" class="text-red-500 ml-1">*</span>
-    </label>
+    <div class="flex items-center justify-between mb-2">
+      <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+        {{ label }}
+        <span v-if="required" class="text-red-500 ml-1">*</span>
+      </label>
+      <div v-if="$slots.actions" class="flex items-center gap-2">
+        <slot name="actions"></slot>
+      </div>
+    </div>
     
     <div class="flex flex-wrap gap-2 p-2 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 min-h-[44px] focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500 transition-all">
       <!-- Email Tags -->
