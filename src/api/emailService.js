@@ -17,21 +17,21 @@ export const sendMultipleCustomMail = async (emailData) => {
   const formData = new FormData();
 
   // Add 'to' emails as array
-  emailData.to.forEach((email) => {
-    formData.append("to[]", email);
+  emailData.to.forEach((email, index) => {
+    formData.append(`to[${index}]`, email);
   });
 
   // Add 'cc' emails as array (if provided)
   if (emailData.cc && emailData.cc.length > 0) {
-    emailData.cc.forEach((email) => {
-      formData.append("cc[]", email);
+    emailData.cc.forEach((email, index) => {
+      formData.append(`cc[${index}]`, email);
     });
   }
 
   // Add 'bcc' emails as array (if provided)
   if (emailData.bcc && emailData.bcc.length > 0) {
-    emailData.bcc.forEach((email) => {
-      formData.append("bcc[]", email);
+    emailData.bcc.forEach((email, index) => {
+      formData.append(`bcc[${index}]`, email);
     });
   }
 
