@@ -8,6 +8,7 @@ import accessControl from "./access-control";
 // dashboard
 import dashboardRoutes from "./dashboard";
 import finnanceDashboard from "./finnance-dashboard";
+import hrDashboard from "./hr-dashboard";
 import Reservation from "./Reservation";
 
 const routes = [
@@ -85,6 +86,8 @@ const routes = [
   dashboardRoutes,
   // finance-dashboard
   finnanceDashboard,
+  // hr-dashboard
+  hrDashboard,
   // reservation
   Reservation,
 ];

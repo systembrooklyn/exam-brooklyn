@@ -23,6 +23,7 @@ import { ref, inject, onMounted } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 import { items } from './itemsLink'
 import { itemfinnance } from '../finnance-dahboard/sideItem'
+import { itemHr } from '../hr-dashboard/sideItem'
 import { X } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -72,6 +73,9 @@ const activeItems = computed(() => {
   if (route.path.startsWith('/finnance')) {
     return itemfinnance
     
+  }
+  if (route.path.startsWith('/hr')) {
+    return itemHr
   }
     if (route.path.startsWith('/reservation')) {
     return itemReservation

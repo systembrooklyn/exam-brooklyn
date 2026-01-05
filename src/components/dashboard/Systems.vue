@@ -50,6 +50,7 @@ import finnance from "@/assets/finnance.png";
 import { useAuthStore } from "@/stores/auth";
 import groupsIcon from "@/assets/user-round.png";
 import emailIcon from "@/assets/email.png";
+import hrIcon from "@/assets/hr.png";
 
 const systems = [
   {
@@ -107,6 +108,12 @@ const systems = [
     route: "send-email",
     image: emailIcon,
     requiresPermission: "view-srmCard",
+  },
+  {
+    name: "HR System",
+    route: "/hr",
+    image: hrIcon,
+    requiresPermission: "", // or omit
   },
 ];
 
