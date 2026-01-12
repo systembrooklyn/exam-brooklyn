@@ -3,7 +3,7 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 
-const PREFIX = "payroll-system";
+import { PAYROLL_DEPARTMENTS } from "@/api/Api";
 
 export const useHrDepartmentsStore = defineStore("hr-departments", {
   state: () => ({
@@ -16,7 +16,7 @@ export const useHrDepartmentsStore = defineStore("hr-departments", {
     async getDepartments() {
       this.loading = true;
       try {
-        const response = await apiClient.get(`${PREFIX}/departments`);
+        const response = await apiClient.get(PAYROLL_DEPARTMENTS);
         // API returns { message: '...', data: [...] }
         this.departments = response.data.data;
         // Optional: notyf.success(response.data.message) here if we want toast on simple fetch, usually valid only for actions
@@ -30,7 +30,7 @@ export const useHrDepartmentsStore = defineStore("hr-departments", {
     },
     async getDepartment(id) {
       try {
-        const response = await apiClient.get(`${PREFIX}/departments/${id}`);
+        const response = await apiClient.get(`${PAYROLL_DEPARTMENTS}/${id}`);
         return response.data.data;
       } catch (err) {
         handleError(err);
@@ -40,7 +40,7 @@ export const useHrDepartmentsStore = defineStore("hr-departments", {
     async createDepartment(payload) {
       this.loading = true;
       try {
-        const response = await apiClient.post(`${PREFIX}/departments`, payload);
+        const response = await apiClient.post(PAYROLL_DEPARTMENTS, payload);
         notyf.success(
           response.data.message || "Department created successfully"
         );
@@ -57,7 +57,7 @@ export const useHrDepartmentsStore = defineStore("hr-departments", {
       this.loading = true;
       try {
         const response = await apiClient.put(
-          `${PREFIX}/departments/${id}`,
+          `${PAYROLL_DEPARTMENTS}/${id}`,
           payload
         );
         notyf.success(
@@ -75,7 +75,7 @@ export const useHrDepartmentsStore = defineStore("hr-departments", {
     async deleteDepartment(id) {
       this.loading = true;
       try {
-        const response = await apiClient.delete(`${PREFIX}/departments/${id}`);
+        const response = await apiClient.delete(`${PAYROLL_DEPARTMENTS}/${id}`);
         notyf.success(
           response.data.message || "Department deleted successfully"
         );

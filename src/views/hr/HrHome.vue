@@ -4,7 +4,7 @@
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Total Employees</p>
-        <h2 class="text-3xl font-bold text-gray-800">124</h2>
+        <h2 class="text-3xl font-bold text-gray-800">{{ employeesCount }}</h2>
         <p class="text-xs text-green-600 mt-2 flex items-center gap-1">
           <span class="bg-green-100 px-1 rounded">↑ 12%</span> vs last month
         </p>
@@ -18,7 +18,7 @@
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Active Contracts</p>
-        <h2 class="text-3xl font-bold text-gray-800">118</h2>
+        <h2 class="text-3xl font-bold text-gray-800">{{ contractsCount }}</h2>
          <p class="text-xs text-gray-400 mt-2">All time</p>
       </div>
       <div class="p-3 bg-blue-50 rounded-xl text-blue-600">
@@ -30,7 +30,7 @@
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Departments</p>
-        <h2 class="text-3xl font-bold text-gray-800">8</h2>
+        <h2 class="text-3xl font-bold text-gray-800">{{ departmentsCount }}</h2>
          <p class="text-xs text-gray-400 mt-2">Operational</p>
       </div>
       <div class="p-3 bg-orange-50 rounded-xl text-orange-600">
@@ -63,7 +63,25 @@
 </template>
 
 <script setup>
+import { onMounted, computed } from 'vue';
 import { Users, FileText, Building, Briefcase } from 'lucide-vue-next';
+import { useHrEmployeesStore } from '@/stores/hr/employees';
+import { useHrContractsStore } from '@/stores/hr/contracts';
+import { useHrDepartmentsStore } from '@/stores/hr/departments';
+
+const empStore = useHrEmployeesStore();
+const contractStore = useHrContractsStore();
+const deptStore = useHrDepartmentsStore();
+
+onMounted(() => {
+  empStore.getEmployees();
+  contractStore.getContracts();
+  deptStore.getDepartments();
+});
+
+const employeesCount = computed(() => empStore.employees.length);
+const contractsCount = computed(() => contractStore.contracts.filter(c => c.is_active).length);
+const departmentsCount = computed(() => deptStore.departments.length);
 </script>
 
 <style scoped>

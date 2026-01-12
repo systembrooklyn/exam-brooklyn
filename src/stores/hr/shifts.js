@@ -3,7 +3,7 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 
-const PREFIX = "payroll-system";
+import { PAYROLL_SHIFTS } from "@/api/Api";
 
 export const useHrShiftsStore = defineStore("hr-shifts", {
   state: () => ({
@@ -15,7 +15,7 @@ export const useHrShiftsStore = defineStore("hr-shifts", {
     async getShifts() {
       this.loading = true;
       try {
-        const response = await apiClient.get(`${PREFIX}/shifts`);
+        const response = await apiClient.get(PAYROLL_SHIFTS);
         this.shifts = response.data.data;
         return response.data;
       } catch (err) {
@@ -27,7 +27,7 @@ export const useHrShiftsStore = defineStore("hr-shifts", {
     },
     async getShift(id) {
       try {
-        const response = await apiClient.get(`${PREFIX}/shifts/${id}`);
+        const response = await apiClient.get(`${PAYROLL_SHIFTS}/${id}`);
         return response.data.data;
       } catch (err) {
         handleError(err);
@@ -37,7 +37,7 @@ export const useHrShiftsStore = defineStore("hr-shifts", {
     async createShift(payload) {
       this.loading = true;
       try {
-        const response = await apiClient.post(`${PREFIX}/shifts`, payload);
+        const response = await apiClient.post(PAYROLL_SHIFTS, payload);
         notyf.success(response.data.message || "Shift created successfully");
         await this.getShifts();
         return response.data;
@@ -51,7 +51,10 @@ export const useHrShiftsStore = defineStore("hr-shifts", {
     async updateShift(id, payload) {
       this.loading = true;
       try {
-        const response = await apiClient.put(`${PREFIX}/shifts/${id}`, payload);
+        const response = await apiClient.put(
+          `${PAYROLL_SHIFTS}/${id}`,
+          payload
+        );
         notyf.success(response.data.message || "Shift updated successfully");
         await this.getShifts();
         return response.data;
@@ -65,7 +68,7 @@ export const useHrShiftsStore = defineStore("hr-shifts", {
     async deleteShift(id) {
       this.loading = true;
       try {
-        const response = await apiClient.delete(`${PREFIX}/shifts/${id}`);
+        const response = await apiClient.delete(`${PAYROLL_SHIFTS}/${id}`);
         notyf.success(response.data.message || "Shift deleted successfully");
         await this.getShifts();
       } catch (err) {

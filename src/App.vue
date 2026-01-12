@@ -8,7 +8,7 @@ const route = useRoute()
 
 <template>
   <div class="dark:bg-gray-800 min-h-screen flex flex-col">
-    <Nav v-if="!route.path.startsWith('/dashboard') && !route.path.startsWith('/finnance') && !route.path.startsWith('/reservation')" />
+    <Nav v-if="!route.path.startsWith('/dashboard') && !route.path.startsWith('/finnance') && !route.path.startsWith('/reservation') && !route.path.startsWith('/hr')" />
     
     <router-view />
   </div>

@@ -14,49 +14,51 @@
     </div>
 
     <!-- Error -->
-    <div v-if="store.error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex justify-between items-center">
-      <span>{{ store.error }}</span>
-      <button @click="store.error = null" class="text-red-800 font-bold">×</button>
+    <div v-if="shiftStore.error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex justify-between items-center">
+      <span>{{ shiftStore.error }}</span>
+      <button @click="shiftStore.error = null" class="text-red-800 font-bold">×</button>
     </div>
 
-    <!-- Loading -->
-    <div v-if="store.loading && !shifts.length" class="flex justify-center items-center h-64">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-    </div>
 
-    <!-- Grid -->
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div v-if="shifts.length === 0" class="col-span-full text-center text-gray-500 py-10">
-          No shifts configured.
-      </div>
 
-      <div v-for="shift in shifts" :key="shift.id" class="border border-gray-100 rounded-xl p-5 hover:shadow-md transition-shadow relative group">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <h3 class="font-bold text-lg text-gray-800">{{ shift.shift_name }}</h3>
-             <span class="text-xs text-gray-400">ID: {{ shift.id }}</span>
-          </div>
-          <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-             <Clock class="w-5 h-5"/>
-          </div>
-        </div>
-        <div class="space-y-2 text-sm text-gray-600">
-          <div class="flex justify-between"><span>Start Time:</span> <span class="font-medium text-gray-900">{{ formatTime(shift.start_time) }}</span></div>
-          <div class="flex justify-between"><span>End Time:</span> <span class="font-medium text-gray-900">{{ formatTime(shift.end_time) }}</span></div>
-          <div class="flex justify-between"><span>Break:</span> <span class="font-medium text-gray-900">{{ formatTime(shift.break_start) }} - {{ formatTime(shift.break_end) }}</span></div>
-        </div>
-        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-end gap-3">
-            <button @click="confirmDelete(shift.id)" class="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100 transition-colors">Delete</button>
-            <button @click="openEditModal(shift)" class="text-xs bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg font-medium hover:bg-indigo-100 transition-colors">Edit Details</button>
-        </div>
-      </div>
-    </div>
+    <HrDataTable
+      :headers="headers"
+      :items="shiftStore.shifts"
+      :loading="shiftStore.loading"
+      emptyMessage="No shifts found."
+      @edit="openEditModal"
+      @delete="confirmDelete"
+    >
+      <template #start_time="{ value }">
+        {{ formatTime(value) }}
+      </template>
+
+      <template #end_time="{ value }">
+        {{ formatTime(value) }}
+      </template>
+
+      <template #break_start="{ value }">
+        {{ formatTime(value) }}
+      </template>
+
+      <template #break_end="{ value }">
+        {{ formatTime(value) }}
+      </template>
+
+      <template #is_active="{ value }">
+         <span class="px-2 py-1 rounded-full text-xs font-semibold"
+            :class="value ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+          >
+           {{ value ? 'Active' : 'Inactive' }}
+          </span>
+      </template>
+    </HrDataTable>
 
      <!-- Add/Edit Modal -->
     <HrModal
       :show="showModal"
       :title="isEditing ? 'Edit Shift' : 'New Shift'"
-      :loading="store.loading"
+      :loading="shiftStore.loading"
       @close="closeModal"
       @save="handleSubmit"
     >
@@ -106,14 +108,29 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, reactive } from 'vue';
 import { useHrShiftsStore } from '@/stores/hr/shifts';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
-import { Clock } from 'lucide-vue-next';
+import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'; // Import Interface
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
+import notyf from "@/components/global/notyf"; // Import Notyf
 
-const store = useHrShiftsStore();
-const shifts = computed(() => store.shifts);
+const shiftStore = useHrShiftsStore();
+// const shifts = computed(() => shiftStore.shifts); // No longer needed, HrDataTable uses shiftStore.shifts directly
+
+onMounted(() => {
+  shiftStore.getShifts();
+});
+
+// Headers for the table
+const headers = [
+  { label: 'Name', key: 'shift_name' },
+  { label: 'Start Time', key: 'start_time' },
+  { label: 'End Time', key: 'end_time' },
+  { label: 'Break Start', key: 'break_start' },
+  { label: 'Break End', key: 'break_end' },
+  // { label: 'Status', key: 'is_active' },
+];
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -131,10 +148,6 @@ const form = ref({
   break_end: ''
 });
 
-onMounted(() => {
-  store.getShifts();
-});
-
 // Helper to format HH:mm:ss to HH:mm for display
 // (Input type="time" usually works with HH:mm)
 const formatTime = (timeStr) => {
@@ -147,12 +160,12 @@ const formatTime = (timeStr) => {
 const openAddModal = () => {
   isEditing.value = false;
   editingId.value = null;
-  form.value = { 
-      shift_name: '', 
-      start_time: '09:00', 
-      end_time: '17:00', 
-      break_start: '12:00', 
-      break_end: '12:30' 
+  form.value = {
+      shift_name: '',
+      start_time: '09:00',
+      end_time: '17:00',
+      break_start: '12:00',
+      break_end: '12:30'
       };
   showModal.value = true;
 };
@@ -166,20 +179,44 @@ const openEditModal = (shift) => {
 
 const closeModal = () => {
   showModal.value = false;
-  // store.error = null;
+  // shiftStore.error = null;
 };
 
 const handleSubmit = async () => {
-  if (!form.value.shift_name) {
-    alert('Shift name is required');
+  if (!form.value.shift_name || !form.value.start_time || !form.value.end_time) {
+    notyf.error('Shift name, Start time, and End time are required');
     return;
+  }
+
+  // Basic validation: Check if start < end
+  const start = form.value.start_time;
+  const end = form.value.end_time;
+
+  if (end <= start) { // For simple same-day shifts
+      notyf.error('End Time must be after Start Time. If this is an overnight shift, please adjust logic or split shifts.');
+      return;
+  }
+
+  // Validate break within shift
+  if (form.value.break_start && form.value.break_end) {
+      // Convert times to comparable format (e.g., minutes from midnight or Date objects)
+      // For simplicity, comparing string HH:mm is usually sufficient if they are valid times
+      // and we assume same day.
+      if (form.value.break_start < start || form.value.break_end > end) {
+          notyf.error('Break time must be within the shift hours.');
+          return;
+      }
+      if (form.value.break_start >= form.value.break_end) {
+          notyf.error('Break End must be after Break Start.');
+          return;
+      }
   }
 
   try {
     if (isEditing.value) {
-      await store.updateShift(editingId.value, form.value);
+      await shiftStore.updateShift(editingId.value, form.value);
     } else {
-      await store.createShift(form.value);
+      await shiftStore.createShift(form.value);
     }
     closeModal();
   } catch (error) {
@@ -195,7 +232,7 @@ const confirmDelete = (id) => {
 const handleDeleteConfirm = async () => {
   if (deleteId.value) {
     try {
-      await store.deleteShift(deleteId.value);
+      await shiftStore.deleteShift(deleteId.value);
     } catch (error) {
       console.error(error);
     } finally {

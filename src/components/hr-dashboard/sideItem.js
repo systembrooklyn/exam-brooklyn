@@ -5,6 +5,8 @@ import {
   Briefcase,
   Clock,
   FileText,
+  Calendar,
+  Link,
 } from "lucide-vue-next";
 
 export const itemHr = [
@@ -38,4 +40,14 @@ export const itemHr = [
     icon: FileText,
     route: "hr-contracts",
   },
+  {
+    name: "Vacation Balances",
+    icon: Calendar,
+    route: "hr-vacation-balances",
+  },
+  // {
+  //   name: "Job Assignments",
+  //   icon: Link,
+  //   route: "hr-links",
+  // },
 ];

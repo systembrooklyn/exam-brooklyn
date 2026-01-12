@@ -3,7 +3,7 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 
-const PREFIX = "payroll-system";
+import { PAYROLL_LINKING } from "@/api/Api";
 
 export const useHrLinksStore = defineStore("hr-links", {
   state: () => ({
@@ -15,9 +15,7 @@ export const useHrLinksStore = defineStore("hr-links", {
     async getEmployeeJobDeps() {
       this.loading = true;
       try {
-        const response = await apiClient.get(
-          `${PREFIX}/employee-job-departments`
-        );
+        const response = await apiClient.get(PAYROLL_LINKING);
         this.links = response.data.data;
         return response.data;
       } catch (err) {
@@ -30,10 +28,7 @@ export const useHrLinksStore = defineStore("hr-links", {
     async linkEmployeeJobDep(payload) {
       this.loading = true;
       try {
-        const response = await apiClient.post(
-          `${PREFIX}/employee-job-departments`,
-          payload
-        );
+        const response = await apiClient.post(PAYROLL_LINKING, payload);
         notyf.success(response.data.message || "Linked successfully");
         await this.getEmployeeJobDeps();
         return response.data;
@@ -48,7 +43,7 @@ export const useHrLinksStore = defineStore("hr-links", {
       this.loading = true;
       try {
         const response = await apiClient.put(
-          `${PREFIX}/employee-job-departments/${id}`,
+          `${PAYROLL_LINKING}/${id}`,
           payload
         );
         notyf.success(response.data.message || "Link updated successfully");
@@ -64,9 +59,7 @@ export const useHrLinksStore = defineStore("hr-links", {
     async deleteEmployeeJobDep(id) {
       this.loading = true;
       try {
-        const response = await apiClient.delete(
-          `${PREFIX}/employee-job-departments/${id}`
-        );
+        const response = await apiClient.delete(`${PAYROLL_LINKING}/${id}`);
         notyf.success(response.data.message || "Link deleted successfully");
         await this.getEmployeeJobDeps();
       } catch (err) {

@@ -5,7 +5,8 @@
     @click.self="$emit('close')"
   >
     <div
-      class="bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]"
+      class="bg-white rounded-2xl shadow-xl w-full mx-4 flex flex-col max-h-[90vh]"
+      :class="maxWidthClass"
     >
       <!-- Header -->
       <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
@@ -68,6 +69,10 @@ defineProps({
   saveLabel: {
     type: String,
     default: "Save",
+  },
+  maxWidthClass: {
+    type: String,
+    default: "max-w-lg",
   },
 });
 

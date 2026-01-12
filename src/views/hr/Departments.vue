@@ -19,40 +19,19 @@
       <button @click="store.error = null" class="text-red-800 font-bold">×</button>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="store.loading && !departments.length" class="flex justify-center items-center h-64">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-    </div>
-
     <!-- Table -->
-    <div v-else class="border border-gray-100 rounded-xl overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="p-4 font-semibold text-gray-600">ID</th>
-            <th class="p-4 font-semibold text-gray-600">Department Name</th>
-            <th class="p-4 font-semibold text-gray-600">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr v-if="departments.length === 0">
-            <td colspan="4" class="p-8 text-center text-gray-500">No departments found.</td>
-          </tr>
-          <tr
-            v-for="dept in departments"
-            :key="dept.id"
-            class="hover:bg-gray-50 transition-colors"
-          >
-            <td class="p-4 text-gray-500">#{{ dept.id }}</td>
-            <td class="p-4 font-medium text-gray-800">{{ dept.department_name }}</td>
-            <td class="p-4 flex gap-3">
-              <button @click="openEditModal(dept)" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-              <button @click="confirmDelete(dept.id)" class="text-red-500 hover:text-red-700 font-medium">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <HrDataTable
+      :headers="headers"
+      :items="departments"
+      :loading="store.loading"
+      emptyMessage="No departments found."
+      @edit="openEditModal"
+      @delete="confirmDelete"
+    >
+      <template #department_name="{ value }">
+        <span class="font-medium text-gray-800">{{ value }}</span>
+      </template>
+    </HrDataTable>
 
     <!-- Add/Edit Modal -->
     <HrModal
@@ -92,9 +71,15 @@ import { onMounted, ref, computed } from 'vue';
 import { useHrDepartmentsStore } from '@/stores/hr/departments';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
+import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
+import notyf from "@/components/global/notyf";
 
 const store = useHrDepartmentsStore();
 const departments = computed(() => store.departments);
+
+const headers = [
+  { label: 'Department Name', key: 'department_name' },
+];
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -133,7 +118,7 @@ const closeModal = () => {
 
 const handleSubmit = async () => {
   if (!form.value.department_name) {
-    alert('Department name is required');
+    notyf.error('Department name is required');
     return;
   }
 
@@ -158,8 +143,9 @@ const handleDeleteConfirm = async () => {
   if (deleteId.value) {
     try {
       await store.deleteDepartment(deleteId.value);
+      notyf.success('Department deleted.');
     } catch (error) {
-      console.error(error);
+      notyf.error('Cannot delete department. It may be assigned to employees.');
     } finally {
       showDeleteConfirm.value = false;
       deleteId.value = null;

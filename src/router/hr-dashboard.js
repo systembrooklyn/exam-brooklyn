@@ -36,5 +36,15 @@ export default {
       name: "hr-contracts",
       component: () => import("@/views/hr/Contracts.vue"),
     },
+    {
+      path: "vacation-balances",
+      name: "hr-vacation-balances",
+      component: () => import("@/views/hr/VacationBalances.vue"),
+    },
+    {
+      path: "links",
+      name: "hr-links",
+      component: () => import("@/views/hr/EmployeeLinks.vue"),
+    },
   ],
 };

@@ -311,3 +311,7 @@
 }
 .empty-state-title { @apply font-semibold text-gray-800 dark:text-gray-200; }
 .empty-state-subtitle { @apply text-sm text-gray-500 dark:text-gray-400; }
+
+input{
+  accent-color: #4c5df2;
+}

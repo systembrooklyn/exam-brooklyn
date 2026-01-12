@@ -3,7 +3,7 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 
-const PREFIX = "payroll-system";
+import { PAYROLL_EMPLOYEES } from "@/api/Api";
 
 export const useHrEmployeesStore = defineStore("hr-employees", {
   state: () => ({
@@ -15,7 +15,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", {
     async getEmployees() {
       this.loading = true;
       try {
-        const response = await apiClient.get(`${PREFIX}/employees`);
+        const response = await apiClient.get(PAYROLL_EMPLOYEES);
         // Assuming same structure { message, data: [] }
         this.employees = response.data.data;
         return response.data;
@@ -28,7 +28,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", {
     },
     async getEmployee(id) {
       try {
-        const response = await apiClient.get(`${PREFIX}/employees/${id}`);
+        const response = await apiClient.get(`${PAYROLL_EMPLOYEES}/${id}`);
         return response.data.data;
       } catch (err) {
         handleError(err);
@@ -38,7 +38,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", {
     async createEmployee(payload) {
       this.loading = true;
       try {
-        const response = await apiClient.post(`${PREFIX}/employees`, payload);
+        const response = await apiClient.post(PAYROLL_EMPLOYEES, payload);
         notyf.success(response.data.message || "Employee created successfully");
         await this.getEmployees();
         return response.data;
@@ -53,7 +53,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", {
       this.loading = true;
       try {
         const response = await apiClient.put(
-          `${PREFIX}/employees/${id}`,
+          `${PAYROLL_EMPLOYEES}/${id}`,
           payload
         );
         notyf.success(response.data.message || "Employee updated successfully");
@@ -69,7 +69,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", {
     async deleteEmployee(id) {
       this.loading = true;
       try {
-        const response = await apiClient.delete(`${PREFIX}/employees/${id}`);
+        const response = await apiClient.delete(`${PAYROLL_EMPLOYEES}/${id}`);
         notyf.success(response.data.message || "Employee deleted successfully");
         await this.getEmployees();
       } catch (err) {
