@@ -2,29 +2,30 @@ import { defineStore } from "pinia";
 import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
+import { ref } from "vue";
 import { PAYROLL_VACATION_BALANCES } from "@/api/Api";
 
-export const useHrVacationBalancesStore = defineStore("hr-vacation-balances", {
-  state: () => ({
-    vacationBalances: [],
-    loading: false,
-  }),
+export const useHrVacationBalancesStore = defineStore(
+  "hr-vacation-balances",
+  () => {
+    const vacationBalances = ref([]);
+    const loading = ref(false);
 
-  actions: {
-    async getVacationBalances() {
-      this.loading = true;
+    const getVacationBalances = async () => {
+      loading.value = true;
       try {
         const response = await apiClient.get(PAYROLL_VACATION_BALANCES);
-        this.vacationBalances = response.data.data;
+        vacationBalances.value = response.data.data;
         return response.data;
       } catch (err) {
         handleError(err);
         throw err;
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    async getVacationBalance(id) {
+    };
+
+    const getVacationBalance = async (id) => {
       try {
         const response = await apiClient.get(
           `${PAYROLL_VACATION_BALANCES}/${id}`
@@ -34,9 +35,10 @@ export const useHrVacationBalancesStore = defineStore("hr-vacation-balances", {
         handleError(err);
         throw err;
       }
-    },
-    async createVacationBalance(payload) {
-      this.loading = true;
+    };
+
+    const createVacationBalance = async (payload) => {
+      loading.value = true;
       try {
         const response = await apiClient.post(
           PAYROLL_VACATION_BALANCES,
@@ -45,17 +47,18 @@ export const useHrVacationBalancesStore = defineStore("hr-vacation-balances", {
         notyf.success(
           response.data.message || "Vacation Balance created successfully"
         );
-        await this.getVacationBalances();
+        await getVacationBalances();
         return response.data;
       } catch (err) {
         handleError(err);
         throw err;
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    async updateVacationBalance(id, payload) {
-      this.loading = true;
+    };
+
+    const updateVacationBalance = async (id, payload) => {
+      loading.value = true;
       try {
         const response = await apiClient.put(
           `${PAYROLL_VACATION_BALANCES}/${id}`,
@@ -64,17 +67,18 @@ export const useHrVacationBalancesStore = defineStore("hr-vacation-balances", {
         notyf.success(
           response.data.message || "Vacation Balance updated successfully"
         );
-        await this.getVacationBalances();
+        await getVacationBalances();
         return response.data;
       } catch (err) {
         handleError(err);
         throw err;
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-    async deleteVacationBalance(id) {
-      this.loading = true;
+    };
+
+    const deleteVacationBalance = async (id) => {
+      loading.value = true;
       try {
         const response = await apiClient.delete(
           `${PAYROLL_VACATION_BALANCES}/${id}`
@@ -82,13 +86,23 @@ export const useHrVacationBalancesStore = defineStore("hr-vacation-balances", {
         notyf.success(
           response.data.message || "Vacation Balance deleted successfully"
         );
-        await this.getVacationBalances();
+        await getVacationBalances();
       } catch (err) {
         handleError(err);
         throw err;
       } finally {
-        this.loading = false;
+        loading.value = false;
       }
-    },
-  },
-});
+    };
+
+    return {
+      vacationBalances,
+      loading,
+      getVacationBalances,
+      getVacationBalance,
+      createVacationBalance,
+      updateVacationBalance,
+      deleteVacationBalance,
+    };
+  }
+);

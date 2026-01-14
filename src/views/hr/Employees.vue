@@ -74,34 +74,46 @@
     >
       <div class="space-y-4">
         <!-- Tabs Header -->
-        <div class="flex border-b border-gray-200 mb-4">
+        <div class="flex p-1 bg-gray-100 rounded-xl mb-6">
             <button 
                 @click="activeTab = 'basic'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-                :class="activeTab === 'basic' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200"
+                :class="activeTab === 'basic' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'"
             >
+                <svg class="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
                 Basic Info
             </button>
             <button 
                 @click="activeTab = 'status'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-                :class="activeTab === 'status' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200"
+                :class="activeTab === 'status' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'"
             >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Status
             </button>
             <button 
                 @click="activeTab = 'manager'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-                :class="activeTab === 'manager' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200"
+                :class="activeTab === 'manager' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'"
             >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
                 Manager
             </button>
             <button 
                 @click="activeTab = 'timeline'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
-                :class="activeTab === 'timeline' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200"
+                :class="activeTab === 'timeline' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'"
                 v-if="isEditing" 
             >
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 Timeline
             </button>
         </div>
@@ -139,18 +151,24 @@
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                        <select v-model="form.department_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
-                            <option :value="null">Select Department</option>
-                            <option v-for="dept in departments" :key="dept.id" :value="dept.id">{{ dept.department_name }}</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Departments</label>
+                        <MultiSelect
+                            v-model="form.department_ids"
+                            :options="departments"
+                            labelKey="department_name"
+                            valueKey="id"
+                            placeholder="Select Departments"
+                        />
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                        <select v-model="form.job_title_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
-                            <option :value="null">Select Job Title</option>
-                            <option v-for="job in jobTitles" :key="job.id" :value="job.id">{{ job.title_name }}</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Job Titles</label>
+                        <MultiSelect
+                            v-model="form.job_title_ids"
+                            :options="jobTitles"
+                            labelKey="title_name"
+                            valueKey="id"
+                            placeholder="Select Job Titles"
+                        />
                     </div>
                      <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Shift Schedule</label>
@@ -268,6 +286,7 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
+import MultiSelect from '@/components/global/MultiSelect.vue';
 
 const store = useHrEmployeesStore();
 const deptStore = useHrDepartmentsStore();
@@ -302,8 +321,8 @@ const form = ref({
   email: '',
   fingerPrint: '',
   manager_id: null,
-  department_id: null,
-  job_title_id: null,
+  department_ids: [],
+  job_title_ids: [],
   shift_id: null,
   hiring_date: '',
   left_at: null,
@@ -379,8 +398,8 @@ const openAddModal = () => {
     email: '',
     fingerPrint: '',
     manager_id: null,
-    department_id: null,
-    job_title_id: null,
+    department_ids: [],
+    job_title_ids: [],
     shift_id: null,
     hiring_date: new Date().toISOString().slice(0, 10),
     left_at: null,
@@ -408,6 +427,8 @@ const openEditModal = async (emp) => {
       let latestJobDep = {};
       if (fullEmployee.job_departments && fullEmployee.job_departments.length > 0) {
           latestJobDep = fullEmployee.job_departments[fullEmployee.job_departments.length - 1]; 
+          console.log('Debug Shift - JobDep Keys:', Object.keys(latestJobDep));
+          console.log('Debug Shift - JobDep Values:', latestJobDep);
       }
 
       // Extract latest shift from contracts
@@ -424,9 +445,10 @@ const openEditModal = async (emp) => {
           fingerPrint: user.fingerPrint || personal.fingerPrint,
           manager_id: (typeof fullEmployee.manager === 'object' && fullEmployee.manager !== null) ? fullEmployee.manager.id : (fullEmployee.manager_id || fullEmployee.manager),
           
-          // Map Assignments
-          department_id: latestJobDep.department_id || fullEmployee.department_id, 
-          job_title_id: latestJobDep.job_title_id || fullEmployee.job_title_id,
+
+          // Map Assignments - Convert current single values to arrays for MultiSelect
+          department_ids: fullEmployee.job_departments ? [...new Set(fullEmployee.job_departments.map(jd => parseInt(jd.department_id)))] : [],
+          job_title_ids: fullEmployee.job_departments ? [...new Set(fullEmployee.job_departments.map(jd => parseInt(jd.job_title_id)))] : [],
           shift_id: latestContract.shift_id || latestJobDep.shift_id || fullEmployee.shift_id,
           
           hiring_date: personal.hiring_date,
@@ -434,14 +456,12 @@ const openEditModal = async (emp) => {
           status: personal.status,
       };
 
-      // Force type conversion for IDs to match select options
-      if (cleanData.department_id) cleanData.department_id = parseInt(cleanData.department_id);
-      if (cleanData.job_title_id) cleanData.job_title_id = parseInt(cleanData.job_title_id);
+      // Force type conversion for IDs
       if (cleanData.shift_id) cleanData.shift_id = parseInt(cleanData.shift_id);
       if (cleanData.manager_id) cleanData.manager_id = parseInt(cleanData.manager_id);
-
+      
       form.value = { ...cleanData };
-      originalForm.value = JSON.parse(JSON.stringify(cleanData)); // Deep copy for comparison
+      originalForm.value = JSON.parse(JSON.stringify(cleanData)); // Deep copy using JSON to avoid ref issues
       
       activeTab.value = 'basic';
       // Fetch links if needed
@@ -501,23 +521,38 @@ const handleSubmit = async () => {
           await store.updateEmployee(editingId.value, changes);
       }
 
-      // 2. Check for Assignment Changes (Dept, Job, Shift)
+       // 2. Check for Assignment Changes (Dept, Job, Shift)
       const assignmentChanged = 
-          form.value.department_id !== originalForm.value.department_id ||
-          form.value.job_title_id !== originalForm.value.job_title_id ||
+          JSON.stringify(form.value.department_ids.sort()) !== JSON.stringify(originalForm.value.department_ids.sort()) ||
+          JSON.stringify(form.value.job_title_ids.sort()) !== JSON.stringify(originalForm.value.job_title_ids.sort()) ||
           form.value.shift_id !== originalForm.value.shift_id;
 
       if (assignmentChanged) {
-          // If assignment changed, create a NEW link record (History)
-          // user said "no manager" in add employee, but manager_id IS in employee payload.
-          // Dept/Job/Shift go to Linking.
-          await linksStore.linkEmployeeJobDep({
-              employee_id: editingId.value,
-              department_id: form.value.department_id,
-              job_title_id: form.value.job_title_id,
-              shift_id: form.value.shift_id,
-              start_date: new Date().toISOString().slice(0, 10) // Assignment starts now
-          });
+          // Iterate over selected departments and jobs to create links
+          // Strategy: If M Depts and N Jobs, create M * N links? Or mapping?
+          // Defaulting to Cartesian for now as it covers "User has these Roles in these Depts"
+          
+          const deptIds = form.value.department_ids.length ? form.value.department_ids : [null];
+          const jobIds = form.value.job_title_ids.length ? form.value.job_title_ids : [null];
+
+           // If user cleared all selections, we might not send anything or just not link.
+           // However, if they selected some, we link.
+
+           for (const dId of deptIds) {
+               for (const jId of jobIds) {
+                   if (dId && jId) {
+                        await linksStore.linkEmployeeJobDep({
+                            employee_id: editingId.value,
+                            department_id: dId,
+                            job_title_id: jId,
+                            shift_id: form.value.shift_id,
+                            hired_at: new Date().toISOString().slice(0, 10)
+                        }, { showNotification: false, refresh: false });
+                   }
+               }
+           }
+           await linksStore.getEmployeeJobDeps();
+           notyf.success('Assignments updated successfully');
       }
       
       if (Object.keys(changes).length === 0 && !assignmentChanged) {
@@ -540,20 +575,32 @@ const handleSubmit = async () => {
       const newEmployee = await store.createEmployee(employeePayload);
       
       // 2. Create Initial Assignment (Link)
-      // Only if Dept/Job/Shift are selected
-      if (form.value.department_id || form.value.job_title_id || form.value.shift_id) {
-           await linksStore.linkEmployeeJobDep({
-              employee_id: newEmployee.data.id || newEmployee.id, // Adjust based on actual API response structure
-              department_id: form.value.department_id,
-              job_title_id: form.value.job_title_id,
-              shift_id: form.value.shift_id,
-              start_date: form.value.hiring_date // Initial assignment starts at hiring date
-          });
+      if (form.value.department_ids.length > 0 || form.value.job_title_ids.length > 0) {
+           const empId = newEmployee.data.id || newEmployee.id;
+           const deptIds = form.value.department_ids.length ? form.value.department_ids : [null];
+           const jobIds = form.value.job_title_ids.length ? form.value.job_title_ids : [null];
+
+           for (const dId of deptIds) {
+               for (const jId of jobIds) {
+                   if (dId && jId) {
+                        await linksStore.linkEmployeeJobDep({
+                            employee_id: empId,
+                            department_id: dId,
+                            job_title_id: jId,
+                            shift_id: form.value.shift_id,
+                            hired_at: form.value.hiring_date
+                        }, { showNotification: false, refresh: false });
+                   }
+               }
+           }
+           await linksStore.getEmployeeJobDeps();
+           notyf.success('Employee created and assigned successfully');
       }
     }
-    closeModal();
   } catch (error) {
      console.error(error);
+  } finally {
+     closeModal();
   }
 };
 
