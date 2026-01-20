@@ -113,7 +113,7 @@ const systems = [
     name: "HR System",
     route: "/hr",
     image: hrIcon,
-    requiresPermission: "view-hrSystemCard",
+    requiresPermission: "view-dashboardCard",
   },
 ];
 
