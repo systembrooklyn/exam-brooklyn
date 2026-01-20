@@ -101,19 +101,19 @@ const systems = [
     name: "Groups Management",
     route: "/groups",
     image: groupsIcon,
-    requiresPermission: "view-dashboardCard",
+    requiresPermission: "view-hrSystemCard",
   },
   {
     name: "Send Multiple Custom Mail",
     route: "send-email",
     image: emailIcon,
-    requiresPermission: "view-srmCard",
+    requiresPermission: "view-sendCustomMailCard",
   },
   {
     name: "HR System",
     route: "/hr",
     image: hrIcon,
-    requiresPermission: "", // or omit
+    requiresPermission: "view-hrSystemCard",
   },
 ];
 
