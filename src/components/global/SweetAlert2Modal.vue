@@ -11,7 +11,8 @@
         </button>
         <button 
           @click="onConfirm" 
-          class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 min-w-[90px] flex justify-center items-center"
+          class="text-white px-4 py-2 rounded min-w-[100px] flex justify-center items-center transition-all shadow-md active:scale-95"
+          :class="confirmButtonClass"
           :disabled="isProcessing"
         >
           <!-- Spinner inside the button if deleting -->
@@ -39,7 +40,11 @@ const props = defineProps({
   },
   confirmButtonText: {
     type: String,
-    default: 'Yes, delete it!',
+    default: 'Confirm',
+  },
+  confirmButtonClass: {
+    type: String,
+    default: 'bg-red-600 hover:bg-red-700',
   },
   cancelButtonText: {
     type: String,

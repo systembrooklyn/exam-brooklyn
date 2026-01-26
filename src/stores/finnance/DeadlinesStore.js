@@ -57,10 +57,6 @@ export const useDeadlinesStore = defineStore("deadlines", () => {
   return Object.values(result);
 });
 
-
-  console.log("Grouped Deadlines by Date:", groupedByDate.value);
-  
-
   return {
     deadlines,
     fetchDeadlines,

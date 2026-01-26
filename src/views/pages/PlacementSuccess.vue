@@ -111,8 +111,6 @@ onMounted(async () => {
 
     // خزن القيم بعد التأكد من أنها جاهزة
     exams.value = placementExamStore.studentPlacement || [];
-
-    console.log("Exams loaded:", exams.value); // دي علشان نتأكد من البيانات
   } catch (error) {
     console.error("Error fetching student placement:", error);
     exams.value = []; // في حال حدوث خطأ، اعتبر أنه مفيش امتحانات

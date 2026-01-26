@@ -110,7 +110,6 @@ const handleStart = () => {
   currentQuestionIndex.value = 0;
   quizStarted.value = true;
   timeLeft.value = remainingTime.value;
-  console.log(remainingTime.value, "time left", timeLeft.value);
 
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
@@ -159,7 +158,6 @@ const previousQuestion = () => {
 };
 
 const submitFinalExam = async () => {
-  console.log("finishing exam...done");
   const unanswered = questions.value.reduce((acc, q, i) => {
     if (
       selectedOptions.value[i] === null ||
@@ -178,8 +176,6 @@ const submitFinalExam = async () => {
     currentQuestionIndex.value = unanswered[0];
     return;
   }
-
-  console.log("Submitting answers:", answersArray.value);
 
   isSubmitting.value = true;
   saveAnswer();

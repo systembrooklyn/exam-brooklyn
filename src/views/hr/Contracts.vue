@@ -326,7 +326,6 @@ const headers = [
 ];
 
 const filteredContracts = computed(() => {
-    console.log('Computing filteredContracts', contracts.value.length);
     const result = contracts.value.filter(c => {
         const empName = getEmployeeName(c.employee_id)?.toLowerCase() || '';
         const matchesSearch = empName.includes(searchQuery.value.toLowerCase());
@@ -338,7 +337,6 @@ const filteredContracts = computed(() => {
 
         return matchesSearch && matchesType && matchesStatus;
     });
-    console.log('Filtered result count:', result.length);
     return result;
 });
 
@@ -435,7 +433,6 @@ const openEditModal = async (contract) => {
 
   try {
     const fullContract = await contractStore.getContract(contract.id);
-    console.log('Fetched Contract By ID:', fullContract);
 
     // Parse day_off because it might be returned differently or valid
     form.value = { 
@@ -446,7 +443,6 @@ const openEditModal = async (contract) => {
         is_active: fullContract.is_active === 1 || fullContract.is_active === true
   };
   } catch (error) {
-    console.log('Failed to fetch contract details:', error);
     // Fallback to table data if fetch fails
     form.value = { 
       ...contract, 

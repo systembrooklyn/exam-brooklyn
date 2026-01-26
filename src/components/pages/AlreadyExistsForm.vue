@@ -6,9 +6,7 @@ import { useCourseStore } from "@/stores/courseStore";
 import { ref } from "vue";
 
 const studentStore = useStudentStore();
-
-
-
+const rulesAccepted = ref(false);
 
 const courseStore = useCourseStore();
 
@@ -49,6 +47,13 @@ const submitForm = async () => {
   }
 
   await studentStore.submitForm();
+};
+
+const acceptRules = () => {
+  rulesAccepted.value = true;
+  sessionStorage.setItem("rulesAccepted", "true");
+  studentStore.showRulesModal = false;
+  studentStore.proceedToExam();
 };
 </script>
 
@@ -204,7 +209,7 @@ const submitForm = async () => {
               studentStore.timer === 120 ||
               studentStore.timer === 0
             "
-            class="bg-gray-50  border focus:border-blue-500 border-gray-300 mt-3 w-full text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            class="bg-gray-50 border border-gray-300 mt-3 w-full text-gray-900 text-md rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
           />
         </div>
         <p :class="studentStore.otpMessageColor" class="mt-2">
@@ -232,6 +237,75 @@ const submitForm = async () => {
         <span v-if="studentStore.loading" class="loader"></span>
         <span v-else>Submit</span>
       </button>
+    </div>
+
+    <!-- Exam Rules Modal -->
+    <div
+      v-if="studentStore.showRulesModal"
+      class="rules-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    >
+      <div
+        class="rules-content bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      >
+        <h2
+          class="text-2xl font-bold text-center mb-6 text-primary dark:text-blue-400"
+        >
+          قواعد تأدية الامتحانات بقاعة الامتحانات
+        </h2>
+        <div class="rules-list space-y-4 mb-6 text-right">
+          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              <span class="text-primary dark:text-blue-400">1.</span>
+              غير مسموح باستخدام الهاتف المحمول لأي غرض سواء (استخدامه آلة
+              حاسبة – ترجمة – مكالمات).
+            </p>
+          </div>
+          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              <span class="text-primary dark:text-blue-400">2.</span>
+              غير مسموح اصطحاب أي مأكولات أو مشروبات داخل قاعة الامتحانات.
+            </p>
+          </div>
+          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              <span class="text-primary dark:text-blue-400">3.</span>
+              لا يتم عمل Submit للامتحان إلا في تواجد موظف المراقبة الموجود
+              بالقاعة.
+            </p>
+          </div>
+          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              <span class="text-primary dark:text-blue-400">4.</span>
+              يسمح في حالة أداء اختبارات المواد استخدام Google Translate من على
+              الحاسب فقط وغير مسموح بذلك في حالة أداء اختبارات القبول.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center justify-center mb-6">
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="rulesAccepted"
+              class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary mr-2"
+            />
+            <span class="text-lg font-medium text-gray-700 dark:text-gray-300">
+              قرأت وفهمت القواعد وأوافق عليها
+            </span>
+          </label>
+        </div>
+        <div class="text-center">
+          <button
+            @click="acceptRules"
+            :disabled="!rulesAccepted"
+            class="w-full py-2 rounded-2xl text-white hover:bg-blue-900 cursor-pointer bg-primary flex items-center justify-center"
+            :class="{
+              'opacity-50 cursor-not-allowed': !rulesAccepted,
+            }"
+          >
+            موافق ومتابع
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -269,5 +343,38 @@ const submitForm = async () => {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.rules-modal {
+  backdrop-filter: blur(4px);
+}
+
+.rules-content {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rule-item {
+  border-right: 4px solid #092c67;
+  transition: all 0.3s ease;
+}
+
+.rule-item:hover {
+  transform: translateX(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark .rule-item {
+  border-right-color: #4788f8;
 }
 </style>

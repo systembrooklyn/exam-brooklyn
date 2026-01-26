@@ -113,6 +113,8 @@ export const useStudentStore = defineStore("studentStore", () => {
     }, 1000);
   };
 
+  const showRulesModal = ref(false);
+
   const submitForm = async () => {
     loading.value = true;
 
@@ -138,7 +140,8 @@ export const useStudentStore = defineStore("studentStore", () => {
         studentOTP.value = "";
         otpMasg.value = "";
         errorMessages.value = "";
-        router.push({ name: "examPage" });
+        // Show rules modal instead of navigating directly
+        showRulesModal.value = true;
         startAutoSubmit();
       } else {
         console.error("Unexpected server response:", response);
@@ -149,6 +152,10 @@ export const useStudentStore = defineStore("studentStore", () => {
     } finally {
       loading.value = false;
     }
+  };
+
+  const proceedToExam = () => {
+    router.push({ name: "examPage" });
   };
 
   const submitExamAnswers = async () => {
@@ -240,6 +247,7 @@ export const useStudentStore = defineStore("studentStore", () => {
     otpSent,
     studentOTP,
     timer,
+    showRulesModal,
 
     // Loaders
     loading,
@@ -256,5 +264,6 @@ export const useStudentStore = defineStore("studentStore", () => {
     submitExamAnswers,
     submitFinalExam,
     stopAutoSubmit,
+    proceedToExam,
   };
 });

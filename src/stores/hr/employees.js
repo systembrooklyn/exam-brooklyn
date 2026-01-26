@@ -3,10 +3,15 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 import { ref } from "vue";
-import { PAYROLL_EMPLOYEES } from "@/api/Api";
+import {
+  PAYROLL_EMPLOYEES,
+  PAYROLL_MANAGERS,
+  PAYROLL_ASSIGN_MANAGER,
+} from "@/api/Api";
 
 export const useHrEmployeesStore = defineStore("hr-employees", () => {
   const employees = ref([]);
+  const managers = ref([]);
   const loading = ref(false);
 
   const getEmployees = async () => {
@@ -14,6 +19,40 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     try {
       const response = await apiClient.get(PAYROLL_EMPLOYEES);
       employees.value = response.data.data;
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const getManagers = async () => {
+    loading.value = true;
+    try {
+      const response = await apiClient.get(PAYROLL_MANAGERS);
+      managers.value = response.data.data;
+      console.log("Managers from API:", response.data.data);
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const assignManager = async (employeeId, managerId) => {
+    loading.value = true;
+    try {
+      const response = await apiClient.post(
+        PAYROLL_ASSIGN_MANAGER(employeeId),
+        {
+          manager_id: managerId,
+        },
+      );
+      notyf.success(response.data.message || "Manager assigned successfully");
       return response.data;
     } catch (err) {
       handleError(err);
@@ -53,7 +92,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     try {
       const response = await apiClient.put(
         `${PAYROLL_EMPLOYEES}/${id}`,
-        payload
+        payload,
       );
       notyf.success(response.data.message || "Employee updated successfully");
       await getEmployees();
@@ -82,8 +121,11 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
 
   return {
     employees,
+    managers,
     loading,
     getEmployees,
+    getManagers,
+    assignManager,
     getEmployee,
     createEmployee,
     updateEmployee,

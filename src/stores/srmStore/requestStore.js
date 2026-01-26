@@ -25,8 +25,6 @@ export const useRequestStore = defineStore("requestStore", () => {
   };
 
   const addRequest = async (request) => {
-    console.log(request);
-
     try {
       const response = await apiClient.post(REQUESTS, request);
       const payload = response.data?.data;
@@ -49,12 +47,9 @@ export const useRequestStore = defineStore("requestStore", () => {
   };
 
   const updateRequest = async (id, updatedData) => {
-    console.log("Updating request with ID:", id, "Data:", updatedData);
-
     try {
       const response = await apiClient.put(`${REQUESTS}/${id}`, updatedData);
       const updatedRequest = response.data.data;
-      console.log("Updated request:", updatedRequest);
 
       if (!Array.isArray(requests.value)) {
         requests.value = updatedRequest ? [updatedRequest] : [];

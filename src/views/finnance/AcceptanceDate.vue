@@ -76,10 +76,8 @@ const filteredData = computed(() => {
 
 
 const editInvoice = (row: any) => {
-  console.log("Edit:", row)
 }
 const deleteInvoice = (id: number) => {
-  console.log("Delete:", id)
 }
 
 const loading = ref(false)

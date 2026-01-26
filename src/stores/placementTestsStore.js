@@ -51,8 +51,6 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
     error.value = null;
     try {
       const response = await apiClient.post(GET_ST_BY_EMAIL,  {email} );
-      console.log(`Fetched student by email :`, response.data);
-      
       student.value = response.data;
       hasSurveyAnswers.value = response.data.hasSurveyAnswers || false; // Check if student has survey answers
     } catch (e) {
@@ -83,8 +81,6 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   // ✅ تحديث اختبار
   async function updatePlacementTest(id, data) {
     error.value = null;
-    console.log(`Updating placement test with ID: ${id}`, data);
-    
     try {
       const response = await apiClient.put(`${PLACEMENT_TESTS}/${id}`, data);
       return response.data;
@@ -111,12 +107,9 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   }
   
   const addPlacementTestWithQuestions = async (data) => {
-    console.log(`Adding placement test with data:`, data);
-    
     error.value = null;
     try {
       const response = await apiClient.post(ADD_PLACEMENT_TEST, data);
-      console.log(`Placement test created:`, response.data);
       
       placementTests.value.push(response.data);
        notyf.success("Placement Test added successfully");
@@ -131,12 +124,9 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   }
 
   const fetchExamQuestions = async (examId) => {
-    console.log(`Fetching questions for exam ID: ${examId}`);
-    
     error.value = null;
     try {
       const response = await apiClient.get(`${GET_PLACEMENT_QUESTIONS}/${examId}`);
-      console.log(`Fetched exam questions:`, response.data.data);
       
       examQuestions.value = response.data.data || [];
       notyf.success(response.data.message || "Exam questions fetched successfully");
@@ -148,9 +138,6 @@ export const usePlacementTestsStore = defineStore("placementTests", () => {
   }
 
  async function addNewQuestions(exam_id, questions) {
-
-console.log(`Adding new questions to exam ID ${exam_id}:`, questions);
-
   error.value = null;
   try {
     const response = await apiClient.post(`${GET_PLACEMENT_QUESTIONS}/${exam_id}`, {questions});
@@ -165,11 +152,9 @@ console.log(`Adding new questions to exam ID ${exam_id}:`, questions);
 }
 
 const updatePlacementTestQuestion = async (questionId, data) => {
-  console.log(`Updating placement test question with ID: ${questionId}`, data); 
   error.value = null;
   try {
     const response = await apiClient.put(`${GET_PLACEMENT_QUESTIONS}/${questionId}`, data);
-    console.log(`Placement test question updated:`, response.data);
     notyf.success("Placement Test Question updated successfully");
     return response.data;
   } catch (e) {
@@ -182,7 +167,6 @@ const updatePlacementTestQuestion = async (questionId, data) => {
 }
 
 const deletePlacementTestQuestion = async (questionId) => {
-  console.log(`Deleting placement test question with ID: ${questionId}`); 
   error.value = null;
   try {
     await apiClient.delete(`${GET_PLACEMENT_QUESTIONS}/${questionId}`);
@@ -197,11 +181,9 @@ const deletePlacementTestQuestion = async (questionId) => {
 }
 
 const addPlacementTestBasic = async (data) => {
-  console.log(`Adding basic placement test with data:`, data);
   error.value = null;
   try {
     const response = await apiClient.post(PLACEMENT_TESTS, data);
-    console.log(`Basic placement test added:`, response.data);
     notyf.success("Placement Test added successfully");
     return response.data;
   } catch (e) {

@@ -76,8 +76,6 @@ const editReservation = (reservation) => {
 };
 
 const saveReservation = async () => {
-  console.log("form.value:", form.value);
-
   saving.value = true;
   const payload = {
     name: form.value.student.name,
@@ -97,11 +95,8 @@ const saveReservation = async () => {
     major: form.value.student.major,
   };
 
-  console.log("payload:", payload);
-
   try {
     if (isEditing.value) {
-      console.log("payload:", payload);
 
       await reservationStore.updateReservation(form.value.id, payload);
     } else {

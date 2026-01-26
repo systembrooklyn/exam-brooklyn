@@ -49,3 +49,29 @@ export const PAYROLL_SHIFTS = "payroll-system/shifts";
 export const PAYROLL_LINKING = "payroll-system/employee-job-departments";
 export const PAYROLL_CONTRACTS = "payroll-system/contracts";
 export const PAYROLL_VACATION_BALANCES = "payroll-system/vacation-balances";
+export const PAYROLL_MANAGERS = "payroll-system/employees/managers";
+export const PAYROLL_ASSIGN_MANAGER = (id) =>
+  `payroll-system/employees/${id}/assign-manager`;
+
+// New Modules
+export const PAYROLL_HOLIDAYS = "payroll-system/official-holidays";
+export const PAYROLL_LINK_HOLIDAY = (id) =>
+  `payroll-system/official-holidays/${id}/link-to-contract`;
+export const PAYROLL_UNLINK_HOLIDAY = (id) =>
+  `payroll-system/official-holidays/${id}/unlink-from-contract`;
+export const PAYROLL_CONTRACT_HOLIDAYS = (id) =>
+  `payroll-system/contracts/${id}/holidays`;
+
+export const PAYROLL_ATTENDANCE = "payroll-system/attendance-logs";
+export const PAYROLL_ATTENDANCE_BULK =
+  "payroll-system/attendance-logs/bulk-upload";
+export const PAYROLL_ATTENDANCE_REPORT = "payroll-system/attendance-monthly";
+
+export const PAYROLL_REQUESTS = "payroll-system/employee-requests";
+export const PAYROLL_REQUESTS_ME = "payroll-system/employee-requests/me";
+export const PAYROLL_REQUESTS_PENDING =
+  "payroll-system/employee-requests/pending";
+export const PAYROLL_APPROVE_REQUEST = (id) =>
+  `payroll-system/employee-requests/${id}/approve`;
+export const PAYROLL_REJECT_REQUEST = (id) =>
+  `payroll-system/employee-requests/${id}/reject`;

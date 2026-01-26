@@ -27,6 +27,21 @@ export default {
       component: () => import("@/views/hr/Shifts.vue"),
     },
     {
+      path: "holidays",
+      name: "hr-holidays",
+      component: () => import("@/views/hr/Holidays.vue"),
+    },
+    {
+      path: "attendance",
+      name: "hr-attendance",
+      component: () => import("@/views/hr/Attendance.vue"),
+    },
+    {
+      path: "requests",
+      name: "hr-requests",
+      component: () => import("@/views/hr/Requests.vue"),
+    },
+    {
       path: "employees",
       name: "hr-employees",
       component: () => import("@/views/hr/Employees.vue"),

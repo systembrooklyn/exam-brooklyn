@@ -360,8 +360,6 @@ const sendQrEmail = async () => {
     }
 
     const payload = { st_num: studentId.value };
-    console.log(payload);
-
     await messageStore.sendMail(payload);
     notyf.success("Send QR successfully");
   } catch (error) {

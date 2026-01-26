@@ -258,7 +258,6 @@ const openEditModal = async (balance) => {
   
   try {
     const fullBalance = await store.getVacationBalance(balance.id);
-    console.log('Fetched Vacation Balance By ID:', fullBalance);
     
     // Map data correctly from the nested structure
     form.value = { 

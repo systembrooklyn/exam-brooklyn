@@ -22,7 +22,6 @@ const student = ref({
 watch(
   () => student.value,
   (newVal, oldVal) => {
-    console.log('Contact changed' , newVal);
   },
   {deep:true}
 );
@@ -31,7 +30,6 @@ watch(
 // watch(
 //   () => student.value.contact.phone,
 //   (newVal, oldVal) => {
-//     console.log('Phone changed:', newVal);
 //   }
 // );
 
@@ -39,7 +37,6 @@ watch(
 // watch(
 //   () => student.value.contact,
 //   (newVal, oldVal) => {
-//     console.log('Contact changed (deep)', newVal);
 //   },
 //   { deep: true }
 // );

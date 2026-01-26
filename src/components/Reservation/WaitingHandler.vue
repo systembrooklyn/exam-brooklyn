@@ -110,20 +110,11 @@ const emitSelection = (e) => {
 
 const handleScholarship = () => {
   if (props.selectedStudents.length === 0) return alert("Choose at least one student");
-
-  console.log("Scholarship Handle:", {
-    students: props.selectedStudents,
-    branch: branch.value,
-  });
    router.push({ name: "waiting-list-table" });
 };
 
 const handleOther = () => {
   if (props.selectedStudents.length === 0) return alert("Choose at least one student");
-  
-  console.log("Other Handle:", {
-    students: props.selectedStudents,
-    branch: branch.value
   });
   router.push({ name: "waiting-list-table" });
 };

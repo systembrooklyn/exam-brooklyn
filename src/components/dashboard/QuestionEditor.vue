@@ -134,8 +134,6 @@ const saveQuestion = async (q) => {
     };
 
     if (props.type === "placement") {
-      console.log("Updating placement test question:", q.id, payload);
-
       await placementStore.updatePlacementTestQuestion(q.id, payload);
     } else {
       await examStore.updateQuestion(q.id, payload);

@@ -48,18 +48,8 @@ export const sendMultipleCustomMail = async (emailData) => {
 
   // Get token from cookies
   const token = Cookies.get("token");
-  console.log(
-    "Token retrieved:",
-    token ? "Yes (length: " + token.length + ")" : "No"
-  );
 
   const url = `${BASE_URL}sendMultipleMail`;
-  console.log("Making POST request to:", url);
-
-  // Debug FormData entries
-  for (let pair of formData.entries()) {
-    console.log("FormData:", pair[0], pair[1]);
-  }
 
   try {
     // Make API request
@@ -69,10 +59,8 @@ export const sendMultipleCustomMail = async (emailData) => {
         Authorization: `Bearer ${token}`,
       },
     });
-    console.log("Axios response:", response);
     return response.data;
   } catch (error) {
-    console.error("Axios error in service:", error);
     throw error;
   }
 };

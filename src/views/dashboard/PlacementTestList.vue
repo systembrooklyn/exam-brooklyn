@@ -41,7 +41,6 @@ onMounted(() => {
 
   
 });
-  console.log("Placement tests loaded:", placementTestsStore.placementTests);
 </script>
 
 <template>

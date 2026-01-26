@@ -120,6 +120,5 @@ function toggleSort(field) {
 const sortedData = computed(() =>
   sortByDate(props.data, sortField.value, sortOrder.value)
 );
-console.log(sortedData.value)
 
 </script>

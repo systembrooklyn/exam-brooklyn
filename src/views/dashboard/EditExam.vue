@@ -230,7 +230,6 @@ const updateExam = async () => {
 
 watchEffect(() => {
   if (exam.value.course_id && exam.value.course_id !== initialExamData.course_id) {
-    console.log("Course has changed!");
     courseChanged.value = true;
   }
 });

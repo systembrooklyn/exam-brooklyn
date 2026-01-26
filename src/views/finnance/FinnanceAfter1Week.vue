@@ -31,8 +31,6 @@ onMounted(async () => {
   const data = { fresh: 0, from: afterOneWeek, to: afterOneWeek };
 
   await deadlinesStore.fetchDeadlines(data);
-  console.log("Deadlines fetched:", deadlinesStore.deadlines);
-
   loading.value = false;
 });
 

@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from "vue";
 import notyf from "@/components/global/notyf";
 import { useStudentStore } from "../../stores/studentStore";
 import { useRouter } from "vue-router";
+import ExamRulesModal from "@/components/ExamRulesModal.vue";
 
 const studentStore = useStudentStore();
 const router = useRouter();
@@ -26,12 +27,15 @@ const timeLeft = ref(remainingTime.value - 1);
 const selectedOptions = ref([]);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
+const rulesAccepted = ref(
+  sessionStorage.getItem("examRulesAccepted") === "true" || false
+);
+const showRules = ref(!rulesAccepted.value);
 let interval;
 
 const mode = ref("all");
 
 const unansweredIndexes = ref([]);
-console.log(timeLeft.value);
 
 const currentQuestion = computed(
   () => questions.value[currentQuestionIndex.value] || null
@@ -126,6 +130,12 @@ const loadSelectedOption = () => {
   }
 };
 
+const acceptRules = () => {
+  rulesAccepted.value = true;
+  showRules.value = false;
+  sessionStorage.setItem("examRulesAccepted", "true");
+};
+
 const handleStart = () => {
   currentQuestionIndex.value = 0;
 
@@ -182,7 +192,6 @@ const submitFinalExam = async () => {
     saveAnswer();
     const payload = { answers: answersArray.value };
     isSubmitting.value = true;
-    console.log(payload);
 
     await studentStore.submitFinalExam(payload);
     isSubmitting.value = false;
@@ -236,8 +245,11 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <!-- Exam Rules Modal -->
+    <ExamRulesModal :show="showRules" @accept="acceptRules" />
+
     <!-- Show 'Start Exam' button initially -->
-    <div v-if="!quizStarted && timeLeft > 0" class="text-center">
+    <div v-if="!quizStarted && timeLeft > 0 && !showRules" class="text-center">
       <button @click="handleStart" class="buttonClass">Start</button>
     </div>
     <div v-if="timeLeft <= 0" class="text-center">

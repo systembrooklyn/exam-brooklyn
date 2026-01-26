@@ -446,7 +446,6 @@ const roles = computed(() => rolesStore.roles);
 const permissions = computed(() => rolesStore.permissions);
 const instructors = computed(() => instructorStore.instructors);
 const scholarships = computed(() => scholarshipStore.scholarships);
-console.log("Scholarships:", scholarships.value);
 
 // Close modal
 const closeModal = () => {
@@ -457,7 +456,6 @@ const closeModal = () => {
 const saveData = () => {
   emit("saveData");
 };
-console.log("Form:", props.form);
 
 // Save button validation
 const isSaveButtonDisabled = computed(() => {

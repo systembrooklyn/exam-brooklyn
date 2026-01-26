@@ -31,7 +31,6 @@ export const usePlacementTestsExamStore = defineStore(
           pt_id: testId,
           st_id: studentId,
         });
-        console.log(response.data);
         examAnswers.value = response.data.data.answers || [];
         Cookies.set("attempt_id", response.data.data.attempt_id, {
           expires: 7,
@@ -48,8 +47,6 @@ export const usePlacementTestsExamStore = defineStore(
     }
 
     async function autoSaveAnswers(answers) {
-      console.log('done  answers');
-      
       const attemptId = Cookies.get("attempt_id");
       if (!attemptId || isFinished.value) return;
 
@@ -62,7 +59,6 @@ export const usePlacementTestsExamStore = defineStore(
         await apiClient.post(`${FINISH_PLACEMENT}/${attemptId}/saveAnswers`, {
           answers: formattedAnswers,
         });
-        console.log("✅ Auto-saved answers");
       } catch (e) {
         console.error("❌ Auto-save failed:", e);
       }
@@ -92,7 +88,6 @@ export const usePlacementTestsExamStore = defineStore(
             answers: formattedAnswers,
           }
         );
-        console.log("Final exam submitted successfully:", response.data);
         notyf.success(
           response.data.message || "Final exam submitted successfully!"
         );
@@ -112,7 +107,7 @@ export const usePlacementTestsExamStore = defineStore(
           st_id,
         }); 
         studentPlacement.value = response.data.data; 
-        // console.log("Student placement fetched successfully:", response.data);
+     
       } catch (error) {
         console.error("Error fetching student placement:", error);
         handleError(error);
@@ -126,7 +121,6 @@ export const usePlacementTestsExamStore = defineStore(
           st_id: st_id,
           answers: answers,
         });
-        console.log("Survey answers saved successfully:", response.data);
       } catch (error) {
         console.error("Error saving survey answers:", error);
         handleError(error);

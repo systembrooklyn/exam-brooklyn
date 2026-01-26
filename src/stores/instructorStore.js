@@ -49,8 +49,6 @@ export const useInstructorStore = defineStore("instructorStore", () => {
         `${ALL_INSTRUCTORS}/${id}`,
         updatedData
       );
-      console.log(response.data);
-      
       const index = instructors.value.findIndex((i) => i.id === id);
       if (index !== -1) {
         instructors.value.splice(index, 1, response.data.data);

@@ -125,8 +125,6 @@ const loadQuestions = async () => {
   loadingQuestions.value = true;
 
   try {
-    console.log();
-
     await placementStore.fetchExamQuestions(route.params.id);
     questions.value = placementStore.examQuestions;
     showEditor.value = true;
@@ -187,10 +185,6 @@ for (let question of addQuestions.value) {
 
 
   try {
-    console.log("Submitting new questions:", addQuestions.value);
-    console.log("Exam ID:", route.params.id);
-
-
     await placementStore.addNewQuestions(route.params.id, addQuestions.value);
     addQuestions.value = [];
     showAdder.value = false;

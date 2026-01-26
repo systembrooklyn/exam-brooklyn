@@ -7,6 +7,8 @@ import {
   FileText,
   Calendar,
   Link,
+  ClipboardList,
+  GitPullRequest,
 } from "lucide-vue-next";
 
 export const itemHr = [
@@ -29,6 +31,21 @@ export const itemHr = [
     name: "Shifts",
     icon: Clock,
     route: "hr-shifts",
+  },
+  {
+    name: "Official Holidays",
+    icon: Calendar,
+    route: "hr-holidays",
+  },
+  {
+    name: "Attendance",
+    icon: ClipboardList,
+    route: "hr-attendance",
+  },
+  {
+    name: "Requests",
+    icon: GitPullRequest,
+    route: "hr-requests",
   },
   {
     name: "Employees",

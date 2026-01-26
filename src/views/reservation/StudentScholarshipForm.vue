@@ -89,7 +89,6 @@ const modules = ref([
 ]);
 
 const submitForm = () => {
-  console.log("Final Data:", form.value);
 };
 </script>
 

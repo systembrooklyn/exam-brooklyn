@@ -123,9 +123,6 @@ const props = defineProps({
   sortOrder: String,
 });
 
-console.log("Data received in InvoicesTable:", props.data);
-
-
 
 function displayValue(value) {
   if (value === null || value === undefined) return "-";

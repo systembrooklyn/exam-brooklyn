@@ -33,13 +33,11 @@ export const useExamStore = defineStore("examStore", () => {
 
   // ✅ Add new exam
   const addExam = async (examData) => {
-    console.log("Exam Data:", examData);
     loading.value = true;
     error.value = null;
     try {
       const response = await apiClient.post(ADD_EXAM, examData);
       notyf.success("Exam created successfully");
-      console.log("Exam created:", response.data);
       
       exams.value.push(response.data.data);
       router.push({ name: "exams" });
@@ -160,8 +158,6 @@ export const useExamStore = defineStore("examStore", () => {
 
   // ✅ Add basic exam
   const addExamBasic = async (examData) => {
-  console.log("Exam Data:", examData);
-  
     loading.value = true;
     error.value = null;
     try {

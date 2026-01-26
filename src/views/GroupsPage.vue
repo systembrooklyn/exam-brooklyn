@@ -228,16 +228,13 @@ const copySearchQuery = () => {
 
 const selectStudent = (student) => {
   selectedStudent.value = student
-  console.log('Selected student:', student)
 }
 
 const sendSMS = () => {
-  console.log('Sending SMS to group...')
   // Implement SMS functionality
 }
 
 const sendEmail = () => {
-  console.log('Sending Email to group...')
   // Implement Email functionality
 }
 
@@ -257,9 +254,6 @@ const searchGroup = async () => {
   try {
     await groupStore.fetchGroupsByCode(code)
     
-    console.log('Group after fetch:', groupStore.group)
-    console.log('Students in group:', groupStore.group?.students)
-    
     // Extract students from group response
     if (groupStore.group && groupStore.group.students) {
       // Convert Proxy array to plain array to ensure reactivity
@@ -267,11 +261,8 @@ const searchGroup = async () => {
         ? [...groupStore.group.students] 
         : []
       students.value = studentsArray
-      console.log('Students array set:', studentsArray)
-      console.log('Students array length:', studentsArray.length)
     } else {
       students.value = []
-      console.log('No students found in group')
     }
   } catch (error) {
     console.error('Error fetching group:', error)
@@ -281,12 +272,9 @@ const searchGroup = async () => {
 
 // Watch for group changes
 watch(() => groupStore.group, (newGroup) => {
-  console.log('Group changed in watch:', newGroup)
   if (newGroup && newGroup.students) {
     // Convert Proxy array to plain array to ensure reactivity
     students.value = Array.isArray(newGroup.students) ? [...newGroup.students] : []
-    console.log('Students updated from watch:', students.value)
-    console.log('Students length:', students.value.length)
   } else {
     students.value = []
   }

@@ -19,8 +19,6 @@ const props = defineProps({
 
 const currentPage = ref(1);
 
-console.log("Card Name:", props.cardName);
-
 const pageSize = computed(() => (props.cardName === "Invoices" ? 10 : 5));
 
 const sortOrder = ref("asc");
@@ -30,8 +28,6 @@ const showRequestFieldModal = ref(false);
 function openModal() {
   showRequestFieldModal.value = true;
 }
-
-console.log("showRequestFieldModal:", showRequestFieldModal.value);
 
 // Sort function for data
 function sortData(data) {

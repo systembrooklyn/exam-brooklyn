@@ -214,7 +214,7 @@
                 <select v-model="form.manager_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
                     <option :value="null">None</option>
                     <option v-for="manager in potentialManagers" :key="manager.id" :value="manager.id">
-                        {{ manager.personal_info?.first_name || manager.first_name }} {{ manager.personal_info?.last_name || manager.last_name }}
+                        {{ manager.name }}
                     </option>
                 </select>
                 <p class="text-xs text-gray-500 mt-2">Select the direct supervisor for this employee.</p>
@@ -332,20 +332,14 @@ const form = ref({
 const originalForm = ref({}); // Store original data for comparison
 
 onMounted(async () => {
-  console.log('Employees Component Mounted - Starting Data Fetch');
-  
   try {
       await Promise.all([
           store.getEmployees(),
+          store.getManagers(),
           deptStore.getDepartments(),
           jobStore.getJobTitles(),
           shiftStore.getShifts()
       ]);
-      
-      console.log('Data Fetch Complete');
-      console.log('Departments:', departments.value);
-      console.log('Job Titles:', jobTitles.value);
-      console.log('Shifts:', shifts.value);
   } catch (error) {
       console.error('Error fetching data:', error);
   }
@@ -382,11 +376,12 @@ const filteredEmployees = computed(() => {
 
 
 const potentialManagers = computed(() => {
-    // Exclude self from manager list if editing
+    // Use store.managers fetch from the new API
+    let list = store.managers || [];
     if (editingId.value) {
-        return employees.value.filter(e => e.id !== editingId.value);
+        return list.filter(e => e.id !== editingId.value);
     }
-    return employees.value;
+    return list;
 });
 
 const openAddModal = () => {
@@ -417,7 +412,6 @@ const openEditModal = async (emp) => {
   // and log it as requested
   try {
       const fullEmployee = await store.getEmployee(emp.id);
-      console.log('Fetched Employee Data for Edit:', fullEmployee);
 
       // Flatten nested personal_info for the form
       const personal = fullEmployee.personal_info || {};
@@ -427,8 +421,6 @@ const openEditModal = async (emp) => {
       let latestJobDep = {};
       if (fullEmployee.job_departments && fullEmployee.job_departments.length > 0) {
           latestJobDep = fullEmployee.job_departments[fullEmployee.job_departments.length - 1]; 
-          console.log('Debug Shift - JobDep Keys:', Object.keys(latestJobDep));
-          console.log('Debug Shift - JobDep Values:', latestJobDep);
       }
 
       // Extract latest shift from contracts
