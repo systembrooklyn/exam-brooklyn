@@ -115,7 +115,6 @@ const handleScholarship = () => {
 
 const handleOther = () => {
   if (props.selectedStudents.length === 0) return alert("Choose at least one student");
-  });
   router.push({ name: "waiting-list-table" });
 };
 </script>
