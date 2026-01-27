@@ -101,7 +101,7 @@ const systems = [
     name: "Groups Management",
     route: "/groups",
     image: groupsIcon,
-    requiresPermission: "view-hrSystemCard",
+    requiresPermission: "view-groupsCard",
   },
   {
     name: "Send Multiple Custom Mail",
@@ -113,7 +113,7 @@ const systems = [
     name: "HR System",
     route: "/hr",
     image: hrIcon,
-    requiresPermission: "view-dashboardCard",
+    requiresPermission: "view-hrSystemCard",
   },
 ];
 
