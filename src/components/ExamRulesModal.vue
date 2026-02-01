@@ -26,15 +26,17 @@ const acceptRules = () => {
   >
     <div
       class="rules-content bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+      dir="auto"
     >
       <h2
         class="text-2xl font-bold text-center mb-6 text-primary dark:text-blue-400"
+        dir="auto"
       >
         قواعد تأدية الامتحانات بقاعة الامتحانات
       </h2>
       <div class="rules-list space-y-4 mb-6">
         <div
-          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-row-reverse items-start gap-3"
+          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start gap-3"
         >
           <span
             class="text-primary dark:text-blue-400 text-lg font-semibold flex-shrink-0"
@@ -42,13 +44,14 @@ const acceptRules = () => {
           >
           <p
             class="text-lg font-semibold text-gray-800 dark:text-gray-200 text-right flex-1"
+            dir="auto"
           >
             غير مسموح باستخدام الهاتف المحمول لأي غرض سواء (استخدامه آلة حاسبة
             – ترجمة – مكالمات).
           </p>
         </div>
         <div
-          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-row-reverse items-start gap-3"
+          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start gap-3"
         >
           <span
             class="text-primary dark:text-blue-400 text-lg font-semibold flex-shrink-0"
@@ -56,12 +59,13 @@ const acceptRules = () => {
           >
           <p
             class="text-lg font-semibold text-gray-800 dark:text-gray-200 text-right flex-1"
+            dir="auto"
           >
             غير مسموح اصطحاب أي مأكولات أو مشروبات داخل قاعة الامتحانات.
           </p>
         </div>
         <div
-          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-row-reverse items-start gap-3"
+          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start gap-3"
         >
           <span
             class="text-primary dark:text-blue-400 text-lg font-semibold flex-shrink-0"
@@ -69,13 +73,14 @@ const acceptRules = () => {
           >
           <p
             class="text-lg font-semibold text-gray-800 dark:text-gray-200 text-right flex-1"
+            dir="auto"
           >
             لا يتم عمل Submit للامتحان إلا في تواجد موظف المراقبة الموجود
             بالقاعة.
           </p>
         </div>
         <div
-          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex flex-row-reverse items-start gap-3"
+          class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start gap-3"
         >
           <span
             class="text-primary dark:text-blue-400 text-lg font-semibold flex-shrink-0"
@@ -83,6 +88,7 @@ const acceptRules = () => {
           >
           <p
             class="text-lg font-semibold text-gray-800 dark:text-gray-200 text-right flex-1"
+            dir="auto"
           >
             يسمح في حالة أداء اختبارات المواد استخدام Google Translate من على
             الحاسب فقط وغير مسموح بذلك في حالة أداء اختبارات القبول.
@@ -96,7 +102,7 @@ const acceptRules = () => {
             v-model="rulesAccepted"
             class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary mr-2"
           />
-          <span class="text-lg font-medium text-gray-700 dark:text-gray-300">
+          <span class="text-lg font-medium text-gray-700 dark:text-gray-300" dir="auto">
             قرأت وفهمت القواعد وأوافق عليها
           </span>
         </label>
