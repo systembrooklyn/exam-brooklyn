@@ -6,7 +6,6 @@ import { useCourseStore } from "@/stores/courseStore";
 import { ref } from "vue";
 
 const studentStore = useStudentStore();
-const rulesAccepted = ref(false);
 
 const courseStore = useCourseStore();
 
@@ -15,7 +14,6 @@ const handelSendOtp = () => {
     studentStore.sendOTP(studentStore.studentId);
   }
 };
-
 
 onMounted(() => {
   courseStore.fetchCourses();
@@ -27,7 +25,7 @@ watch(
     if (newModule) {
       studentStore.fetchInstructors();
     }
-  }
+  },
 );
 
 const submitForm = async () => {
@@ -47,13 +45,6 @@ const submitForm = async () => {
   }
 
   await studentStore.submitForm();
-};
-
-const acceptRules = () => {
-  rulesAccepted.value = true;
-  sessionStorage.setItem("rulesAccepted", "true");
-  studentStore.showRulesModal = false;
-  studentStore.proceedToExam();
 };
 </script>
 
@@ -106,10 +97,7 @@ const acceptRules = () => {
         <div class="mb-5" v-if="studentStore.loadingCourses">
           <p class="text-sm text-gray-500">Loading modules...</p>
         </div>
-        <div
-          class="mb-5"
-          v-else-if="studentStore.courses.data"
-        >
+        <div class="mb-5" v-else-if="studentStore.courses.data">
           <label
             class="block text-sm font-medium dark:text-gray-300 text-gray-900"
           >
@@ -127,12 +115,8 @@ const acceptRules = () => {
                 {{ course.name }}
               </option>
             </select>
-
-          
           </div>
         </div>
-
-     
       </div>
 
       <div class="mb-5" v-if="studentStore.loadingInstructors">
@@ -163,18 +147,13 @@ const acceptRules = () => {
 
       <div
         class="mb-5 relative"
-        v-if="
-          
-          studentStore.selectedModule &&
-          studentStore.selectedInstructor
-        "
+        v-if="studentStore.selectedModule && studentStore.selectedInstructor"
       >
         <div class="flex justify-center">
           <button
             @click="handelSendOtp"
             :disabled="
               (studentStore.timer < 120 && studentStore.timer > 0) ||
-              
               studentStore.studentId === ''
             "
             class="text-primary absolute top-4 z-10 right-3 cursor-pointer"
@@ -187,7 +166,6 @@ const acceptRules = () => {
               :class="{
                 'opacity-50 cursor-not-allowed ':
                   (studentStore.timer < 120 && studentStore.timer > 0) ||
-                
                   studentStore.studentId === '',
               }"
               class="relative text-sm font-bold border-b-1"
@@ -204,7 +182,6 @@ const acceptRules = () => {
             v-model="studentStore.studentOTP"
             :placeholder="`It will be sent after ${studentStore.timer} seconds`"
             :disabled="
-              
               studentStore.studentId === '' ||
               studentStore.timer === 120 ||
               studentStore.timer === 0
@@ -221,7 +198,7 @@ const acceptRules = () => {
         v-show="studentStore.selectedModule && studentStore.selectedInstructor"
         @click="submitForm"
         type="button"
-        class="  w-full py-2 rounded-2xl text-white hover:bg-blue-900 cursor-pointer bg-primary flex items-center justify-center"
+        class="w-full py-2 rounded-2xl text-white hover:bg-blue-900 cursor-pointer bg-primary flex items-center justify-center"
         :disabled="
           studentStore.loading &&
           !studentStore.selectedModule &&
@@ -237,75 +214,6 @@ const acceptRules = () => {
         <span v-if="studentStore.loading" class="loader"></span>
         <span v-else>Submit</span>
       </button>
-    </div>
-
-    <!-- Exam Rules Modal -->
-    <div
-      v-if="studentStore.showRulesModal"
-      class="rules-modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    >
-      <div
-        class="rules-content bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
-      >
-        <h2
-          class="text-2xl font-bold text-center mb-6 text-primary dark:text-blue-400"
-        >
-          قواعد تأدية الامتحانات بقاعة الامتحانات
-        </h2>
-        <div class="rules-list space-y-4 mb-6 text-right">
-          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              <span class="text-primary dark:text-blue-400">1.</span>
-              غير مسموح باستخدام الهاتف المحمول لأي غرض سواء (استخدامه آلة
-              حاسبة – ترجمة – مكالمات).
-            </p>
-          </div>
-          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              <span class="text-primary dark:text-blue-400">2.</span>
-              غير مسموح اصطحاب أي مأكولات أو مشروبات داخل قاعة الامتحانات.
-            </p>
-          </div>
-          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              <span class="text-primary dark:text-blue-400">3.</span>
-              لا يتم عمل Submit للامتحان إلا في تواجد موظف المراقبة الموجود
-              بالقاعة.
-            </p>
-          </div>
-          <div class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <p class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              <span class="text-primary dark:text-blue-400">4.</span>
-              يسمح في حالة أداء اختبارات المواد استخدام Google Translate من على
-              الحاسب فقط وغير مسموح بذلك في حالة أداء اختبارات القبول.
-            </p>
-          </div>
-        </div>
-        <div class="flex items-center justify-center mb-6">
-          <label class="flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              v-model="rulesAccepted"
-              class="w-5 h-5 text-primary border-gray-300 rounded focus:ring-primary mr-2"
-            />
-            <span class="text-lg font-medium text-gray-700 dark:text-gray-300">
-              قرأت وفهمت القواعد وأوافق عليها
-            </span>
-          </label>
-        </div>
-        <div class="text-center">
-          <button
-            @click="acceptRules"
-            :disabled="!rulesAccepted"
-            class="w-full py-2 rounded-2xl text-white hover:bg-blue-900 cursor-pointer bg-primary flex items-center justify-center"
-            :class="{
-              'opacity-50 cursor-not-allowed': !rulesAccepted,
-            }"
-          >
-            موافق ومتابع
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </template>
@@ -323,8 +231,6 @@ const acceptRules = () => {
 .input-field:focus {
   border-color: #007bff;
 }
-
-
 
 .loader {
   border: 4px solid #f3f3f3;

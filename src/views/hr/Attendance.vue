@@ -91,12 +91,59 @@
     <HrModal
       :show="showUploadModal"
       title="Bulk Upload Attendance"
-      @close="showUploadModal = false"
+      :loading="store.loading"
+      @close="closeUploadModal"
       @save="handleUpload"
     >
       <div class="space-y-4">
-        <p class="text-xs text-gray-500">Upload a CSV file containing employee attendance data.</p>
-        <input type="file" @change="onFileChange" accept=".csv" class="w-full border border-dashed border-gray-300 p-4 rounded-lg" />
+        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+          <h4 class="text-sm font-bold text-blue-800 mb-2">Instructions:</h4>
+          <p class="text-xs text-blue-700 leading-relaxed">
+            Please upload a <strong>CSV</strong> file with the following headers and format. Ensure date is <strong>YYYY-MM-DD</strong> and time is <strong>HH:MM:SS</strong>.
+          </p>
+        </div>
+
+        <!-- Format Guide -->
+        <div class="overflow-x-auto border border-gray-100 rounded-lg">
+          <table class="w-full text-[10px] text-left">
+            <thead class="bg-gray-50 text-gray-600 font-bold">
+              <tr>
+                <th class="p-2 border-b">fingerprint</th>
+                <th class="p-2 border-b">date</th>
+                <th class="p-2 border-b">check_in</th>
+                <th class="p-2 border-b">check_out</th>
+                <th class="p-2 border-b">break_in</th>
+                <th class="p-2 border-b">break_out</th>
+              </tr>
+            </thead>
+            <tbody class="text-gray-500">
+              <tr>
+                <td class="p-2 border-b">703</td>
+                <td class="p-2 border-b">2026-01-01</td>
+                <td class="p-2 border-b">09:00:00</td>
+                <td class="p-2 border-b">17:00:00</td>
+                <td class="p-2 border-b">12:00:00</td>
+                <td class="p-2 border-b">12:30:00</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="relative group">
+          <input 
+            type="file" 
+            @change="onFileChange" 
+            accept=".csv" 
+            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
+          />
+          <div class="border-2 border-dashed border-gray-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/50 p-8 rounded-xl transition-all text-center">
+            <LucideUpload class="w-8 h-8 text-gray-400 group-hover:text-indigo-500 mx-auto mb-2" />
+            <p class="text-sm font-medium text-gray-600 group-hover:text-indigo-600">
+              {{ selectedFile ? selectedFile.name : 'Click or drag CSV file to upload' }}
+            </p>
+            <p class="text-xs text-gray-400 mt-1">Maximum file size: 5MB</p>
+          </div>
+        </div>
       </div>
     </HrModal>
 
@@ -106,7 +153,7 @@
       :loading="store.loading"
       saveLabel="Generate"
       maxWidthClass="max-w-4xl"
-      @close="showReportModal = false"
+      @close="closeReportModal"
       @save="handleReport"
     >
       <div class="space-y-6">
@@ -311,7 +358,7 @@ const handleUpload = async () => {
   formData.append('file', selectedFile.value);
   try {
     await store.bulkUploadAttendance(formData);
-    showUploadModal.value = false;
+    closeUploadModal();
   } catch (e) { console.error(e); }
 };
 
@@ -327,11 +374,24 @@ const handleSubmit = async () => {
     } else {
       await store.createAttendanceLog(form.value);
     }
-    showModal.value = false;
+    closeModal();
   } catch (e) { console.error(e); }
 };
 
-const closeModal = () => showModal.value = false;
+const closeModal = () => {
+  showModal.value = false;
+  isEditing.value = false;
+  editingId.value = null;
+};
+
+const closeUploadModal = () => {
+  showUploadModal.value = false;
+  selectedFile.value = null;
+};
+
+const closeReportModal = () => {
+  showReportModal.value = false;
+};
 
 const openReportModal = () => {
   reportForm.value = { employee_id: null, from_date: '', to_date: '' };

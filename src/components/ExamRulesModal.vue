@@ -22,7 +22,7 @@ const acceptRules = () => {
 <template>
   <div
     v-if="show"
-    class="rules-modal fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-50 flex items-center justify-center z-50"
+    class="rules-modal fixed inset-0 bg-white/60 backdrop-blur-md flex items-center justify-center z-50 animate-fade-in"
   >
     <div
       class="rules-content bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"

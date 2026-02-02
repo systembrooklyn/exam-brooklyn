@@ -40,7 +40,7 @@ export const useStudentStore = defineStore("studentStore", () => {
   let startTimer = null;
 
   const storedAttemptId = computed(
-    () => attemptId.value || sessionStorage.getItem("attemptId")
+    () => attemptId.value || sessionStorage.getItem("attemptId"),
   );
 
   const fetchCourses = async () => {
@@ -65,7 +65,9 @@ export const useStudentStore = defineStore("studentStore", () => {
     if (!selectedModule.value) return;
     loadingInstructors.value = true;
     try {
-      const response = await apiClient.get(`${INSTRUCTORS}/${selectedModule.value}`);
+      const response = await apiClient.get(
+        `${INSTRUCTORS}/${selectedModule.value}`,
+      );
       instructors.value = response.data;
     } catch (error) {
       handleError(error);
@@ -140,8 +142,8 @@ export const useStudentStore = defineStore("studentStore", () => {
         studentOTP.value = "";
         otpMasg.value = "";
         errorMessages.value = "";
-        // Show rules modal instead of navigating directly
-        showRulesModal.value = true;
+        // Navigate directly to exam page; rules will be shown there via ExamRulesModal component
+        proceedToExam();
         startAutoSubmit();
       } else {
         console.error("Unexpected server response:", response);
@@ -166,7 +168,10 @@ export const useStudentStore = defineStore("studentStore", () => {
       const answers = JSON.parse(answersFromStorage);
       const finalPayload = { answers };
 
-      await apiClient.post(`${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`, finalPayload);
+      await apiClient.post(
+        `${SUBMIT_EXAM_ANSWERS}/${storedAttemptId.value}`,
+        finalPayload,
+      );
     } catch (error) {
       handleError(error);
     }
@@ -206,7 +211,7 @@ export const useStudentStore = defineStore("studentStore", () => {
 
       const res = await apiClient.post(
         `${FINISH_EXAM_API}/${storedAttemptId.value}`,
-        finalPayload
+        finalPayload,
       );
 
       if (res.data?.message) {

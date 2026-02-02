@@ -13,7 +13,7 @@
         <h2 class="text-xl font-bold text-gray-800">{{ title }}</h2>
         <button
           @click="$emit('close')"
-          class="text-gray-400 hover:text-gray-600 transition-colors"
+          class="text-gray-400 cursor-pointer hover:text-gray-600 transition-colors"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -41,13 +41,13 @@
       <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
         <button
           @click="$emit('close')"
-          class="px-4 py-2 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+          class="px-4 py-2 cursor-pointer text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
         >
           Cancel
         </button>
         <button
           @click="$emit('save')"
-          class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+          class="px-4 py-2 bg-indigo-600 cursor-pointer text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
           :disabled="loading"
         >
           <span

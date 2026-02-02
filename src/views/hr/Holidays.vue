@@ -68,7 +68,7 @@
     <HrModal
       :show="showLinkModal"
       title="Link Holiday to Contracts"
-      @close="showLinkModal = false"
+      @close="closeLinkModal"
       @save="handleLink"
     >
       <div class="space-y-4">
@@ -162,6 +162,12 @@ const openEditModal = (item) => {
   showModal.value = true;
 };
 
+const closeModal = () => {
+  showModal.value = false;
+  isEditing.value = false;
+  editingId.value = null;
+};
+
 const handleSubmit = async () => {
   if (!form.value.holiday_name || !form.value.holiday_date) {
     notyf.error('Please fill in all fields');
@@ -179,7 +185,7 @@ const handleSubmit = async () => {
     } else {
       await store.createHoliday(payload);
     }
-    showModal.value = false;
+    closeModal();
   } catch (e) {
     console.error(e);
   }
@@ -204,6 +210,10 @@ const openLinkModal = () => {
   showLinkModal.value = true;
 };
 
+const closeLinkModal = () => {
+  showLinkModal.value = false;
+};
+
 const handleLink = async () => {
   if (!linkForm.value.holiday_id || linkForm.value.contract_ids.length === 0) {
     notyf.error('Please select a holiday and at least one contract');
@@ -211,7 +221,7 @@ const handleLink = async () => {
   }
   try {
     await store.linkHolidayToContract(linkForm.value.holiday_id, linkForm.value.contract_ids);
-    showLinkModal.value = false;
+    closeLinkModal();
   } catch (e) {
     console.error(e);
   }
