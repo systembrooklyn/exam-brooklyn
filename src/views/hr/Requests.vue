@@ -11,7 +11,7 @@
           class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors"
           :class="showPendingOnly ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
         >
-          {{ showPendingOnly ? 'Showing Pending' : 'Show All' }}
+          {{ showPendingOnly ? 'Show All' : 'Showing Pending' }}
         </button>
         <button
           @click="openAddModal"
@@ -140,16 +140,31 @@
       @confirm="handleApprove"
       @cancel="showConfirmApprove = false"
     />
-    <SweetAlert2Modal
+    <!-- Rejection Modal -->
+    <HrModal
       v-if="showConfirmReject"
-      title="Reject Request?"
-      text="Are you sure you want to reject this request?"
-      icon="warning"
-      confirmButtonText="Yes, Reject"
-      confirmButtonClass="bg-red-600 hover:bg-red-700"
-      @confirm="handleReject"
-      @cancel="showConfirmReject = false"
-    />
+      :show="showConfirmReject"
+      title="Reject Request"
+      :loading="store.loading"
+      saveLabel="Reject"
+      @close="showConfirmReject = false"
+      @save="handleReject"
+    >
+      <div class="space-y-4">
+        <div class="mb-4 text-gray-600">
+           Are you sure you want to reject this request?
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
+          <textarea 
+            v-model="rejectionNote" 
+            rows="4" 
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+            placeholder="Please explain why this request is being rejected..."
+          ></textarea>
+        </div>
+      </div>
+    </HrModal>
   </div>
 </template>
 
@@ -171,6 +186,7 @@ const profileError = ref(false);
 const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
 const targetId = ref(null);
+const rejectionNote = ref('');
 
 const form = ref({
   request_type: 'leave',
@@ -295,17 +311,17 @@ const handleApprove = async () => {
 
 const confirmReject = (id) => {
   targetId.value = id;
+  rejectionNote.value = '';
   showConfirmReject.value = true;
 };
 
 const handleReject = async () => {
   try {
-    await store.rejectRequest(targetId.value);
+    await store.rejectRequest(targetId.value, rejectionNote.value);
     await fetchData();
+    showConfirmReject.value = false;
   } catch (e) {
     console.error("Rejection failed:", e);
-  } finally {
-    showConfirmReject.value = false;
   }
 };
 </script>

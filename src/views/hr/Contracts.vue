@@ -21,7 +21,8 @@
             <option value="">All Types</option>
             <option value="new">New</option>
             <option value="old">Old</option>
-            <option value="hourly-online">Hourly Online</option>
+            <option value="hourly">Hourly</option>
+            <option value="online">Online</option>
         </select>
 
          <select v-model="statusFilter" class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
@@ -139,7 +140,8 @@
                          <select v-model="form.type" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
                             <option value="new">New</option>
                             <option value="old">Old</option>
-                            <option value="hourly-online">Hourly Online</option>
+                            <option value="hourly">Hourly</option>
+                            <option value="online">Online</option>
                         </select>
                     </div>
                 </div>
@@ -180,7 +182,7 @@
                          <select v-model="form.shift_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
                             <option :value="null">Select Shift</option>
                             <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
-                                {{ shift.shift_name }}
+                                {{ shift.shift_name }} ({{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }})
                             </option>
                         </select>
                     </div>
@@ -238,18 +240,18 @@
                     Compensation
                 </h3>
                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
+                    <div :class="form.type === 'hourly' ? 'md:col-span-1' : 'md:col-span-2'">
                          <label class="block text-sm font-medium text-gray-700 mb-1">Fixed Monthly Salary <span class="text-red-500">*</span></label>
                          <div class="relative">
                             <span class="absolute left-2 top-2.5 text-gray-500 text-xs">EGP</span>
                             <input v-model="form.fixed_monthly_salary" type="number" class="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
                          </div>
                     </div>
-                     <div>
+                    <div v-if="form.type === 'hourly'">
                          <label class="block text-sm font-medium text-gray-700 mb-1">Max Hours Limit</label>
                          <input v-model="form.max_hours_limit" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
                     </div>
-                    <div class="md:col-span-2">
+                    <div :class="form.type === 'hourly' ? 'md:col-span-1' : 'md:col-span-2'">
                          <label class="block text-sm font-medium text-gray-700 mb-1">Other variable amounts</label>
                          <input v-model="form.other_var_amounts" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
                     </div>
@@ -337,6 +339,10 @@ const filteredContracts = computed(() => {
 
         return matchesSearch && matchesType && matchesStatus;
     });
+    
+    // Print table data to console
+    console.log('📊 Filtered Contracts (Table Data):', result);
+    
     return result;
 });
 
@@ -381,20 +387,42 @@ const form = ref({
     days_off_count: 2,
     day_off: [], 
     fixed_monthly_salary: '',
+    max_hours_limit: 0,
     other_var_amounts: 0,
     description: '',
     is_active: true
 });
 
 onMounted(async () => {
-  contractStore.getContracts();
+  await contractStore.getContracts();
   await employeeStore.getEmployees();
-  shiftStore.getShifts();
+  await shiftStore.getShifts();
+  
+  // Print shifts data to console
+  console.log('Shift Schedules:', shifts.value);
+  
+  // Print contracts data to check shift structure
+  console.log('Contracts with shift data:', contracts.value);
 });
 
 const getEmployeeName = (id) => {
     const emp = employees.value.find(e => e.id === id);
     return emp?.personal_info ? `${emp.personal_info.first_name} ${emp.personal_info.last_name}` : `Emp #${id}`;
+};
+
+const formatTime = (time) => {
+  if (!time) return '';
+  
+  // Extract hours and minutes from "HH:MM:SS" format
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const min = minutes;
+  
+  // Convert to 12-hour format
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  
+  return `${displayHour}:${min} ${period}`;
 };
 
 const toggleDayOff = (dayIndex) => {
@@ -419,6 +447,8 @@ const openAddModal = () => {
     days_off_count: 2,
     day_off: [5, 6], // Default Fri/Sat
     fixed_monthly_salary: '',
+    hourly_rate_egp: 0,
+    max_hours_limit: 0,
     other_var_amounts: 0,
     description: '',
     is_active: true
@@ -431,29 +461,36 @@ const openEditModal = async (contract) => {
   isEditing.value = true;
   editingId.value = contract.id;
 
+  // 1. Immediately populate form with existing data for instant modal opening
+  form.value = { 
+    ...contract, 
+    day_off: Array.isArray(contract.day_off) ? contract.day_off : [],
+    employee_id: contract.employee ? contract.employee.id : contract.employee_id,
+    shift_id: contract.shift ? contract.shift.id : contract.shift_id,
+    is_active: contract.is_active === 1 || contract.is_active === true
+  };
+
+  activeTab.value = 'general';
+  showModal.value = true;  // Open modal immediately!
+
+  // 2. Fetch fresh data in background to ensure data accuracy
   try {
     const fullContract = await contractStore.getContract(contract.id);
-
-    // Parse day_off because it might be returned differently or valid
-    form.value = { 
+    
+    // Update form with fresh data only if modal is still open for this contract
+    if (showModal.value && editingId.value === contract.id) {
+      form.value = { 
         ...fullContract, 
         day_off: Array.isArray(fullContract.day_off) ? fullContract.day_off : [],
         employee_id: fullContract.employee ? fullContract.employee.id : fullContract.employee_id,
         shift_id: fullContract.shift ? fullContract.shift.id : fullContract.shift_id,
         is_active: fullContract.is_active === 1 || fullContract.is_active === true
-  };
+      };
+    }
   } catch (error) {
-    // Fallback to table data if fetch fails
-    form.value = { 
-      ...contract, 
-      day_off: Array.isArray(contract.day_off) ? contract.day_off : [],
-      employee_id: contract.employee ? contract.employee.id : contract.employee_id,
-      shift_id: contract.shift ? contract.shift.id : contract.shift_id
-  };
+    // Silently fail - we already have data from the table
+    console.warn('Failed to fetch fresh contract data:', error);
   }
-
-  activeTab.value = 'general';
-  showModal.value = true;
 };
 
 

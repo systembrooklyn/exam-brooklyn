@@ -80,10 +80,14 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
-  const rejectRequest = async (id) => {
+  const rejectRequest = async (id, reason = null) => {
     loading.value = true;
     try {
-      const response = await apiClient.post(PAYROLL_REJECT_REQUEST(id));
+      const payload = reason ? { note: reason } : {};
+      const response = await apiClient.post(
+        PAYROLL_REJECT_REQUEST(id),
+        payload,
+      );
       notyf.success(response.data.message || "Request rejected");
       await getPendingRequests();
       return response.data;

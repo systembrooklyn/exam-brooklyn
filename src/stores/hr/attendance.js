@@ -13,14 +13,28 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
   const attendanceLogs = ref([]);
   const loading = ref(false);
 
-  const getAttendanceLogs = async () => {
+  const getAttendanceLogs = async (params = {}) => {
     loading.value = true;
+    console.log("Store: Fetching Attendance Logs with params:", params);
     try {
-      const response = await apiClient.get(PAYROLL_ATTENDANCE);
+      const response = await apiClient.get(PAYROLL_ATTENDANCE, { params });
+      console.log("Store: Attendance Logs Raw Response:", response.data);
       attendanceLogs.value = response.data.data;
-      console.log("Attendance Logs from API:", response.data.data);
+
+      if (!attendanceLogs.value) {
+        console.warn("Store: API returned null or undefined data field");
+      } else {
+        console.log(
+          `Store: Successfully loaded ${attendanceLogs.value.length} logs`,
+        );
+      }
+
       return response.data;
     } catch (err) {
+      console.error(
+        "Store: Error fetching attendance logs:",
+        err.response?.data || err.message,
+      );
       handleError(err);
       throw err;
     } finally {
@@ -28,14 +42,20 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
     }
   };
 
-  const createAttendanceLog = async (payload) => {
+  const createAttendanceLog = async (payload, currentFilters = {}) => {
     loading.value = true;
+    console.log("Store: Creating log entry with payload:", payload);
     try {
       const response = await apiClient.post(PAYROLL_ATTENDANCE, payload);
       notyf.success(response.data.message || "Log entry created");
-      await getAttendanceLogs();
+      console.log(
+        "Store: Create success, re-fetching logs with filters:",
+        currentFilters,
+      );
+      await getAttendanceLogs(currentFilters);
       return response.data;
     } catch (err) {
+      console.error("Store: Create failed", err.response?.data || err.message);
       handleError(err);
       throw err;
     } finally {
@@ -43,8 +63,9 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
     }
   };
 
-  const bulkUploadAttendance = async (formData) => {
+  const bulkUploadAttendance = async (formData, currentFilters = {}) => {
     loading.value = true;
+    console.log("Store: Starting bulk upload");
     try {
       const response = await apiClient.post(PAYROLL_ATTENDANCE_BULK, formData, {
         headers: {
@@ -52,9 +73,17 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
         },
       });
       notyf.success(response.data.message || "Bulk upload successful");
-      await getAttendanceLogs();
+      console.log(
+        "Store: Bulk upload success, re-fetching logs with filters:",
+        currentFilters,
+      );
+      await getAttendanceLogs(currentFilters);
       return response.data;
     } catch (err) {
+      console.error(
+        "Store: Bulk upload failed",
+        err.response?.data || err.message,
+      );
       handleError(err);
       throw err;
     } finally {
@@ -81,17 +110,23 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
     }
   };
 
-  const updateAttendanceLog = async (id, payload) => {
+  const updateAttendanceLog = async (id, payload, currentFilters = {}) => {
     loading.value = true;
+    console.log(`Store: Updating log ${id} with payload:`, payload);
     try {
       const response = await apiClient.put(
         `${PAYROLL_ATTENDANCE}/${id}`,
         payload,
       );
       notyf.success(response.data.message || "Log entry updated");
-      await getAttendanceLogs();
+      console.log(
+        "Store: Update success, re-fetching logs with filters:",
+        currentFilters,
+      );
+      await getAttendanceLogs(currentFilters);
       return response.data;
     } catch (err) {
+      console.error("Store: Update failed", err.response?.data || err.message);
       handleError(err);
       throw err;
     } finally {

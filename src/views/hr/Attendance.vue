@@ -1,30 +1,65 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
-    <div class="flex justify-between items-center mb-6">
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
-        <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p>
-      </div>
-      <div class="flex gap-2">
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="flex justify-between w-full">
+          <div >
+          <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
+          <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p>
+          </div>
+          
+            <div class="flex gap-2">
         <button
           @click="openReportModal"
-          class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-sky-600 hover:bg-sky-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
         >
           <LucideFileText class="w-4 h-4" /> Monthly Report
         </button>
         <button
           @click="openUploadModal"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
         >
           <LucideUpload class="w-4 h-4" /> Bulk Upload
         </button>
         <button
           @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
         >
           <span class="text-xl">+</span> Add Log
         </button>
       </div>
+        </div>
+        
+        <!-- Quick Filters -->
+        <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-indigo-200">
+          <div class="flex flex-col px-2 min-w-[120px]">
+            <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
+            <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs">
+              <option value="">All Employees</option>
+              <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
+                {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
+              </option>
+            </select>
+          </div>
+          <div class="w-px h-8 bg-gray-200 mx-1"></div>
+          <div class="flex flex-col px-2">
+            <label class="text-[10px] uppercase font-bold text-gray-400">From</label>
+            <input v-model="filterForm.from_date" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs" />
+          </div>
+          <div class="w-px h-8 bg-gray-200 mx-1"></div>
+          <div class="flex flex-col px-2">
+            <label class="text-[10px] uppercase font-bold text-gray-400">To</label>
+            <input v-model="filterForm.to_date" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs" />
+          </div>
+          <button @click="fetchLogs" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors" title="Reload Logs">
+             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+             </svg>
+          </button>
+        </div>
+      </div>
+
+    
     </div>
 
     <!-- Table -->
@@ -96,38 +131,23 @@
       @save="handleUpload"
     >
       <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-          <h4 class="text-sm font-bold text-blue-800 mb-2">Instructions:</h4>
-          <p class="text-xs text-blue-700 leading-relaxed">
-            Please upload a <strong>CSV</strong> file with the following headers and format. Ensure date is <strong>YYYY-MM-DD</strong> and time is <strong>HH:MM:SS</strong>.
-          </p>
+        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex justify-between items-start gap-4">
+          <div>
+            <h4 class="text-sm font-bold text-blue-800 mb-2">Instructions:</h4>
+            <p class="text-xs text-blue-700 leading-relaxed">
+              Please upload a <strong>CSV</strong> file with the following headers and format. Ensure date is <strong>YYYY-MM-DD</strong> and time is <strong>HH:MM:SS</strong>.
+            </p>
+          </div>
+          <a 
+            :href="bulkUploadTemplate" 
+            download="BulkUploadTemplate.csv"
+            class="flex-shrink-0 bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-sm"
+          >
+            <LucideDownload class="w-3 h-3" /> Download Template
+          </a>
         </div>
 
-        <!-- Format Guide -->
-        <div class="overflow-x-auto border border-gray-100 rounded-lg">
-          <table class="w-full text-[10px] text-left">
-            <thead class="bg-gray-50 text-gray-600 font-bold">
-              <tr>
-                <th class="p-2 border-b">fingerprint</th>
-                <th class="p-2 border-b">date</th>
-                <th class="p-2 border-b">check_in</th>
-                <th class="p-2 border-b">check_out</th>
-                <th class="p-2 border-b">break_in</th>
-                <th class="p-2 border-b">break_out</th>
-              </tr>
-            </thead>
-            <tbody class="text-gray-500">
-              <tr>
-                <td class="p-2 border-b">703</td>
-                <td class="p-2 border-b">2026-01-01</td>
-                <td class="p-2 border-b">09:00:00</td>
-                <td class="p-2 border-b">17:00:00</td>
-                <td class="p-2 border-b">12:00:00</td>
-                <td class="p-2 border-b">12:30:00</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      
 
         <div class="relative group">
           <input 
@@ -147,117 +167,207 @@
       </div>
     </HrModal>
 
-    <HrModal
-      :show="showReportModal"
-      title="Generate Monthly Report"
-      :loading="store.loading"
-      saveLabel="Generate"
-      maxWidthClass="max-w-4xl"
-      @close="closeReportModal"
-      @save="handleReport"
-    >
-      <div class="space-y-6">
-        <!-- Filter Section -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-            <select v-model="reportForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
-              <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-                {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
-              </option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input v-model="reportForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input v-model="reportForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
-          </div>
-        </div>
-
-        <!-- Report Content -->
-        <div v-if="reportData" id="printable-report" class="space-y-6 animate-fade-in border-t pt-6">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="text-xl font-bold text-gray-900">Attendance Report</h3>
-              <p class="text-sm text-gray-500">{{ reportData.period.from }} - {{ reportData.period.to }}</p>
+    <!-- Report Drawer -->
+    <Transition name="drawer">
+      <div v-if="showReportModal" class="fixed inset-0 z-50 overflow-hidden">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/50 transition-opacity" @click="closeReportModal"></div>
+        
+        <!-- Drawer -->
+        <div class="absolute right-0 top-0 h-full w-full md:w-[800px] bg-white shadow-2xl flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-600 to-indigo-700">
+            <div class="text-white">
+              <h2 class="text-2xl font-bold">Monthly Attendance Report</h2>
+              <p class="text-indigo-100 text-sm mt-1">View detailed attendance breakdown</p>
             </div>
-            <button 
-              @click="downloadPDF" 
-              :disabled="isDownloading"
-              class="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition-all shadow-md no-print disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span v-if="isDownloading" class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
-              <LucideDownload v-else class="w-4 h-4" /> 
-              {{ isDownloading ? 'Downloading...' : 'Download PDF' }}
+            <button @click="closeReportModal" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
 
-          <!-- Employee Info & Summary -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 report-summary-grid">
-            <div class="p-4 rounded-xl border summary-card indigo-card">
-              <p class="text-xs font-bold uppercase mb-1">Employee</p>
-              <p class="text-sm font-bold">{{ reportData.employee.name }}</p>
+          <!-- Content -->
+          <div class="flex-1 overflow-y-auto p-6 space-y-6">
+            <!-- Filter Section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                <select v-model="reportForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
+                  <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
+                    {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <input v-model="reportForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <input v-model="reportForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
+              </div>
             </div>
-            <div class="p-4 rounded-xl border summary-card emerald-card">
-              <p class="text-xs font-bold uppercase mb-1">Present Days</p>
-              <p class="text-lg font-bold">{{ reportData.summary.present_days }}</p>
-            </div>
-            <div class="p-4 rounded-xl border summary-card rose-card">
-              <p class="text-xs font-bold uppercase mb-1">Absent Days</p>
-              <p class="text-lg font-bold">{{ reportData.summary.absent_days }}</p>
-            </div>
-            <div class="p-4 rounded-xl border summary-card amber-card">
-              <p class="text-xs font-bold uppercase mb-1">Vacation Taken</p>
-              <p class="text-lg font-bold">{{ reportData.summary.vacation.taken_days }}</p>
+
+            <!-- Generate Button -->
+            <button 
+              @click="handleReport"
+              :disabled="store.loading"
+              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              <span v-if="store.loading" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+              {{ store.loading ? 'Generating...' : 'Generate Report' }}
+            </button>
+
+            <!-- Report Content -->
+            <div v-if="reportData" id="printable-report" class="space-y-6 animate-fade-in">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="text-xl font-bold text-gray-900">Attendance Report</h3>
+                  <p class="text-sm text-gray-500">{{ reportData.period.from }} - {{ reportData.period.to }}</p>
+                </div>
+              </div>
+
+              <!-- Employee Info & Summary -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 report-summary-grid">
+                <div class="p-4 rounded-xl border summary-card indigo-card">
+                  <p class="text-xs font-bold uppercase mb-1">Employee</p>
+                  <p class="text-sm font-bold">{{ reportData.employee.name }}</p>
+                </div>
+                <div class="p-4 rounded-xl border summary-card emerald-card">
+                  <p class="text-xs font-bold uppercase mb-1">Present Days</p>
+                  <p class="text-lg font-bold">{{ reportData.summary.present_days }}</p>
+                </div>
+                <div class="p-4 rounded-xl border summary-card rose-card">
+                  <p class="text-xs font-bold uppercase mb-1">Absent Days</p>
+                  <p class="text-lg font-bold">{{ reportData.summary.absent_days }}</p>
+                </div>
+                <div class="p-4 rounded-xl border summary-card amber-card">
+                  <p class="text-xs font-bold uppercase mb-1">Vacation</p>
+                  <p class="text-lg font-bold">{{ reportData.summary.vacation.taken_days }}/{{ reportData.summary.vacation.available_days }}</p>
+                  <p class="text-xs text-amber-700 mt-1">{{ reportData.summary.vacation.remaining_days }} days remaining</p>
+                </div>
+              </div>
+
+              <!-- Daily Breakdown -->
+              <div class="overflow-hidden border border-gray-100 rounded-xl">
+                <table class="w-full text-center">
+                  <thead class="bg-gray-50">
+                    <tr class="text-md">
+                      <th class="p-3 font-bold border-b text-center ">Date</th>
+                      <th class="p-3 font-bold border-b text-center">Status</th>
+                      <th class="p-3 font-bold border-b text-center">In / Out</th>
+                      <th class="p-3 font-bold border-b text-center">Break</th>
+                      <th class="p-3 font-bold border-b text-center font-bold text-indigo-600">Minutes</th>
+                      <th class="p-3 font-bold border-b text-center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-50">
+                    <tr v-for="day in reportData.days" :key="day.date" class="hover:bg-gray-50/50">
+                      <td class="p-3 font-medium text-center">{{ day.date }}</td>
+                      <td class="p-3 text-center">
+                        <span :class="{
+                          'status-present': day.status === 'present',
+                          'status-absent': day.status === 'absent',
+                          'status-holiday': day.status === 'holiday',
+                          'status-vacation': day.status === 'vacation'
+                        }" class="px-2 py-0.5 rounded-full uppercase text-[10px] font-bold status-badge-fallback">
+                          {{ day.label }}
+                        </span>
+                      </td>
+                      <td class="p-3 text-center text-gray-500">
+                        <template v-if="day.attendance?.check_in">
+                          {{ day.attendance.check_in.substring(0,5) }} - {{ day.attendance.check_out?.substring(0,5) || '--' }}
+                        </template>
+                        <span v-else>--</span>
+                      </td>
+                      <td class="p-3 text-center text-gray-400">
+                        <template v-if="day.attendance?.break_in">
+                          {{ day.attendance.break_in.substring(0,5) }} - {{ day.attendance.break_out?.substring(0,5) || '--' }}
+                        </template>
+                        <span v-else>--</span>
+                      </td>
+                      <td class="p-3 text-center font-bold text-indigo-700">
+                        {{ day.attendance?.worked_minutes ? parseFloat(day.attendance.worked_minutes).toFixed(2) : 0 }} min
+                      </td>
+                      <td class="p-3 text-center">
+                        <button 
+                          @click="openRequestForDay(day.date)"
+                          class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shadow-sm"
+                        >
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                          </svg>
+                          Request
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </Transition>
 
-          <!-- Daily Breakdown -->
-          <div class="overflow-hidden border border-gray-100 rounded-xl text-xs">
-            <table class="w-full text-left">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="p-3 font-bold border-b">Date</th>
-                  <th class="p-3 font-bold border-b text-center">Status</th>
-                  <th class="p-3 font-bold border-b text-center">In / Out</th>
-                  <th class="p-3 font-bold border-b text-center">Break</th>
-                  <th class="p-3 font-bold border-b text-center font-bold text-indigo-600">Minutes</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-50">
-                <tr v-for="day in reportData.days" :key="day.date" class="hover:bg-gray-50/50">
-                  <td class="p-3 font-medium">{{ day.date }}</td>
-                  <td class="p-3 text-center">
-                    <span :class="{
-                      'status-present': day.status === 'present',
-                      'status-absent': day.status === 'absent',
-                      'status-holiday': day.status === 'holiday',
-                      'status-vacation': day.status === 'vacation'
-                    }" class="px-2 py-0.5 rounded-full uppercase text-[10px] font-bold status-badge-fallback">
-                      {{ day.label }}
-                    </span>
-                  </td>
-                  <td class="p-3 text-center text-gray-500">
-                    <template v-if="day.attendance?.check_in">
-                      {{ day.attendance.check_in.substring(0,5) }} - {{ day.attendance.check_out?.substring(0,5) || '--' }}
-                    </template>
-                    <span v-else>--</span>
-                  </td>
-                  <td class="p-3 text-center text-gray-400">
-                    <template v-if="day.attendance?.break_in">
-                      {{ day.attendance.break_in.substring(0,5) }} - {{ day.attendance.break_out?.substring(0,5) || '--' }}
-                    </template>
-                    <span v-else>--</span>
-                  </td>
-                  <td class="p-3 text-center font-bold text-indigo-700">
-                    {{ day.attendance?.worked_minutes ? parseFloat(day.attendance.worked_minutes).toFixed(2) : 0 }} min
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+    <!-- Request Modal -->
+    <HrModal
+      :show="showRequestModal"
+      title="Create Request"
+      :loading="requestLoading"
+      @close="showRequestModal = false"
+      @save="handleRequestSubmit"
+    >
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
+          <select v-model="requestForm.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+            <option value="lateness">Lateness</option>
+            <option value="leave">Leave</option>
+            <option value="overtime">Overtime</option>
+            <option value="vacation">Vacation</option>
+            <option value="day_off_swap">Day Off Swap</option>
+            <option value="work_from_home">Work From Home</option>
+            <option value="shift_move">Shift Move</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input v-model="requestForm.day" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          </div>
+
+          <!-- Conditional: Duration Hours (Lateness/Leave) -->
+          <div v-if="['lateness', 'leave'].includes(requestForm.request_type)" class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (Hours)</label>
+            <input v-model="requestForm.duration_hours" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 2" />
+          </div>
+
+          <!-- Conditional: Day Replacement (Day Off Swap) -->
+          <div v-if="requestForm.request_type === 'day_off_swap'" class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Replacement Date</label>
+            <input v-model="requestForm.day_replacement" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          </div>
+
+          <!-- Conditional: Duration Type (Vacation) -->
+          <div v-if="requestForm.request_type === 'vacation'" class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
+            <select v-model="requestForm.duration_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+                <option value="full">Full Day</option>
+                <option value="half">Half Day</option>
+            </select>
+          </div>
+
+          <!-- From/To Time (Optional for most, usually for Overtime/Leave) -->
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
+            <input v-model="requestForm.from_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
+            <input v-model="requestForm.to_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
           </div>
         </div>
       </div>
@@ -274,6 +384,7 @@ import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import { LucideUpload, LucideFileText, LucideDownload } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
+import bulkUploadTemplate from '@/assets/BulkUploadTest.csv?url';
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
@@ -288,6 +399,17 @@ const showReportModal = ref(false);
 const selectedFile = ref(null);
 const reportData = ref(null);
 const isDownloading = ref(false);
+
+// Initialize filters with current month
+const now = new Date();
+const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+const filterForm = ref({
+  from_date: firstDay,
+  to_date: lastDay,
+  employee_id: ''
+});
 
 const form = ref({
   employee_id: null,
@@ -311,12 +433,22 @@ const headers = [
   { label: 'Check Out', key: 'check_out' },
 ];
 
+const fetchLogs = async () => {
+  console.log("View: Fetching logs with filters:", filterForm.value);
+  try {
+    await store.getAttendanceLogs(filterForm.value);
+  } catch (e) {
+    console.error("View: Failed to fetch logs:", e);
+  }
+};
+
 onMounted(async () => {
+  console.log("View: Attendance Page Mounted. Loading data...");
   await Promise.all([
-    store.getAttendanceLogs(),
+    fetchLogs(),
     employeeStore.getEmployees()
   ]);
-  console.log("Attendance View Loaded. Employees:", employeeStore.employees);
+  console.log("View: Initial load complete. Employees:", employeeStore.employees);
 });
 
 const openAddModal = () => {
@@ -357,9 +489,9 @@ const handleUpload = async () => {
   const formData = new FormData();
   formData.append('file', selectedFile.value);
   try {
-    await store.bulkUploadAttendance(formData);
+    await store.bulkUploadAttendance(formData, filterForm.value);
     closeUploadModal();
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("View: Upload failed", e); }
 };
 
 const handleSubmit = async () => {
@@ -368,14 +500,14 @@ const handleSubmit = async () => {
     return;
   }
   try {
-    console.log("Submitting form. isEditing:", isEditing.value, "Data:", form.value);
+    console.log("View: Submitting form. isEditing:", isEditing.value, "Data:", form.value);
     if (isEditing.value) {
-      await store.updateAttendanceLog(editingId.value, form.value);
+      await store.updateAttendanceLog(editingId.value, form.value, filterForm.value);
     } else {
-      await store.createAttendanceLog(form.value);
+      await store.createAttendanceLog(form.value, filterForm.value);
     }
     closeModal();
-  } catch (e) { console.error(e); }
+  } catch (e) { console.error("View: Submit failed", e); }
 };
 
 const closeModal = () => {
@@ -399,6 +531,10 @@ const openReportModal = () => {
   showReportModal.value = true;
 };
 
+console.log(reportData.value);
+
+
+
 const handleReport = async () => {
   console.log("Generating Report for:", reportForm.value);
   if (!reportForm.value.employee_id || !reportForm.value.from_date || !reportForm.value.to_date) {
@@ -417,6 +553,87 @@ const handleReport = async () => {
     notyf.success('Report generated');
   } catch (e) { 
     console.error("Report Generation Failed:", e); 
+  }
+};
+
+// Request Modal State
+const showRequestModal = ref(false);
+const requestLoading = ref(false);
+const requestForm = ref({
+  request_type: 'leave',
+  day: '',
+  duration_hours: null,
+  from_time: '',
+  to_time: '',
+  day_replacement: '',
+  duration_type: 'full'
+});
+
+const openRequestForDay = (date) => {
+  requestForm.value = {
+    request_type: 'leave',
+    day: date,
+    duration_hours: null,
+    from_time: '',
+    to_time: '',
+    day_replacement: '',
+    duration_type: 'full'
+  };
+  showRequestModal.value = true;
+};
+
+const handleRequestSubmit = async () => {
+  if (!requestForm.value.day) {
+    notyf.error('Please select a date');
+    return;
+  }
+
+  // Build clean payload based on API rules
+  const payload = {
+    request_type: requestForm.value.request_type,
+    day: requestForm.value.day,
+    from_time: requestForm.value.from_time || null,
+    to_time: requestForm.value.to_time || null,
+  };
+
+  // 1. duration_hours: required for "lateness and Leave" requests only
+  if (['lateness', 'leave'].includes(requestForm.value.request_type)) {
+    if (!requestForm.value.duration_hours) {
+        notyf.error('Duration hours is required for this request type');
+        return;
+    }
+    payload.duration_hours = parseInt(requestForm.value.duration_hours);
+  }
+
+  // 2. day_replacement: required for "day off swap" requests only
+  if (requestForm.value.request_type === 'day_off_swap') {
+    if (!requestForm.value.day_replacement) {
+        notyf.error('Replacement date is required for day off swap');
+        return;
+    }
+    payload.day_replacement = requestForm.value.day_replacement;
+  }
+
+  // 3. duration_type: required for "vacation" requests only
+  if (requestForm.value.request_type === 'vacation') {
+    payload.duration_type = requestForm.value.duration_type; // 'full' or 'half'
+  }
+
+  console.log("Submitting Request payload:", payload);
+
+  requestLoading.value = true;
+  try {
+    // Import the requests store
+    const { useHrRequestsStore } = await import('@/stores/hr/requests');
+    const requestsStore = useHrRequestsStore();
+    
+    await requestsStore.createRequest(payload);
+    showRequestModal.value = false;
+    notyf.success('Request created successfully');
+  } catch (e) {
+    console.error("Request submission failed:", e);
+  } finally {
+    requestLoading.value = false;
   }
 };
 
@@ -511,6 +728,32 @@ const downloadPDF = async () => {
     border-bottom: 1px solid #f3f4f6 !important; 
     color: #4b5563 !important; 
     font-size: 11px;
+}
+
+/* Drawer Animation */
+.drawer-enter-active,
+.drawer-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.drawer-enter-active > div:last-child,
+.drawer-leave-active > div:last-child {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-enter-from,
+.drawer-leave-to {
+  opacity: 0;
+}
+
+.drawer-enter-from > div:last-child,
+.drawer-leave-to > div:last-child {
+  transform: translateX(100%);
+}
+
+.drawer-enter-to > div:last-child,
+.drawer-leave-from > div:last-child {
+  transform: translateX(0);
 }
 
 @media print {
