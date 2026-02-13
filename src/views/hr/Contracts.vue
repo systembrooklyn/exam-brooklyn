@@ -333,8 +333,8 @@ const filteredContracts = computed(() => {
         const matchesSearch = empName.includes(searchQuery.value.toLowerCase());
         const matchesType = !typeFilter.value || c.type === typeFilter.value;
         
-        // Handle boolean vs number 0/1 for isActive
-        const isActive = c.is_active || c.is_active === 1;
+        // Handle boolean vs number 0/1 or string "0"/"1" for isActive
+        const isActive = c.is_active == 1 || c.is_active == true;
         const matchesStatus = statusFilter.value === '' || isActive === statusFilter.value;
 
         return matchesSearch && matchesType && matchesStatus;
