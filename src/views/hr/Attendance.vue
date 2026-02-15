@@ -1,35 +1,12 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <div class="flex flex-wrap items-center justify-between gap-4">
-        <div class="flex justify-between w-full">
-          <div >
-          <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
-          <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p>
-          </div>
-          
-            <div class="flex gap-2">
-        <button
-          @click="openReportModal"
-          class="bg-sky-600 hover:bg-sky-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <LucideFileText class="w-4 h-4" /> Monthly Report
-        </button>
-        <button
-          @click="openUploadModal"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <LucideUpload class="w-4 h-4" /> Bulk Upload
-        </button>
-        <button
-          @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3  rounded-lg flex items-center gap-2 transition-colors"
-        >
-          <span class="text-xl">+</span> Add Log
-        </button>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
+        <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p>
       </div>
-        </div>
-        
+
+      <div class="flex flex-wrap items-center gap-2">
         <!-- Quick Filters -->
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-indigo-200">
           <div class="flex flex-col px-2 min-w-[120px]">
@@ -51,25 +28,50 @@
             <label class="text-[10px] uppercase font-bold text-gray-400">To</label>
             <input v-model="filterForm.to_date" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs" />
           </div>
-          <button @click="fetchLogs" class="bg-indigo-50 text-indigo-600 p-2 rounded-lg hover:bg-indigo-100 transition-colors" title="Reload Logs">
-             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button 
+            @click="fetchLogs" 
+            class="p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+            :class="store.loading ? 'text-indigo-400' : 'text-indigo-600 bg-indigo-50'"
+            title="Reload Logs"
+          >
+             <svg class="w-4 h-4" :class="{'animate-spin': store.loading}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
              </svg>
           </button>
         </div>
-      </div>
 
-    
+        <!-- Actions -->
+        <button
+          @click="openReportModal"
+          class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ml-2"
+        >
+          <LucideFileText class="w-4 h-4" /> Monthly Report
+        </button>
+        <button
+          @click="openUploadModal"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
+          <LucideUpload class="w-4 h-4" /> Bulk Upload
+        </button>
+        <button
+          @click="openAddModal"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
+          <span class="text-xl leading-none">+</span> Add Log
+        </button>
+      </div>
     </div>
 
+    
     <!-- Table -->
     <HrDataTable
       :headers="headers"
       :items="attendanceLogs"
       :loading="store.loading"
       emptyMessage="No attendance logs found."
-      :hasDelete="false"
+      :hasDelete="true"
       @edit="openEditModal"
+      @delete="confirmDelete"
     >
       <template #employee="{ item }">
         {{ item.employee?.name || '-' }}
@@ -234,6 +236,7 @@
                 <div class="p-4 rounded-xl border summary-card indigo-card">
                   <p class="text-xs font-bold uppercase mb-1">Employee</p>
                   <p class="text-sm font-bold">{{ reportData.employee.name }}</p>
+                  <p class="text-xs text-gray-500 mt-1">ID: {{ reportData.employee.id }}</p>
                 </div>
                 <div class="p-4 rounded-xl border summary-card emerald-card">
                   <p class="text-xs font-bold uppercase mb-1">Present Days</p>
@@ -250,55 +253,98 @@
                 </div>
               </div>
 
+               <!-- Extra Stats -->
+               <div class="grid grid-cols-2 gap-4">
+                  <div class="p-3 bg-red-50 rounded-lg text-center border border-red-100">
+                    <span class="text-xs font-bold text-red-600 uppercase">Lateness</span>
+                    <p class="font-bold text-red-700">{{ reportData.summary.total_lateness || 0 }}m</p>
+                  </div>
+                   <div class="p-3 bg-green-50 rounded-lg text-center border border-green-100">
+                    <span class="text-xs font-bold text-green-600 uppercase">Overtime</span>
+                    <p class="font-bold text-green-700">{{ reportData.summary.total_overtime || 0 }}m</p>
+                  </div>
+               </div>
+
               <!-- Daily Breakdown -->
               <div class="overflow-hidden border border-gray-100 rounded-xl">
-                <table class="w-full text-center">
+                <table class="w-full text-center text-sm">
                   <thead class="bg-gray-50">
                     <tr class="text-md">
-                      <th class="p-3 font-bold border-b text-center ">Date</th>
-                      <th class="p-3 font-bold border-b text-center">Status</th>
+                      <th class="p-3 font-bold border-b text-center">Date</th>
+                      <th class="p-3 font-bold border-b text-center">Main Shift</th>
                       <th class="p-3 font-bold border-b text-center">In / Out</th>
-                      <th class="p-3 font-bold border-b text-center">Break</th>
-                      <th class="p-3 font-bold border-b text-center font-bold text-indigo-600">Minutes</th>
-                      <th class="p-3 font-bold border-b text-center">Action</th>
+                      <th class="p-3 font-bold border-b text-center text-red-600">Late</th>
+                      <th class="p-3 font-bold border-b text-center text-green-600">Overtime</th>
+                      <th class="p-3 font-bold border-b text-center">Status</th>
+                      <th class="p-3 font-bold border-b text-center font-bold text-indigo-600">Worked</th>
+                      <th class="p-3 font-bold border-b text-center no-print">Action</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-50">
                     <tr v-for="day in reportData.days" :key="day.date" class="hover:bg-gray-50/50">
-                      <td class="p-3 font-medium text-center">{{ day.date }}</td>
+                      <!-- Date -->
+                      <td class="p-3 font-medium text-center text-xs">
+                        {{ formatDate(day.date) }}
+                      </td>
+                      
+                      <!-- Main Shift -->
+                      <td class="p-3 text-center text-xs text-gray-500">
+                         <div v-if="day.main_shift" class="flex flex-col">
+                            <span>{{ formatTime(day.main_shift.from) }} - {{ formatTime(day.main_shift.to) }}</span>
+                         </div>
+                         <span v-else>--</span>
+                      </td>
+
+                      <!-- In / Out -->
+                      <td class="p-3 text-center text-gray-500 text-xs">
+                        <template v-if="day.attendance?.check_in">
+                          <div class="flex flex-col">
+                            <span :class="{'text-red-500 font-bold': day.lateness}">{{ formatTime(day.attendance.check_in, true) }}</span>
+                            <span class="text-[10px] text-gray-300">to</span>
+                            <span>{{ formatTime(day.attendance.check_out, true) }}</span>
+                          </div>
+                        </template>
+                        <span v-else>--</span>
+                      </td>
+
+                       <!-- Lateness -->
+                      <td class="p-3 text-center border-r">
+                         <span v-if="getLatenessValue(day) > 0" class="inline-block px-2 py-1 bg-red-100 text-red-700 rounded font-bold">
+                            {{ getLatenessValue(day) }}m
+                         </span>
+                         <span v-else class="text-gray-300">-</span>
+                      </td>
+
+                      <!-- Overtime -->
+                      <td class="p-3 text-center border-r">
+                         <span v-if="getOvertimeValue(day) > 0" class="inline-block px-2 py-1 bg-green-100 text-green-700 rounded font-bold">
+                            {{ getOvertimeValue(day) }}m
+                         </span>
+                         <span v-else class="text-gray-300">-</span>
+                      </td>
+
+                      <!-- Status -->
                       <td class="p-3 text-center">
                         <span :class="{
                           'status-present': day.status === 'present',
                           'status-absent': day.status === 'absent',
                           'status-holiday': day.status === 'holiday',
+                          'status-day_off': day.status === 'day_off',
                           'status-vacation': day.status === 'vacation'
                         }" class="px-2 py-0.5 rounded-full uppercase text-[10px] font-bold status-badge-fallback">
                           {{ day.label }}
                         </span>
                       </td>
-                      <td class="p-3 text-center text-gray-500">
-                        <template v-if="day.attendance?.check_in">
-                          {{ day.attendance.check_in.substring(0,5) }} - {{ day.attendance.check_out?.substring(0,5) || '--' }}
-                        </template>
-                        <span v-else>--</span>
+
+                      <td class="p-3 text-center font-bold text-indigo-700 text-xs">
+                        {{ day.attendance?.worked_minutes ? parseFloat(day.attendance.worked_minutes).toFixed(0) : 0 }}m
                       </td>
-                      <td class="p-3 text-center text-gray-400">
-                        <template v-if="day.attendance?.break_in">
-                          {{ day.attendance.break_in.substring(0,5) }} - {{ day.attendance.break_out?.substring(0,5) || '--' }}
-                        </template>
-                        <span v-else>--</span>
-                      </td>
-                      <td class="p-3 text-center font-bold text-indigo-700">
-                        {{ day.attendance?.worked_minutes ? parseFloat(day.attendance.worked_minutes).toFixed(2) : 0 }} min
-                      </td>
-                      <td class="p-3 text-center">
+
+                      <td class="p-3 text-center no-print">
                         <button 
                           @click="openRequestForDay(day.date)"
                           class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shadow-sm"
                         >
-                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                          </svg>
                           Request
                         </button>
                       </td>
@@ -372,6 +418,16 @@
         </div>
       </div>
     </HrModal>
+
+    <!-- Delete Confirmation -->
+    <SweetAlert2Modal
+      v-if="showDeleteConfirm"
+      title="Are you sure?"
+      text="This attendance log will be deleted permanently."
+      icon="warning"
+      @confirm="handleDeleteConfirm"
+      @cancel="cancelDelete"
+    />
   </div>
 </template>
 
@@ -381,6 +437,7 @@ import { useHrAttendanceStore } from '@/stores/hr/attendance';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
+import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import { LucideUpload, LucideFileText, LucideDownload } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
@@ -500,7 +557,9 @@ const handleSubmit = async () => {
     return;
   }
   try {
-    console.log("View: Submitting form. isEditing:", isEditing.value, "Data:", form.value);
+    console.log("View: Submitting form. isEditing:", isEditing.value);
+    console.log("View: Payload Data:", JSON.parse(JSON.stringify(form.value)));
+    
     if (isEditing.value) {
       await store.updateAttendanceLog(editingId.value, form.value, filterForm.value);
     } else {
@@ -580,6 +639,33 @@ const openRequestForDay = (date) => {
     duration_type: 'full'
   };
   showRequestModal.value = true;
+};
+
+// Delete Actions
+const showDeleteConfirm = ref(false);
+const deleteId = ref(null);
+
+const confirmDelete = (id) => {
+  deleteId.value = id;
+  showDeleteConfirm.value = true;
+};
+
+const handleDeleteConfirm = async () => {
+  if (deleteId.value) {
+    try {
+      await store.deleteAttendanceLog(deleteId.value, filterForm.value);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      showDeleteConfirm.value = false;
+      deleteId.value = null;
+    }
+  }
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  deleteId.value = null;
 };
 
 const handleRequestSubmit = async () => {
@@ -670,6 +756,46 @@ const downloadPDF = async () => {
   } finally {
     isDownloading.value = false;
   }
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+};
+
+const formatTime = (time, isShort = false) => {
+  if (!time) return '-';
+  // Check if seconds exist, if not append 00 for existing logic or split safely
+  const parts = time.split(':');
+  if (parts.length < 2) return time;
+  
+  const hours = parseInt(parts[0]);
+  const minutes = parts[1];
+  
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+  
+  if (isShort) {
+    return `${displayHour}:${minutes} ${period}`;
+  }
+  return `${displayHour}:${minutes} ${period}`;
+};
+
+const getLatenessValue = (day) => {
+  if (!day.lateness) return 0;
+  if (typeof day.lateness === 'object') {
+    return Math.round(Number(day.lateness.minutes) || 0);
+  }
+  return Math.round(Number(day.lateness) || 0);
+};
+
+const getOvertimeValue = (day) => {
+  if (!day.overtime) return 0;
+  if (typeof day.overtime === 'object') {
+    return Math.round(Number(day.overtime.total) || 0);
+  }
+  return Math.round(Number(day.overtime) || 0);
 };
 </script>
 

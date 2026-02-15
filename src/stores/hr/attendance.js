@@ -112,12 +112,16 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
 
   const updateAttendanceLog = async (id, payload, currentFilters = {}) => {
     loading.value = true;
-    console.log(`Store: Updating log ${id} with payload:`, payload);
+    console.log(
+      `Store: Updating log ${id} with payload:`,
+      JSON.parse(JSON.stringify(payload)),
+    );
     try {
       const response = await apiClient.put(
         `${PAYROLL_ATTENDANCE}/${id}`,
         payload,
       );
+      console.log("Store: Update Response:", response.data);
       notyf.success(response.data.message || "Log entry updated");
       console.log(
         "Store: Update success, re-fetching logs with filters:",
@@ -127,6 +131,27 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
       return response.data;
     } catch (err) {
       console.error("Store: Update failed", err.response?.data || err.message);
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const deleteAttendanceLog = async (id, currentFilters = {}) => {
+    loading.value = true;
+    console.log(`Store: Deleting log ${id}`);
+    try {
+      const response = await apiClient.delete(`${PAYROLL_ATTENDANCE}/${id}`);
+      notyf.success(response.data.message || "Log entry deleted");
+      console.log(
+        "Store: Delete success, re-fetching logs with filters:",
+        currentFilters,
+      );
+      await getAttendanceLogs(currentFilters);
+      return response.data;
+    } catch (err) {
+      console.error("Store: Delete failed", err.response?.data || err.message);
       handleError(err);
       throw err;
     } finally {
@@ -146,6 +171,7 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
     getAttendanceLogs,
     createAttendanceLog,
     updateAttendanceLog,
+    deleteAttendanceLog,
     bulkUploadAttendance,
     generateMonthlyReport,
   };

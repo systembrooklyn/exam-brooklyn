@@ -174,7 +174,9 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Shift Schedule</label>
                         <select v-model="form.shift_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
                             <option :value="null">Select Shift</option>
-                            <option v-for="shift in shifts" :key="shift.id" :value="shift.id">{{ shift.shift_name }}</option>
+                            <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
+                                {{ shift.shift_name }} ({{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }})
+                            </option>
                         </select>
                     </div>
                      <div>
@@ -252,7 +254,12 @@
                             </div>
                             <div class="col-span-2">
                                 <span class="text-gray-500 block text-[10px] uppercase font-semibold">Shift</span>
-                                <span class="text-gray-900 font-medium">{{ link.shift?.shift_name || '-' }}</span>
+                                <span class="text-gray-900 font-medium">
+                                    {{ link.shift?.shift_name || '-' }}
+                                    <span v-if="link.shift" class="text-xs text-gray-500">
+                                        ({{ formatTime(link.shift.start_time) }} - {{ formatTime(link.shift.end_time) }})
+                                    </span>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -483,6 +490,21 @@ const fetchEmployeeTimeline = async (employeeId) => {
 const closeModal = () => {
   showModal.value = false;
   // store.error = null;
+};
+
+const formatTime = (time) => {
+  if (!time) return '';
+  
+  // Extract hours and minutes from "HH:MM:SS" format
+  const [hours, minutes] = time.split(':');
+  const hour = parseInt(hours);
+  const min = minutes;
+  
+  // Convert to 12-hour format
+  const period = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+  
+  return `${displayHour}:${min} ${period}`;
 };
 
 const handleSubmit = async () => {

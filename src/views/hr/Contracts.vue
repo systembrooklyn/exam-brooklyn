@@ -58,6 +58,7 @@
       <template #shift="{ item }">
         <span class="text-gray-600 block text-xs">
           {{ item.shift?.shift_name || '-' }}
+          <span v-if="item.shift">({{ formatTime(item.shift.start_time) }} - {{ formatTime(item.shift.end_time) }})</span>
         </span>
       </template>
 
