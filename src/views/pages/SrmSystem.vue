@@ -45,7 +45,15 @@
               </button>
             </div>
 
-            <CardDetails :cardName="cardName" :headers="headers" :data="data" :loading="loading" />
+            <CardDetails
+              :cardName="cardName"
+              :headers="headers"
+              :data="data"
+              :loading="loading"
+              :student-id="student?.student?.id ?? studentStore.studentId"
+              @refresh-payments="refreshPayments"
+              @refresh-groups="refreshGroups"
+            />
           </div>
         </div>
       </div>
@@ -101,7 +109,6 @@ const filteredTabs = computed(() => {
 });
 
 const selectTab = async (name, label) => {
-
   const permission = tabPermissions[name];
   if (permission && !authStore.hasPermission(permission)) {
     console.warn(`User does not have permission: ${permission}`);
@@ -120,8 +127,8 @@ const selectTab = async (name, label) => {
       columnMap[name]?.length > 0
         ? columnMap[name]
         : data.value.length > 0
-        ? Object.keys(data.value[0])
-        : [];
+          ? Object.keys(data.value[0])
+          : [];
   } catch (error) {
     console.error("Error fetching tab data:", error);
     data.value = [];
@@ -130,6 +137,14 @@ const selectTab = async (name, label) => {
     loading.value = false;
   }
 };
+
+async function refreshPayments() {
+  await selectTab("payments", "Deadlines");
+}
+
+async function refreshGroups() {
+  await selectTab("groups", "Groups");
+}
 
 if (emitter) {
   emitter.on("refresh", () => {

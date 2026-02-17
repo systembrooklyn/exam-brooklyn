@@ -15,7 +15,10 @@ const props = defineProps({
   headers: Array,
   data: Array,
   loading: Boolean,
+  studentId: [String, Number],
 });
+
+defineEmits(["refresh-payments", "refresh-groups"]);
 
 const currentPage = ref(1);
 
@@ -160,7 +163,14 @@ watch(
 
     <div v-else class="space-y-6">
   
-    <GroupsTable v-if="cardName === 'Groups'" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
+    <GroupsTable
+        v-if="cardName === 'Groups'"
+        :data="paginatedData"
+        :student-id="studentId"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+        @refresh-groups="$emit('refresh-groups')"
+      />
      
       <AttendanceTable v-if="cardName === 'Attendance'" :data="paginatedData" :sortOrder="sortOrder"
         @toggleSort="toggleSort" />
@@ -174,8 +184,14 @@ watch(
 
         <RequestsTable :title="cardName" :data="paginatedData" :sortOrder="sortOrder" @toggleSort="toggleSort" />
       </div>
-      <Deadlines v-if="cardName === 'Deadlines'" :data="paginatedData" :sortOrder="sortOrder"
-        @toggleSort="toggleSort" />
+      <Deadlines
+        v-if="cardName === 'Deadlines'"
+        :data="paginatedData"
+        :student-id="studentId"
+        :sortOrder="sortOrder"
+        @toggleSort="toggleSort"
+        @refresh-payments="$emit('refresh-payments')"
+      />
 
       <PapersTable v-if="cardName === 'Papers'" :data="paginatedData" />
     

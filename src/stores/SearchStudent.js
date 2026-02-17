@@ -14,62 +14,68 @@ export const useStudentStore = defineStore("studentStore", () => {
   const loadingData = ref(false);
   const studentsList = ref([]);
 
- const fetchStudent = async (id) => {
-  studentId.value = id;
-  loadingData.value = true;
-  error.value = null;
+  const fetchStudent = async (id) => {
+    studentId.value = id;
+    loadingData.value = true;
+    error.value = null;
 
-  try {
-    const response = await apiClient.get(`${STUDENT}/${id}`);
-    student.value = response.data.data;
-    localStorage.setItem("studentId", JSON.stringify(student.value.student.id));
-  } catch (err) {
-    handleError(err);
-    error.value = err.response?.data?.message || "An error occurred while fetching the student.";
-    throw err; 
-  } finally {
-    loadingData.value = false;
-  }
-};
+    try {
+      const response = await apiClient.get(`${STUDENT}/${id}`);
+      student.value = response.data.data;
+      localStorage.setItem(
+        "studentId",
+        JSON.stringify(student.value.student.id),
+      );
+    } catch (err) {
+      handleError(err);
+      error.value =
+        err.response?.data?.message ||
+        "An error occurred while fetching the student.";
+      throw err;
+    } finally {
+      loadingData.value = false;
+    }
+  };
 
-const fetchStudentByOther = async (value) => {
-  loading.value = true;
-  error.value = null;
-   
-  try {
-    const response = await apiClient.post(STUDENT_SEARCH, { value: value });
-    studentsList.value = response.data.data;
-    
-    // ✅ ارجع الـ response
-    return response;
-  } catch (err) {
-    studentsList.value = null;
-    handleError(err);
-    throw err; // ✅ ارمي الخطأ عشان الكومبونينت يتعامل معاه
-  } finally {
-    loading.value = false;
-  }
-};
+  const fetchStudentByOther = async (value) => {
+    loading.value = true;
+    error.value = null;
 
-const fetchDataStuden = async (name) => {
-  loading.value = true;
-  error.value = null;
+    try {
+      const response = await apiClient.post(STUDENT_SEARCH, { value: value });
+      studentsList.value = response.data.data;
 
-  try {
-    const response = await apiClient.get(`${STUDENT}/${studentId.value}/${name}`);
-    studentData.value = response.data.data;
-  } catch (err) {
-    studentData.value = null;
-    handleError(err);
-  } finally {
-    loading.value = false;
-  }
-};
+      // ✅ ارجع الـ response
+      return response;
+    } catch (err) {
+      studentsList.value = null;
+      handleError(err);
+      throw err; // ✅ ارمي الخطأ عشان الكومبونينت يتعامل معاه
+    } finally {
+      loading.value = false;
+    }
+  };
 
+  const fetchDataStuden = async (name) => {
+    loading.value = true;
+    error.value = null;
 
+    try {
+      const response = await apiClient.get(
+        `${STUDENT}/${studentId.value}/${name}`,
+      );
+      studentData.value = response.data.data;
+    } catch (err) {
+      studentData.value = null;
+      handleError(err);
+    } finally {
+      loading.value = false;
+    }
+  };
 
   return {
     student,
+    studentId,
     fetchDataStuden,
     fetchStudentByOther,
     studentData,
@@ -77,6 +83,6 @@ const fetchDataStuden = async (name) => {
     loading,
     error,
     fetchStudent,
-    loadingData
+    loadingData,
   };
 });
