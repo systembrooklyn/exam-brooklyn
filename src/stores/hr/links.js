@@ -19,7 +19,7 @@ export const useHrLinksStore = defineStore("hr-links", () => {
     return Number.isInteger(id) && id > 0 ? [id] : [];
   };
 
-  const buildAssignmentsPayload = (payload = {}) => {
+  const buildAssignmentsPayload = (payload = {}, { includeEmployeeId = true } = {}) => {
     const departmentIds = normalizeIdList(payload.department_id);
     const jobTitleIds = normalizeIdList(payload.job_title_id);
 
@@ -29,8 +29,14 @@ export const useHrLinksStore = defineStore("hr-links", () => {
       job_title_id: jobTitleIds,
     };
 
-    if (payload.employee_id !== undefined && payload.employee_id !== null) {
+    if (
+      includeEmployeeId &&
+      payload.employee_id !== undefined &&
+      payload.employee_id !== null
+    ) {
       normalizedPayload.employee_id = Number(payload.employee_id);
+    } else {
+      delete normalizedPayload.employee_id;
     }
 
     return normalizedPayload;
@@ -80,7 +86,7 @@ export const useHrLinksStore = defineStore("hr-links", () => {
     try {
       const response = await apiClient.put(
         `${PAYROLL_LINKING}/${employeeId}`,
-        buildAssignmentsPayload(payload),
+        buildAssignmentsPayload(payload, { includeEmployeeId: false }),
       );
       notyf.success(response.data.message || "Assignments updated successfully");
       await getEmployeeJobDeps();
