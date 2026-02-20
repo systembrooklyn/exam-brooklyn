@@ -445,9 +445,17 @@ const openEditModal = async (emp) => {
           manager_id: (typeof fullEmployee.manager === 'object' && fullEmployee.manager !== null) ? fullEmployee.manager.id : (fullEmployee.manager_id || fullEmployee.manager),
           
 
-          // Map Assignments - Convert current single values to arrays for MultiSelect
-          department_ids: fullEmployee.job_departments ? [...new Set(fullEmployee.job_departments.map(jd => parseInt(jd.department_id)))] : [],
-          job_title_ids: fullEmployee.job_departments ? [...new Set(fullEmployee.job_departments.map(jd => parseInt(jd.job_title_id)))] : [],
+          // Keep same index mapping between department and job title arrays.
+          department_ids: fullEmployee.job_departments
+            ? fullEmployee.job_departments
+                .map(jd => parseInt(jd.department_id))
+                .filter(id => Number.isInteger(id) && id > 0)
+            : [],
+          job_title_ids: fullEmployee.job_departments
+            ? fullEmployee.job_departments
+                .map(jd => parseInt(jd.job_title_id))
+                .filter(id => Number.isInteger(id) && id > 0)
+            : [],
           shift_id: latestContract.shift_id || latestJobDep.shift_id || fullEmployee.shift_id,
           
           hiring_date: personal.hiring_date,
@@ -507,6 +515,25 @@ const formatTime = (time) => {
   return `${displayHour}:${min} ${period}`;
 };
 
+const normalizeIdArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(id => Number(id))
+    .filter(id => Number.isInteger(id) && id > 0);
+};
+
+const validateAssignmentPairs = () => {
+  const departmentIds = normalizeIdArray(form.value.department_ids);
+  const jobTitleIds = normalizeIdArray(form.value.job_title_ids);
+
+  if (departmentIds.length !== jobTitleIds.length) {
+    notyf.error('Departments and job titles must have the same count.');
+    return null;
+  }
+
+  return { departmentIds, jobTitleIds };
+};
+
 const handleSubmit = async () => {
   if (!form.value.first_name || !form.value.last_name || !form.value.email || !form.value.hiring_date) {
     notyf.error('Please fill in all required fields.');
@@ -531,42 +558,34 @@ const handleSubmit = async () => {
           }
       }
 
+       // 2. Check for Assignment Changes (Dept, Job, Shift)
+      const currentDepartmentIds = normalizeIdArray(form.value.department_ids);
+      const currentJobTitleIds = normalizeIdArray(form.value.job_title_ids);
+      const originalDepartmentIds = normalizeIdArray(originalForm.value.department_ids);
+      const originalJobTitleIds = normalizeIdArray(originalForm.value.job_title_ids);
+
+      const assignmentChanged = 
+          JSON.stringify(currentDepartmentIds) !== JSON.stringify(originalDepartmentIds) ||
+          JSON.stringify(currentJobTitleIds) !== JSON.stringify(originalJobTitleIds) ||
+          form.value.shift_id !== originalForm.value.shift_id;
+
+      if (assignmentChanged && currentDepartmentIds.length !== currentJobTitleIds.length) {
+        notyf.error('Departments and job titles must have the same count.');
+        return;
+      }
+
       if (Object.keys(changes).length > 0) {
           await store.updateEmployee(editingId.value, changes);
       }
 
-       // 2. Check for Assignment Changes (Dept, Job, Shift)
-      const assignmentChanged = 
-          JSON.stringify(form.value.department_ids.sort()) !== JSON.stringify(originalForm.value.department_ids.sort()) ||
-          JSON.stringify(form.value.job_title_ids.sort()) !== JSON.stringify(originalForm.value.job_title_ids.sort()) ||
-          form.value.shift_id !== originalForm.value.shift_id;
-
       if (assignmentChanged) {
-          // Iterate over selected departments and jobs to create links
-          // Strategy: If M Depts and N Jobs, create M * N links? Or mapping?
-          // Defaulting to Cartesian for now as it covers "User has these Roles in these Depts"
-          
-          const deptIds = form.value.department_ids.length ? form.value.department_ids : [null];
-          const jobIds = form.value.job_title_ids.length ? form.value.job_title_ids : [null];
-
-           // If user cleared all selections, we might not send anything or just not link.
-           // However, if they selected some, we link.
-
-           for (const dId of deptIds) {
-               for (const jId of jobIds) {
-                   if (dId && jId) {
-                        await linksStore.linkEmployeeJobDep({
-                            employee_id: editingId.value,
-                            department_id: dId,
-                            job_title_id: jId,
-                            shift_id: form.value.shift_id,
-                            hired_at: new Date().toISOString().slice(0, 10)
-                        }, { showNotification: false, refresh: false });
-                   }
-               }
-           }
-           await linksStore.getEmployeeJobDeps();
-           notyf.success('Assignments updated successfully');
+          await linksStore.updateEmployeeJobDep(editingId.value, {
+            employee_id: editingId.value,
+            department_id: currentDepartmentIds,
+            job_title_id: currentJobTitleIds,
+            shift_id: form.value.shift_id ? parseInt(form.value.shift_id) : null,
+            hired_at: form.value.hiring_date
+          });
       }
       
       if (Object.keys(changes).length === 0 && !assignmentChanged) {
@@ -574,6 +593,9 @@ const handleSubmit = async () => {
       }
 
     } else {
+      const assignmentPairs = validateAssignmentPairs();
+      if (!assignmentPairs) return;
+
       // 1. Create Employee
       const employeePayload = {
           first_name: form.value.first_name,
@@ -589,25 +611,15 @@ const handleSubmit = async () => {
       const newEmployee = await store.createEmployee(employeePayload);
       
       // 2. Create Initial Assignment (Link)
-      if (form.value.department_ids.length > 0 || form.value.job_title_ids.length > 0) {
+      if (assignmentPairs.departmentIds.length > 0) {
            const empId = newEmployee.data.id || newEmployee.id;
-           const deptIds = form.value.department_ids.length ? form.value.department_ids : [null];
-           const jobIds = form.value.job_title_ids.length ? form.value.job_title_ids : [null];
-
-           for (const dId of deptIds) {
-               for (const jId of jobIds) {
-                   if (dId && jId) {
-                        await linksStore.linkEmployeeJobDep({
-                            employee_id: empId,
-                            department_id: dId,
-                            job_title_id: jId,
-                            shift_id: form.value.shift_id,
-                            hired_at: form.value.hiring_date
-                        }, { showNotification: false, refresh: false });
-                   }
-               }
-           }
-           await linksStore.getEmployeeJobDeps();
+           await linksStore.linkEmployeeJobDep({
+             employee_id: empId,
+             department_id: assignmentPairs.departmentIds,
+             job_title_id: assignmentPairs.jobTitleIds,
+             shift_id: form.value.shift_id ? parseInt(form.value.shift_id) : null,
+             hired_at: form.value.hiring_date
+           }, { showNotification: false, refresh: true });
            notyf.success('Employee created and assigned successfully');
       }
     }

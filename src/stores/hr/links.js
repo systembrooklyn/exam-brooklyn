@@ -9,6 +9,33 @@ export const useHrLinksStore = defineStore("hr-links", () => {
   const links = ref([]);
   const loading = ref(false);
 
+  const normalizeIdList = (value) => {
+    if (Array.isArray(value)) {
+      return value
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0);
+    }
+    const id = Number(value);
+    return Number.isInteger(id) && id > 0 ? [id] : [];
+  };
+
+  const buildAssignmentsPayload = (payload = {}) => {
+    const departmentIds = normalizeIdList(payload.department_id);
+    const jobTitleIds = normalizeIdList(payload.job_title_id);
+
+    const normalizedPayload = {
+      ...payload,
+      department_id: departmentIds,
+      job_title_id: jobTitleIds,
+    };
+
+    if (payload.employee_id !== undefined && payload.employee_id !== null) {
+      normalizedPayload.employee_id = Number(payload.employee_id);
+    }
+
+    return normalizedPayload;
+  };
+
   const getEmployeeJobDeps = async () => {
     loading.value = true;
     try {
@@ -29,7 +56,10 @@ export const useHrLinksStore = defineStore("hr-links", () => {
   ) => {
     loading.value = true;
     try {
-      const response = await apiClient.post(PAYROLL_LINKING, payload);
+      const response = await apiClient.post(
+        PAYROLL_LINKING,
+        buildAssignmentsPayload(payload),
+      );
       if (showNotification) {
         notyf.success(response.data.message || "Linked successfully");
       }
@@ -45,11 +75,14 @@ export const useHrLinksStore = defineStore("hr-links", () => {
     }
   };
 
-  const updateEmployeeJobDep = async (id, payload) => {
+  const updateEmployeeJobDep = async (employeeId, payload) => {
     loading.value = true;
     try {
-      const response = await apiClient.put(`${PAYROLL_LINKING}/${id}`, payload);
-      notyf.success(response.data.message || "Link updated successfully");
+      const response = await apiClient.put(
+        `${PAYROLL_LINKING}/${employeeId}`,
+        buildAssignmentsPayload(payload),
+      );
+      notyf.success(response.data.message || "Assignments updated successfully");
       await getEmployeeJobDeps();
       return response.data;
     } catch (err) {

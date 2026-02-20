@@ -136,6 +136,7 @@ const editingId = ref(null);
 
 // Delete Confirmation
 const showDeleteConfirm = ref(false);
+const deleteId = ref(null);
 
 const form = ref({
   employee_id: null,
@@ -225,7 +226,7 @@ const openAddModal = () => {
 
 const openEditModal = (link) => {
   isEditing.value = true;
-  editingId.value = link.id;
+  editingId.value = link.employee_id;
   form.value = { ...link };
   showModal.value = true;
 };
@@ -235,16 +236,27 @@ const closeModal = () => {
 };
 
 const handleSubmit = async () => {
-  if (!form.value.employee_id || !form.value.department_id || !form.value.job_title_id) {
+  const employeeId = Number(form.value.employee_id);
+  const departmentId = Number(form.value.department_id);
+  const jobTitleId = Number(form.value.job_title_id);
+
+  if (!employeeId || !departmentId || !jobTitleId) {
     notyf.error('All fields are required');
     return;
   }
 
+  const payload = {
+    employee_id: employeeId,
+    department_id: [departmentId],
+    job_title_id: [jobTitleId],
+    hired_at: form.value.hired_at
+  };
+
   try {
     if (isEditing.value) {
-      await store.updateEmployeeJobDep(editingId.value, form.value);
+      await store.updateEmployeeJobDep(editingId.value, payload);
     } else {
-      await store.linkEmployeeJobDep(form.value);
+      await store.linkEmployeeJobDep(payload);
     }
     closeModal();
   } catch (error) {

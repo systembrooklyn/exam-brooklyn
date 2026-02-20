@@ -13,11 +13,23 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
   const attendanceLogs = ref([]);
   const loading = ref(false);
 
+  const normalizeAttendanceParams = (params = {}) => ({
+    from_date: params.from_date || "",
+    to_date: params.to_date || "",
+    employee_id:
+      params.employee_id === undefined || params.employee_id === null
+        ? ""
+        : String(params.employee_id).trim(),
+  });
+
   const getAttendanceLogs = async (params = {}) => {
     loading.value = true;
-    console.log("Store: Fetching Attendance Logs with params:", params);
+    const queryParams = normalizeAttendanceParams(params);
+    console.log("Store: Fetching Attendance Logs with params:", queryParams);
     try {
-      const response = await apiClient.get(PAYROLL_ATTENDANCE, { params });
+      const response = await apiClient.get(PAYROLL_ATTENDANCE, {
+        params: queryParams,
+      });
       console.log("Store: Attendance Logs Raw Response:", response.data);
       attendanceLogs.value = response.data.data;
 
