@@ -169,194 +169,13 @@
       </div>
     </HrModal>
 
-    <!-- Report Drawer -->
-    <Transition name="drawer">
-      <div v-if="showReportModal" class="fixed inset-0 z-50 overflow-hidden">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/50 transition-opacity" @click="closeReportModal"></div>
-        
-        <!-- Drawer -->
-        <div class="absolute right-0 top-0 h-full w-full md:w-[800px] bg-white shadow-2xl flex flex-col">
-          <!-- Header -->
-          <div class="flex items-center justify-between p-4 border-b bg-gradient-to-r from-indigo-600 to-indigo-700">
-            <div class="text-white">
-              <h2 class="text-2xl font-bold">Monthly Attendance Report</h2>
-              <p class="text-indigo-100 text-sm mt-1">View detailed attendance breakdown</p>
-            </div>
-            <button @click="closeReportModal" class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
-              <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-
-          <!-- Content -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-6">
-            <!-- Filter Section -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-                <select v-model="reportForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
-                  <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-                    {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-                <input v-model="reportForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-                <input v-model="reportForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
-              </div>
-            </div>
-
-            <!-- Generate Button -->
-            <button 
-              @click="handleReport"
-              :disabled="store.loading"
-              class="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              <span v-if="store.loading" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-              {{ store.loading ? 'Generating...' : 'Generate Report' }}
-            </button>
-
-            <!-- Report Content -->
-            <div v-if="reportData" id="printable-report" class="space-y-6 animate-fade-in">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h3 class="text-xl font-bold text-gray-900">Attendance Report</h3>
-                  <p class="text-sm text-gray-500">{{ reportData.period.from }} - {{ reportData.period.to }}</p>
-                </div>
-              </div>
-
-              <!-- Employee Info & Summary -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 report-summary-grid">
-                <div class="p-4 rounded-xl border summary-card indigo-card">
-                  <p class="text-xs font-bold uppercase mb-1">Employee</p>
-                  <p class="text-sm font-bold">{{ reportData.employee.name }}</p>
-                  <p class="text-xs text-gray-500 mt-1">ID: {{ reportData.employee.id }}</p>
-                </div>
-                <div class="p-4 rounded-xl border summary-card emerald-card">
-                  <p class="text-xs font-bold uppercase mb-1">Present Days</p>
-                  <p class="text-lg font-bold">{{ reportData.summary.present_days }}</p>
-                </div>
-                <div class="p-4 rounded-xl border summary-card rose-card">
-                  <p class="text-xs font-bold uppercase mb-1">Absent Days</p>
-                  <p class="text-lg font-bold">{{ reportData.summary.absent_days }}</p>
-                </div>
-                <div class="p-4 rounded-xl border summary-card amber-card">
-                  <p class="text-xs font-bold uppercase mb-1">Vacation</p>
-                  <p class="text-lg font-bold">{{ reportData.summary.vacation.taken_days }}/{{ reportData.summary.vacation.available_days }}</p>
-                  <p class="text-xs text-amber-700 mt-1">{{ reportData.summary.vacation.remaining_days }} days remaining</p>
-                </div>
-              </div>
-
-               <!-- Extra Stats -->
-               <div class="grid grid-cols-2 gap-4">
-                  <div class="p-3 bg-red-50 rounded-lg text-center border border-red-100">
-                    <span class="text-xs font-bold text-red-600 uppercase">Lateness</span>
-                    <p class="font-bold text-red-700">{{ reportData.summary.total_lateness || 0 }}m</p>
-                  </div>
-                   <div class="p-3 bg-green-50 rounded-lg text-center border border-green-100">
-                    <span class="text-xs font-bold text-green-600 uppercase">Overtime</span>
-                    <p class="font-bold text-green-700">{{ reportData.summary.total_overtime || 0 }}m</p>
-                  </div>
-               </div>
-
-              <!-- Daily Breakdown -->
-              <div class="overflow-hidden border border-gray-100 rounded-xl">
-                <table class="w-full text-center text-sm">
-                  <thead class="bg-gray-50">
-                    <tr class="text-md">
-                      <th class="p-3 font-bold border-b text-center">Date</th>
-                      <th class="p-3 font-bold border-b text-center">Main Shift</th>
-                      <th class="p-3 font-bold border-b text-center">In / Out</th>
-                      <th class="p-3 font-bold border-b text-center text-red-600">Late</th>
-                      <th class="p-3 font-bold border-b text-center text-green-600">Overtime</th>
-                      <th class="p-3 font-bold border-b text-center">Status</th>
-                      <th class="p-3 font-bold border-b text-center font-bold text-indigo-600">Worked</th>
-                      <th class="p-3 font-bold border-b text-center no-print">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-50">
-                    <tr v-for="day in reportData.days" :key="day.date" class="hover:bg-gray-50/50">
-                      <!-- Date -->
-                      <td class="p-3 font-medium text-center text-xs">
-                        {{ formatDate(day.date) }}
-                      </td>
-                      
-                      <!-- Main Shift -->
-                      <td class="p-3 text-center text-xs text-gray-500">
-                         <div v-if="day.main_shift" class="flex flex-col">
-                            <span>{{ formatTime(day.main_shift.from) }} - {{ formatTime(day.main_shift.to) }}</span>
-                         </div>
-                         <span v-else>--</span>
-                      </td>
-
-                      <!-- In / Out -->
-                      <td class="p-3 text-center text-gray-500 text-xs">
-                        <template v-if="day.attendance?.check_in">
-                          <div class="flex flex-col">
-                            <span :class="{'text-red-500 font-bold': day.lateness}">{{ formatTime(day.attendance.check_in, true) }}</span>
-                            <span class="text-[10px] text-gray-300">to</span>
-                            <span>{{ formatTime(day.attendance.check_out, true) }}</span>
-                          </div>
-                        </template>
-                        <span v-else>--</span>
-                      </td>
-
-                       <!-- Lateness -->
-                      <td class="p-3 text-center border-r">
-                         <span v-if="getLatenessValue(day) > 0" class="inline-block px-2 py-1 bg-red-100 text-red-700 rounded font-bold">
-                            {{ getLatenessValue(day) }}m
-                         </span>
-                         <span v-else class="text-gray-300">-</span>
-                      </td>
-
-                      <!-- Overtime -->
-                      <td class="p-3 text-center border-r">
-                         <span v-if="getOvertimeValue(day) > 0" class="inline-block px-2 py-1 bg-green-100 text-green-700 rounded font-bold">
-                            {{ getOvertimeValue(day) }}m
-                         </span>
-                         <span v-else class="text-gray-300">-</span>
-                      </td>
-
-                      <!-- Status -->
-                      <td class="p-3 text-center">
-                        <span :class="{
-                          'status-present': day.status === 'present',
-                          'status-absent': day.status === 'absent',
-                          'status-holiday': day.status === 'holiday',
-                          'status-day_off': day.status === 'day_off',
-                          'status-vacation': day.status === 'vacation'
-                        }" class="px-2 py-0.5 rounded-full uppercase text-[10px] font-bold status-badge-fallback">
-                          {{ day.label }}
-                        </span>
-                      </td>
-
-                      <td class="p-3 text-center font-bold text-indigo-700 text-xs">
-                        {{ day.attendance?.worked_minutes ? parseFloat(day.attendance.worked_minutes).toFixed(0) : 0 }}m
-                      </td>
-
-                      <td class="p-3 text-center no-print">
-                        <button 
-                          @click="openRequestForDay(day.date)"
-                          class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors shadow-sm"
-                        >
-                          Request
-                        </button>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
+    <!-- Report Drawer Component -->
+    <AttendanceReportDrawer 
+      ref="reportDrawerRef"
+      :show="showReportModal" 
+      @close="showReportModal = false"
+      @request-for-day="openRequestForDay"
+    />
 
     <!-- Request Modal -->
     <HrModal
@@ -438,9 +257,8 @@ import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
+import AttendanceReportDrawer from '@/components/hr/attendance/AttendanceReportDrawer.vue';
 import { LucideUpload, LucideFileText, LucideDownload } from 'lucide-vue-next';
-import notyf from "@/components/global/notyf";
-import html2pdf from 'html2pdf.js/dist/html2pdf.bundle.min.js';
 import bulkUploadTemplate from '@/assets/BulkUploadTest.csv?url';
 
 const store = useHrAttendanceStore();
@@ -454,8 +272,8 @@ const editingId = ref(null);
 const showUploadModal = ref(false);
 const showReportModal = ref(false);
 const selectedFile = ref(null);
-const reportData = ref(null);
-const isDownloading = ref(false);
+const reportDrawerRef = ref(null);
+
 
 // Initialize filters with current month
 const now = new Date();
@@ -477,11 +295,6 @@ const form = ref({
   break_out: ''
 });
 
-const reportForm = ref({
-  employee_id: null,
-  from_date: '',
-  to_date: ''
-});
 
 const headers = [
   { label: 'Employee', key: 'employee' },
@@ -580,39 +393,9 @@ const closeUploadModal = () => {
   selectedFile.value = null;
 };
 
-const closeReportModal = () => {
-  showReportModal.value = false;
-};
-
 const openReportModal = () => {
-  reportForm.value = { employee_id: null, from_date: '', to_date: '' };
-  reportData.value = null;
+  reportDrawerRef.value?.reset();
   showReportModal.value = true;
-};
-
-console.log(reportData.value);
-
-
-
-const handleReport = async () => {
-  console.log("Generating Report for:", reportForm.value);
-  if (!reportForm.value.employee_id || !reportForm.value.from_date || !reportForm.value.to_date) {
-    notyf.error('Please fill in all criteria');
-    return;
-  }
-  try {
-    const payload = {
-      employee_id: parseInt(reportForm.value.employee_id),
-      from_date: reportForm.value.from_date,
-      to_date: reportForm.value.to_date
-    };
-    console.log("Payload being sent to API:", payload);
-    const data = await store.generateMonthlyReport(payload);
-    reportData.value = data.data; // Note: accessing the data nested object from response
-    notyf.success('Report generated');
-  } catch (e) { 
-    console.error("Report Generation Failed:", e); 
-  }
 };
 
 // Request Modal State
@@ -723,80 +506,7 @@ const handleRequestSubmit = async () => {
   }
 };
 
-const downloadPDF = async () => {
-  console.log("Download PDF button clicked");
-  isDownloading.value = true;
-  
-  try {
-    const element = document.getElementById('printable-report');
-    if (!element) throw new Error("Printable element not found");
 
-    const opt = {
-      margin:       [10, 10, 10, 10], // top, left, bottom, right
-      filename:     `Attendance_Report_${reportData.value.employee.name.replace(/\s+/g, '_')}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { 
-        scale: 2, 
-        useCORS: true, 
-        logging: true,
-        letterRendering: true,
-        windowWidth: element.clientWidth
-      },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-
-    console.log("Invoking html2pdf...");
-    // Use worker to have more control
-    await html2pdf().set(opt).from(element).save();
-    console.log("PDF download complete");
-    notyf.success('PDF Downloaded');
-  } catch (err) {
-    console.error("PDF Download Failed:", err);
-    notyf.error("Download failed. Check console.");
-  } finally {
-    isDownloading.value = false;
-  }
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
-};
-
-const formatTime = (time, isShort = false) => {
-  if (!time) return '-';
-  // Check if seconds exist, if not append 00 for existing logic or split safely
-  const parts = time.split(':');
-  if (parts.length < 2) return time;
-  
-  const hours = parseInt(parts[0]);
-  const minutes = parts[1];
-  
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const displayHour = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
-  
-  if (isShort) {
-    return `${displayHour}:${minutes} ${period}`;
-  }
-  return `${displayHour}:${minutes} ${period}`;
-};
-
-const getLatenessValue = (day) => {
-  if (!day.lateness) return 0;
-  if (typeof day.lateness === 'object') {
-    return Math.round(Number(day.lateness.minutes) || 0);
-  }
-  return Math.round(Number(day.lateness) || 0);
-};
-
-const getOvertimeValue = (day) => {
-  if (!day.overtime) return 0;
-  if (typeof day.overtime === 'object') {
-    return Math.round(Number(day.overtime.total) || 0);
-  }
-  return Math.round(Number(day.overtime) || 0);
-};
 </script>
 
 <style scoped>
@@ -819,68 +529,6 @@ const getOvertimeValue = (day) => {
   font-family: sans-serif !important;
 }
 
-.summary-card { padding: 1rem; border-radius: 0.75rem; border: 1px solid #e5e7eb !important; }
-.indigo-card { background-color: #eef2ff !important; color: #4338ca !important; border-color: #e0e7ff !important; }
-.emerald-card { background-color: #ecfdf5 !important; color: #047857 !important; border-color: #d1fae5 !important; }
-.rose-card { background-color: #fff1f2 !important; color: #be123c !important; border-color: #ffe4e6 !important; }
-.amber-card { background-color: #fffbeb !important; color: #b45309 !important; border-color: #fef3c7 !important; }
-
-/* Status Badges Fallbacks */
-.status-badge-fallback { 
-    display: inline-block;
-    padding: 2px 8px; 
-    border-radius: 999px; 
-    font-size: 10px; 
-    font-weight: bold; 
-    text-transform: uppercase;
-}
-.status-present { background-color: #d1fae5 !important; color: #065f46 !important; }
-.status-absent { background-color: #fee2e2 !important; color: #991b1b !important; }
-.status-holiday { background-color: #dbeafe !important; color: #1e40af !important; }
-.status-vacation { background-color: #fef3c7 !important; color: #92400e !important; }
-
-/* Table overrides */
-#printable-report table { width: 100%; border-collapse: collapse; }
-#printable-report thead { background-color: #f9fafb !important; }
-#printable-report th { 
-    padding: 12px; 
-    text-align: left; 
-    color: #374151 !important; 
-    border-bottom: 2px solid #e5e7eb !important; 
-    font-size: 11px;
-}
-#printable-report td { 
-    padding: 12px; 
-    border-bottom: 1px solid #f3f4f6 !important; 
-    color: #4b5563 !important; 
-    font-size: 11px;
-}
-
-/* Drawer Animation */
-.drawer-enter-active,
-.drawer-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.drawer-enter-active > div:last-child,
-.drawer-leave-active > div:last-child {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.drawer-enter-from,
-.drawer-leave-to {
-  opacity: 0;
-}
-
-.drawer-enter-from > div:last-child,
-.drawer-leave-to > div:last-child {
-  transform: translateX(100%);
-}
-
-.drawer-enter-to > div:last-child,
-.drawer-leave-from > div:last-child {
-  transform: translateX(0);
-}
 
 @media print {
   body * {
