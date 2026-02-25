@@ -128,7 +128,7 @@
             <div class="flex justify-between items-start">
               <div>
                 <h3 class="text-xl font-bold text-gray-900">
-                  Attendance Report
+                  {{ reportData.employee.name }} (FP: {{ reportData.employee.fingerprint }})
                 </h3>
                 <p class="text-sm text-gray-500">
                   {{ reportData.period.from }} - {{ reportData.period.to }}
@@ -136,25 +136,10 @@
               </div>
             </div>
 
-            <!-- Employee Info & Summary -->
+            <!-- Employee Summary Stats -->
             <div
-              class="grid grid-cols-1 md:grid-cols-5 gap-3 report-summary-grid"
+              class="grid grid-cols-1 md:grid-cols-4 gap-3 report-summary-grid"
             >
-              <div
-                class="p-3 rounded-xl border summary-card indigo-card flex items-center gap-3"
-              >
-                <div class="p-2 bg-indigo-100 rounded-lg text-indigo-600">
-                  <User class="w-4 h-4" />
-                </div>
-                <div>
-                  <p class="text-[10px] font-bold uppercase text-gray-400">
-                    Employee
-                  </p>
-                  <p class="text-xs font-bold">
-                    {{ reportData.employee.name }}
-                  </p>
-                </div>
-              </div>
               <div
                 class="p-3 rounded-xl border summary-card emerald-card flex items-center gap-3"
               >
@@ -307,6 +292,7 @@
                     v-for="day in paginatedDays"
                     :key="day.date"
                     class="divide-x divide-gray-200 hover:bg-gray-50/30 transition-colors"
+                    :class="{ 'bg-amber-50/80': day.status === 'day_off' }"
                   >
                     <!-- Date -->
                     <td class="p-3 font-bold text-center text-xs">

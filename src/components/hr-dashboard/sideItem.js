@@ -9,6 +9,7 @@ import {
   Link,
   ClipboardList,
   GitPullRequest,
+  Banknote,
 } from "lucide-vue-next";
 
 export const itemHr = [
@@ -61,6 +62,11 @@ export const itemHr = [
     name: "Vacation Balances",
     icon: Calendar,
     route: "hr-vacation-balances",
+  },
+  {
+    name: "Payrolls",
+    icon: Banknote,
+    route: "hr-payrolls",
   },
   // {
   //   name: "Job Assignments",

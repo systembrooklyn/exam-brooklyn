@@ -78,3 +78,9 @@ export const PAYROLL_APPROVE_REQUEST = (id) =>
   `payroll-system/employee-requests/${id}/approve`;
 export const PAYROLL_REJECT_REQUEST = (id) =>
   `payroll-system/employee-requests/${id}/reject`;
+
+export const PAYROLL_CALC = "payroll-system/payroll-system/payroll-details";
+export const PAYROLL_STATUS_UPDATE =
+  "payroll-system/payroll-system/payroll-status/update";
+export const PAYROLL_DETAILS = "payroll-system/payroll-details";
+export const PAYROLL_ACTIONABLE = "payroll-system/payroll-actionable";

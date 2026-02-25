@@ -11,7 +11,7 @@
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-indigo-200">
           <div class="flex flex-col px-2 min-w-[120px]">
             <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
-            <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs">
+            <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5" @change="fetchLogs">
               <option value="">All Employees</option>
               <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
                 {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
@@ -40,7 +40,6 @@
           </button>
         </div>
 
-        <!-- Actions -->
         <button
           @click="openReportModal"
           class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ml-2"
@@ -84,92 +83,25 @@
       </template>
     </HrDataTable>
 
-    <!-- Add/Edit Modal -->
-    <HrModal
+    <!-- Custom Components -->
+    <AttendanceLogsModal
       :show="showModal"
-      :title="isEditing ? 'Edit Attendance Log' : 'New Attendance Log'"
+      :isEditing="isEditing"
       :loading="store.loading"
+      :initialForm="form"
+      :employees="employeeStore.employees"
       @close="closeModal"
       @save="handleSubmit"
-    >
-      <div class="grid grid-cols-2 gap-4">
-        <div class="col-span-2">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-          <select v-model="form.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-            <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-              {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
-            </option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-          <input v-model="form.date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Check In</label>
-          <input v-model="form.check_in" type="time" step="1" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Check Out</label>
-          <input v-model="form.check_out" type="time" step="1" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Break In</label>
-          <input v-model="form.break_in" type="time" step="1" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Break Out</label>
-          <input v-model="form.break_out" type="time" step="1" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-        </div>
-      </div>
-    </HrModal>
+    />
 
-    <!-- Import Modal -->
-    <HrModal
+    <BulkUploadModal
       :show="showUploadModal"
-      title="Bulk Upload Attendance"
       :loading="store.loading"
+      :templateUrl="bulkUploadTemplate"
       @close="closeUploadModal"
-      @save="handleUpload"
-    >
-      <div class="space-y-4">
-        <div class="bg-blue-50 border border-blue-100 p-4 rounded-xl flex justify-between items-start gap-4">
-          <div>
-            <h4 class="text-sm font-bold text-blue-800 mb-2">Instructions:</h4>
-            <p class="text-xs text-blue-700 leading-relaxed">
-              Please upload a <strong>CSV</strong> file with the following headers and format. Ensure date is <strong>YYYY-MM-DD</strong> and time is <strong>HH:MM:SS</strong>.
-            </p>
-          </div>
-          <a 
-            :href="bulkUploadTemplate" 
-            download="BulkUploadTemplate.csv"
-            class="flex-shrink-0 bg-white text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-sm"
-          >
-            <LucideDownload class="w-3 h-3" /> Download Template
-          </a>
-        </div>
+      @upload="handleUpload"
+    />
 
-      
-
-        <div class="relative group">
-          <input 
-            type="file" 
-            @change="onFileChange" 
-            accept=".csv" 
-            class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
-          />
-          <div class="border-2 border-dashed border-gray-300 group-hover:border-indigo-400 group-hover:bg-indigo-50/50 p-8 rounded-xl transition-all text-center">
-            <LucideUpload class="w-8 h-8 text-gray-400 group-hover:text-indigo-500 mx-auto mb-2" />
-            <p class="text-sm font-medium text-gray-600 group-hover:text-indigo-600">
-              {{ selectedFile ? selectedFile.name : 'Click or drag CSV file to upload' }}
-            </p>
-            <p class="text-xs text-gray-400 mt-1">Maximum file size: 5MB</p>
-          </div>
-        </div>
-      </div>
-    </HrModal>
-
-    <!-- Report Drawer Component -->
     <AttendanceReportDrawer 
       ref="reportDrawerRef"
       :show="showReportModal" 
@@ -177,66 +109,13 @@
       @request-for-day="openRequestForDay"
     />
 
-    <!-- Request Modal -->
-    <HrModal
+    <AttendanceRequestModal
       :show="showRequestModal"
-      title="Create Request"
       :loading="requestLoading"
+      :initialForm="requestForm"
       @close="showRequestModal = false"
       @save="handleRequestSubmit"
-    >
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
-          <select v-model="requestForm.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-            <option value="lateness">Lateness</option>
-            <option value="leave">Leave</option>
-            <option value="overtime">Overtime</option>
-            <option value="vacation">Vacation</option>
-            <option value="day_off_swap">Day Off Swap</option>
-            <option value="work_from_home">Work From Home</option>
-            <option value="shift_move">Shift Move</option>
-          </select>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input v-model="requestForm.day" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-          </div>
-
-          <!-- Conditional: Duration Hours (Lateness/Leave) -->
-          <div v-if="['lateness', 'leave'].includes(requestForm.request_type)" class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (Hours)</label>
-            <input v-model="requestForm.duration_hours" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 2" />
-          </div>
-
-          <!-- Conditional: Day Replacement (Day Off Swap) -->
-          <div v-if="requestForm.request_type === 'day_off_swap'" class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Replacement Date</label>
-            <input v-model="requestForm.day_replacement" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-          </div>
-
-          <!-- Conditional: Duration Type (Vacation) -->
-          <div v-if="requestForm.request_type === 'vacation'" class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
-            <select v-model="requestForm.duration_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
-                <option value="full">Full Day</option>
-                <option value="half">Half Day</option>
-            </select>
-          </div>
-
-          <!-- From/To Time (Optional for most, usually for Overtime/Leave) -->
-          <div class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
-            <input v-model="requestForm.from_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-          </div>
-          <div class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
-            <input v-model="requestForm.to_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
-          </div>
-        </div>
-      </div>
-    </HrModal>
+    />
 
     <!-- Delete Confirmation -->
     <SweetAlert2Modal
@@ -254,26 +133,29 @@
 import { onMounted, ref, computed } from 'vue';
 import { useHrAttendanceStore } from '@/stores/hr/attendance';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
-import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
-import AttendanceReportDrawer from '@/components/hr/attendance/AttendanceReportDrawer.vue';
-import { LucideUpload, LucideFileText, LucideDownload } from 'lucide-vue-next';
+import AttendanceReportDrawer from '@/components/hr-dashboard/AttendanceReportDrawer.vue';
+import AttendanceLogsModal from '@/components/hr-dashboard/attendance/AttendanceLogsModal.vue';
+import BulkUploadModal from '@/components/hr-dashboard/attendance/BulkUploadModal.vue';
+import AttendanceRequestModal from '@/components/hr-dashboard/attendance/AttendanceRequestModal.vue';
+import { LucideUpload, LucideFileText } from 'lucide-vue-next';
 import bulkUploadTemplate from '@/assets/BulkUploadTest.csv?url';
+import notyf from '@/components/global/notyf';
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
 
 const attendanceLogs = computed(() => store.attendanceLogs);
 
+// Modal States
 const showModal = ref(false);
 const isEditing = ref(false);
 const editingId = ref(null);
 const showUploadModal = ref(false);
 const showReportModal = ref(false);
-const selectedFile = ref(null);
+const showRequestModal = ref(false);
 const reportDrawerRef = ref(null);
-
 
 // Initialize filters with current month
 const now = new Date();
@@ -295,7 +177,6 @@ const form = ref({
   break_out: ''
 });
 
-
 const headers = [
   { label: 'Employee', key: 'employee' },
   { label: 'Date', key: 'date' },
@@ -304,7 +185,6 @@ const headers = [
 ];
 
 const fetchLogs = async () => {
-  console.log("View: Fetching logs with filters:", filterForm.value);
   try {
     await store.getAttendanceLogs(filterForm.value);
   } catch (e) {
@@ -313,14 +193,13 @@ const fetchLogs = async () => {
 };
 
 onMounted(async () => {
-  console.log("View: Attendance Page Mounted. Loading data...");
   await Promise.all([
     fetchLogs(),
     employeeStore.getEmployees()
   ]);
-  console.log("View: Initial load complete. Employees:", employeeStore.employees);
 });
 
+// Handlers
 const openAddModal = () => {
   isEditing.value = false;
   editingId.value = null;
@@ -329,7 +208,6 @@ const openAddModal = () => {
 };
 
 const openEditModal = (item) => {
-  console.log("Item being edited:", item);
   isEditing.value = true;
   editingId.value = item.id;
   form.value = { 
@@ -343,54 +221,37 @@ const openEditModal = (item) => {
   showModal.value = true;
 };
 
-const openUploadModal = () => {
-  showUploadModal.value = true;
-};
-
-const onFileChange = (e) => {
-  selectedFile.value = e.target.files[0];
-};
-
-const handleUpload = async () => {
-  if (!selectedFile.value) {
-    notyf.error('Please select a CSV file');
-    return;
-  }
-  const formData = new FormData();
-  formData.append('file', selectedFile.value);
-  try {
-    await store.bulkUploadAttendance(formData, filterForm.value);
-    closeUploadModal();
-  } catch (e) { console.error("View: Upload failed", e); }
-};
-
-const handleSubmit = async () => {
-  if (!form.value.employee_id || !form.value.date) {
-    notyf.error('Please fill in required fields');
-    return;
-  }
-  try {
-    console.log("View: Submitting form. isEditing:", isEditing.value);
-    console.log("View: Payload Data:", JSON.parse(JSON.stringify(form.value)));
-    
-    if (isEditing.value) {
-      await store.updateAttendanceLog(editingId.value, form.value, filterForm.value);
-    } else {
-      await store.createAttendanceLog(form.value, filterForm.value);
-    }
-    closeModal();
-  } catch (e) { console.error("View: Submit failed", e); }
-};
-
 const closeModal = () => {
   showModal.value = false;
   isEditing.value = false;
   editingId.value = null;
 };
 
-const closeUploadModal = () => {
-  showUploadModal.value = false;
-  selectedFile.value = null;
+const openUploadModal = () => { showUploadModal.value = true; };
+const closeUploadModal = () => { showUploadModal.value = false; };
+
+const handleUpload = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  try {
+    await store.bulkUploadAttendance(formData, filterForm.value);
+    closeUploadModal();
+  } catch (e) { console.error("Upload failed", e); }
+};
+
+const handleSubmit = async (formData) => {
+  if (!formData.employee_id || !formData.date) {
+    notyf.error('Please fill in required fields');
+    return;
+  }
+  try {
+    if (isEditing.value) {
+      await store.updateAttendanceLog(editingId.value, formData, filterForm.value);
+    } else {
+      await store.createAttendanceLog(formData, filterForm.value);
+    }
+    closeModal();
+  } catch (e) { console.error("Submit failed", e); }
 };
 
 const openReportModal = () => {
@@ -398,8 +259,7 @@ const openReportModal = () => {
   showReportModal.value = true;
 };
 
-// Request Modal State
-const showRequestModal = ref(false);
+// Requests
 const requestLoading = ref(false);
 const requestForm = ref({
   request_type: 'leave',
@@ -424,78 +284,26 @@ const openRequestForDay = (date) => {
   showRequestModal.value = true;
 };
 
-// Delete Actions
-const showDeleteConfirm = ref(false);
-const deleteId = ref(null);
-
-const confirmDelete = (id) => {
-  deleteId.value = id;
-  showDeleteConfirm.value = true;
-};
-
-const handleDeleteConfirm = async () => {
-  if (deleteId.value) {
-    try {
-      await store.deleteAttendanceLog(deleteId.value, filterForm.value);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      showDeleteConfirm.value = false;
-      deleteId.value = null;
-    }
-  }
-};
-
-const cancelDelete = () => {
-  showDeleteConfirm.value = false;
-  deleteId.value = null;
-};
-
-const handleRequestSubmit = async () => {
-  if (!requestForm.value.day) {
+const handleRequestSubmit = async (payload) => {
+  if (!payload.day) {
     notyf.error('Please select a date');
     return;
   }
 
-  // Build clean payload based on API rules
-  const payload = {
-    request_type: requestForm.value.request_type,
-    day: requestForm.value.day,
-    from_time: requestForm.value.from_time || null,
-    to_time: requestForm.value.to_time || null,
-  };
-
-  // 1. duration_hours: required for "lateness and Leave" requests only
-  if (['lateness', 'leave'].includes(requestForm.value.request_type)) {
-    if (!requestForm.value.duration_hours) {
-        notyf.error('Duration hours is required for this request type');
-        return;
-    }
-    payload.duration_hours = parseInt(requestForm.value.duration_hours);
+  // Final validation before sending
+  if (['lateness', 'leave'].includes(payload.request_type) && !payload.duration_hours) {
+    notyf.error('Duration hours is required for this request type');
+    return;
   }
-
-  // 2. day_replacement: required for "day off swap" requests only
-  if (requestForm.value.request_type === 'day_off_swap') {
-    if (!requestForm.value.day_replacement) {
-        notyf.error('Replacement date is required for day off swap');
-        return;
-    }
-    payload.day_replacement = requestForm.value.day_replacement;
+  if (payload.request_type === 'day_off_swap' && !payload.day_replacement) {
+    notyf.error('Replacement date is required for day off swap');
+    return;
   }
-
-  // 3. duration_type: required for "vacation" requests only
-  if (requestForm.value.request_type === 'vacation') {
-    payload.duration_type = requestForm.value.duration_type; // 'full' or 'half'
-  }
-
-  console.log("Submitting Request payload:", payload);
 
   requestLoading.value = true;
   try {
-    // Import the requests store
     const { useHrRequestsStore } = await import('@/stores/hr/requests');
     const requestsStore = useHrRequestsStore();
-    
     await requestsStore.createRequest(payload);
     showRequestModal.value = false;
     notyf.success('Request created successfully');
@@ -506,8 +314,34 @@ const handleRequestSubmit = async () => {
   }
 };
 
+// Delete
+const showDeleteConfirm = ref(false);
+const deleteId = ref(null);
 
+const confirmDelete = (id) => {
+  deleteId.value = id;
+  showDeleteConfirm.value = true;
+};
+
+const handleDeleteConfirm = async () => {
+  if (!deleteId.value) return;
+  try {
+    await store.deleteAttendanceLog(deleteId.value, filterForm.value);
+  } catch (e) { console.error(e); }
+  finally {
+    showDeleteConfirm.value = false;
+    deleteId.value = null;
+  }
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  deleteId.value = null;
+};
 </script>
+
+
+
 
 <style scoped>
 /* Aggressive HEX Overrides for PDF generation (Avoid oklch) */

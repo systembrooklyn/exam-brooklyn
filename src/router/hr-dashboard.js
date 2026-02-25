@@ -61,5 +61,10 @@ export default {
       name: "hr-links",
       component: () => import("@/views/hr/EmployeeLinks.vue"),
     },
+    {
+      path: "payrolls",
+      name: "hr-payrolls",
+      component: () => import("@/views/hr/Payrolls.vue"),
+    },
   ],
 };
