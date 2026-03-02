@@ -43,9 +43,10 @@
           @click="$emit('close')"
           class="px-4 py-2 cursor-pointer text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"
         >
-          Cancel
+          {{ cancelLabel || 'Cancel' }}
         </button>
         <button
+          v-if="hasSave !== false"
           @click="$emit('save')"
           class="px-4 py-2 bg-indigo-600 cursor-pointer text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
           :disabled="loading"
@@ -70,9 +71,17 @@ defineProps({
     type: String,
     default: "Save",
   },
+  cancelLabel: {
+    type: String,
+    default: "Cancel",
+  },
   maxWidthClass: {
     type: String,
     default: "max-w-lg",
+  },
+  hasSave: {
+    type: Boolean,
+    default: true,
   },
 });
 

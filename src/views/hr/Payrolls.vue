@@ -8,7 +8,6 @@
 
       <div class="flex flex-wrap items-center gap-2">
         <button
-          v-if="isAdminOrHR"
           @click="openCalcModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
@@ -29,6 +28,7 @@
       :items="store.actionablePayrolls" 
       :loading="store.loading" 
       :userRole="userJobTitle"
+      :fetchingId="fetchingId"
       @view="showDetails"
       @update-status="handleUpdateStatus"
     />
@@ -47,18 +47,25 @@
           <select v-model="calcForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
             <option value="">Select Employee</option>
             <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-              {{ emp.name || 'N/A' }}
+              {{
+                emp.name ||
+                (emp.personal_info
+                  ? emp.personal_info.first_name +
+                    " " +
+                    emp.personal_info.last_name
+                  : "Emp #" + emp.id)
+              }}
             </option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input v-model="calcForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input v-model="calcForm.from_date" type="date" :max="today" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input v-model="calcForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input v-model="calcForm.to_date" type="date" :max="today" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           </div>
         </div>
       </div>
@@ -69,44 +76,80 @@
       :show="showDetailsModal"
       title="Payroll Details"
       :loading="store.loading"
+      maxWidthClass="max-w-2xl"
       @close="showDetailsModal = false"
       cancelLabel="Close"
       :hasSave="false"
     >
-      <div v-if="selectedPayroll" class="space-y-6">
-        <div class="flex justify-between items-start">
+      <div v-if="selectedPayroll" class="space-y-5 ">
+
+        <!-- Header: Period + Status -->
+        <div class="flex justify-between items-center">
           <div>
-            <h3 class="font-bold text-lg text-gray-900">{{ selectedPayroll.employee?.name }}</h3>
-            <p class="text-sm text-gray-500">{{ selectedPayroll.employee?.job_title }}</p>
+            <p class="text-xs text-gray-400 uppercase font-bold">Payroll Period</p>
+            <p class="text-base font-bold text-gray-800">{{ selectedPayroll.period?.payroll_month || selectedPayroll.period?.from }}</p>
           </div>
-          <PayrollStatusBadge :status="selectedPayroll.status" />
+          <PayrollStatusBadge :status="selectedPayroll.current_status || selectedPayroll.status" />
         </div>
 
-        <div class="grid grid-cols-2 gap-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
-          <div>
-            <label class="text-[10px] uppercase font-bold text-gray-400">Fixed Salary</label>
-            <p class="text-lg font-bold text-gray-800">{{ selectedPayroll.fixed_salary }}</p>
+        <!-- Financials -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 text-center">
+            <p class="text-[10px] uppercase font-bold text-gray-400 mb-1">Fixed Salary Paid</p>
+            <p class="text-xl font-bold text-gray-800">{{ selectedPayroll.financials?.fixed_salary_paid ?? '-' }}</p>
           </div>
-          <div>
-            <label class="text-[10px] uppercase font-bold text-gray-400">Net Salary</label>
-            <p class="text-lg font-bold text-indigo-600">{{ selectedPayroll.net_salary }}</p>
+          <div class="bg-indigo-50 rounded-xl p-4 border border-indigo-100 text-center">
+            <p class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Net Salary Due</p>
+            <p class="text-xl font-bold text-indigo-700">{{ selectedPayroll.financials?.net_salary_due ?? '-' }}</p>
           </div>
-          <div>
-            <label class="text-[10px] uppercase font-bold text-gray-400">Period From</label>
-            <p class="text-sm font-medium">{{ selectedPayroll.period_from }}</p>
+          <div class="bg-red-50 rounded-xl p-3 border border-red-100 text-center">
+            <p class="text-[10px] uppercase font-bold text-red-400 mb-1">Deductions</p>
+            <p class="text-lg font-bold text-red-700">{{ selectedPayroll.financials?.deductions ?? '-' }}</p>
           </div>
-          <div>
-            <label class="text-[10px] uppercase font-bold text-gray-400">Period To</label>
-            <p class="text-sm font-medium">{{ selectedPayroll.period_to }}</p>
+          <div class="bg-green-50 rounded-xl p-3 border border-green-100 text-center">
+            <p class="text-[10px] uppercase font-bold text-green-400 mb-1">Additions</p>
+            <p class="text-lg font-bold text-green-700">{{ selectedPayroll.financials?.additions ?? '-' }}</p>
           </div>
         </div>
 
-        <div v-if="selectedPayroll.notes" class="bg-blue-50 p-4 rounded-xl border border-blue-100">
-          <label class="text-[10px] uppercase font-bold text-blue-400">Notes</label>
+        <!-- Notes -->
+        <div v-if="selectedPayroll.notes" class="bg-blue-50 p-3 rounded-xl border border-blue-100">
+          <p class="text-[10px] uppercase font-bold text-blue-400 mb-1">Notes</p>
           <p class="text-sm text-blue-800">{{ selectedPayroll.notes }}</p>
+          <p class="text-[10px] text-blue-400 mt-1">Last updated by: {{ selectedPayroll.last_updated_by }}</p>
         </div>
+
+        <!-- Status History Timeline -->
+        <div v-if="selectedPayroll.statuses_history?.length">
+          <h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-2">Status History</h4>
+          <ul class="space-y-3">
+            <li
+              v-for="(entry, i) in selectedPayroll.statuses_history"
+              :key="i"
+              class="flex gap-3 items-start"
+            >
+              <div class="flex flex-col items-center">
+                <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 mt-1 flex-shrink-0"></div>
+                <div v-if="i < selectedPayroll.statuses_history.length - 1" class="w-px flex-1 bg-indigo-100 mt-1"></div>
+              </div>
+              <div class="flex-1 pb-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <PayrollStatusBadge :status="entry.status" />
+                  <span class="text-xs text-gray-400">{{ entry.action_at }}</span>
+                </div>
+                <p class="text-xs text-gray-600 mt-1">
+                  By <strong>{{ entry.action_by?.name }}</strong>
+                  <span v-if="entry.action_by?.job_titles?.length" class="text-gray-400"> ({{ entry.action_by.job_titles.join(', ') }})</span>
+                </p>
+                <p v-if="entry.notes" class="text-[11px] text-gray-500 italic mt-0.5">{{ entry.notes }}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+
       </div>
     </HrModal>
+
 
     <!-- Update Status Modal (Notes) -->
     <HrModal
@@ -133,104 +176,117 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useHrPayrollStore } from '@/stores/hr/payroll';
-import { useHrEmployeesStore } from '@/stores/hr/employees';
-import { useAuthStore } from '@/stores/auth';
-import HrModal from '@/components/hr-dashboard/HrModal.vue';
-import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue';
-import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue';
-import { LucideCalculator, LucideRefreshCw } from 'lucide-vue-next';
-import notyf from '@/components/global/notyf';
+import { ref, onMounted, computed } from 'vue'
+import { useHrPayrollStore } from '@/stores/hr/payroll'
+import { useHrEmployeesStore } from '@/stores/hr/employees'
+import { useAuthStore } from '@/stores/auth'
+import HrModal from '@/components/hr-dashboard/HrModal.vue'
+import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
+import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
+import { LucideCalculator, LucideRefreshCw } from 'lucide-vue-next'
+import notyf from '@/components/global/notyf'
 
-const store = useHrPayrollStore();
-const employeeStore = useHrEmployeesStore();
-const authStore = useAuthStore();
+// ─── Stores ──────────────────────────────────────────────
+const store = useHrPayrollStore()
+const employeeStore = useHrEmployeesStore()
+const authStore = useAuthStore()
 
-const userJobTitle = computed(() => authStore.user?.job_title || 'employee');
-const isAdminOrHR = computed(() => {
-  const role = userJobTitle.value.toLowerCase();
-  return role.includes('hr') || role.includes('admin');
-});
+// ─── Auth / Role ──────────────────────────────────────────
+const userJobTitle = computed(() => authStore.user?.job_title || 'employee')
 
-const showCalcModal = ref(false);
-const calcForm = ref({
-  employee_id: '',
-  from_date: '',
-  to_date: ''
-});
+// ─── Helpers ──────────────────────────────────────────────
+const today = new Date().toISOString().split('T')[0]
 
-const showDetailsModal = ref(false);
-const selectedPayroll = ref(null);
+// ─── Calculate Payroll Modal ──────────────────────────────
+const showCalcModal = ref(false)
+const calcForm = ref({ employee_id: '', from_date: '', to_date: '' })
 
-const showStatusModal = ref(false);
-const nextStatus = ref('');
+const openCalcModal = () => {
+  calcForm.value = { employee_id: '', from_date: '', to_date: '' }
+  showCalcModal.value = true
+}
+
+const handleCalculate = async () => {
+  if (!calcForm.value.employee_id || !calcForm.value.from_date || !calcForm.value.to_date) {
+    notyf.error('Please fill in all fields')
+    return
+  }
+  try {
+    const response = await store.calculatePayroll(calcForm.value)
+    selectedPayroll.value = response.data
+    showCalcModal.value = false
+    showDetailsModal.value = true
+    fetchPayrolls()
+  } catch (error) {
+    console.error('Calculation failed:', error)
+  }
+}
+
+// ─── Payroll Details Modal ────────────────────────────────
+const showDetailsModal = ref(false)
+const selectedPayroll = ref(null)
+const fetchingId = ref(null)
+
+const showDetails = async (item) => {
+  fetchingId.value = item.payroll_id
+  try {
+    const empId = item.employee?.id || item.employee_id
+    const periodMonth = item.period?.payroll_month || item.period_from
+    const response = await store.getPayrollDetails(empId, periodMonth)
+    selectedPayroll.value = response.data
+    showDetailsModal.value = true
+  } catch (error) {
+    console.error('Failed to fetch payroll details:', error)
+    selectedPayroll.value = item
+    showDetailsModal.value = true
+  } finally {
+    fetchingId.value = null
+  }
+}
+
+// ─── Update Status Modal ──────────────────────────────────
+const showStatusModal = ref(false)
+const nextStatus = ref('')
 const statusUpdateForm = ref({
   employee_id: null,
   period_from: '',
   period_to: '',
   status: '',
   notes: ''
-});
-
-const fetchPayrolls = async () => {
-  try {
-    await store.getActionablePayrolls();
-  } catch (error) {
-    console.error("Failed to fetch payrolls:", error);
-  }
-};
-
-onMounted(async () => {
-  await Promise.all([
-    fetchPayrolls(),
-    employeeStore.getEmployees()
-  ]);
-});
-
-const openCalcModal = () => {
-  calcForm.value = { employee_id: '', from_date: '', to_date: '' };
-  showCalcModal.value = true;
-};
-
-const handleCalculate = async () => {
-  if (!calcForm.value.employee_id || !calcForm.value.from_date || !calcForm.value.to_date) {
-    notyf.error('Please fill in all fields');
-    return;
-  }
-  try {
-    await store.calculatePayroll(calcForm.value);
-    showCalcModal.value = false;
-    fetchPayrolls();
-  } catch (error) {
-    console.error("Calculation failed:", error);
-  }
-};
-
-const showDetails = (item) => {
-  selectedPayroll.value = item;
-  showDetailsModal.value = true;
-};
+})
 
 const handleUpdateStatus = ({ item, status }) => {
   statusUpdateForm.value = {
-    employee_id: item.employee_id,
-    period_from: item.period_from,
-    period_to: item.period_to,
-    status: status,
+    employee_id: item.employee_id || item.employee?.id,
+    period_from: item.period_from || item.period?.payroll_month,
+    period_to: item.period_to || item.period?.payroll_month,
+    status,
     notes: ''
-  };
-  nextStatus.value = status;
-  showStatusModal.value = true;
-};
+  }
+  nextStatus.value = status
+  showStatusModal.value = true
+}
 
 const executeStatusUpdate = async () => {
   try {
-    await store.updatePayrollStatus(statusUpdateForm.value);
-    showStatusModal.value = false;
-    fetchPayrolls();
+    await store.updatePayrollStatus(statusUpdateForm.value)
+    showStatusModal.value = false
+    fetchPayrolls()
   } catch (error) {
-    console.error("Status update failed:", error);
+    console.error('Status update failed:', error)
   }
-};
+}
+
+// ─── Fetch Payrolls ───────────────────────────────────────
+const fetchPayrolls = async () => {
+  try {
+    await store.getActionablePayrolls()
+  } catch (error) {
+    console.error('Failed to fetch payrolls:', error)
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([fetchPayrolls(), employeeStore.getEmployees()])
+})
 </script>
