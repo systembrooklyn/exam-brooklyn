@@ -17,6 +17,7 @@ const props = defineProps({
 const statusMap = {
   'pending': { label: 'Pending', class: 'bg-yellow-100 text-yellow-700' },
   'hr-approved': { label: 'HR Approved', class: 'bg-blue-100 text-blue-700' },
+  'hr-manager-approved': { label: 'HR Manager Approved', class: 'bg-teal-100 text-teal-700' },
   'gm-approved': { label: 'GM Approved', class: 'bg-purple-100 text-purple-700' },
   'gm-approved-suspended': { label: 'GM Approved (Suspended)', class: 'bg-orange-100 text-orange-700' },
   'suspended': { label: 'Suspended', class: 'bg-orange-100 text-orange-700' },

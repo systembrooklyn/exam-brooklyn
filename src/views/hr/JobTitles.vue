@@ -7,7 +7,7 @@
       </div>
       <button
         @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
         <span class="text-xl">+</span> Add Job Title
       </button>
@@ -15,7 +15,7 @@
 
     <div v-if="store.error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex justify-between items-center">
       <span>{{ store.error }}</span>
-      <button @click="store.error = null" class="text-red-800 font-bold">×</button>
+      <button @click="store.error = null" class="text-red-800 font-bold cursor-pointer">×</button>
     </div>
 
     <div v-if="store.loading && !jobTitles.length" class="flex justify-center items-center h-64">

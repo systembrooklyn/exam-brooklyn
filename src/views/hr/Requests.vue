@@ -8,14 +8,14 @@
       <div class="flex gap-2">
         <button
           @click="showPendingOnly = !showPendingOnly"
-          class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors"
+          class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer"
           :class="showPendingOnly ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
         >
           {{ showPendingOnly ? 'Show All' : 'Showing Pending' }}
         </button>
         <button
           @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <span class="text-xl">+</span> New Request
         </button>

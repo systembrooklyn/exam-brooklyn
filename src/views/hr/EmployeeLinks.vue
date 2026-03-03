@@ -7,7 +7,7 @@
       </div>
       <button
         @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
         <span class="text-xl">+</span> Assign Job
       </button>

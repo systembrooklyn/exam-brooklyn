@@ -60,10 +60,18 @@ export const useHrPayrollStore = defineStore("hr-payroll", () => {
     }
   };
 
-  const getActionablePayrolls = async () => {
+  const getActionablePayrolls = async (params = {}) => {
     loading.value = true;
     try {
-      const response = await apiClient.get(PAYROLL_ACTIONABLE);
+      const queryParams = {};
+      if (params.include_missing != null) queryParams.include_missing = params.include_missing;
+      if (params.period_from) queryParams.period_from = params.period_from;
+      if (params.period_to) queryParams.period_to = params.period_to;
+      if (params.status) queryParams.status = params.status;
+
+      const response = await apiClient.get(PAYROLL_ACTIONABLE, {
+        params: queryParams,
+      });
       actionablePayrolls.value = response.data.data;
       return response.data;
     } catch (err) {

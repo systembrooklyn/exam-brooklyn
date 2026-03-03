@@ -30,7 +30,7 @@
           </div>
           <button 
             @click="fetchLogs" 
-            class="p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+            class="p-2 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
             :class="store.loading ? 'text-indigo-400' : 'text-indigo-600 bg-indigo-50'"
             title="Reload Logs"
           >
@@ -42,19 +42,19 @@
 
         <button
           @click="openReportModal"
-          class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ml-2"
+          class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer ml-2"
         >
           <LucideFileText class="w-4 h-4" /> Monthly Report
         </button>
         <button
           @click="openUploadModal"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <LucideUpload class="w-4 h-4" /> Bulk Upload
         </button>
         <button
           @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <span class="text-xl leading-none">+</span> Add Log
         </button>

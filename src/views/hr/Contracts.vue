@@ -7,7 +7,7 @@
       </div>
       <button
         @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
         <span class="text-xl">+</span> New Contract
       </button>
@@ -35,7 +35,7 @@
     <!-- Error -->
     <div v-if="contractStore.error" class="bg-red-50 text-red-600 p-4 rounded-lg mb-4 flex justify-between items-center">
       <span>{{ contractStore.error }}</span>
-      <button @click="contractStore.error = null" class="text-red-800 font-bold">×</button>
+      <button @click="contractStore.error = null" class="text-red-800 font-bold cursor-pointer">×</button>
     </div>
 
 
@@ -91,28 +91,28 @@
         <div class="flex border-b border-gray-200 mb-4 overflow-x-auto">
             <button 
                 @click="activeTab = 'general'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer"
                 :class="activeTab === 'general' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
             >
                 General
             </button>
             <button 
                 @click="activeTab = 'schedule'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer"
                 :class="activeTab === 'schedule' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
             >
                 Schedule
             </button>
             <button 
                 @click="activeTab = 'salary'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer"
                 :class="activeTab === 'salary' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
             >
                 Salary
             </button>
             <button 
                 @click="activeTab = 'status'"
-                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap"
+                class="px-4 py-2 text-sm font-medium border-b-2 transition-colors whitespace-nowrap cursor-pointer"
                 :class="activeTab === 'status' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
             >
                 Status
@@ -222,7 +222,7 @@
                             v-for="(day, index) in daysOfWeek" 
                             :key="index"
                             @click="toggleDayOff(index)"
-                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm cursor-pointer"
                             :class="form.day_off.includes(index) ? 'bg-indigo-600 text-white shadow-indigo-500/30 ring-2 ring-indigo-600 ring-offset-2' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
                         >
                             {{ day }}

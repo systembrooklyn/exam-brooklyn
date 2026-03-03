@@ -1,12 +1,13 @@
 <template>
   <div
     v-if="show"
-    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in cursor-pointer"
     @click.self="$emit('close')"
   >
     <div
-      class="bg-white rounded-2xl shadow-xl w-full mx-4 flex flex-col max-h-[90vh]"
+      class="bg-white rounded-2xl shadow-xl w-full mx-4 flex flex-col max-h-[90vh] cursor-default"
       :class="maxWidthClass"
+      @click.stop
     >
       <!-- Header -->
       <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">

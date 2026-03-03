@@ -3,7 +3,7 @@
     <div v-if="show" class="fixed inset-0 z-50 overflow-hidden">
       <!-- Backdrop -->
       <div
-        class="absolute inset-0 bg-black/50 transition-opacity"
+        class="absolute inset-0 bg-black/50 transition-opacity cursor-pointer"
         @click="$emit('close')"
       ></div>
 
@@ -23,7 +23,7 @@
           </div>
           <button
             @click="$emit('close')"
-            class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+            class="text-white hover:bg-white/20 p-2 rounded-lg transition-colors cursor-pointer"
           >
             <svg
               class="w-6 h-6"
@@ -98,7 +98,7 @@
             <button
               @click="handleReport"
               :disabled="store.loading"
-              class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <span
                 v-if="store.loading"
@@ -436,7 +436,7 @@
                     <td class="p-3 text-center no-print">
                       <button
                         @click="$emit('request-for-day', day.date)"
-                        class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm"
+                        class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
                       >
                         Request
                       </button>
@@ -470,7 +470,7 @@
                 <button
                   @click="currentPage--"
                   :disabled="currentPage === 1"
-                  class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600"
+                  class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer"
                 >
                   <svg
                     class="w-4 h-4"
@@ -491,7 +491,7 @@
                     v-for="page in totalPages"
                     :key="page"
                     @click="currentPage = page"
-                    class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border"
+                    class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border cursor-pointer"
                     :class="
                       currentPage === page
                         ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
@@ -504,7 +504,7 @@
                 <button
                   @click="currentPage++"
                   :disabled="currentPage === totalPages"
-                  class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600"
+                  class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer"
                 >
                   <svg
                     class="w-4 h-4"

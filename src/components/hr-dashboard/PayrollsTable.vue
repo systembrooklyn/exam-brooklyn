@@ -51,7 +51,7 @@
           <!-- Eye / Loading Spinner -->
           <button
             @click="$emit('view', item)"
-            class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+            class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
             title="View Details"
             :disabled="fetchingId === (item.payroll_id || item.id)"
           >
@@ -66,7 +66,7 @@
           <div v-if="canAction(item)" class="flex items-center gap-1 border-l pl-2 ml-1">
             <button
               @click="$emit('update-status', { item, status: successStatus })"
-              class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
               :title="successLabel"
             >
               <LucideCheckCircle class="w-4 h-4" />
@@ -74,7 +74,7 @@
 
             <button
               @click="$emit('update-status', { item, status: 'rejected' })"
-              class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Reject"
             >
               <LucideXCircle class="w-4 h-4" />
@@ -128,6 +128,7 @@ const canAction = () => {
 const successStatus = computed(() => {
   const role = props.userRole?.toLowerCase()
 
+  if (role.includes('hr manager') || role.includes('hr-manager')) return 'hr-manager-approved'
   if (role.includes('hr')) return 'hr-approved'
   if (role.includes('gm')) return 'gm-approved'
   if (role.includes('accountant')) return 'paid'
@@ -139,6 +140,7 @@ const successStatus = computed(() => {
 const successLabel = computed(() => {
   const role = props.userRole?.toLowerCase()
 
+  if (role.includes('hr manager') || role.includes('hr-manager')) return 'HR Manager Approve'
   if (role.includes('hr')) return 'HR Approve'
   if (role.includes('gm')) return 'GM Approve'
   if (role.includes('accountant')) return 'Mark as Paid'
