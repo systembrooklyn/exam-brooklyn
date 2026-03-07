@@ -90,15 +90,12 @@
             </option>
           </select>
         </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input v-model="calcForm.from_date" type="date" :max="today" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input v-model="calcForm.to_date" type="date" :max="today" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
-          </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
+          <input v-model="calcForm.payroll_month" type="month" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <p v-if="calcForm.payroll_month" class="text-xs text-gray-400 mt-1">
+            Period: {{ getPayrollDates(calcForm.payroll_month).from_date }} → {{ getPayrollDates(calcForm.payroll_month).to_date }}
+          </p>
         </div>
       </div>
     </HrModal>
@@ -244,8 +241,8 @@ const today = new Date().toISOString().split('T')[0]
 
 // Default period: 21 of last month → 20 of current month (company payroll cycle)
 const now = new Date()
-const defaultPeriodFrom = new Date(now.getFullYear(), now.getMonth() - 1, 22).toISOString().split('T')[0]
-const defaultPeriodTo = new Date(now.getFullYear(), now.getMonth(), 21).toISOString().split('T')[0]
+const defaultPeriodFrom = new Date(now.getFullYear(), now.getMonth() - 1, 21).toISOString().split('T')[0]
+const defaultPeriodTo = new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0]
 
 // ─── Filters ──────────────────────────────────────────────
 const filterForm = ref({
@@ -269,20 +266,37 @@ const getEmployeeName = (p) => {
 
 // ─── Calculate Payroll Modal ──────────────────────────────
 const showCalcModal = ref(false)
-const calcForm = ref({ employee_id: '', from_date: '', to_date: '' })
+const calcForm = ref({ employee_id: '', payroll_month: '' })
+
+// Given a YYYY-MM string, return { from_date: 'YYYY-MM-21', to_date: 'YYYY-MM-20' } for next month
+const getPayrollDates = (month) => {
+  if (!month) return { from_date: '', to_date: '' }
+  const [year, mon] = month.split('-').map(Number)
+  const fromDate = `${year}-${String(mon).padStart(2, '0')}-21`
+  // to_date = 20th of next month
+  const toYear = mon === 12 ? year + 1 : year
+  const toMon = mon === 12 ? 1 : mon + 1
+  const toDate = `${toYear}-${String(toMon).padStart(2, '0')}-20`
+  return { from_date: fromDate, to_date: toDate }
+}
 
 const openCalcModal = () => {
-  calcForm.value = { employee_id: '', from_date: '', to_date: '' }
+  calcForm.value = { employee_id: '', payroll_month: '' }
   showCalcModal.value = true
 }
 
 const handleCalculate = async () => {
-  if (!calcForm.value.employee_id || !calcForm.value.from_date || !calcForm.value.to_date) {
+  if (!calcForm.value.employee_id || !calcForm.value.payroll_month) {
     notyf.error('Please fill in all fields')
     return
   }
+  const { from_date, to_date } = getPayrollDates(calcForm.value.payroll_month)
   try {
-    const response = await store.calculatePayroll(calcForm.value)
+    const response = await store.calculatePayroll({
+      employee_id: calcForm.value.employee_id,
+      from_date,
+      to_date
+    })
     selectedPayroll.value = response.data?.data ?? response.data
     showCalcModal.value = false
     showDetailsModal.value = true
