@@ -64,7 +64,8 @@ export const useHrPayrollStore = defineStore("hr-payroll", () => {
     loading.value = true;
     try {
       const queryParams = {};
-      if (params.include_missing != null) queryParams.include_missing = params.include_missing;
+      if (params.include_missing != null)
+        queryParams.include_missing = params.include_missing;
       if (params.period_from) queryParams.period_from = params.period_from;
       if (params.period_to) queryParams.period_to = params.period_to;
       if (params.status) queryParams.status = params.status;
@@ -72,7 +73,24 @@ export const useHrPayrollStore = defineStore("hr-payroll", () => {
       const response = await apiClient.get(PAYROLL_ACTIONABLE, {
         params: queryParams,
       });
-      actionablePayrolls.value = response.data.data;
+
+      const mainData = response.data.data || [];
+      const missingData = (response.data.employees_without_payroll || []).map(
+        (emp) => ({
+          ...emp,
+          is_missing: true,
+          current_status: "no_payroll_calculated",
+          period_from: params.period_from,
+          period_to: params.period_to,
+          employee: {
+            id: emp.id,
+            name: emp.name,
+            fingerprint: emp.fingerprint,
+          },
+        }),
+      );
+
+      actionablePayrolls.value = [...mainData, ...missingData];
       return response.data;
     } catch (err) {
       handleError(err);

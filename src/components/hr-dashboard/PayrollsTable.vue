@@ -22,7 +22,7 @@
       <!-- Period -->
       <template #period="{ item }">
         <div class="text-xs text-gray-600">
-          {{ item.period?.payroll_month }}
+          {{ item.period?.payroll_month || item.period_from || '-' }}
         </div>
       </template>
 
@@ -64,6 +64,7 @@
 
           <!-- Approval Actions -->
           <div v-if="canAction(item)" class="flex items-center gap-1 border-l pl-2 ml-1">
+            <!-- Approve -->
             <button
               @click="$emit('update-status', { item, status: successStatus })"
               class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
@@ -72,6 +73,16 @@
               <LucideCheckCircle class="w-4 h-4" />
             </button>
 
+            <!-- Suspend -->
+            <button
+              @click="$emit('update-status', { item, status: 'suspended' })"
+              class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
+              title="Suspend"
+            >
+              <LucidePauseCircle class="w-4 h-4" />
+            </button>
+
+            <!-- Reject -->
             <button
               @click="$emit('update-status', { item, status: 'rejected' })"
               class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"

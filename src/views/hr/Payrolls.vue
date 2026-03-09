@@ -237,12 +237,13 @@ const authStore = useAuthStore()
 const userJobTitle = computed(() => authStore.user?.job_title || 'employee')
 
 // ─── Helpers ──────────────────────────────────────────────
-const today = new Date().toISOString().split('T')[0]
+const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const today = formatDate(new Date())
 
 // Default period: 21 of last month → 20 of current month (company payroll cycle)
 const now = new Date()
-const defaultPeriodFrom = new Date(now.getFullYear(), now.getMonth() - 1, 21).toISOString().split('T')[0]
-const defaultPeriodTo = new Date(now.getFullYear(), now.getMonth(), 20).toISOString().split('T')[0]
+const defaultPeriodFrom = formatDate(new Date(now.getFullYear(), now.getMonth() - 1, 21))
+const defaultPeriodTo = formatDate(new Date(now.getFullYear(), now.getMonth(), 20))
 
 // ─── Filters ──────────────────────────────────────────────
 const filterForm = ref({
