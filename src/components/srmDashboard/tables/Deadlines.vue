@@ -71,7 +71,7 @@
           </span>
           <template v-if="editingPaymentId !== getPaymentId(row)">
             <button
-              v-if="row.status !== 'paid' && authStore.hasPermission('edit-payments')"
+              v-if="authStore.hasPermission('edit-payments')"
               type="button"
               class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition"
               title="Edit"
