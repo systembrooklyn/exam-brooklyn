@@ -223,7 +223,7 @@ const props = defineProps({
 
 const search = ref("");
 const currentPage = ref(1);
-const itemsPerPage = 5;
+const itemsPerPage = 10;
 const selectedExam = ref(null);
 
 // Function to check if the user has the required permission

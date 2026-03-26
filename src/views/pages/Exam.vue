@@ -52,13 +52,32 @@ const answeredCount = computed(() => studentStore.examAnswers.length);
 //     : questions.value;
 // });
 const seconds = ref(60);
+const submitOnTimeout = async () => {
+  console.log("[Timer] Time is up! Force submitting exam...");
+  console.log("[Timer] Answers at timeout:", JSON.stringify(answersArray.value));
+  try {
+    saveAnswer();
+    const payload = { answers: answersArray.value };
+    isSubmitting.value = true;
+    console.log("[Timer] Sending payload to API:", payload);
+    await studentStore.submitFinalExam(payload);
+    isSubmitting.value = false;
+    console.log("[Timer] Exam submitted successfully on timeout.");
+  } catch (err) {
+    console.error("[Timer] Error submitting exam on timeout:", err);
+    notyf.error("Error submitting exam");
+  } finally {
+    router.replace({ name: "home" });
+  }
+};
+
 const startTimer = () => {
   interval = setInterval(() => {
     if (timeLeft.value === 0) {
       clearInterval(interval);
+      console.log("[Timer] Countdown reached zero — triggering auto-submit.");
       notyf.error("Time is up! Exam ended.");
-      router.replace({ name: "home" });
-      submitFinalExam({ answers: answersArray.value });
+      submitOnTimeout();
     } else {
       if (seconds.value === 0) {
         timeLeft.value -= 1;
@@ -66,6 +85,7 @@ const startTimer = () => {
       } else {
         seconds.value -= 1;
       }
+
     }
   }, 1000);
 };
@@ -140,7 +160,7 @@ const handleStart = () => {
   currentQuestionIndex.value = 0;
 
   quizStarted.value = true;
-  timeLeft.value = remainingTime.value; // seconds
+  timeLeft.value = remainingTime.value;
   startTimer();
   loadSelectedOption();
 };
@@ -209,7 +229,24 @@ const allAnswered = computed(() => {
   );
 });
 
-// Handle before unload
+const handleGoBack = async () => {
+  try {
+    isSubmitting.value = true;
+    const answers =
+      answersArray.value.length > 0
+        ? answersArray.value
+        : previousAnswers.value;
+    await studentStore.submitFinalExam({ answers });
+  } catch (err) {
+    console.error("[GoBack] Error submitting exam:", err);
+  } finally {
+    isSubmitting.value = false;
+    router.push("/home");
+  }
+};
+
+
+
 const handleBeforeUnload = (e) => {
   e.preventDefault();
   sessionStorage.removeItem("attemptId");
@@ -245,15 +282,18 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <!-- Exam Rules Modal -->
+    
+    
     <ExamRulesModal :show="showRules" @accept="acceptRules" />
 
-    <!-- Show 'Start Exam' button initially -->
     <div v-if="!quizStarted && timeLeft > 0 && !showRules" class="text-center">
       <button @click="handleStart" class="buttonClass">Start</button>
     </div>
-    <div v-if="timeLeft <= 0" class="text-center">
-      <button @click="router.push('/home')" class="btn-start">Go Back</button>
+    <div v-if="timeLeft <= 0 && !quizStarted" class="text-center">
+      <button @click="handleGoBack" :disabled="isSubmitting" class="btn-start">
+        <span v-if="isSubmitting"><i class="fa-solid fa-circle-notch fa-spin-pulse"></i></span>
+        <span v-else>Finish Exam and Go Home</span>
+      </button>
     </div>
 
     <div v-if="quizStarted" class="max-w-[70%] mx-auto bg-gray-50 py-6">
@@ -407,11 +447,6 @@ onBeforeUnmount(() => {
   color: #092c67;
   font-weight: bold;
 }
-
-/* .dark .selected {
-  background-color: #b5ccf3;
-  color: rgb(255, 255, 255);
-} */
 
 button {
   padding: 10px 50px;

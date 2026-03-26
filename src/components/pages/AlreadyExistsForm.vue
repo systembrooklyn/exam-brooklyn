@@ -150,28 +150,40 @@ const submitForm = async () => {
         v-if="studentStore.selectedModule && studentStore.selectedInstructor"
       >
         <div class="flex justify-center">
+          <!-- Countdown ring while waiting -->
+          <div
+            v-if="studentStore.timer > 0 && studentStore.timer < 120 && !studentStore.loadingOtp"
+            class="absolute top-4 z-10 right-3 flex items-center justify-center w-8 h-8"
+            title="Resend available after countdown"
+          >
+            <svg class="w-8 h-8 -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="#e5e7eb" stroke-width="3" />
+              <circle
+                cx="18" cy="18" r="15" fill="none"
+                stroke="#092c67" stroke-width="3"
+                stroke-dasharray="94.2"
+                :stroke-dashoffset="94.2 - (94.2 * studentStore.timer) / 120"
+                stroke-linecap="round"
+              />
+            </svg>
+            <span class="absolute text-[10px] font-bold text-primary">{{ studentStore.timer }}</span>
+          </div>
+
+          <!-- Send OTP button (shown when idle or loading) -->
           <button
+            v-else
             @click="handelSendOtp"
-            :disabled="
-              (studentStore.timer < 120 && studentStore.timer > 0) ||
-              studentStore.studentId === ''
-            "
+            :disabled="studentStore.studentId === '' || studentStore.loadingOtp"
             class="text-primary absolute top-4 z-10 right-3 cursor-pointer"
           >
-            <span v-if="studentStore.loadingOtp"
-              ><i class="fa-solid fa-circle-notch fa-spin-pulse"></i
-            ></span>
+            <span v-if="studentStore.loadingOtp">
+              <i class="fa-solid fa-circle-notch fa-spin-pulse"></i>
+            </span>
             <span
               v-else
-              :class="{
-                'opacity-50 cursor-not-allowed ':
-                  (studentStore.timer < 120 && studentStore.timer > 0) ||
-                  studentStore.studentId === '',
-              }"
+              :class="{ 'opacity-50 cursor-not-allowed': studentStore.studentId === '' }"
               class="relative text-sm font-bold border-b-1"
-            >
-              Send OTP</span
-            >
+            >Send OTP</span>
           </button>
         </div>
 
