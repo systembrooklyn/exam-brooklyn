@@ -18,9 +18,12 @@ const form = reactive({
   email: "",
   mobiles: [""],
   ID_number: "",
+  nationality: "",
+  governorate: "",
   birth_date: "",
   grade: "",
   company: "",
+  has_scholarship_code: "No",
   marketing_code: "",
   scholarship: "",
   called_time: "",
@@ -42,16 +45,23 @@ async function handleSubmit() {
     "email",
     "mobiles",
     "ID_number",
+    "nationality",
     "birth_date",
+    "scholarship",
+    "called_by",
     "grade",
     "company",
-    "marketing_code",
-    "scholarship",
-    "called_time",
-    "called_by",
   ];
 
   const missing = requiredFields.filter((field) => !form[field]);
+
+  // Conditional requirements
+  if (form.nationality === "Egyptian" && !form.governorate) {
+    missing.push("governorate");
+  }
+  if (form.has_scholarship_code === "Yes" && !form.marketing_code) {
+    missing.push("marketing_code");
+  }
 
   if (missing.length > 0) {
     missingFieldsError.value = true;
@@ -61,20 +71,20 @@ async function handleSubmit() {
   missingFieldsError.value = false;
   isLoading.value = true;
 
-  const calledDateTime = form.called_time.replace("T", " ") + ":00";
-
   const payload = {
     name: form.name,
     email: form.email,
     phones: cleanedPhones,
     ID_number: form.ID_number,
+    nationality: form.nationality,
+    governorate: form.nationality === "Egyptian" ? form.governorate : "",
     birth_date: form.birth_date,
     grade: form.grade,
     company: form.company,
-    marketing_code: form.marketing_code,
+    has_scholarship_code: form.has_scholarship_code,
+    marketing_code: form.has_scholarship_code === "Yes" ? form.marketing_code : "",
     scholarship: form.scholarship,
     called_by: form.called_by,
-    called_time: calledDateTime,
     faculity: form.faculity,
     major: form.major,
     careerType: form.careerType,
@@ -215,6 +225,58 @@ onMounted(() => {
         </div>
       </div>
 
+      <!-- Nationality -->
+      <div>
+        <label class="form-label">Nationality</label>
+        <select v-model="form.nationality" class="form-input">
+          <option disabled value="">Select Nationality</option>
+          <option value="Egyptian">Egyptian</option>
+          <option value="Sudanese">Sudanese</option>
+          <option value="KSA">KSA</option>
+          <option value="UAE">UAE</option>
+          <option value="Bahrain">Bahrain</option>
+          <option value="Syrian">Syrian</option>
+          <option value="Iraq">Iraq</option>
+          <option value="Palestinian">Palestinian</option>
+          <option value="Yemeni">Yemeni</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <!-- Governorate (Conditional) -->
+      <div v-if="form.nationality === 'Egyptian'">
+        <label class="form-label">Governorate</label>
+        <select v-model="form.governorate" class="form-input">
+          <option disabled value="">Select Governorate</option>
+          <option value="Cairo">Cairo</option>
+          <option value="Giza">Giza</option>
+          <option value="Alex">Alex</option>
+          <option value="Behira">Behira</option>
+          <option value="Kafr Elsheekh">Kafr Elsheekh</option>
+          <option value="Demiat">Demiat</option>
+          <option value="Pour Saied">Pour Saied</option>
+          <option value="Ismailia">Ismailia</option>
+          <option value="Gharbia">Gharbia</option>
+          <option value="Dakhlia">Dakhlia</option>
+          <option value="Sharkia">Sharkia</option>
+          <option value="Kalubia">Kalubia</option>
+          <option value="Monofia">Monofia</option>
+          <option value="Suez">Suez</option>
+          <option value="South Sinai">South Sinai</option>
+          <option value="Matrouh">Matrouh</option>
+          <option value="Red sea">Red sea</option>
+          <option value="Faum">Faum</option>
+          <option value="Bani Suif">Bani Suif</option>
+          <option value="Minia">Minia</option>
+          <option value="Assuit">Assuit</option>
+          <option value="Sauhag">Sauhag</option>
+          <option value="Kina">Kina</option>
+          <option value="Elwadi El gaded">Elwadi El gaded</option>
+          <option value="Luxor">Luxor</option>
+          <option value="Aswan">Aswan</option>
+        </select>
+      </div>
+
       <!-- Date of Birth -->
       <div>
         <label class="form-label">Date of Birth</label>
@@ -265,7 +327,7 @@ onMounted(() => {
           <option>>45</option>
         </select>
       </div>
-      <!-- Career Type -->
+      <!-- Student Category -->
       <div>
         <label class="form-label">Career Type</label>
         <select v-model="form.careerType" class="form-input">
@@ -296,59 +358,58 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Marketing Code -->
+      <!-- Marketing Code / Scholarship Code -->
       <div>
+        <label class="form-label">Do you have a scholarship Code?</label>
+        <div class="flex gap-4 mb-2">
+          <label class="flex items-center gap-1 cursor-pointer">
+            <input
+              type="radio"
+              v-model="form.has_scholarship_code"
+              value="Yes"
+            />
+            Yes
+          </label>
+          <label class="flex items-center gap-1 cursor-pointer">
+            <input type="radio" v-model="form.has_scholarship_code" value="No" />
+            No
+          </label>
+        </div>
+      </div>
+
+      <!-- Called By -->
+      <div>
+        <label class="flex items-center gap-2 mb-2"
+          ><span class="font-bold text-[#1e3a8a]">Called By</span>
+          <span class="text-sm text-gray-500"
+            >(Filled by the employee)</span
+          ></label
+        >
+        <select v-model="form.called_by" class="form-input">
+          <option disabled value="">Select</option>
+          <option
+            v-for="employee in employeeStore.employees"
+            :key="employee.id"
+            :value="employee.id"
+          >
+            {{ employee.name }}
+          </option>
+        </select>
+      </div>
+
+      <div v-if="form.has_scholarship_code === 'Yes'">
         <label class="form-label">Scholarship Code</label>
         <input
           v-model="form.marketing_code"
           type="text"
           class="form-input"
-          placeholder="Scholarship Code"
+          placeholder="Enter Scholarship Code"
         />
       </div>
 
       <!-- Manual Called Time -->
 
-      <!-- Call Info Section -->
-      <div class="md:col-span-2 border-t-1 border-blue-200">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-          <!-- Call Time -->
-          <!-- Call Time -->
-          <div>
-            <label class="flex items-center gap-2 mb-2">
-              <span class="font-bold text-[#1e3a8a]">Call Date & Time</span>
-              <span class="text-sm text-gray-500"
-                >(Filled by the employee)</span
-              >
-            </label>
-            <input
-              v-model="form.called_time"
-              type="datetime-local"
-              class="form-input"
-            />
-          </div>
-
-          <!-- Called By -->
-          <div>
-            <label class="flex items-center gap-2 mb-2"
-              ><span class="font-bold text-[#1e3a8a]">Called By</span>
-              <span class="text-sm text-gray-500"
-                >(Filled by the employee)</span
-              ></label
-            >
-            <select v-model="form.called_by" class="form-input">
-              <option disabled value="">Select</option>
-              <option
-                v-for="employee in employeeStore.employees"
-                :key="employee.id"
-                :value="employee.id"
-              >
-                {{ employee.name }}
-              </option>
-            </select>
-          </div>
-        </div>
-      </div>
+ <!-- Manual Called Time -->
       <!-- Error message if required fields are missing -->
       <p
         v-if="missingFieldsError"

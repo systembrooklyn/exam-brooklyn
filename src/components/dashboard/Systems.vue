@@ -75,7 +75,7 @@ const systems = [
   },
   {
     name: "Reservation System",
-    route: "/reservation",
+    route: "/reservation/form",
     image: reservation,
     requiresPermission: "view-reservationCard",
   },
