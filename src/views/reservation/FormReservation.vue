@@ -13,6 +13,14 @@ const router = useRouter();
 
 const isLoading = ref(false);
 
+const restrictToEnglish = (field) => {
+  form[field] = form[field].replace(/[^\x00-\x7F]/g, "");
+};
+
+const restrictToDigits = (field) => {
+  form[field] = form[field].replace(/\D/g, "");
+};
+
 const form = reactive({
   name: "",
   email: "",
@@ -110,7 +118,7 @@ onMounted(() => {
   >
     <img src="@/assets/logo.png" class="h-15 mx-auto" alt="" />
     <h2
-      class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-7"
+      class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-2"
     >
       Reservation Intake Form
     </h2>
@@ -131,6 +139,7 @@ onMounted(() => {
             type="text"
             class="form-input pl-10"
             placeholder="Please enter full English name"
+            @input="restrictToEnglish('name')"
           />
         </div>
       </div>
@@ -161,6 +170,7 @@ onMounted(() => {
             type="email"
             class="form-input pl-10"
             placeholder="example@mail.com"
+            @input="restrictToEnglish('email')"
           />
         </div>
       </div>
@@ -221,6 +231,7 @@ onMounted(() => {
             class="form-input"
             maxlength="14"
             placeholder="12345678901234"
+            @input="restrictToDigits('ID_number')"
           />
         </div>
       </div>
@@ -299,6 +310,7 @@ onMounted(() => {
           type="text"
           class="form-input"
           placeholder="Faculty name"
+          @input="restrictToEnglish('faculity')"
         />
       </div>
       <!-- Major -->
@@ -309,6 +321,7 @@ onMounted(() => {
           type="text"
           class="form-input"
           placeholder="Your Major"
+          @input="restrictToEnglish('major')"
         />
       </div>
 
@@ -354,6 +367,7 @@ onMounted(() => {
             type="text"
             class="form-input"
             placeholder="Company name (if any)"
+            @input="restrictToEnglish('company')"
           />
         </div>
       </div>
@@ -404,12 +418,22 @@ onMounted(() => {
           type="text"
           class="form-input"
           placeholder="Enter Scholarship Code"
+          @input="restrictToEnglish('marketing_code')"
         />
       </div>
 
-      <!-- Manual Called Time -->
+      <div class="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-200 p-2 rounded-xl mb-4">
+        <div class="bg-blue-500 p-2 rounded-full shrink-0">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div>
+         
+          <p class="text-blue-700 text-sm">Please ensure all data is entered in English only.</p>
+        </div>
+      </div>
 
- <!-- Manual Called Time -->
       <!-- Error message if required fields are missing -->
       <p
         v-if="missingFieldsError"
