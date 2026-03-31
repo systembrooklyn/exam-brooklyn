@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, reactive, nextTick } from "vue";
-import { User, Mail, Phone, Calendar, IdCard, Landmark } from "lucide-vue-next";
+import { User, Mail, Calendar, IdCard, Landmark } from "lucide-vue-next";
 import { useReservationStore } from "@/stores/reservations.js";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 import { useEmployeeStore } from "@/stores/employeesStore.js";
@@ -39,10 +39,28 @@ const form = reactive({
   faculity: "",
   major: "",
   careerType: "",
+  receptionist: "",
 });
 
 const missingFieldsError = ref(false);
+const phase1Error = ref(false);
+const step = ref(1);
 const serverErrorFields = reactive({});
+
+function goToStep2() {
+  phase1Error.value = false;
+  if (!form.called_by || !form.receptionist) {
+    phase1Error.value = true;
+    return;
+  }
+  step.value = 2;
+  missingFieldsError.value = false;
+}
+
+function goBackToStep1() {
+  step.value = 1;
+  missingFieldsError.value = false;
+}
 
 function clearServerErrors() {
   Object.keys(serverErrorFields).forEach((k) => delete serverErrorFields[k]);
@@ -71,6 +89,8 @@ function applyServerErrors(err) {
 const emailInputRef = ref(null);
 
 async function handleSubmit() {
+  if (step.value !== 2) return;
+
   const cleanedPhones = form.mobiles
     .map((phone) => phone?.replace(/\D/g, ""))
     .filter((phone) => phone);
@@ -86,6 +106,7 @@ async function handleSubmit() {
     "called_by",
     "grade",
     "company",
+    "receptionist",
   ];
 
   const missing = requiredFields.filter((field) => !form[field]);
@@ -124,6 +145,7 @@ async function handleSubmit() {
     faculity: form.faculity,
     major: form.major,
     careerType: form.careerType,
+    receptionist: form.receptionist,
   };
 
   try {
@@ -151,10 +173,80 @@ onMounted(() => {
     class="w-full max-w-4xl border border-gray-300 mx-auto m-5 bg-white p-8 rounded-2xl shadow-lg shadow-blue-300 space-y-6 dark:bg-gray-800">
     <img src="@/assets/logo.png" class="h-15 mx-auto" alt="" />
     <h2 class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-2">
-      Reservation Intake Form
+      Reservation Form
     </h2>
 
     <form @submit.prevent="handleSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
+      <p
+        class="md:col-span-2 text-center text-sm font-semibold text-[#1e3a8a] dark:text-blue-200 -mb-2"
+      >
+        {{ step === 1 ? "Step 1 of 2 — Employee" : "Step 2 of 2 — Applicant details" }}
+      </p>
+
+      <template v-if="step === 1">
+        <div>
+          <label class="flex items-center gap-2 mb-2">
+            <span class="font-bold text-[#1e3a8a]">Called By</span>
+            <span class="text-sm text-gray-500">(Filled by the employee)</span>
+          </label>
+          <div class="relative">
+            <User
+              class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+            />
+            <select v-model="form.called_by" class="form-input">
+              <option disabled value="">Select Employee</option>
+              <option
+                v-for="employee in employeeStore.employees"
+                :key="employee.id"
+                :value="employee.id"
+              >
+                {{ employee.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="flex items-center gap-2 mb-2">
+            <span class="font-bold text-[#1e3a8a]">Receptionist By</span>
+            <span class="text-sm text-gray-500">(Filled by the employee)</span>
+          </label>
+          <div class="relative">
+            <User
+              class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+            />
+            <select v-model="form.receptionist" class="form-input">
+              <option disabled value="">Select Employee</option>
+              <option
+                v-for="employee in employeeStore.employees"
+                :key="employee.id"
+                :value="employee.id"
+              >
+                {{ employee.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <p
+          v-if="phase1Error"
+          class="text-red-600 text-center font-medium md:col-span-2"
+        >
+          Please select both employees before continuing.
+        </p>
+
+        <div class="md:col-span-2 flex justify-center pt-2">
+          <button
+            type="button"
+            class="bg-primary text-white py-2 px-8 rounded-xl hover:bg-blue-700 transition font-medium"
+            @click="goToStep2"
+          >
+            Next
+          </button>
+        </div>
+      </template>
+
+      <template v-else>
       <!-- Full Name -->
       <div>
         <label class="form-label">Full Name (English)</label>
@@ -168,7 +260,7 @@ onMounted(() => {
       <div>
         <label class="form-label">Select Scholarship</label>
         <select v-model="form.scholarship" class="form-input">
-          <option disabled value="">Select</option>
+          <option disabled value="">Select Scholarship</option>
           <option v-for="scholarship in scholarshipStore.scholarships" :key="scholarship.id" :value="scholarship.id">
             {{ scholarship.name }}
           </option>
@@ -241,7 +333,7 @@ onMounted(() => {
 
       <!-- National ID -->
       <div>
-        <label class="form-label">National ID (14 digits)</label>
+        <label class="form-label">National ID</label>
         <div class="relative">
           <IdCard class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
           <input
@@ -388,18 +480,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Called By -->
-      <div>
-        <label class="flex items-center gap-2 mb-2"><span class="font-bold text-[#1e3a8a]">Called By</span>
-          <span class="text-sm text-gray-500">(Filled by the employee)</span></label>
-        <select v-model="form.called_by" class="form-input">
-          <option disabled value="">Select</option>
-          <option v-for="employee in employeeStore.employees" :key="employee.id" :value="employee.id">
-            {{ employee.name }}
-          </option>
-        </select>
-      </div>
-
       <div v-if="form.has_scholarship_code === 'Yes'">
         <label class="form-label">Scholarship Code</label>
         <input v-model="form.marketing_code" type="text" class="form-input" placeholder="Enter Scholarship Code"
@@ -425,18 +505,48 @@ onMounted(() => {
         ⚠️ Please fill in all required fields before submitting.
       </p>
 
-      <!-- Submit -->
-      <div class="md:col-span-2 text-center py-4 flex items-center justify-center">
-        <button type="submit" :disabled="isLoading"
-          class="bg-primary text-white py-2 px-6 w-50 cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
-          <svg v-if="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-            viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+      <!-- Back + Submit -->
+      <div
+        class="md:col-span-2 text-center py-4 flex flex-wrap items-center justify-center gap-3"
+      >
+        <button
+          type="button"
+          :disabled="isLoading"
+          class="py-2 px-6 rounded-xl border border-gray-300 text-[#1e3a8a] font-medium hover:bg-gray-50 transition disabled:opacity-50"
+          @click="goBackToStep1"
+        >
+          Back
+        </button>
+        <button
+          type="submit"
+          :disabled="isLoading"
+          class="bg-primary text-white py-2 px-6 min-w-[12rem] cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 disabled:opacity-70"
+        >
+          <svg
+            v-if="isLoading"
+            class="animate-spin h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
           </svg>
           <span>{{ isLoading ? "Submitting..." : "Submit" }}</span>
         </button>
       </div>
+      </template>
     </form>
   </div>
 </template>
