@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, reactive } from "vue";
+import { onMounted, ref, reactive, nextTick } from "vue";
 import { User, Mail, Phone, Calendar, IdCard, Landmark } from "lucide-vue-next";
 import { useReservationStore } from "@/stores/reservations.js";
 import { useScholarshipStore } from "@/stores/scholarships.js";
@@ -42,6 +42,33 @@ const form = reactive({
 });
 
 const missingFieldsError = ref(false);
+const serverErrorFields = reactive({});
+
+function clearServerErrors() {
+  Object.keys(serverErrorFields).forEach((k) => delete serverErrorFields[k]);
+}
+
+function applyServerErrors(err) {
+  clearServerErrors();
+  const data = err?.response?.data;
+  if (!data) return;
+  if (data.errors && typeof data.errors === "object") {
+    for (const [key, val] of Object.entries(data.errors)) {
+      const msg = Array.isArray(val) ? val[0] : val;
+      serverErrorFields[key] = typeof msg === "string" ? msg : true;
+    }
+    return;
+  }
+  const msg = data.message;
+  if (
+    typeof msg === "string" &&
+    /email|already|exist|duplicate|registered|taken/i.test(msg)
+  ) {
+    serverErrorFields.email = msg;
+  }
+}
+
+const emailInputRef = ref(null);
 
 async function handleSubmit() {
   const cleanedPhones = form.mobiles
@@ -77,6 +104,7 @@ async function handleSubmit() {
   }
 
   missingFieldsError.value = false;
+  clearServerErrors();
   isLoading.value = true;
 
   const payload = {
@@ -101,6 +129,12 @@ async function handleSubmit() {
   try {
     await reservationStore.addReservation(payload);
     router.push({ name: "reservation-success" });
+  } catch (err) {
+    applyServerErrors(err);
+    await nextTick();
+    if (serverErrorFields.email) {
+      emailInputRef.value?.focus?.();
+    }
   } finally {
     isLoading.value = false;
   }
@@ -114,33 +148,20 @@ onMounted(() => {
 
 <template>
   <div
-    class="w-full max-w-4xl border border-gray-300 mx-auto m-5 bg-white p-8 rounded-2xl shadow-lg shadow-blue-300 space-y-6 dark:bg-gray-800"
-  >
+    class="w-full max-w-4xl border border-gray-300 mx-auto m-5 bg-white p-8 rounded-2xl shadow-lg shadow-blue-300 space-y-6 dark:bg-gray-800">
     <img src="@/assets/logo.png" class="h-15 mx-auto" alt="" />
-    <h2
-      class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-2"
-    >
+    <h2 class="text-3xl font-bold text-blue-900 dark:text-white text-center mb-2">
       Reservation Intake Form
     </h2>
 
-    <form
-      @submit.prevent="handleSubmit"
-      class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10"
-    >
+    <form @submit.prevent="handleSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
       <!-- Full Name -->
       <div>
         <label class="form-label">Full Name (English)</label>
         <div class="relative">
-          <User
-            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
-          />
-          <input
-            v-model="form.name"
-            type="text"
-            class="form-input pl-10"
-            placeholder="Please enter full English name"
-            @input="restrictToEnglish('name')"
-          />
+          <User class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
+          <input v-model="form.name" type="text" class="form-input pl-10" placeholder="Please enter full English name"
+            @input="restrictToEnglish('name')" />
         </div>
       </div>
 
@@ -148,11 +169,7 @@ onMounted(() => {
         <label class="form-label">Select Scholarship</label>
         <select v-model="form.scholarship" class="form-input">
           <option disabled value="">Select</option>
-          <option
-            v-for="scholarship in scholarshipStore.scholarships"
-            :key="scholarship.id"
-            :value="scholarship.id"
-          >
+          <option v-for="scholarship in scholarshipStore.scholarships" :key="scholarship.id" :value="scholarship.id">
             {{ scholarship.name }}
           </option>
         </select>
@@ -162,17 +179,26 @@ onMounted(() => {
       <div>
         <label class="form-label">E-Mail Address</label>
         <div class="relative">
-          <Mail
-            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
-          />
+          <Mail class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
           <input
+            ref="emailInputRef"
             v-model="form.email"
             type="email"
             class="form-input pl-10"
+            :class="{ '!border-red-500 ring-1 ring-red-400': serverErrorFields.email }"
             placeholder="example@mail.com"
-            @input="restrictToEnglish('email')"
+            @input="
+              restrictToEnglish('email');
+              delete serverErrorFields.email;
+            "
           />
         </div>
+        <p
+          v-if="serverErrorFields.email && typeof serverErrorFields.email === 'string'"
+          class="text-red-600 text-sm mt-1"
+        >
+          {{ serverErrorFields.email }}
+        </p>
       </div>
 
       <!-- Mobile Number -->
@@ -188,31 +214,26 @@ onMounted(() => {
           v-for="(phone, index) in form.mobiles"
           :key="index"
           class="flex items-center gap-2 mb-2"
+          :class="{ 'rounded-xl ring-1 ring-red-400 p-1': serverErrorFields.phones }"
         >
           <vue-tel-input
             v-model="form.mobiles[index]"
             mode="international"
             placeholder="Enter mobile number"
             class="form-input-tel"
+            :class="{ '!border-red-500': serverErrorFields.phones }"
+            @update:model-value="delete serverErrorFields.phones"
           ></vue-tel-input>
 
           <!-- Add button only on last input -->
-          <button
-            v-if="index === form.mobiles.length - 1"
-            type="button"
-            @click="form.mobiles.push('')"
-            class="text-blue-600 text-xl font-bold w-7 h-7 cursor-pointer flex items-center justify-center border rounded border-blue-600 hover:bg-blue-100"
-          >
+          <button v-if="index === form.mobiles.length - 1" type="button" @click="form.mobiles.push('')"
+            class="text-blue-600 text-xl font-bold w-7 h-7 cursor-pointer flex items-center justify-center border rounded border-blue-600 hover:bg-blue-100">
             +
           </button>
 
           <!-- Remove button (optional) -->
-          <button
-            v-if="form.mobiles.length > 1"
-            type="button"
-            @click="form.mobiles.splice(index, 1)"
-            class="text-red-500 text-xl w-7 h-7 flex cursor-pointer items-center justify-center font-bold border rounded border-red-400 hover:bg-red-100"
-          >
+          <button v-if="form.mobiles.length > 1" type="button" @click="form.mobiles.splice(index, 1)"
+            class="text-red-500 text-xl w-7 h-7 flex cursor-pointer items-center justify-center font-bold border rounded border-red-400 hover:bg-red-100">
             −
           </button>
         </div>
@@ -222,16 +243,18 @@ onMounted(() => {
       <div>
         <label class="form-label">National ID (14 digits)</label>
         <div class="relative">
-          <IdCard
-            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
-          />
+          <IdCard class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
           <input
             v-model="form.ID_number"
             type="text"
             class="form-input"
+            :class="{ '!border-red-500 ring-1 ring-red-400': serverErrorFields.ID_number }"
             maxlength="14"
             placeholder="12345678901234"
-            @input="restrictToDigits('ID_number')"
+            @input="
+              restrictToDigits('ID_number');
+              delete serverErrorFields.ID_number;
+            "
           />
         </div>
       </div>
@@ -292,40 +315,25 @@ onMounted(() => {
       <div>
         <label class="form-label">Date of Birth</label>
         <div class="relative">
-          <Calendar
-            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
-          />
-          <input
-            v-model="form.birth_date"
-            type="date"
-            class="form-input pl-10 appearance-none bg-white text-gray-800 dark:bg-gray-700 dark:text-white"
-          />
+          <Calendar class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
+          <input v-model="form.birth_date" type="date"
+            class="form-input pl-10 appearance-none bg-white text-gray-800 dark:bg-gray-700 dark:text-white" />
         </div>
       </div>
-       <!-- Faculty -->
+      <!-- Faculty -->
       <div>
         <label class="form-label">Faculty</label>
-        <input
-          v-model="form.faculity"
-          type="text"
-          class="form-input"
-          placeholder="Faculty name"
-          @input="restrictToEnglish('faculity')"
-        />
+        <input v-model="form.faculity" type="text" class="form-input" placeholder="Faculty name"
+          @input="restrictToEnglish('faculity')" />
       </div>
       <!-- Major -->
       <div>
         <label class="form-label">Major</label>
-        <input
-          v-model="form.major"
-          type="text"
-          class="form-input"
-          placeholder="Your Major"
-          @input="restrictToEnglish('major')"
-        />
+        <input v-model="form.major" type="text" class="form-input" placeholder="Your Major"
+          @input="restrictToEnglish('major')" />
       </div>
 
-     
+
 
       <!-- Grade -->
       <div>
@@ -359,16 +367,9 @@ onMounted(() => {
       <div>
         <label class="form-label">Company</label>
         <div class="relative">
-          <Landmark
-            class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
-          />
-          <input
-            v-model="form.company"
-            type="text"
-            class="form-input"
-            placeholder="Company name (if any)"
-            @input="restrictToEnglish('company')"
-          />
+          <Landmark class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500" />
+          <input v-model="form.company" type="text" class="form-input" placeholder="Company name (if any)"
+            @input="restrictToEnglish('company')" />
         </div>
       </div>
 
@@ -377,11 +378,7 @@ onMounted(() => {
         <label class="form-label">Do you have a scholarship Code?</label>
         <div class="flex gap-4 mb-2">
           <label class="flex items-center gap-1 cursor-pointer">
-            <input
-              type="radio"
-              v-model="form.has_scholarship_code"
-              value="Yes"
-            />
+            <input type="radio" v-model="form.has_scholarship_code" value="Yes" />
             Yes
           </label>
           <label class="flex items-center gap-1 cursor-pointer">
@@ -393,19 +390,11 @@ onMounted(() => {
 
       <!-- Called By -->
       <div>
-        <label class="flex items-center gap-2 mb-2"
-          ><span class="font-bold text-[#1e3a8a]">Called By</span>
-          <span class="text-sm text-gray-500"
-            >(Filled by the employee)</span
-          ></label
-        >
+        <label class="flex items-center gap-2 mb-2"><span class="font-bold text-[#1e3a8a]">Called By</span>
+          <span class="text-sm text-gray-500">(Filled by the employee)</span></label>
         <select v-model="form.called_by" class="form-input">
           <option disabled value="">Select</option>
-          <option
-            v-for="employee in employeeStore.employees"
-            :key="employee.id"
-            :value="employee.id"
-          >
+          <option v-for="employee in employeeStore.employees" :key="employee.id" :value="employee.id">
             {{ employee.name }}
           </option>
         </select>
@@ -413,64 +402,37 @@ onMounted(() => {
 
       <div v-if="form.has_scholarship_code === 'Yes'">
         <label class="form-label">Scholarship Code</label>
-        <input
-          v-model="form.marketing_code"
-          type="text"
-          class="form-input"
-          placeholder="Enter Scholarship Code"
-          @input="restrictToEnglish('marketing_code')"
-        />
+        <input v-model="form.marketing_code" type="text" class="form-input" placeholder="Enter Scholarship Code"
+          @input="restrictToEnglish('marketing_code')" />
       </div>
 
       <div class="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-200 p-2 rounded-xl mb-4">
         <div class="bg-blue-500 p-2 rounded-full shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         <div>
-         
+
           <p class="text-blue-700 text-sm">Please ensure all data is entered in English only.</p>
         </div>
       </div>
 
       <!-- Error message if required fields are missing -->
-      <p
-        v-if="missingFieldsError"
-        class="text-red-600 text-center font-medium md:col-span-2"
-      >
+      <p v-if="missingFieldsError" class="text-red-600 text-center font-medium md:col-span-2">
         ⚠️ Please fill in all required fields before submitting.
       </p>
 
       <!-- Submit -->
-      <div
-        class="md:col-span-2 text-center py-4 flex items-center justify-center"
-      >
-        <button
-          type="submit"
-          :disabled="isLoading"
-          class="bg-primary text-white py-2 px-6 w-50 cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2"
-        >
-          <svg
-            v-if="isLoading"
-            class="animate-spin h-5 w-5 text-white"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-            ></path>
+      <div class="md:col-span-2 text-center py-4 flex items-center justify-center">
+        <button type="submit" :disabled="isLoading"
+          class="bg-primary text-white py-2 px-6 w-50 cursor-pointer rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2">
+          <svg v-if="isLoading" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
           </svg>
           <span>{{ isLoading ? "Submitting..." : "Submit" }}</span>
         </button>

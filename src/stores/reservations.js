@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { RESERVATIONS } from "../api/Api"; 
+import { RESERVATIONS } from "../api/Api";
 import notyf from "../components/global/notyf";
 import { handleError } from "./handleError";
 
@@ -16,9 +16,6 @@ export const useReservationStore = defineStore("reservationStore", () => {
     try {
       const response = await apiClient.get(RESERVATIONS);
       reservations.value = response.data.data;
-      
- 
-      
     } catch (err) {
       handleError(err);
       console.error(err);
@@ -30,25 +27,30 @@ export const useReservationStore = defineStore("reservationStore", () => {
   const addReservation = async (reservation) => {
     try {
       const response = await apiClient.post(RESERVATIONS, reservation);
-    //   reservations.value.push(response.data.data);
-      
+      //   reservations.value.push(response.data.data);
+
       notyf.success("Reservation added successfully");
     } catch (err) {
       handleError(err);
       console.error(err);
+      throw err;
     }
   };
 
   const updateReservation = async (id, updatedData) => {
     try {
-      const response = await apiClient.put(`${RESERVATIONS}/${id}`, updatedData);
+      const response = await apiClient.put(
+        `${RESERVATIONS}/${id}`,
+        updatedData,
+      );
       reservations.value = reservations.value.map((r) =>
-        r.id === id ? response.data.data : r
+        r.id === id ? response.data.data : r,
       );
       notyf.success("Reservation updated successfully");
     } catch (err) {
       handleError(err);
       console.error(err);
+      throw err;
     }
   };
 
