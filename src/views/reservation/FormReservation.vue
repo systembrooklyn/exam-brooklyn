@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, reactive, nextTick } from "vue";
-import { User, Mail, Calendar, IdCard, Landmark } from "lucide-vue-next";
+import { User, Mail, Calendar, IdCard, Landmark, Loader2 } from "lucide-vue-next";
 import { useReservationStore } from "@/stores/reservations.js";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 import { useEmployeeStore } from "@/stores/employeesStore.js";
@@ -17,8 +17,8 @@ const restrictToEnglish = (field) => {
   form[field] = form[field].replace(/[^\x00-\x7F]/g, "");
 };
 
-const restrictToDigits = (field) => {
-  form[field] = form[field].replace(/\D/g, "");
+const restrictToEnglishAlphanumeric = (field) => {
+  form[field] = form[field].replace(/[^A-Za-z0-9]/g, "");
 };
 
 const form = reactive({
@@ -48,6 +48,7 @@ const step = ref(1);
 const serverErrorFields = reactive({});
 
 function goToStep2() {
+  if (employeeStore.loading) return;
   phase1Error.value = false;
   if (!form.called_by || !form.receptionist) {
     phase1Error.value = true;
@@ -189,12 +190,21 @@ onMounted(() => {
             <span class="font-bold text-[#1e3a8a]">Called By</span>
             <span class="text-sm text-gray-500">(Filled by the employee)</span>
           </label>
-          <div class="relative">
+          <div class="relative min-h-[2.75rem]">
             <User
-              class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+              class="absolute top-1/2 left-3 z-[1] transform -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none"
             />
-            <select v-model="form.called_by" class="form-input">
-              <option disabled value="">Select Employee</option>
+            <select
+              v-model="form.called_by"
+              class="form-input relative z-0"
+              :disabled="employeeStore.loading"
+              :class="{ 'opacity-60 cursor-wait': employeeStore.loading }"
+            >
+              <option disabled value="">
+                {{
+                  employeeStore.loading ? "Loading employees…" : "Select Employee"
+                }}
+              </option>
               <option
                 v-for="employee in employeeStore.employees"
                 :key="employee.id"
@@ -203,6 +213,13 @@ onMounted(() => {
                 {{ employee.name }}
               </option>
             </select>
+            <div
+              v-if="employeeStore.loading"
+              class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/75 dark:bg-gray-800/75 backdrop-blur-[1px]"
+              aria-hidden="true"
+            >
+              <Loader2 class="w-6 h-6 text-blue-600 animate-spin" />
+            </div>
           </div>
         </div>
 
@@ -211,12 +228,21 @@ onMounted(() => {
             <span class="font-bold text-[#1e3a8a]">Receptionist By</span>
             <span class="text-sm text-gray-500">(Filled by the employee)</span>
           </label>
-          <div class="relative">
+          <div class="relative min-h-[2.75rem]">
             <User
-              class="absolute top-1/2 left-3 transform -translate-y-1/2 w-5 h-5 text-blue-500"
+              class="absolute top-1/2 left-3 z-[1] transform -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none"
             />
-            <select v-model="form.receptionist" class="form-input">
-              <option disabled value="">Select Employee</option>
+            <select
+              v-model="form.receptionist"
+              class="form-input relative z-0"
+              :disabled="employeeStore.loading"
+              :class="{ 'opacity-60 cursor-wait': employeeStore.loading }"
+            >
+              <option disabled value="">
+                {{
+                  employeeStore.loading ? "Loading employees…" : "Select Employee"
+                }}
+              </option>
               <option
                 v-for="employee in employeeStore.employees"
                 :key="employee.id"
@@ -225,6 +251,13 @@ onMounted(() => {
                 {{ employee.name }}
               </option>
             </select>
+            <div
+              v-if="employeeStore.loading"
+              class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/75 dark:bg-gray-800/75 backdrop-blur-[1px]"
+              aria-hidden="true"
+            >
+              <Loader2 class="w-6 h-6 text-blue-600 animate-spin" />
+            </div>
           </div>
         </div>
 
@@ -238,7 +271,8 @@ onMounted(() => {
         <div class="md:col-span-2 flex justify-center pt-2">
           <button
             type="button"
-            class="bg-primary text-white py-2 px-8 rounded-xl hover:bg-blue-700 transition font-medium"
+            class="bg-primary text-white py-2 px-8 rounded-xl hover:bg-blue-700 transition font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+            :disabled="employeeStore.loading"
             @click="goToStep2"
           >
             Next
@@ -248,6 +282,20 @@ onMounted(() => {
 
       <template v-else>
       <!-- Full Name -->
+       <div class="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-200 p-2 rounded-xl mb-4">
+          <div class="bg-blue-500 p-2 rounded-full shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+
+            <p class="text-blue-700 text-sm">Please ensure all data is entered in English only.</p>
+          </div>
+        </div>
+
       <div>
         <label class="form-label">Full Name (English)</label>
         <div class="relative">
@@ -341,10 +389,11 @@ onMounted(() => {
             type="text"
             class="form-input"
             :class="{ '!border-red-500 ring-1 ring-red-400': serverErrorFields.ID_number }"
-            maxlength="14"
-            placeholder="12345678901234"
+            maxlength="64"
+            placeholder="English letters Or Numbers only"
+            autocomplete="off"
             @input="
-              restrictToDigits('ID_number');
+              restrictToEnglishAlphanumeric('ID_number');
               delete serverErrorFields.ID_number;
             "
           />
@@ -486,19 +535,7 @@ onMounted(() => {
           @input="restrictToEnglish('marketing_code')" />
       </div>
 
-      <div class="md:col-span-2 flex items-center gap-3 bg-blue-50 border border-blue-200 p-2 rounded-xl mb-4">
-        <div class="bg-blue-500 p-2 rounded-full shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"
-            stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <div>
-
-          <p class="text-blue-700 text-sm">Please ensure all data is entered in English only.</p>
-        </div>
-      </div>
+      
 
       <!-- Error message if required fields are missing -->
       <p v-if="missingFieldsError" class="text-red-600 text-center font-medium md:col-span-2">
