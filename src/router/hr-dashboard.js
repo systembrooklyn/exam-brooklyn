@@ -57,6 +57,11 @@ export default {
       component: () => import("@/views/hr/VacationBalances.vue"),
     },
     {
+      path: "my-vacations",
+      name: "hr-my-vacations",
+      component: () => import("@/views/hr/MyVacationBalances.vue"),
+    },
+    {
       path: "links",
       name: "hr-links",
       component: () => import("@/views/hr/EmployeeLinks.vue"),

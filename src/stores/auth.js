@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Cookies from "js-cookie";
 import { useRouter } from "vue-router";
 import notyf from "@/components/global/notyf";
@@ -11,6 +11,24 @@ import {
   USER_BY_TOKEN,
 } from "../api/Api";
 import { handleError } from "./handleError";
+
+/** Role object or string from API — tune names if your backend differs. */
+function roleLooksAdmin(role) {
+  if (role == null) return false;
+  const raw =
+    typeof role === "object"
+      ? role.name ?? role.slug ?? role.role_name ?? role.title ?? ""
+      : role;
+  const n = String(raw).toLowerCase().trim();
+  if (!n) return false;
+  return (
+    n === "admin" ||
+    n === "administrator" ||
+    n.includes("super admin") ||
+    n.includes("super-admin") ||
+    n === "superadmin"
+  );
+}
 
 export const useAuthStore = defineStore("authStore", () => {
   const token = ref(null);
@@ -125,6 +143,19 @@ export const useAuthStore = defineStore("authStore", () => {
     return permissions.value.includes(permissionName);
   };
 
+  /**
+   * True when the logged-in user is treated as admin (no extra permission string required).
+   * Uses: is_admin / isAdmin, roles[], or role from `GET user` payload.
+   */
+  const isAdminUser = computed(() => {
+    const u = user.value;
+    if (!u) return false;
+    if (u.is_admin === true || u.is_admin === 1 || u.isAdmin === true) return true;
+    if (Array.isArray(u.roles) && u.roles.some(roleLooksAdmin)) return true;
+    if (roleLooksAdmin(u.role)) return true;
+    if (Array.isArray(u.role) && u.role.some(roleLooksAdmin)) return true;
+    return false;
+  });
 
   const initAuth = async () => {
     restoreTokenFromCookies();
@@ -146,6 +177,7 @@ export const useAuthStore = defineStore("authStore", () => {
     resetPassword,
     getUserByToken ,
     hasPermission,
+    isAdminUser,
     initAuth,
   };
 });

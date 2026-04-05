@@ -106,9 +106,14 @@ const searchQuery = ref('');
 const container = ref(null);
 const searchInput = ref(null);
 
+const optionMatchesModel = (optVal) => {
+  if (!props.modelValue?.length) return false;
+  return props.modelValue.some((v) => v == optVal);
+};
+
 const selectedOptions = computed(() => {
   if (!props.modelValue) return [];
-  return props.options.filter(opt => props.modelValue.includes(opt[props.valueKey]));
+  return props.options.filter((opt) => optionMatchesModel(opt[props.valueKey]));
 });
 
 const filteredOptions = computed(() => {
@@ -131,25 +136,26 @@ const toggleDropdown = () => {
 };
 
 const isSelected = (option) => {
-  return props.modelValue.includes(option[props.valueKey]);
+  return optionMatchesModel(option[props.valueKey]);
 };
 
 const toggleOption = (option) => {
   const id = option[props.valueKey];
   const newValue = [...props.modelValue];
-  
-  if (isSelected(option)) {
-    const index = newValue.indexOf(id);
-    newValue.splice(index, 1);
+  const idx = newValue.findIndex((v) => v == id);
+
+  if (idx >= 0) {
+    newValue.splice(idx, 1);
   } else {
     newValue.push(id);
   }
-  
+
   emit('update:modelValue', newValue);
 };
 
 const removeItem = (item) => {
-  const newValue = props.modelValue.filter(id => id !== item[props.valueKey]);
+  const optVal = item[props.valueKey];
+  const newValue = props.modelValue.filter((v) => v != optVal);
   emit('update:modelValue', newValue);
 };
 

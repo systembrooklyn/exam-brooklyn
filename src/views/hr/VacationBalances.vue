@@ -2,125 +2,177 @@
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
     <div class="flex justify-between items-center mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Vacation Balances</h1>
-        <p class="text-gray-500 mt-1">Manage employee leave entitlements</p>
+        <h1 class="text-2xl font-bold text-gray-800">Vacation Details</h1>
+        <!-- <p class="text-gray-500 mt-1">List from API with optional year</p> -->
       </div>
-      <button
+      <!-- <button
+        type="button"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
         <span class="text-xl">+</span> Add Balance
-      </button>
+      </button> -->
     </div>
 
-     <!-- Filters -->
     <div class="flex flex-wrap gap-4 mb-6">
-        <input v-model="searchQuery" type="text" placeholder="Search employee..." class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-        
-         <select v-model="yearFilter" class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-            <option :value="null">All Years</option>
-            <option v-for="year in availableYears" :key="year" :value="year">
-                {{ year }}
-            </option>
-        </select>
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search employee..."
+        class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+      />
+
+      <select
+        v-model="listYear"
+        class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+      >
+        <option :value="null">All years</option>
+        <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+      </select>
     </div>
 
-
-
-    <!-- Table -->
     <HrDataTable
       :headers="headers"
       :items="filteredBalances"
       :loading="store.loading"
       emptyMessage="No vacation balances found."
-      @edit="openEditModal"
-      @delete="confirmDelete"
     >
       <template #employee="{ item }">
-        <span class="font-medium text-gray-900">
-           {{ getBalanceEmployeeName(item) }}
-        </span>
+        <span class="font-medium text-gray-900">{{ getRowEmployeeName(item) }}</span>
       </template>
 
-      <template #available_days="{ value }">
-         <span class="font-bold text-gray-700">{{ value }}</span>
+      <template #year="{ item }">
+        <span class="text-gray-700">{{ item.balance.year ?? "—" }}</span>
       </template>
 
-      <template #total_vacations_taken="{ value }">
-         <span class="text-blue-600 font-medium">{{ value }}</span>
+      <template #available_days="{ item, value }">
+        <span class="font-bold text-gray-700">{{ displayAvailable(item, value) }}</span>
       </template>
 
-      <template #remaining_days="{ value }">
-         <span class="text-green-600 font-bold">{{ value }}</span>
+      <template #total_vacations_taken="{ item, value }">
+        <span class="text-blue-600 font-medium">{{ displayUsed(item, value) }}</span>
+      </template>
+
+      <template #remaining_days="{ item, value }">
+        <span class="text-green-600 font-bold">{{ displayRemaining(item, value) }}</span>
+      </template>
+
+      <template #start_date="{ item }">
+        <span class="text-gray-700">{{ displayStartDate(item) }}</span>
+      </template>
+
+      <template #actions="{ item }">
+        <div class="flex items-center justify-center gap-2 flex-wrap">
+          <button
+            v-if="item.contract"
+            type="button"
+            @click="openEditModal(item)"
+            class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
+            title="Change vacation link for this contract"
+          >
+            <Edit class="w-5 h-5" />
+          </button>
+          <button
+            v-if="authStore.isAdminUser"
+            type="button"
+            @click="confirmDelete(pickBalanceId(item.balance))"
+            class="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
+            title="Delete (admin only)"
+          >
+            <Trash2 class="w-5 h-5" />
+          </button>
+        </div>
       </template>
     </HrDataTable>
 
-    <!-- Add/Edit Modal -->
+    <!-- New: simple POST. Edit: PUT contract ↔ vacation (same simple list as My vacations). -->
     <HrModal
       :show="showModal"
       :title="isEditing ? 'Edit Balance' : 'New Balance'"
-      :loading="store.loading"
-      maxWidthClass="max-w-2xl"
+      :loading="
+        isEditing
+          ? store.contractLinkUpdating || editModalPrefetching
+          : store.loading
+      "
+      max-width-class="max-w-lg"
       @close="closeModal"
-      @save="handleSubmit"
+      @save="handleBalanceSubmit"
     >
-      <div class="space-y-6">
-        <!-- Employee Section -->
-        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                Employee Information
-            </h3>
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
+        <template v-if="!isEditing">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-                 <label class="block text-sm font-medium text-gray-700 mb-1">Employee <span class="text-red-500">*</span></label>
-                 <select v-model="form.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white" :disabled="isEditing">
-                    <option :value="null">Select Employee</option>
-                    <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-                        {{ emp.personal_info?.first_name }} {{ emp.personal_info?.last_name }}
-                    </option>
-                </select>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Year <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model.number="balanceForm.year"
+                type="number"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+              />
             </div>
-        </div>
-
-        <!-- Balance Details -->
-        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                Balance Details
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                    <input v-model="form.year" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" placeholder="2026" />
-                </div>
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <input v-model="form.start_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
-                </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >Available days <span class="text-red-500">*</span></label
+              >
+              <input
+                v-model.number="balanceForm.available_days"
+                type="number"
+                min="0"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+              />
             </div>
-        </div>
-
-         <!-- Limits -->
-         <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
-             <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" /></svg>
-                Quota & Entitlements
-            </h3>
-             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Available Days (Quota)</label>
-                    <input v-model="form.available_days" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
-                </div>
-                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Used Days</label>
-                    <input v-model="form.total_vacations_taken" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
-                </div>
-            </div>
-        </div>
+          </div>
+        </template>
+        <template v-else>
+          <p class="text-sm text-gray-600">
+            <span class="font-medium text-gray-800">{{ editEmployeeLabel }}</span>
+            · Contract
+            <span class="font-mono font-semibold">#{{ contractEditForm.contract_id }}</span>
+          </p>
+          <p class="text-xs text-gray-500">
+            Current vacation balance ID:
+            <span class="font-mono text-gray-700">{{
+              contractEditForm.vacation_balance_id
+            }}</span>
+          </p>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Vacation balance <span class="text-red-500">*</span></label
+            >
+            <select
+              v-model.number="contractEditForm.new_vacation_balance_id"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white"
+            >
+              <option v-if="!simpleVacationSelectOptions.length" disabled :value="0">
+                No balances loaded
+              </option>
+              <option
+                v-for="opt in simpleVacationSelectOptions"
+                :key="opt.id"
+                :value="opt.id"
+              >
+                {{ opt.label }}
+              </option>
+            </select>
+            <p class="text-xs text-gray-500 mt-1">
+              Your vacation balances (simple API — same as My vacations).
+            </p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Start date <span class="text-gray-400 font-normal">(optional)</span></label
+            >
+            <input
+              v-model="contractEditForm.start_date"
+              type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+          </div>
+        </template>
       </div>
     </HrModal>
 
-    <!-- Delete Confirmation -->
     <SweetAlert2Modal
       v-if="showDeleteConfirm"
       title="Are you sure?"
@@ -133,214 +185,359 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
-import { useHrVacationBalancesStore } from '@/stores/hr/vacationBalances';
-import { useHrEmployeesStore } from '@/stores/hr/employees';
-import { useHrContractsStore } from '@/stores/hr/contracts';
-
-import HrModal from '@/components/hr-dashboard/HrModal.vue';
-import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
-import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
+import { onMounted, ref, computed, watch } from "vue";
+import { Edit, Trash2 } from "lucide-vue-next";
+import { useHrVacationBalancesStore } from "@/stores/hr/vacationBalances";
+import { useHrEmployeesStore } from "@/stores/hr/employees";
+import { useAuthStore } from "@/stores/auth";
+import HrModal from "@/components/hr-dashboard/HrModal.vue";
+import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
+import HrDataTable from "@/components/hr-dashboard/HrDataTable.vue";
 import notyf from "@/components/global/notyf";
-import { watch } from 'vue';
 
 const store = useHrVacationBalancesStore();
 const empStore = useHrEmployeesStore();
-const contractStore = useHrContractsStore();
+const authStore = useAuthStore();
 
 const vacationBalances = computed(() => store.vacationBalances);
 const employees = computed(() => empStore.employees);
-const contracts = computed(() => contractStore.contracts);
+
+const searchQuery = ref("");
+const listYear = ref(new Date().getFullYear());
+
+const currentY = new Date().getFullYear();
+const yearOptions = computed(() => {
+  const ys = [];
+  for (let y = currentY + 1; y >= currentY - 10; y--) ys.push(y);
+  return ys;
+});
+
+const fetchBalances = () => store.getVacationBalances(listYear.value);
+
+watch(listYear, () => {
+  fetchBalances();
+});
+
+/** API: Vacation_id on list rows; store may copy to id */
+const pickBalanceId = (row) =>
+  row?.Vacation_id ??
+  row?.vacation_id ??
+  row?.id ??
+  row?.vacation_balance_id ??
+  row?.vacationBalanceId ??
+  null;
+
+/** First contract row that has nested vacation_balance (API shape). */
+const firstVacationSnapshot = (balance) => {
+  const list = balance.contracts;
+  if (!Array.isArray(list) || !list.length) return null;
+  const withVb = list.find((c) => c?.vacation_balance != null);
+  return (withVb ?? list[0])?.vacation_balance ?? null;
+};
+
+/** Per-contract vacation_balance when API nests it; else shared snapshot from balance. */
+const vacationSnapshotForRow = (row) => {
+  const vb = row.contract?.vacation_balance;
+  if (vb) return vb;
+  return firstVacationSnapshot(row.balance);
+};
+
+const getBalanceEmployeeName = (balance) => {
+  const fromContracts = (balance.contracts || [])
+    .map((c) => c.employee?.name)
+    .filter(Boolean);
+  if (fromContracts.length) {
+    return [...new Set(fromContracts)].join(", ");
+  }
+  if (balance.employee?.name) return balance.employee.name;
+  const empId = balance.employee_id || balance.contracts?.[0]?.employee?.id;
+  const emp = employees.value.find((e) => e.id === empId || String(e.id) === String(empId));
+  if (emp) {
+    const info = emp.personal_info || emp;
+    return `${info.first_name} ${info.last_name}`;
+  }
+  return "—";
+};
+
+const getRowEmployeeName = (row) => {
+  const name = row.contract?.employee?.name;
+  if (name) return name;
+  return getBalanceEmployeeName(row.balance);
+};
+
+/** One table row per linked contract so Employee / dates / numbers align per person. */
+const balanceTableRows = computed(() => {
+  const rows = [];
+  for (const balance of vacationBalances.value) {
+    const bid = pickBalanceId(balance);
+    const prefix = bid != null ? String(bid) : `row-${rows.length}`;
+    const contracts = Array.isArray(balance.contracts) ? balance.contracts : [];
+    if (!contracts.length) {
+      rows.push({
+        balance,
+        contract: null,
+        tableRowKey: `${prefix}-solo`,
+      });
+    } else {
+      contracts.forEach((c, i) => {
+        const cid = c.contract_id ?? c.contractId ?? c.id ?? i;
+        rows.push({
+          balance,
+          contract: c,
+          tableRowKey: `${prefix}-c-${cid}`,
+        });
+      });
+    }
+  }
+  return rows;
+});
+
+const hasAvailNumber = (v) =>
+  v != null && v !== "" && !(typeof v === "number" && Number.isNaN(v));
+
+const displayAvailable = (row, value) => {
+  const item = row.balance;
+  const rootFirst = value ?? item.available_days ?? item.availableDays;
+  if (hasAvailNumber(rootFirst)) return rootFirst;
+  const vb = vacationSnapshotForRow(row);
+  const nested = vb?.available_days ?? vb?.availableDays;
+  if (hasAvailNumber(nested)) return nested;
+  return "—";
+};
+
+const displayStartDate = (row) => {
+  const item = row.balance;
+  const c = row.contract;
+  const vb = vacationSnapshotForRow(row);
+  const v =
+    vb?.start_date ??
+    vb?.startDate ??
+    item.start_date ??
+    item.startDate ??
+    c?.start_date ??
+    c?.startDate ??
+    item.contracts?.[0]?.start_date ??
+    item.contracts?.[0]?.startDate;
+  if (v == null || v === "") return "—";
+  const s = String(v);
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : s;
+};
+
+const displayUsed = (row, value) => {
+  const item = row.balance;
+  const vb = vacationSnapshotForRow(row);
+  const v =
+    value ??
+    vb?.taken_days ??
+    item.total_vacations_taken ??
+    item.used_days ??
+    item.vacations_taken;
+  if (v == null || v === "") return "—";
+  return v;
+};
+
+const displayRemaining = (row, value) => {
+  const item = row.balance;
+  const vb = vacationSnapshotForRow(row);
+  const v =
+    value ??
+    vb?.remaining_days ??
+    vb?.remaining ??
+    item.remaining_days ??
+    item.remaining;
+  if (v == null || v === "") return "—";
+  return v;
+};
+
+const headers = [
+  { label: "Employee", key: "employee" },
+  { label: "Year", key: "year" },
+  { label: "Start date", key: "start_date" },
+  { label: "Available", key: "available_days" },
+  { label: "Used", key: "total_vacations_taken" },
+  { label: "Remaining", key: "remaining_days" },
+];
+
+const filteredBalances = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  const list = balanceTableRows.value;
+  if (!q) return list;
+  return list.filter((r) =>
+    getRowEmployeeName(r).toLowerCase().includes(q)
+  );
+});
 
 const showModal = ref(false);
 const isEditing = ref(false);
 const editingId = ref(null);
+const editModalPrefetching = ref(false);
+const editEmployeeLabel = ref("");
+const balanceForm = ref({
+  year: currentY,
+  available_days: 21,
+});
 
-// Delete Confirmation
+const contractEditForm = ref({
+  vacation_balance_id: null,
+  contract_id: null,
+  new_vacation_balance_id: null,
+  start_date: "",
+});
+
+const simpleVacationSelectOptions = computed(() => {
+  const list = store.simpleVacations || [];
+  let opts = list
+    .filter((v) => v.id != null && v.id !== "")
+    .map((v) => ({
+      id: Number(v.id),
+      label: `ID ${v.id} · Year ${v.year ?? "—"} · ${v.days ?? "—"} days`,
+    }))
+    .filter((o) => Number.isFinite(o.id));
+  const cur = contractEditForm.value.vacation_balance_id;
+  const curN = Number(cur);
+  if (
+    showModal.value &&
+    isEditing.value &&
+    Number.isFinite(curN) &&
+    !opts.some((o) => o.id === curN)
+  ) {
+    opts = [
+      {
+        id: curN,
+        label: `ID ${curN} · (current row)`,
+      },
+      ...opts,
+    ];
+  }
+  return opts;
+});
+
+const pickContractId = (contract) => {
+  if (!contract) return null;
+  const cid = contract.contract_id ?? contract.contractId ?? contract.id;
+  if (cid == null || cid === "") return null;
+  const n = Number(cid);
+  return Number.isFinite(n) ? n : null;
+};
+
 const showDeleteConfirm = ref(false);
 const deleteId = ref(null);
 
-const form = ref({
-  employee_id: null,
-  year: new Date().getFullYear(),
-  start_date: '',
-  available_days: 21,
-
-  total_vacations_taken: 0
-});
-
 onMounted(async () => {
-  store.getVacationBalances();
-  empStore.getEmployees();
-  contractStore.getContracts();
+  await Promise.all([empStore.getEmployees(), fetchBalances()]);
 });
-
-const getBalanceEmployeeName = (balance) => {
-    // 1. Try contracts array (from API index)
-    if (balance.contracts?.[0]?.employee?.name) return balance.contracts[0].employee.name;
-    // 2. Try employee object (if exists)
-    if (balance.employee?.name) return balance.employee.name;
-    // 3. Fallback to store if we have IDs
-    const empId = balance.employee_id || balance.contracts?.[0]?.employee?.id;
-    const emp = employees.value.find(e => e.id === empId);
-    if (emp) {
-        const info = emp.personal_info || emp;
-        return `${info.first_name} ${info.last_name}`;
-    }
-    return `-`;
-};
-
-const searchQuery = ref('');
-const yearFilter = ref(null);
-
-const headers = [
-  { label: 'Employee', key: 'employee' },
-  { label: 'Year', key: 'year' },
-  { label: 'Start Date', key: 'start_date' },
-  { label: 'Entitlement', key: 'available_days' },
-  { label: 'Used', key: 'total_vacations_taken' },
-  { label: 'Remaining', key: 'remaining_days' },
-];
-
-const availableYears = computed(() => {
-    const years = new Set(vacationBalances.value.map(b => b.year));
-    return Array.from(years).sort((a, b) => b - a);
-});
-
-const filteredBalances = computed(() => {
-    return vacationBalances.value.filter(b => {
-        const empName = getBalanceEmployeeName(b).toLowerCase();
-        const matchesSearch = empName.includes(searchQuery.value.toLowerCase());
-        const matchesYear = !yearFilter.value || b.year === yearFilter.value;
-
-        return matchesSearch && matchesYear;
-    });
-});
-
-// Pagination
-const currentPage = ref(1);
-const itemsPerPage = 7;
-
-const totalPages = computed(() => Math.ceil(filteredBalances.value.length / itemsPerPage));
-
-const paginatedBalances = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredBalances.value.slice(start, end);
-});
-
-const goToPage = (page) => {
-  currentPage.value = page;
-};
-
-// Reset pagination
-watch([searchQuery, yearFilter], () => {
-    currentPage.value = 1;
-});
-
 
 const openAddModal = () => {
   isEditing.value = false;
   editingId.value = null;
-  form.value = {
-    employee_id: null,
-    year: new Date().getFullYear(),
-    start_date: new Date().toISOString().slice(0, 10),
+  editEmployeeLabel.value = "";
+  balanceForm.value = {
+    year: currentY,
     available_days: 21,
-    total_vacations_taken: 0
   };
   showModal.value = true;
 };
 
-const openEditModal = async (balance) => {
-  isEditing.value = true;
-  editingId.value = balance.id;
-  
-  try {
-    const fullBalance = await store.getVacationBalance(balance.id);
-    
-    // Map data correctly from the nested structure
-    form.value = { 
-      ...fullBalance,
-      employee_id: fullBalance.contracts?.[0]?.employee?.id || fullBalance.employee_id
-    };
-  } catch (error) {
-    console.error('Failed to fetch details:', error);
-    form.value = { ...balance };
+const openEditModal = async (row) => {
+  if (!row.contract) {
+    notyf.error("Edit is only available on rows with a contract.");
+    return;
   }
-  
-  showModal.value = true;
+  const balance = row.balance;
+  const vid = pickBalanceId(balance);
+  const cid = pickContractId(row.contract);
+  if (vid == null || cid == null) {
+    notyf.error("Missing vacation balance or contract id.");
+    return;
+  }
+  editModalPrefetching.value = true;
+  try {
+    await store.getSimpleVacationBalancesAll();
+    isEditing.value = true;
+    editingId.value = vid;
+    editEmployeeLabel.value = getRowEmployeeName(row);
+    contractEditForm.value = {
+      vacation_balance_id: vid,
+      contract_id: cid,
+      new_vacation_balance_id: Number(vid),
+      start_date: startDateForInput(row),
+    };
+    showModal.value = true;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    editModalPrefetching.value = false;
+  }
 };
 
 const closeModal = () => {
   showModal.value = false;
+  editEmployeeLabel.value = "";
 };
 
-const handleSubmit = async () => {
-  if (!form.value.employee_id) {
-    notyf.error('Employee is required');
-    return;
-  }
-
-  // Find active contract for employee
-  let targetContract = contracts.value.find(c => c.employee_id === form.value.employee_id && (c.is_active || c.is_active === 1));
-
-  // Fallback: If no active contract, take the first available contract for this employee
-  if (!targetContract) {
-    targetContract = contracts.value.find(c => c.employee_id === form.value.employee_id);
-  }
-
-  if (!targetContract && !isEditing.value) {
-      notyf.error('Selected employee does not have any contract. Please create a contract for this employee first.');
-      return; 
-  }
-
-  const payload = {
-      ...form.value,
-      employee_id: parseInt(form.value.employee_id),
-      year: parseInt(form.value.year),
-      available_days: parseInt(form.value.available_days),
-      total_vacations_taken: parseInt(form.value.total_vacations_taken || 0),
-      contract_ids: targetContract ? [targetContract.id] : []
-  }
-
+const handleBalanceSubmit = async () => {
   try {
     if (isEditing.value) {
-      // For update, the API might not need contract_ids if strictly updating balance fields, 
-      // but if it does, we send it. Usually update is just balance data.
-      await store.updateVacationBalance(editingId.value, payload);
+      const nb = Number(contractEditForm.value.new_vacation_balance_id);
+      if (!Number.isFinite(nb)) {
+        notyf.error("Select a vacation balance");
+        return;
+      }
+      await store.updateContractVacationRelationship({
+        vacation_balance_id: contractEditForm.value.vacation_balance_id,
+        contract_id: contractEditForm.value.contract_id,
+        new_vacation_balance_id: nb,
+        start_date: contractEditForm.value.start_date?.trim() || undefined,
+      });
     } else {
-      await store.createVacationBalance(payload);
+      const y = Number(balanceForm.value.year);
+      const days = Number(balanceForm.value.available_days);
+      if (!Number.isFinite(y) || !Number.isFinite(days)) {
+        notyf.error("Year and available days are required");
+        return;
+      }
+      await store.createVacationBalanceSimple({
+        year: y,
+        available_days: days,
+      });
     }
     closeModal();
-    // Refresh to show new data
-    store.getVacationBalances(); 
-  } catch (error) {
-     console.error(error);
+    await fetchBalances();
+  } catch (e) {
+    console.error(e);
   }
 };
 
 const confirmDelete = (id) => {
+  if (id == null) {
+    notyf.error("Missing balance id.");
+    return;
+  }
   deleteId.value = id;
   showDeleteConfirm.value = true;
 };
 
 const handleDeleteConfirm = async () => {
-  if (deleteId.value) {
-    try {
-      await store.deleteVacationBalance(deleteId.value);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      showDeleteConfirm.value = false;
-      deleteId.value = null;
-    }
+  if (!deleteId.value) return;
+  try {
+    await store.deleteVacationBalance(deleteId.value);
+    await fetchBalances();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    showDeleteConfirm.value = false;
+    deleteId.value = null;
   }
 };
 
 const cancelDelete = () => {
-    showDeleteConfirm.value = false;
-    deleteId.value = null;
+  showDeleteConfirm.value = false;
+  deleteId.value = null;
+};
+
+const startDateForInput = (row) => {
+  const s = displayStartDate(row);
+  return s === "—" ? "" : s;
 };
 </script>
 
@@ -350,7 +547,13 @@ const cancelDelete = () => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

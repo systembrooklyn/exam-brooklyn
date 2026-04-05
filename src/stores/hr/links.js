@@ -8,6 +8,8 @@ import { PAYROLL_LINKING } from "@/api/Api";
 export const useHrLinksStore = defineStore("hr-links", () => {
   const links = ref([]);
   const loading = ref(false);
+  /** True after at least one successful payroll-links fetch (avoids refetching on every edit open). */
+  const linksHydrated = ref(false);
 
   const normalizeIdList = (value) => {
     if (Array.isArray(value)) {
@@ -47,6 +49,7 @@ export const useHrLinksStore = defineStore("hr-links", () => {
     try {
       const response = await apiClient.get(PAYROLL_LINKING);
       links.value = response.data.data;
+      linksHydrated.value = true;
       return response.data;
     } catch (err) {
       handleError(err);
@@ -116,6 +119,7 @@ export const useHrLinksStore = defineStore("hr-links", () => {
   return {
     links,
     loading,
+    linksHydrated,
     getEmployeeJobDeps,
     linkEmployeeJobDep,
     updateEmployeeJobDep,

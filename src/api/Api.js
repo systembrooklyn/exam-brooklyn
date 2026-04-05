@@ -52,6 +52,12 @@ export const PAYROLL_SHIFTS = "payroll-system/shifts";
 export const PAYROLL_LINKING = "payroll-system/employee-job-departments";
 export const PAYROLL_CONTRACTS = "payroll-system/contracts";
 export const PAYROLL_VACATION_BALANCES = "payroll-system/vacation-balances";
+export const PAYROLL_VACATION_BALANCES_SIMPLE =
+  "payroll-system/vacation-balances/simple";
+export const PAYROLL_VACATION_BALANCES_ASSIGN_CONTRACTS =
+  "payroll-system/vacation-balances/assign-contracts";
+export const PAYROLL_VACATION_BALANCE_CONTRACT = (vacationBalanceId, contractId) =>
+  `payroll-system/vacation-balances/${vacationBalanceId}/contracts/${contractId}`;
 export const PAYROLL_MANAGERS = "payroll-system/employees/managers";
 export const PAYROLL_ASSIGN_MANAGER = (id) =>
   `payroll-system/employees/${id}/assign-manager`;
@@ -80,7 +86,6 @@ export const PAYROLL_REJECT_REQUEST = (id) =>
   `payroll-system/employee-requests/${id}/reject`;
 
 export const PAYROLL_CALC = "payroll-system/payroll-details";
-export const PAYROLL_STATUS_UPDATE =
-  "payroll-system/payroll-status/update";
+export const PAYROLL_STATUS_UPDATE = "payroll-system/payroll-status/update";
 export const PAYROLL_DETAILS = "payroll-system/payroll-details";
 export const PAYROLL_ACTIONABLE = "payroll-system/payroll-actionable";

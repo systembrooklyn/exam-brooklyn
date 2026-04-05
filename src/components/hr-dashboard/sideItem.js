@@ -10,6 +10,7 @@ import {
   ClipboardList,
   GitPullRequest,
   Banknote,
+  Palmtree,
 } from "lucide-vue-next";
 
 export const itemHr = [
@@ -59,9 +60,12 @@ export const itemHr = [
     route: "hr-contracts",
   },
   {
-    name: "Vacation Balances",
-    icon: Calendar,
-    route: "hr-vacation-balances",
+    name: "Vacations",
+    icon: Palmtree,
+    children: [
+      { name: "Vacations Details", route: "hr-vacation-balances" },
+      { name: "Vacation Balances", route: "hr-my-vacations" },
+    ],
   },
   {
     name: "Payrolls",

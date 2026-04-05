@@ -16,35 +16,28 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <!-- Serial Number Header -->
-            <th class="p-4 font-semibold text-gray-600 text-center w-16">#</th>
-            
+            <!-- <th class="p-4 font-semibold text-gray-600 text-center w-16">#</th> -->
+
             <!-- Dynamic Headers -->
-            <th 
-              v-for="header in headers" 
-              :key="header.key" 
-              class="p-4 font-semibold text-gray-600 text-center whitespace-nowrap"
-            >
+            <th v-for="header in headers" :key="header.key"
+              class="p-4 font-semibold text-gray-600 text-center whitespace-nowrap">
               {{ header.label }}
             </th>
-            
+
             <!-- Actions Header -->
             <th v-if="hasActions" class="p-4 font-semibold text-gray-600 text-center w-32">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr v-for="(item, index) in paginatedItems" :key="item.id || index" class="hover:bg-gray-50 transition-colors">
+          <tr v-for="(item, index) in paginatedItems" :key="item.tableRowKey ?? item.id ?? index"
+            class="hover:bg-gray-50 transition-colors">
             <!-- Serial Number -->
-            <td class="p-4 text-center text-gray-500 font-medium">
+            <!-- <td class="p-4 text-center text-gray-500 font-medium">
               {{ (currentPage - 1) * itemsPerPage + index + 1 }}
-            </td>
+            </td> -->
 
             <!-- Data Columns -->
-            <td 
-              v-for="header in headers" 
-              :key="header.key" 
-              class="p-4 text-center text-sm"
-              :class="header.class"
-            >
+            <td v-for="header in headers" :key="header.key" class="p-4 text-center text-sm" :class="header.class">
               <!-- Slot for custom cell content -->
               <slot :name="header.key" :item="item" :value="item[header.key]">
                 <!-- Default content -->
@@ -56,12 +49,14 @@
             <td v-if="hasActions" class="p-4">
               <div class="flex items-center justify-center gap-3">
                 <slot name="actions" :item="item">
-                     <button v-if="hasEdit" @click="$emit('edit', item)" class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors" title="Edit">
-                        <Edit class="w-5 h-5" />
-                    </button>
-                    <button v-if="hasDelete" @click="$emit('delete', item.id)" class="cursor-pointer text-red-500 hover:text-red-700 transition-colors" title="Delete">
-                        <Trash2 class="w-5 h-5" />
-                    </button>
+                  <button v-if="hasEdit" @click="$emit('edit', item)"
+                    class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors" title="Edit">
+                    <Edit class="w-5 h-5" />
+                  </button>
+                  <button v-if="hasDelete" @click="$emit('delete', item.id)"
+                    class="cursor-pointer text-red-500 hover:text-red-700 transition-colors" title="Delete">
+                    <Trash2 class="w-5 h-5" />
+                  </button>
                 </slot>
               </div>
             </td>
@@ -71,14 +66,8 @@
     </div>
 
     <!-- Pagination -->
-    <Pagination
-      v-if="items.length > itemsPerPage"
-      :currentPage="currentPage"
-      :totalPages="totalPages"
-      :totalQuestions="items.length"
-      :questionsPerPage="itemsPerPage"
-      :goToPage="goToPage"
-    />
+    <Pagination v-if="items.length > itemsPerPage" :currentPage="currentPage" :totalPages="totalPages"
+      :totalQuestions="items.length" :questionsPerPage="itemsPerPage" :goToPage="goToPage" />
   </div>
 </template>
 
