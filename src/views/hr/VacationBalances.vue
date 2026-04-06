@@ -66,11 +66,16 @@
           <button
             v-if="item.contract"
             type="button"
+            :disabled="editModalPrefetching"
             @click="openEditModal(item)"
-            class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
+            class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[1.25rem]"
             title="Change vacation link for this contract"
           >
-            <Edit class="w-5 h-5" />
+            <Loader2
+              v-if="editRowLoadingKey === item.tableRowKey"
+              class="w-5 h-5 animate-spin text-blue-600"
+            />
+            <Edit v-else class="w-5 h-5" />
           </button>
           <button
             v-if="authStore.isAdminUser"
@@ -186,7 +191,7 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from "vue";
-import { Edit, Trash2 } from "lucide-vue-next";
+import { Edit, Trash2, Loader2 } from "lucide-vue-next";
 import { useHrVacationBalancesStore } from "@/stores/hr/vacationBalances";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
 import { useAuthStore } from "@/stores/auth";
@@ -358,9 +363,14 @@ const headers = [
   { label: "Remaining", key: "remaining_days" },
 ];
 
+const rowHasEmployeeName = (row) => {
+  const n = String(getRowEmployeeName(row) ?? "").trim();
+  return n.length > 0 && n !== "—";
+};
+
 const filteredBalances = computed(() => {
+  const list = balanceTableRows.value.filter((r) => rowHasEmployeeName(r));
   const q = searchQuery.value.trim().toLowerCase();
-  const list = balanceTableRows.value;
   if (!q) return list;
   return list.filter((r) =>
     getRowEmployeeName(r).toLowerCase().includes(q)
@@ -371,6 +381,7 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const editingId = ref(null);
 const editModalPrefetching = ref(false);
+const editRowLoadingKey = ref(null);
 const editEmployeeLabel = ref("");
 const balanceForm = ref({
   year: currentY,
@@ -450,6 +461,7 @@ const openEditModal = async (row) => {
     notyf.error("Missing vacation balance or contract id.");
     return;
   }
+  editRowLoadingKey.value = row.tableRowKey;
   editModalPrefetching.value = true;
   try {
     await store.getSimpleVacationBalancesAll();
@@ -467,6 +479,7 @@ const openEditModal = async (row) => {
     console.error(e);
   } finally {
     editModalPrefetching.value = false;
+    editRowLoadingKey.value = null;
   }
 };
 
