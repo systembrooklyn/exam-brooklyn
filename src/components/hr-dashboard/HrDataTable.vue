@@ -16,7 +16,7 @@
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <!-- Serial Number Header -->
-            <!-- <th class="p-4 font-semibold text-gray-600 text-center w-16">#</th> -->
+            <th class="p-4 font-semibold text-gray-600 text-center w-16">#</th>
 
             <!-- Dynamic Headers -->
             <th v-for="header in headers" :key="header.key"
@@ -32,9 +32,9 @@
           <tr v-for="(item, index) in paginatedItems" :key="item.tableRowKey ?? item.id ?? index"
             class="hover:bg-gray-50 transition-colors">
             <!-- Serial Number -->
-            <!-- <td class="p-4 text-center text-gray-500 font-medium">
+            <td class="p-4 text-center text-gray-500 font-medium">
               {{ (currentPage - 1) * itemsPerPage + index + 1 }}
-            </td> -->
+            </td>
 
             <!-- Data Columns -->
             <td v-for="header in headers" :key="header.key" class="p-4 text-center text-sm" :class="header.class">

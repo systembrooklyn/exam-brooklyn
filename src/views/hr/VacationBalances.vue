@@ -38,7 +38,12 @@
       emptyMessage="No vacation balances found."
     >
       <template #employee="{ item }">
-        <span class="font-medium text-gray-900">{{ getRowEmployeeName(item) }}</span>
+        <button
+          @click="viewVacationHistory(item)"
+          class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer transition-colors text-left"
+        >
+          {{ getRowEmployeeName(item) }}
+        </button>
       </template>
 
       <template #year="{ item }">
@@ -186,14 +191,112 @@
       @confirm="handleDeleteConfirm"
       @cancel="cancelDelete"
     />
+
+    <!-- Vacation History Modal -->
+    <HrModal
+      :show="showHistoryModal"
+      :title="`Vacation History`"
+      :hasSave="false"
+      max-width-class="max-w-2xl"
+      @close="showHistoryModal = false"
+    >
+      <div v-if="historyLoading" class="flex flex-col items-center justify-center py-12">
+        <Loader2 class="w-10 h-10 animate-spin text-indigo-600 mb-4" />
+        <p class="text-gray-500 font-medium animate-pulse">Fetching history...</p>
+      </div>
+
+      <div v-else-if="!vacationHistory.length" class="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+        <History class="w-12 h-12 text-gray-300 mx-auto mb-3" />
+        <h3 class="text-lg font-bold text-gray-700">No History Found</h3>
+        <p class="text-gray-500 mt-1 max-w-xs mx-auto">This employee doesn't have any approved vacations on record.</p>
+      </div>
+
+      <div v-else class="space-y-6">
+        <!-- Top Info Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                <User class="w-6 h-6" />
+            </div>
+            <div>
+              <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider">Employee</p>
+              <p class="text-gray-900 font-bold truncate">{{ selectedEmployeeName }}</p>
+            </div>
+          </div>
+          <div class="bg-gradient-to-br from-emerald-50 to-white p-4 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
+            <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                <ShieldCheck class="w-6 h-6" />
+            </div>
+            <div>
+              <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider">Approved Total</p>
+              <p class="text-gray-900 font-extrabold text-xl">{{ totalVacationDays }} <span class="text-xs font-normal text-gray-500">Days</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="overflow-hidden border border-gray-100 rounded-2xl shadow-sm">
+          <table class="w-full text-left text-sm border-collapse">
+            <thead class="bg-gray-50/80 backdrop-blur-sm text-gray-600 font-bold uppercase text-lg tracking-widest">
+              <tr>
+                <th class="px-6 py-4 border-b">
+                  <div class="flex items-center gap-2">
+                    <Calendar class="w-3 h-3" /> Day
+                  </div>
+                </th>
+                <th class="px-6 py-4 border-b text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <Clock class="w-3 h-3" /> Duration
+                  </div>
+                </th>
+                <th class="px-6 py-4 border-b text-right">
+                  <div class="flex items-center justify-end gap-2">
+                    <CheckCircle class="w-3 h-3" /> Approved At
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <tr v-for="(vac, idx) in vacationHistory" :key="idx" class="hover:bg-indigo-50/30 transition-colors group">
+                <td class="px-6 py-4 text-gray-900 font-semibold">
+                  {{ vac.day || '-' }}
+                </td>
+                <td class="px-6 py-4 text-center">
+                  <span 
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-tighter"
+                    :class="vac.duration_type === 'full' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'"
+                  >
+                    {{ vac.duration_type || '-' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-right text-gray-500 font-mono text-xs">
+                  {{ formatApprovedDate(vac.approved_at) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </HrModal>
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref, computed, watch } from "vue";
-import { Edit, Trash2, Loader2 } from "lucide-vue-next";
+import { 
+  Edit, 
+  Trash2, 
+  Loader2, 
+  Calendar, 
+  Clock, 
+  CheckCircle,
+  History,
+  User,
+  ShieldCheck
+} from "lucide-vue-next";
 import { useHrVacationBalancesStore } from "@/stores/hr/vacationBalances";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
+import { useHrRequestsStore } from "@/stores/hr/requests";
 import { useAuthStore } from "@/stores/auth";
 import HrModal from "@/components/hr-dashboard/HrModal.vue";
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
@@ -202,6 +305,7 @@ import notyf from "@/components/global/notyf";
 
 const store = useHrVacationBalancesStore();
 const empStore = useHrEmployeesStore();
+const requestsStore = useHrRequestsStore();
 const authStore = useAuthStore();
 
 const vacationBalances = computed(() => store.vacationBalances);
@@ -209,6 +313,36 @@ const employees = computed(() => empStore.employees);
 
 const searchQuery = ref("");
 const listYear = ref(new Date().getFullYear());
+
+const showHistoryModal = ref(false);
+const historyLoading = ref(false);
+const vacationHistory = ref([]);
+const totalVacationDays = ref(0);
+const selectedEmployeeName = ref("");
+
+const viewVacationHistory = async (item) => {
+  const empId = item.contract?.employee?.id || item.balance.employee_id;
+  if (!empId) {
+    notyf.error("Employee ID not found for this record.");
+    return;
+  }
+  selectedEmployeeName.value = getRowEmployeeName(item);
+  showHistoryModal.value = true;
+  historyLoading.value = true;
+  vacationHistory.value = [];
+  totalVacationDays.value = 0;
+  try {
+    const res = await requestsStore.getApprovedVacations(empId);
+    // Based on API response: res.data.vacations is the list, res.data.total_days is the count
+    vacationHistory.value = res.data?.vacations || [];
+    totalVacationDays.value = res.data?.total_days || 0;
+  } catch (e) {
+    console.error("Failed to fetch vacation history", e);
+    vacationHistory.value = [];
+  } finally {
+    historyLoading.value = false;
+  }
+};
 
 const currentY = new Date().getFullYear();
 const yearOptions = computed(() => {
@@ -551,6 +685,12 @@ const cancelDelete = () => {
 const startDateForInput = (row) => {
   const s = displayStartDate(row);
   return s === "—" ? "" : s;
+};
+
+const formatApprovedDate = (val) => {
+  if (!val || val === "-") return "-";
+  // Remove " 00:00:00" if present
+  return val.replace(" 00:00:00", "");
 };
 </script>
 

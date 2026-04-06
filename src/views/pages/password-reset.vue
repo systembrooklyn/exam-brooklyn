@@ -34,7 +34,7 @@ const successMessage = ref("");
 const schema = yup.object().shape({
   password: yup
     .string()
-    .min(8, "Password must be at least 8 characters")
+    .min(5, "Password must be at least 5 characters")
     .required("Password is required"),
   password_confirmation: yup
     .string()

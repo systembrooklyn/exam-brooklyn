@@ -72,15 +72,7 @@
         {{ item.personal_info?.hiring_date || '-' }}
       </template>
 
-      <template #status="{ item }">
-        <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase" :class="{
-          'bg-green-100 text-green-700': item.personal_info?.status === 'active',
-          'bg-gray-100 text-gray-600': item.personal_info?.status === 'inactive',
-          'bg-red-100 text-red-700': item.personal_info?.status === 'terminated',
-        }">
-          {{ item.personal_info?.status || '-' }}
-        </span>
-      </template>
+
     </HrDataTable>
 
     <!-- Add/Edit Modal -->
@@ -374,7 +366,6 @@ const headers = [
   { label: 'Department', key: 'department' },
   { label: 'Job Title', key: 'job_title' },
   { label: 'Hired At', key: 'hiring_date' },
-  { label: 'Status', key: 'status' },
 ];
 
 const jobTitleNameById = (id) => {

@@ -9,6 +9,7 @@ import {
   PAYROLL_REQUESTS_PENDING,
   PAYROLL_APPROVE_REQUEST,
   PAYROLL_REJECT_REQUEST,
+  PAYROLL_APPROVED_VACATIONS,
 } from "@/api/Api";
 
 export const useHrRequestsStore = defineStore("hr-requests", () => {
@@ -99,6 +100,21 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
+  const getApprovedVacations = async (employeeId) => {
+    loading.value = true;
+    try {
+      const response = await apiClient.get(PAYROLL_APPROVED_VACATIONS, {
+        params: { employee_id: employeeId },
+      });
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     requests,
     loading,
@@ -107,5 +123,6 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     createRequest,
     approveRequest,
     rejectRequest,
+    getApprovedVacations,
   };
 });

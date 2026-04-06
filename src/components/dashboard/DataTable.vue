@@ -121,6 +121,7 @@
 
             <td class="px-6 py-4 whitespace-nowrap space-x-6">
               <button
+                v-if="canEdit"
                 @click="$emit('edit', item)"
                 class="text-indigo-600 cursor-pointer hover:text-indigo-800 transition inline-flex items-center gap-1"
               >
