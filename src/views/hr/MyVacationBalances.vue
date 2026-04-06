@@ -485,8 +485,13 @@ const handleAssignSubmit = async () => {
     notyf.error("Start date is required");
     return;
   }
-  if (!assignForm.value.contract_ids?.length) {
-    notyf.error("Select at least one contract");
+  const selected = (assignForm.value.contract_ids || []).map((id) => Number(id));
+  const linked = assignModalAlreadyLinkedIds.value;
+  const newContractIdsOnly = selected.filter(
+    (id) => Number.isFinite(id) && !linked.has(id)
+  );
+  if (!newContractIdsOnly.length) {
+    notyf.error("Select at least one new contract to assign");
     return;
   }
   const vbId = assignForm.value.vacation_balance_id;
@@ -494,7 +499,7 @@ const handleAssignSubmit = async () => {
   try {
     await store.assignContractsToVacationBalance({
       vacation_balance_id: vbId,
-      contract_ids: assignForm.value.contract_ids,
+      contract_ids: newContractIdsOnly,
       start_date: assignForm.value.start_date,
     });
     closeAssignModal();
