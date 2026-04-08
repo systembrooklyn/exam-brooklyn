@@ -7,13 +7,16 @@
       </div>
       <div class="flex gap-2">
         <button
-          @click="showPendingOnly = !showPendingOnly"
+          v-if="canAccessPendingQueue"
+          type="button"
+          @click="pendingQueueMode = !pendingQueueMode"
           class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer"
-          :class="showPendingOnly ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
+          :class="pendingQueueMode ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
         >
-          {{ showPendingOnly ? 'Show All' : 'Showing Pending' }}
+          {{ pendingQueueMode ? 'Show all my requests' : 'Pending approvals' }}
         </button>
         <button
+          type="button"
           @click="openAddModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
@@ -38,30 +41,56 @@
       :headers="headers"
       :items="requests"
       :loading="store.loading"
-      emptyMessage="No requests found."
+      :emptyMessage="emptyMessage"
       :hasActions="false"
       :hasDelete="false"
       :hasEdit="false"
       @edit="null"
     >
+      <template #employee="{ item }">
+        <span class="text-gray-800 font-medium">{{ employeeDisplayName(item) }}</span>
+      </template>
+      <template #request_type="{ item }">
+        <span class="text-gray-800 ">{{ formatRequestTypeLabel(item.request_type) }}</span>
+      </template>
+      <template #day="{ item }">
+        <span class="text-gray-800">{{ formatDate(item.day) }}</span>
+      </template>
+      <template #duration="{ item }">
+        <span class="text-gray-700">{{ formatDuration(item) }}</span>
+      </template>
+      <template #is_paid="{ item }">
+        <span
+          class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
+          :class="isPaidYes(item) ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'"
+        >
+          {{ isPaidYes(item) ? 'Paid' : 'Unpaid' }}
+        </span>
+      </template>
+      <template #created_at="{ item }">
+        <span class="text-gray-700">{{ formatDate(item.created_at) }}</span>
+      </template>
+      <template #action_by="{ item }">
+        <span class="text-gray-700">{{ actionByDisplay(item) }}</span>
+      </template>
       <template #status="{ item }">
-        <span 
-          class="px-2 py-1 rounded-full text-xs font-semibold uppercase"
+        <span
+          class="px-2 py-0.5 rounded-full text-xs font-semibold"
           :class="{
-            'bg-yellow-100 text-yellow-700': item.status === 'pending',
-            'bg-green-100 text-green-700': item.status === 'approved',
-            'bg-red-100 text-red-700': item.status === 'rejected'
+            'bg-yellow-100 text-yellow-800': item.status === 'pending',
+            'bg-green-100 text-green-800': item.status === 'approved',
+            'bg-red-100 text-red-800': item.status === 'rejected'
           }"
         >
-          {{ item.status }}
+          {{ statusLabel(item.status) }}
         </span>
       </template>
       <template #actions="{ item }">
         <div v-if="item.status === 'pending'" class="flex gap-2 justify-center">
-          <button @click="confirmApprove(item.id)" class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Approve">
+          <button type="button" @click="confirmApprove(item.id)" class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Approve">
              <LucideCheckCircle class="w-6 h-6" />
           </button>
-          <button @click="confirmReject(item.id)" class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Reject">
+          <button type="button" @click="confirmReject(item.id)" class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Reject">
              <LucideXCircle class="w-6 h-6" />
           </button>
         </div>
@@ -170,16 +199,89 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from 'vue';
+import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import { LucideCheckCircle, LucideXCircle, LucideAlertTriangle } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
+import formatDate from '@/components/global/FormDate';
 
+const REQUEST_TYPE_LABELS = {
+  lateness: 'Lateness',
+  leave: 'Leave',
+  overtime: 'Overtime',
+  vacation: 'Vacation',
+  day_off_swap: 'Day off swap',
+  work_from_home: 'Work from home',
+  shift_move: 'Shift move',
+};
+
+const APPROVER_JOB_TITLES_NORMALIZED = new Set(['hr', 'hr manager', 'general manager']);
+
+function pushJobTitle(out, raw) {
+  if (raw == null) return;
+  if (typeof raw === 'string') {
+    const s = raw.trim();
+    if (s) out.push(s);
+    return;
+  }
+  if (typeof raw === 'object') {
+    const name = raw.title_name ?? raw.name ?? raw.title;
+    if (name) out.push(String(name).trim());
+  }
+}
+
+function collectJobTitleNamesFromUser(u) {
+  const out = [];
+  if (!u) return out;
+  pushJobTitle(out, u.job_title);
+  if (Array.isArray(u.job_titles)) u.job_titles.forEach((t) => pushJobTitle(out, t));
+  const emp = u.employee;
+  if (emp) {
+    pushJobTitle(out, emp.job_title);
+    if (Array.isArray(emp.job_titles)) emp.job_titles.forEach((t) => pushJobTitle(out, t));
+    if (Array.isArray(emp.job_departments)) {
+      emp.job_departments.forEach((jd) => {
+        pushJobTitle(out, jd?.job_title);
+        if (jd?.job_title && typeof jd.job_title === 'object') {
+          pushJobTitle(out, jd.job_title.title_name ?? jd.job_title.name);
+        }
+      });
+    }
+  }
+  return out;
+}
+
+function normalizeJobTitleKey(s) {
+  return String(s || '')
+    .toLowerCase()
+    .trim()
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function jobTitleIsApprover(name) {
+  return APPROVER_JOB_TITLES_NORMALIZED.has(normalizeJobTitleKey(name));
+}
+
+const CELL_TEXT = 'text-base text-gray-800';
+const CELL_LEFT = `${CELL_TEXT} text-left min-w-[140px]`;
+const CELL_CENTER = `${CELL_TEXT} text-center whitespace-nowrap`;
+
+const authStore = useAuthStore();
 const store = useHrRequestsStore();
 const requests = computed(() => store.requests);
-const showPendingOnly = ref(false);
+
+const canAccessPendingQueue = computed(
+  () =>
+    authStore.isAdminUser ||
+    // collectJobTitleNamesFromUser(authStore.user).some(jobTitleIsApprover),
+    true,
+);
+
+const pendingQueueMode = ref(false);
 const showModal = ref(false);
 const profileError = ref(false);
 
@@ -187,6 +289,13 @@ const showConfirmApprove = ref(false);
 const showConfirmReject = ref(false);
 const targetId = ref(null);
 const rejectionNote = ref('');
+
+const emptyMessage = computed(() => {
+  if (canAccessPendingQueue.value && pendingQueueMode.value) {
+    return 'No pending requests.';
+  }
+  return 'You have no requests yet.';
+});
 
 const form = ref({
   request_type: 'leave',
@@ -198,30 +307,88 @@ const form = ref({
   duration_type: 'full'
 });
 
+function formatRequestTypeLabel(type) {
+  if (!type) return '—';
+  return REQUEST_TYPE_LABELS[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function formatDuration(item) {
+  const t = item.request_type;
+  if ((t === 'vacation' || t === 'work_from_home') && item.duration_type) {
+    return item.duration_type === 'full' ? 'Full day' : 'Half day';
+  }
+  if (['lateness', 'leave'].includes(t) && item.duration_hours != null && item.duration_hours !== '') {
+    const h = Number(item.duration_hours);
+    if (!Number.isNaN(h)) return `${h}h`;
+  }
+  if (t === 'day_off_swap' && item.day_replacement) {
+    return `Swap → ${formatDate(item.day_replacement)}`;
+  }
+  if (item.from_time && item.to_time) {
+    return `${item.from_time} – ${item.to_time}`;
+  }
+  if (item.from_time || item.to_time) {
+    return String(item.from_time || item.to_time);
+  }
+  return '—';
+}
+
+function isPaidYes(item) {
+  const v = item.is_paid;
+  return v === 1 || v === true || v === '1';
+}
+
+function employeeDisplayName(item) {
+  const n = item.employee?.name;
+  if (n == null || String(n).trim() === '') return '—';
+  return String(n).trim();
+}
+
+function actionByDisplay(item) {
+  const n = item.action_by?.name;
+  if (n == null || String(n).trim() === '') return '—';
+  return String(n).trim();
+}
+
+function statusLabel(status) {
+  const map = {
+    pending: 'Pending',
+    approved: 'Approved',
+    rejected: 'Rejected',
+  };
+  return map[status] ?? (status ? String(status).replace(/_/g, ' ') : '—');
+}
+
 const headers = computed(() => {
   const baseHeaders = [
-    { label: 'Type', key: 'request_type' },
-    { label: 'Date', key: 'day' },
-    { label: 'Status', key: 'status' },
+    { label: 'Employee', key: 'employee', class: CELL_LEFT },
+    { label: 'Type', key: 'request_type', class: CELL_LEFT },
+    { label: 'Date', key: 'day', class: CELL_CENTER },
+    { label: 'Duration', key: 'duration', class: CELL_CENTER },
+    { label: 'Paid', key: 'is_paid', class: CELL_CENTER },
+    { label: 'Submitted', key: 'created_at', class: CELL_CENTER },
+    { label: 'Reviewed by', key: 'action_by', class: CELL_LEFT },
+    { label: 'Status', key: 'status', class: CELL_CENTER },
   ];
-  
-  // Only show the column if we are in "Pending" view or if there ARE pending items to manage
-  if (showPendingOnly.value || requests.value.some(r => r.status === 'pending')) {
-    baseHeaders.push({ label: 'Actions', key: 'actions' });
+
+  if (
+    canAccessPendingQueue.value &&
+    (pendingQueueMode.value || requests.value.some((r) => r.status === 'pending'))
+  ) {
+    baseHeaders.push({ label: 'Actions', key: 'actions', class: `${CELL_CENTER} w-28` });
   }
-  
+
   return baseHeaders;
 });
 
 const fetchData = async () => {
   profileError.value = false;
   try {
-    if (showPendingOnly.value) {
+    if (canAccessPendingQueue.value && pendingQueueMode.value) {
       await store.getPendingRequests();
     } else {
       await store.getMyRequests();
     }
-    console.log("Current Requests list in view:", requests.value);
   } catch (e) {
     if (e.response?.status === 404 && e.response?.data?.message?.includes('profile')) {
       profileError.value = true;
@@ -230,7 +397,14 @@ const fetchData = async () => {
 };
 
 onMounted(fetchData);
-watch(showPendingOnly, fetchData);
+watch(pendingQueueMode, fetchData);
+
+watch(canAccessPendingQueue, (ok) => {
+  if (!ok && pendingQueueMode.value) {
+    pendingQueueMode.value = false;
+    fetchData();
+  }
+});
 
 const openAddModal = () => {
   form.value = { 
@@ -281,8 +455,6 @@ const handleSubmit = async () => {
   if (form.value.request_type === 'vacation') {
     payload.duration_type = form.value.duration_type; // 'full' or 'half'
   }
-
-  console.log("Submitting refined Request payload:", payload);
 
   try {
     await store.createRequest(payload);

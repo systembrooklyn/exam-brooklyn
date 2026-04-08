@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 import { items } from './itemsLink'
 import { itemfinnance } from '../finnance-dahboard/sideItem'
@@ -27,13 +27,11 @@ import { itemHr } from '../hr-dashboard/sideItem'
 import { X } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { computed } from 'vue'
 import { itemReservation } from '../Reservation/itemReservation'
 
 
 
 const authStore = useAuthStore()
-const permissions = authStore.permissions || []
 const router = useRouter();
 const route = useRoute();
 
@@ -42,32 +40,29 @@ const route = useRoute();
 const isSidebarOpen = ref(true)  
 const emitter = inject('emitter')
 
-function hasPermission(permissionName) {
-  return permissions.includes(permissionName)
-}
-
 function getRouteMeta(routeName) {
   const route = router.getRoutes().find(r => r.name === routeName)
   return route?.meta || {}
 }
 
 
-const filteredItems = items
-  .map(item => {
+const filteredDashboardItems = computed(() =>
+  items
+    .map(item => {
+      if (item.children) {
+        const filteredChildren = item.children.filter(child => {
+          const meta = getRouteMeta(child.route)
+          return !meta.requiresPermission || authStore.hasPermission(meta.requiresPermission)
+        })
 
-    if (item.children) {
-      const filteredChildren = item.children.filter(child => {
-        const meta = getRouteMeta(child.route)
-        return !meta.requiresPermission || hasPermission(meta.requiresPermission)
-      })
+        return filteredChildren.length > 0 ? { ...item, children: filteredChildren } : null
+      }
 
-      return filteredChildren.length > 0 ? { ...item, children: filteredChildren } : null
-    } else {
       const meta = getRouteMeta(item.route)
-      return !meta.requiresPermission || hasPermission(meta.requiresPermission) ? item : null
-    }
-  })
-  .filter(Boolean)
+      return !meta.requiresPermission || authStore.hasPermission(meta.requiresPermission) ? item : null
+    })
+    .filter(Boolean)
+)
 
 const activeItems = computed(() => {
   if (route.path.startsWith('/finnance')) {
@@ -80,7 +75,7 @@ const activeItems = computed(() => {
     if (route.path.startsWith('/reservation')) {
     return itemReservation
   }
-  return items
+  return filteredDashboardItems.value
 })
 onMounted(() => {
   if (emitter) {

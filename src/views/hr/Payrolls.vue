@@ -9,14 +9,20 @@
       <div class="flex flex-wrap items-center gap-4">
         <!-- Filters -->
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-2 rounded-xl border border-indigo-200">
-          <div class="flex flex-col px-2">
-            <label class="text-[10px] uppercase font-bold text-gray-400">From</label>
-            <input v-model="filterForm.period_from" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchPayrolls" />
-          </div>
-          <div class="w-px h-8 bg-gray-200"></div>
-          <div class="flex flex-col px-2">
-            <label class="text-[10px] uppercase font-bold text-gray-400">To</label>
-            <input v-model="filterForm.period_to" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchPayrolls" />
+          <div class="flex flex-col px-2 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
+            <div class="relative">
+              <input
+                v-model="filterPayrollMonth"
+                type="month"
+                class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                @change="applyFilterMonth"
+              />
+              <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
+              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} → {{ getPayrollDates(filterPayrollMonth).to_date }}
+            </p>
           </div>
           <div class="w-px h-8 bg-gray-200"></div>
           <div class="flex flex-col px-2 min-w-[120px]">
@@ -59,8 +65,9 @@
     <PayrollsTable 
       :items="store.actionablePayrolls" 
       :loading="store.loading" 
-      :userRole="userJobTitle"
       :fetchingId="fetchingId"
+      :filter-period-from="filterForm.period_from"
+      :filter-period-to="filterForm.period_to"
       @view="showDetails"
       @update-status="handleUpdateStatus"
     />
@@ -217,38 +224,48 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useHrPayrollStore } from '@/stores/hr/payroll'
 import { useHrEmployeesStore } from '@/stores/hr/employees'
-import { useAuthStore } from '@/stores/auth'
 import HrModal from '@/components/hr-dashboard/HrModal.vue'
 import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
 import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
 import PayrollSalaryDetails from '@/components/hr-dashboard/PayrollSalaryDetails.vue'
-import { LucideCalculator, LucideRefreshCw } from 'lucide-vue-next'
+import { LucideCalculator, LucideRefreshCw, LucideCalendar } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
 
 // ─── Stores ──────────────────────────────────────────────
 const store = useHrPayrollStore()
 const employeeStore = useHrEmployeesStore()
-const authStore = useAuthStore()
-
-// ─── Auth / Role ──────────────────────────────────────────
-const userJobTitle = computed(() => authStore.user?.job_title || 'employee')
 
 // ─── Helpers ──────────────────────────────────────────────
-const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-const today = formatDate(new Date())
+// Given YYYY-MM, payroll cycle: day 21 of that month → day 20 of next month
+const getPayrollDates = (month) => {
+  if (!month) return { from_date: "", to_date: "" };
 
-// Default period: 21 of last month → 20 of current month (company payroll cycle)
+  const [year, mon] = month.split("-").map(Number);
+
+  const fromYear = mon === 1 ? year - 1 : year;
+  const fromMon = mon === 1 ? 12 : mon - 1;
+
+  const fromDate = `${fromYear}-${String(fromMon).padStart(2, "0")}-21`;
+  const toDate = `${year}-${String(mon).padStart(2, "0")}-20`;
+
+  return { from_date: fromDate, to_date: toDate };
+};
+
+// Default: 21st previous calendar month → 20th current month (same as old From/To default)
 const now = new Date()
-const defaultPeriodFrom = formatDate(new Date(now.getFullYear(), now.getMonth() - 1, 21))
-const defaultPeriodTo = formatDate(new Date(now.getFullYear(), now.getMonth(), 20))
+const defaultMonthAnchor = new Date(now.getFullYear(), now.getMonth() - 1, 21)
+const defaultPayrollMonth = `${defaultMonthAnchor.getFullYear()}-${String(defaultMonthAnchor.getMonth() + 1).padStart(2, '0')}`
+const defaultPeriod = getPayrollDates(defaultPayrollMonth)
+
+const filterPayrollMonth = ref(defaultPayrollMonth)
 
 // ─── Filters ──────────────────────────────────────────────
 const filterForm = ref({
-  period_from: defaultPeriodFrom,
-  period_to: defaultPeriodTo,
+  period_from: defaultPeriod.from_date,
+  period_to: defaultPeriod.to_date,
   status: '',
   include_missing: false
 })
@@ -269,18 +286,6 @@ const getEmployeeName = (p) => {
 const showCalcModal = ref(false)
 const calcForm = ref({ employee_id: '', payroll_month: '' })
 
-// Given a YYYY-MM string, return { from_date: 'YYYY-MM-21', to_date: 'YYYY-MM-20' } for next month
-const getPayrollDates = (month) => {
-  if (!month) return { from_date: '', to_date: '' }
-  const [year, mon] = month.split('-').map(Number)
-  const fromDate = `${year}-${String(mon).padStart(2, '0')}-21`
-  // to_date = 20th of next month
-  const toYear = mon === 12 ? year + 1 : year
-  const toMon = mon === 12 ? 1 : mon + 1
-  const toDate = `${toYear}-${String(toMon).padStart(2, '0')}-20`
-  return { from_date: fromDate, to_date: toDate }
-}
-
 const openCalcModal = () => {
   calcForm.value = { employee_id: '', payroll_month: '' }
   showCalcModal.value = true
@@ -293,6 +298,8 @@ const handleCalculate = async () => {
   }
   const { from_date, to_date } = getPayrollDates(calcForm.value.payroll_month)
   try {
+    console.log(from_date, to_date)
+    console.log(calcForm.value.employee_id)
     const response = await store.calculatePayroll({
       employee_id: calcForm.value.employee_id,
       from_date,
@@ -336,16 +343,16 @@ const statusUpdateForm = ref({
   employee_id: null,
   period_from: '',
   period_to: '',
-  status: '',
+  action: '',
   notes: ''
 })
 
 const handleUpdateStatus = ({ item, status }) => {
   statusUpdateForm.value = {
     employee_id: item.employee_id || item.employee?.id,
-    period_from: item.period_from || item.period?.payroll_month,
-    period_to: item.period_to || item.period?.payroll_month,
-    status,
+    period_from: filterForm.value.period_from,
+    period_to: filterForm.value.period_to,
+    action: status, // approve or reject
     notes: ''
   }
   nextStatus.value = status
@@ -374,6 +381,14 @@ const fetchPayrolls = async () => {
   } catch (error) {
     console.error('Failed to fetch payrolls:', error)
   }
+}
+
+const applyFilterMonth = () => {
+  if (!filterPayrollMonth.value) return
+  const { from_date, to_date } = getPayrollDates(filterPayrollMonth.value)
+  filterForm.value.period_from = from_date
+  filterForm.value.period_to = to_date
+  fetchPayrolls()
 }
 
 onMounted(async () => {

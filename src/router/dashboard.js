@@ -62,7 +62,7 @@ export default {
     {
       path: "placement/:id/edit",
       name: "edit-placement",
-      meta: { requiresPermission: "edit-placement" },
+      meta: { requiresPermission: "edit-placementTest" },
       component: () => import("@/views/dashboard/EditPlacementTest.vue"),
     },
     {
@@ -74,19 +74,19 @@ export default {
     {
       path: "reservations",
       name: "reservations",
-      meta: { requiresPermission: "view-dashboard" },
+      meta: { requiresPermission: "view-reservation" },
       component: () => import("@/views/dashboard/ReservationsList.vue"),
     },
     {
       path: "placement",
       name: "placement",
-      // meta: { requiresPermission: "view-reservations" },
+      meta: { requiresPermission: "view-placementTest" },
       component: () => import("@/views/dashboard/PlacementTestList.vue"),
     },
     {
       path: "create-placement",
       name: "create-placement",
-      // meta: { requiresPermission: "view-reservations" },
+      meta: { requiresPermission: "create-placementTest" },
       component: () => import("@/views/dashboard/CreatePlacement.vue"),
     },
   ],

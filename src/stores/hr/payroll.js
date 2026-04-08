@@ -17,6 +17,7 @@ export const useHrPayrollStore = defineStore("hr-payroll", () => {
   const loading = ref(false);
 
   const calculatePayroll = async (payload) => {
+    console.log(payload)
     loading.value = true;
     try {
       const response = await apiClient.post(PAYROLL_CALC, payload);
@@ -45,6 +46,7 @@ export const useHrPayrollStore = defineStore("hr-payroll", () => {
   };
 
   const getPayrollDetails = async (employee_id, payroll_month) => {
+    console.log(employee_id, payroll_month)
     loading.value = true;
     try {
       const response = await apiClient.get(PAYROLL_DETAILS, {

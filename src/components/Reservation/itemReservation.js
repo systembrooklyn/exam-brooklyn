@@ -6,14 +6,14 @@ export const itemReservation = [
     icon: Calendar,
     route: "formreservation-form",
   },
-  {
-    name: "waiting list",
-    icon: ListTodo,
-    route: "waiting-list",
-  },
-  {
-    name: "Scholarship",
-    icon: GraduationCap,
-    route: "waiting-list-table",
-  },
+  // {
+  //   name: "waiting list",
+  //   icon: ListTodo,
+  //   route: "waiting-list",
+  // },
+  // {
+  //   name: "Scholarship",
+  //   icon: GraduationCap,
+  //   route: "waiting-list-table",
+  // },
 ];
