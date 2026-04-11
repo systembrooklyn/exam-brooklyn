@@ -55,7 +55,7 @@ onMounted(() => {
       ]"
       :isPlacementTests="true"
       :items="placementTestsStore.placementTests || []"
-      resourceType="placement-tests"
+      resourceType="placementTest"
       @edit="handleEditPlas"
       @delete="showDeleteAlert"
       :loading="placementTestsStore.loading"
@@ -70,4 +70,6 @@ onMounted(() => {
       @cancel="cancelDelete"
     />
   </div>
+
 </template>
+

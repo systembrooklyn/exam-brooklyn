@@ -24,7 +24,6 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
       requests.value = response.data.data.map((item) =>
         item.data ? { ...item.data } : item,
       );
-      console.log("My Requests from API (Processed):", requests.value);
       return response.data;
     } catch (err) {
       handleError(err);
@@ -42,7 +41,6 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
       requests.value = response.data.data.map((item) =>
         item.data ? { ...item.data } : item,
       );
-      console.log("Pending Requests from API (Processed):", requests.value);
       return response.data;
     } catch (err) {
       handleError(err);
@@ -90,7 +88,6 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
         payload,
       );
       notyf.success(response.data.message || "Request rejected");
-      await getPendingRequests();
       return response.data;
     } catch (err) {
       handleError(err);

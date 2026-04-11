@@ -21,8 +21,10 @@
 
       <!-- Period -->
       <template #period="{ item }">
-        <div class="text-xs text-gray-600">
-          {{ item.period?.payroll_month || item.period_from || '-' }}
+       <div class="flex flex-col gap-0.5 items-center text-center">          <span class="text-sm font-medium text-gray-800">{{ payrollMonthLabel(item) }}</span>
+          <span v-if="periodRangeLine(item)" class="text-[11px] text-gray-400">
+            Period: {{ periodRangeLine(item) }}
+          </span>
         </div>
       </template>
 
@@ -63,17 +65,17 @@
           </button>
 
           <!-- Approval Actions -->
-          <div v-if="canAction(item)" class="flex items-center gap-1 border-l pl-2 ml-1">
+          <div class="flex items-center gap-1 border-l pl-2 ml-1">
             <!-- Approve -->
             <button
-              @click="$emit('update-status', { item, status: successStatus })"
+              @click="$emit('update-status', { item, status: 'approve' })"
               class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-              :title="successLabel"
+              title="Approve"
             >
               <LucideCheckCircle class="w-4 h-4" />
             </button>
 
-            <!-- Suspend -->
+            <!-- Suspend (restored later if needed — was: status 'suspended')
             <button
               @click="$emit('update-status', { item, status: 'suspended' })"
               class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
@@ -81,26 +83,16 @@
             >
               <LucidePauseCircle class="w-4 h-4" />
             </button>
+            -->
 
             <!-- Reject -->
             <button
-              @click="$emit('update-status', { item, status: 'rejected' })"
+              @click="$emit('update-status', { item, status: 'reject' })"
               class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
               title="Reject"
             >
               <LucideXCircle class="w-4 h-4" />
             </button>
-
-            <!--
-            <button
-              v-if="['pending','hr-approved'].includes(item.current_status)"
-              @click="$emit('update-status', { item, status: 'suspended' })"
-              class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-              title="Suspend"
-            >
-              <LucidePauseCircle class="w-4 h-4" />
-            </button>
-            -->
           </div>
         </div>
       </template>
@@ -110,16 +102,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'
 import PayrollStatusBadge from './PayrollStatusBadge.vue'
-import { LucideEye, LucideCheckCircle, LucideXCircle, LucidePauseCircle } from 'lucide-vue-next'
+import { LucideEye, LucideCheckCircle, LucideXCircle } from 'lucide-vue-next'
 
 const props = defineProps({
   items: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
-  userRole: { type: String, default: '' },
-  fetchingId: { type: [Number, String, null], default: null }
+  fetchingId: { type: [Number, String, null], default: null },
+  /** When a row has no period fields (e.g. pending), match the filter strip */
+  filterPeriodFrom: { type: String, default: '' },
+  filterPeriodTo: { type: String, default: '' }
 })
 
 defineEmits(['view', 'update-status'])
@@ -132,31 +125,50 @@ const headers = [
   { label: 'Status', key: 'status' },
 ]
 
-const canAction = () => {
-  return true
+/** Same rule as Payrolls.vue getPayrollDates: YYYY-MM payroll month → prev month 21 → selected month 20 */
+function boundsFromPayrollMonthYm(ym) {
+  if (!ym || !/^\d{4}-\d{2}$/.test(String(ym))) return { from: '', to: '' }
+  const [year, mon] = String(ym).split('-').map(Number)
+  const fromYear = mon === 1 ? year - 1 : year
+  const fromMon = mon === 1 ? 12 : mon - 1
+  const from = `${fromYear}-${String(fromMon).padStart(2, '0')}-21`
+  const to = `${year}-${String(mon).padStart(2, '0')}-20`
+  return { from, to }
 }
 
-const successStatus = computed(() => {
-  const role = props.userRole?.toLowerCase()
+function effectivePeriodBounds(item) {
+  let from = item.period_from || item.period?.from || item.period?.period_from
+  let to = item.period_to || item.period?.to || item.period?.period_to
+  const ym = item.period?.payroll_month
+  if ((!from || !to) && ym && /^\d{4}-\d{2}$/.test(String(ym))) {
+    const b = boundsFromPayrollMonthYm(ym)
+    from = from || b.from
+    to = to || b.to
+  }
+  if ((!from || !to) && props.filterPeriodFrom && props.filterPeriodTo) {
+    from = from || props.filterPeriodFrom
+    to = to || props.filterPeriodTo
+  }
+  return { from, to }
+}
 
-  if (role.includes('hr manager') || role.includes('hr-manager')) return 'hr-manager-approved'
-  if (role.includes('hr')) return 'hr-approved'
-  if (role.includes('gm')) return 'gm-approved'
-  if (role.includes('accountant')) return 'paid'
-  if (role.includes('employee')) return 'received'
+/** Label from period end (e.g. April 2026 for …→ 2026-04-20) */
+function payrollMonthLabel(item) {
+  const { from, to } = effectivePeriodBounds(item)
+  if (to && /^\d{4}-\d{2}-\d{2}$/.test(String(to))) {
+    const [y, m, d] = String(to).split('-').map(Number)
+    return new Date(y, m - 1, d).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  }
+  if (from && /^\d{4}-\d{2}-\d{2}$/.test(String(from))) {
+    const [y, m] = String(from).split('-').map(Number)
+    return new Date(y, m, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' })
+  }
+  return '-'
+}
 
+function periodRangeLine(item) {
+  const { from, to } = effectivePeriodBounds(item)
+  if (from && to) return `${from} → ${to}`
   return ''
-})
-
-const successLabel = computed(() => {
-  const role = props.userRole?.toLowerCase()
-
-  if (role.includes('hr manager') || role.includes('hr-manager')) return 'HR Manager Approve'
-  if (role.includes('hr')) return 'HR Approve'
-  if (role.includes('gm')) return 'GM Approve'
-  if (role.includes('accountant')) return 'Mark as Paid'
-  if (role.includes('employee')) return 'Mark as Received'
-
-  return 'Approve'
-})
+}
 </script>
