@@ -47,6 +47,23 @@ export const useAuthStore = defineStore("authStore", () => {
     }
   };
 
+  const clearSession = () => {
+    token.value = null;
+    user.value = null;
+    permissions.value = [];
+    Cookies.remove("token");
+  };
+
+  const forceLogout = ({ message = "Session expired. Please log in again." } = {}) => {
+    clearSession();
+
+    if (message) {
+      notyf.error(message);
+    }
+
+    router.push({ name: "login" });
+  };
+
  
   const getUserByToken  = async () => {
     if (!token.value) return;
@@ -57,7 +74,7 @@ export const useAuthStore = defineStore("authStore", () => {
       user.value = response.data.User;
       permissions.value = response.data.permissions || [];
     } catch (err) {
-      logout();
+      forceLogout({ message: null });
     }
   };
 
@@ -93,13 +110,8 @@ export const useAuthStore = defineStore("authStore", () => {
     } catch (err) {
       handleError(err);
     } finally {
-      token.value = null;
-      user.value = null;
-      permissions.value = [];
       loading.value = false;
-
-      Cookies.remove("token");
-
+      clearSession();
       router.push({ name: "login" });
     }
   };
@@ -218,6 +230,8 @@ export const useAuthStore = defineStore("authStore", () => {
     forgotSuccess,
     login,
     logout,
+    clearSession,
+    forceLogout,
     forgotPassword,
     resetPassword,
     getUserByToken ,

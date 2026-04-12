@@ -33,6 +33,9 @@ const rulesAccepted = ref(
 const showRules = ref(!rulesAccepted.value);
 let interval;
 
+const isAuthenticationError = (err) =>
+  [401, 403].includes(err?.response?.status);
+
 const mode = ref("all");
 
 const unansweredIndexes = ref([]);
@@ -59,15 +62,18 @@ const submitOnTimeout = async () => {
     saveAnswer();
     const payload = { answers: answersArray.value };
     isSubmitting.value = true;
-    console.log("[Timer] Sending payload to API:", payload);
-    await studentStore.submitFinalExam(payload);
+    // console.log("[Timer] Sending payload to API:", payload);
+    const result = await studentStore.submitFinalExam(payload);
+    if (result?.redirectedToLogin) return;
     isSubmitting.value = false;
-    console.log("[Timer] Exam submitted successfully on timeout.");
+    // console.log("[Timer] Exam submitted successfully on timeout.");
+    router.replace({ name: "home" });
   } catch (err) {
+    if (isAuthenticationError(err)) return;
     console.error("[Timer] Error submitting exam on timeout:", err);
     notyf.error("Error submitting exam");
   } finally {
-    router.replace({ name: "home" });
+    isSubmitting.value = false;
   }
 };
 
@@ -213,12 +219,17 @@ const submitFinalExam = async () => {
     const payload = { answers: answersArray.value };
     isSubmitting.value = true;
 
-    await studentStore.submitFinalExam(payload);
-    isSubmitting.value = false;
-    clearInterval(interval);
-    quizStarted.value = false;
-  } catch {
+    const result = await studentStore.submitFinalExam(payload);
+    if (result?.redirectedToLogin) return;
+    if (result?.success) {
+      clearInterval(interval);
+      quizStarted.value = false;
+    }
+  } catch (err) {
+    if (isAuthenticationError(err)) return;
     notyf.error("Error submitting final exam");
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -236,12 +247,14 @@ const handleGoBack = async () => {
       answersArray.value.length > 0
         ? answersArray.value
         : previousAnswers.value;
-    await studentStore.submitFinalExam({ answers });
+    const result = await studentStore.submitFinalExam({ answers });
+    if (result?.redirectedToLogin) return;
+    router.push("/home");
   } catch (err) {
+    if (isAuthenticationError(err)) return;
     console.error("[GoBack] Error submitting exam:", err);
   } finally {
     isSubmitting.value = false;
-    router.push("/home");
   }
 };
 

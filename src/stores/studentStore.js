@@ -12,6 +12,7 @@ import {
 import notyf from "@/components/global/notyf";
 import { useRouter } from "vue-router";
 import { handleError } from "./handleError";
+import { useAuthStore } from "./auth";
 
 export const useStudentStore = defineStore("studentStore", () => {
   const studentId = ref("");
@@ -29,6 +30,8 @@ export const useStudentStore = defineStore("studentStore", () => {
   const errorMessages = ref("");
   const error = ref(null);
   const router = useRouter();
+  const authStore = useAuthStore();
+  const AUTO_SUBMIT_INTERVAL_MS = 5 * 60 * 1000;
 
   // Loading Flags
   const loading = ref(false); // general form loading
@@ -38,6 +41,19 @@ export const useStudentStore = defineStore("studentStore", () => {
   const otpSent = ref(false);
 
   let startTimer = null;
+
+  const isAuthenticationError = (err) =>
+    [401, 403].includes(err?.response?.status);
+
+  const handleExamAuthenticationError = (err) => {
+    if (!isAuthenticationError(err)) return false;
+
+    stopAutoSubmit();
+    clearExamData();
+    sessionStorage.removeItem("examRulesAccepted");
+    authStore.forceLogout();
+    return true;
+  };
 
   const storedAttemptId = computed(
     () => attemptId.value || sessionStorage.getItem("attemptId"),
@@ -149,8 +165,11 @@ export const useStudentStore = defineStore("studentStore", () => {
         console.error("Unexpected server response:", response);
       }
     } catch (error) {
+      if (handleExamAuthenticationError(error)) {
+        return { redirectedToLogin: true };
+      }
       handleError(error);
-      router.push({ name: "home" });
+      return { success: false };
     } finally {
       loading.value = false;
     }
@@ -173,6 +192,7 @@ export const useStudentStore = defineStore("studentStore", () => {
         finalPayload,
       );
     } catch (error) {
+      if (handleExamAuthenticationError(error)) return;
       handleError(error);
     }
   };
@@ -180,9 +200,10 @@ export const useStudentStore = defineStore("studentStore", () => {
   let interval = null;
 
   const startAutoSubmit = () => {
+    stopAutoSubmit();
     interval = setInterval(() => {
       submitExamAnswers();
-    }, 5000);
+    }, AUTO_SUBMIT_INTERVAL_MS);
   };
 
   const stopAutoSubmit = () => {
@@ -204,7 +225,7 @@ export const useStudentStore = defineStore("studentStore", () => {
 
       if (answers.length === 0) {
         notyf.error("No answers available to submit.");
-        return;
+        return { success: false };
       }
 
       const finalPayload = { answers };
@@ -218,11 +239,17 @@ export const useStudentStore = defineStore("studentStore", () => {
         notyf.success("Exam submitted successfully.");
         clearExamData();
         router.push({ name: "ResultPage" });
+        return { success: true };
       } else {
         notyf.error("Error in closing the exam. Please try again.");
+        return { success: false };
       }
     } catch (error) {
+      if (handleExamAuthenticationError(error)) {
+        return { success: false, redirectedToLogin: true };
+      }
       handleError(error);
+      return { success: false };
     }
   };
 
