@@ -1,4 +1,5 @@
 import Layout from "../components/hr-dashboard/Layout.vue";
+import { useAuthStore } from "@/stores/auth";
 
 export default {
   path: "/hr",
@@ -9,6 +10,13 @@ export default {
     {
       path: "",
       name: "hr-home",
+      beforeEnter: (_to, _from, next) => {
+        const auth = useAuthStore();
+        if (!auth.canManageFullAttendance) {
+          return next({ name: "hr-my-attendance", replace: true });
+        }
+        next();
+      },
       component: () => import("@/views/hr/HrHome.vue"),
     },
     {
@@ -32,8 +40,20 @@ export default {
       component: () => import("@/views/hr/Holidays.vue"),
     },
     {
+      path: "my-attendance",
+      name: "hr-my-attendance",
+      component: () => import("@/views/hr/MyAttendanceReport.vue"),
+    },
+    {
       path: "attendance",
       name: "hr-attendance",
+      beforeEnter: (_to, _from, next) => {
+        const auth = useAuthStore();
+        if (!auth.canManageFullAttendance) {
+          return next({ name: "hr-my-attendance", replace: true });
+        }
+        next();
+      },
       component: () => import("@/views/hr/Attendance.vue"),
     },
     {

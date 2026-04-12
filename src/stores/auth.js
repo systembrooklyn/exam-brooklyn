@@ -157,6 +157,51 @@ export const useAuthStore = defineStore("authStore", () => {
     return false;
   });
 
+  /**
+   * Permission slug for HR users who may use full Attendance logs + admin report flows.
+   * Set `VITE_HR_ATTENDANCE_MANAGE_PERMISSION` in `.env` to match your API `permissions` array.
+   */
+  const hrAttendanceManagePermission = String(
+    (typeof import.meta !== "undefined" &&
+      import.meta.env?.VITE_HR_ATTENDANCE_MANAGE_PERMISSION) ||
+      "",
+  ).trim();
+
+  /** Admin or explicit permission: full attendance management UI; others get self-service landing. */
+  const canManageFullAttendance = computed(() => {
+    if (isAdminUser.value) return true;
+    if (!hrAttendanceManagePermission) return false;
+    return permissions.value.includes(hrAttendanceManagePermission);
+  });
+
+  /** Payroll / HR `employee_id` for the logged-in user (string for query params). */
+  const payrollEmployeeId = computed(() => {
+    const u = user.value;
+    if (!u) return "";
+    const candidates = [
+      u.employee_id,
+      u.payroll_employee_id,
+      u.hr_employee_id,
+      u.payroll_employee?.id,
+      u.employee?.id,
+      u.employee?.employee_id,
+      u.linked_employee_id,
+      u.staff_id,
+      u.payroll?.employee_id,
+      u.payroll?.id,
+      u.profile?.employee_id,
+      u.meta?.employee_id,
+      u.user_employee?.employee_id,
+      u.user_employee?.id,
+    ];
+    for (const raw of candidates) {
+      if (raw === undefined || raw === null) continue;
+      const s = String(raw).trim();
+      if (s) return s;
+    }
+    return "";
+  });
+
   const initAuth = async () => {
     restoreTokenFromCookies();
     if (token.value) {
@@ -178,6 +223,8 @@ export const useAuthStore = defineStore("authStore", () => {
     getUserByToken ,
     hasPermission,
     isAdminUser,
+    canManageFullAttendance,
+    payrollEmployeeId,
     initAuth,
   };
 });

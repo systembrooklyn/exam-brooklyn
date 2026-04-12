@@ -9,24 +9,32 @@
       <div class="flex flex-wrap items-center gap-2">
         <!-- Quick Filters -->
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-indigo-200">
-          <div class="flex flex-col px-2 min-w-[120px]">
-            <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
-            <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5" @change="fetchLogs">
-              <option value="">All Employees</option>
-              <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-                {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
-              </option>
-            </select>
-          </div>
-          <div class="w-px h-8 bg-gray-200 mx-1"></div>
-          <div class="flex flex-col px-2">
-            <label class="text-[10px] uppercase font-bold text-gray-400">From</label>
-            <input v-model="filterForm.from_date" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs" />
-          </div>
-          <div class="w-px h-8 bg-gray-200 mx-1"></div>
-          <div class="flex flex-col px-2">
-            <label class="text-[10px] uppercase font-bold text-gray-400">To</label>
-            <input v-model="filterForm.to_date" type="date" class="bg-transparent border-none text-sm font-medium focus:ring-0 p-0 h-5" @change="fetchLogs" />
+          <template v-if="authStore.isAdminUser">
+            <div class="flex flex-col px-2 min-w-[120px]">
+              <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
+              <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5" @change="fetchLogs">
+                <option value="">All Employees</option>
+                <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
+                  {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
+                </option>
+              </select>
+            </div>
+            <div class="w-px h-8 bg-gray-200 mx-1"></div>
+          </template>
+          <div class="flex flex-col px-2 min-w-[200px]">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
+            <div class="relative">
+              <input
+                v-model="filterPayrollMonth"
+                type="month"
+                class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                @change="applyFilterMonth"
+              />
+              <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+            <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
+              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} — {{ getPayrollDates(filterPayrollMonth).to_date }}
+            </p>
           </div>
           <button 
             @click="fetchLogs" 
@@ -41,18 +49,21 @@
         </div>
 
         <button
+          v-if="authStore.isAdminUser"
           @click="openReportModal"
           class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer ml-2"
         >
           <LucideFileText class="w-4 h-4" /> Monthly Report
         </button>
         <button
+          v-if="authStore.isAdminUser"
           @click="openUploadModal"
           class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <LucideUpload class="w-4 h-4" /> Bulk Upload
         </button>
         <button
+          v-if="authStore.isAdminUser"
           @click="openAddModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
@@ -64,11 +75,12 @@
     
     <!-- Table -->
     <HrDataTable
-      :headers="headers"
+      :headers="tableHeaders"
       :items="attendanceLogs"
       :loading="store.loading"
       emptyMessage="No attendance logs found."
-      :hasDelete="true"
+      :hasEdit="authStore.isAdminUser"
+      :hasDelete="authStore.isAdminUser"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -133,20 +145,79 @@
 import { onMounted, ref, computed } from 'vue';
 import { useHrAttendanceStore } from '@/stores/hr/attendance';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
+import { useAuthStore } from '@/stores/auth';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import AttendanceReportDrawer from '@/components/hr-dashboard/AttendanceReportDrawer.vue';
 import AttendanceLogsModal from '@/components/hr-dashboard/attendance/AttendanceLogsModal.vue';
 import BulkUploadModal from '@/components/hr-dashboard/attendance/BulkUploadModal.vue';
 import AttendanceRequestModal from '@/components/hr-dashboard/attendance/AttendanceRequestModal.vue';
-import { LucideUpload, LucideFileText } from 'lucide-vue-next';
+import { LucideUpload, LucideFileText, LucideCalendar } from 'lucide-vue-next';
 import bulkUploadTemplate from '@/assets/BulkUploadTest.csv?url';
 import notyf from '@/components/global/notyf';
+import { getPayrollDates, defaultPayrollMonthRange } from '@/utils/payrollPeriod';
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
+const authStore = useAuthStore();
 
 const attendanceLogs = computed(() => store.attendanceLogs);
+
+/** When the auth user JSON has no employee id, we match this user to a payroll employee row (same list as HR Employees). */
+const resolvedPayrollEmployeeId = ref("");
+
+/** Query params sent to attendance-logs API (non-admins are always scoped to their employee id). */
+const attendanceQueryParams = computed(() => {
+  const { from_date, to_date, employee_id } = filterForm.value;
+  if (authStore.isAdminUser) {
+    return { from_date, to_date, employee_id };
+  }
+  const eid =
+    authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "";
+  return {
+    from_date,
+    to_date,
+    employee_id: eid,
+  };
+});
+
+const effectiveNonAdminEmployeeId = computed(
+  () => authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "",
+);
+
+async function resolvePayrollEmployeeFromDirectory() {
+  resolvedPayrollEmployeeId.value = "";
+  if (authStore.isAdminUser || authStore.payrollEmployeeId) return;
+
+  try {
+    await employeeStore.getEmployees();
+    const u = authStore.user;
+    if (!u) return;
+
+    const uid = u.id;
+    const email = String(u.email || "").trim().toLowerCase();
+    const list = employeeStore.employees || [];
+
+    const match = list.find((emp) => {
+      const linkedUserId = emp.user?.id ?? emp.user_id;
+      if (uid != null && linkedUserId != null && String(linkedUserId) === String(uid)) {
+        return true;
+      }
+      const empEmail = String(
+        emp.user?.email || emp.email || emp.personal_info?.email || "",
+      )
+        .trim()
+        .toLowerCase();
+      return email.length > 0 && empEmail === email;
+    });
+
+    if (match?.id != null) {
+      resolvedPayrollEmployeeId.value = String(match.id).trim();
+    }
+  } catch (e) {
+    console.warn("Attendance: could not resolve employee from directory", e);
+  }
+}
 
 // Modal States
 const showModal = ref(false);
@@ -157,16 +228,22 @@ const showReportModal = ref(false);
 const showRequestModal = ref(false);
 const reportDrawerRef = ref(null);
 
-// Initialize filters with current month
-const now = new Date();
-const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+const { payrollMonth: defaultPayrollMonth, ...defaultPeriod } = defaultPayrollMonthRange();
+const filterPayrollMonth = ref(defaultPayrollMonth);
 
 const filterForm = ref({
-  from_date: firstDay,
-  to_date: lastDay,
+  from_date: defaultPeriod.from_date,
+  to_date: defaultPeriod.to_date,
   employee_id: ''
 });
+
+const applyFilterMonth = () => {
+  if (!filterPayrollMonth.value) return;
+  const { from_date, to_date } = getPayrollDates(filterPayrollMonth.value);
+  filterForm.value.from_date = from_date;
+  filterForm.value.to_date = to_date;
+  fetchLogs();
+};
 
 const form = ref({
   employee_id: null,
@@ -177,26 +254,40 @@ const form = ref({
   break_out: ''
 });
 
-const headers = [
-  { label: 'Employee', key: 'employee' },
-  { label: 'Date', key: 'date' },
-  { label: 'Check In', key: 'check_in' },
-  { label: 'Check Out', key: 'check_out' },
-];
+const tableHeaders = computed(() => {
+  const row = [
+    { label: 'Date', key: 'date' },
+    { label: 'Check In', key: 'check_in' },
+    { label: 'Check Out', key: 'check_out' },
+  ];
+  if (authStore.isAdminUser) {
+    return [{ label: 'Employee', key: 'employee' }, ...row];
+  }
+  return row;
+});
 
 const fetchLogs = async () => {
   try {
-    await store.getAttendanceLogs(filterForm.value);
+    if (!authStore.isAdminUser && !effectiveNonAdminEmployeeId.value) {
+      notyf.error('Your account is not linked to an employee record.');
+      return;
+    }
+    await store.getAttendanceLogs(attendanceQueryParams.value);
   } catch (e) {
     console.error("View: Failed to fetch logs:", e);
   }
 };
 
 onMounted(async () => {
-  await Promise.all([
-    fetchLogs(),
-    employeeStore.getEmployees()
-  ]);
+  if (!authStore.user && authStore.token) {
+    await authStore.getUserByToken();
+  }
+  if (authStore.isAdminUser) {
+    await Promise.all([employeeStore.getEmployees(), fetchLogs()]);
+  } else {
+    await resolvePayrollEmployeeFromDirectory();
+    await fetchLogs();
+  }
 });
 
 // Handlers
@@ -234,7 +325,7 @@ const handleUpload = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    await store.bulkUploadAttendance(formData, filterForm.value);
+    await store.bulkUploadAttendance(formData, attendanceQueryParams.value);
     closeUploadModal();
   } catch (e) { console.error("Upload failed", e); }
 };
@@ -246,9 +337,9 @@ const handleSubmit = async (formData) => {
   }
   try {
     if (isEditing.value) {
-      await store.updateAttendanceLog(editingId.value, formData, filterForm.value);
+      await store.updateAttendanceLog(editingId.value, formData, attendanceQueryParams.value);
     } else {
-      await store.createAttendanceLog(formData, filterForm.value);
+      await store.createAttendanceLog(formData, attendanceQueryParams.value);
     }
     closeModal();
   } catch (e) { console.error("Submit failed", e); }
@@ -326,7 +417,7 @@ const confirmDelete = (id) => {
 const handleDeleteConfirm = async () => {
   if (!deleteId.value) return;
   try {
-    await store.deleteAttendanceLog(deleteId.value, filterForm.value);
+    await store.deleteAttendanceLog(deleteId.value, attendanceQueryParams.value);
   } catch (e) { console.error(e); }
   finally {
     showDeleteConfirm.value = false;

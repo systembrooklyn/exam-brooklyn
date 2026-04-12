@@ -13,6 +13,9 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
   const attendanceLogs = ref([]);
   const loading = ref(false);
 
+  /** Incremented on each list fetch so out-of-order HTTP responses cannot overwrite newer results. */
+  let attendanceLogsFetchSeq = 0;
+
   const normalizeAttendanceParams = (params = {}) => ({
     from_date: params.from_date || "",
     to_date: params.to_date || "",
@@ -23,23 +26,19 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
   });
 
   const getAttendanceLogs = async (params = {}) => {
+    const seq = ++attendanceLogsFetchSeq;
     loading.value = true;
+    attendanceLogs.value = [];
     const queryParams = normalizeAttendanceParams(params);
-    console.log("Store: Fetching Attendance Logs with params:", queryParams);
     try {
       const response = await apiClient.get(PAYROLL_ATTENDANCE, {
         params: queryParams,
       });
-      console.log("Store: Attendance Logs Raw Response:", response.data);
-      attendanceLogs.value = response.data.data;
-
-      if (!attendanceLogs.value) {
-        console.warn("Store: API returned null or undefined data field");
-      } else {
-        console.log(
-          `Store: Successfully loaded ${attendanceLogs.value.length} logs`,
-        );
+      if (seq !== attendanceLogsFetchSeq) {
+        return response.data;
       }
+      const raw = response.data?.data;
+      attendanceLogs.value = Array.isArray(raw) ? raw : [];
 
       return response.data;
     } catch (err) {
@@ -47,10 +46,15 @@ export const useHrAttendanceStore = defineStore("hr-attendance", () => {
         "Store: Error fetching attendance logs:",
         err.response?.data || err.message,
       );
-      handleError(err);
+      if (seq === attendanceLogsFetchSeq) {
+        attendanceLogs.value = [];
+        handleError(err);
+      }
       throw err;
     } finally {
-      loading.value = false;
+      if (seq === attendanceLogsFetchSeq) {
+        loading.value = false;
+      }
     }
   };
 
