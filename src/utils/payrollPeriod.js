@@ -18,7 +18,7 @@ export function getPayrollDates(month) {
 /** Default anchor: same as Payrolls / Attendance (21st previous calendar month → 20th current). */
 export function defaultPayrollMonthRange() {
   const now = new Date();
-  const defaultMonthAnchor = new Date(now.getFullYear(), now.getMonth() - 1, 21);
+  const defaultMonthAnchor = new Date(now.getFullYear(), now.getMonth() , 21);
   const payrollMonth = `${defaultMonthAnchor.getFullYear()}-${String(defaultMonthAnchor.getMonth() + 1).padStart(2, "0")}`;
   return {
     payrollMonth,

@@ -1,5 +1,13 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
+    <div
+      v-if="!authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)"
+      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm"
+    >
+      You do not have permission to view attendance logs.
+    </div>
+
+    <template v-else>
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
@@ -9,13 +17,16 @@
       <div class="flex flex-wrap items-center gap-2">
         <!-- Quick Filters -->
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-1.5 rounded-xl border border-indigo-200">
-          <template v-if="authStore.isAdminUser">
+          <template v-if="authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)">
             <div class="flex flex-col px-2 min-w-[120px]">
               <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
-              <select v-model="filterForm.employee_id" class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5" @change="fetchLogs">
+              <select v-model="filterForm.employee_id"
+                class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5"
+                @change="fetchLogs">
                 <option value="">All Employees</option>
                 <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-                  {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name) : ('Emp #' + emp.id)) }}
+                  {{ emp.name || (emp.personal_info ? (emp.personal_info.first_name + ' ' + emp.personal_info.last_name)
+                    : ('Emp #' + emp.id)) }}
                 </option>
               </select>
             </div>
@@ -24,66 +35,47 @@
           <div class="flex flex-col px-2 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
             <div class="relative">
-              <input
-                v-model="filterPayrollMonth"
-                type="month"
+              <input v-model="filterPayrollMonth" type="month"
                 class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                @change="applyFilterMonth"
-              />
-              <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                @change="applyFilterMonth" />
+              <LucideCalendar
+                class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
             <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
-              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} — {{ getPayrollDates(filterPayrollMonth).to_date }}
+              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} — {{
+                getPayrollDates(filterPayrollMonth).to_date }}
             </p>
           </div>
-          <button 
-            @click="fetchLogs" 
-            class="p-2 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
-            :class="store.loading ? 'text-indigo-400' : 'text-indigo-600 bg-indigo-50'"
-            title="Reload Logs"
-          >
-             <svg class="w-4 h-4" :class="{'animate-spin': store.loading}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-             </svg>
+          <button @click="fetchLogs" class="p-2 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
+            :class="store.loading ? 'text-indigo-400' : 'text-indigo-600 bg-indigo-50'" title="Reload Logs">
+            <svg class="w-4 h-4" :class="{ 'animate-spin': store.loading }" fill="none" viewBox="0 0 24 24"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
           </button>
         </div>
 
-        <button
-          v-if="authStore.isAdminUser"
-          @click="openReportModal"
-          class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer ml-2"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)" @click="openReportModal"
+          class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer ml-2">
           <LucideFileText class="w-4 h-4" /> Monthly Report
         </button>
-        <button
-          v-if="authStore.isAdminUser"
-          @click="openUploadModal"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.BULK_UPLOAD_ATTENDANCE)" @click="openUploadModal"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
           <LucideUpload class="w-4 h-4" /> Bulk Upload
         </button>
-        <button
-          v-if="authStore.isAdminUser"
-          @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.CREATE_ATTENDANCE_LOG)" @click="openAddModal"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
           <span class="text-xl leading-none">+</span> Add Log
         </button>
       </div>
     </div>
 
-    
+
     <!-- Table -->
-    <HrDataTable
-      :headers="tableHeaders"
-      :items="attendanceLogs"
-      :loading="store.loading"
-      emptyMessage="No attendance logs found."
-      :hasEdit="authStore.isAdminUser"
-      :hasDelete="authStore.isAdminUser"
-      @edit="openEditModal"
-      @delete="confirmDelete"
-    >
+    <HrDataTable :headers="tableHeaders" :items="attendanceLogs" :loading="attendanceTableLoading"
+      emptyMessage="No attendance logs found." :hasEdit="authStore.can(HR_PERMISSION.UPDATE_ATTENDANCE_LOG)" :hasDelete="authStore.can(HR_PERMISSION.DELETE_ATTENDANCE_LOG)"
+      @edit="openEditModal" @delete="confirmDelete">
       <template #employee="{ item }">
         {{ item.employee?.name || '-' }}
       </template>
@@ -96,48 +88,23 @@
     </HrDataTable>
 
     <!-- Custom Components -->
-    <AttendanceLogsModal
-      :show="showModal"
-      :isEditing="isEditing"
-      :loading="store.loading"
-      :initialForm="form"
-      :employees="employeeStore.employees"
-      @close="closeModal"
-      @save="handleSubmit"
-    />
+    <AttendanceLogsModal :show="showModal" :isEditing="isEditing" :loading="store.loading" :initialForm="form"
+      :employees="employeeStore.employees" @close="closeModal" @save="handleSubmit" />
 
-    <BulkUploadModal
-      :show="showUploadModal"
-      :loading="store.loading"
-      :templateUrl="bulkUploadTemplate"
-      @close="closeUploadModal"
-      @upload="handleUpload"
-    />
+    <BulkUploadModal :show="showUploadModal" :loading="store.loading" :templateUrl="bulkUploadTemplate"
+      @close="closeUploadModal" @upload="handleUpload" />
 
-    <AttendanceReportDrawer 
-      ref="reportDrawerRef"
-      :show="showReportModal" 
-      @close="showReportModal = false"
-      @request-for-day="openRequestForDay"
-    />
+    <AttendanceReportDrawer ref="reportDrawerRef" :show="showReportModal" @close="showReportModal = false"
+      @request-for-day="openRequestForDay" />
 
-    <AttendanceRequestModal
-      :show="showRequestModal"
-      :loading="requestLoading"
-      :initialForm="requestForm"
-      @close="showRequestModal = false"
-      @save="handleRequestSubmit"
-    />
+    <AttendanceRequestModal :show="showRequestModal" :loading="requestLoading" :initialForm="requestForm"
+      @close="showRequestModal = false" @save="handleRequestSubmit" />
 
     <!-- Delete Confirmation -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Are you sure?"
-      text="This attendance log will be deleted permanently."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?"
+      text="This attendance log will be deleted permanently." icon="warning" @confirm="handleDeleteConfirm"
+      @cancel="cancelDelete" />
+    </template>
   </div>
 </template>
 
@@ -156,6 +123,7 @@ import { LucideUpload, LucideFileText, LucideCalendar } from 'lucide-vue-next';
 import bulkUploadTemplate from '@/assets/BulkUploadTest.csv?url';
 import notyf from '@/components/global/notyf';
 import { getPayrollDates, defaultPayrollMonthRange } from '@/utils/payrollPeriod';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
@@ -163,61 +131,25 @@ const authStore = useAuthStore();
 
 const attendanceLogs = computed(() => store.attendanceLogs);
 
-/** When the auth user JSON has no employee id, we match this user to a payroll employee row (same list as HR Employees). */
-const resolvedPayrollEmployeeId = ref("");
+/** Until first list fetch finishes, keep table in loading state (avoids empty flash while employees load). */
+const attendanceListReady = ref(false);
+const attendanceTableLoading = computed(
+  () => store.loading || !attendanceListReady.value,
+);
 
-/** Query params sent to attendance-logs API (non-admins are always scoped to their employee id). */
+/** Query params: org-wide when admin or `view-attendance-log`; else scoped to linked payroll employee id. */
 const attendanceQueryParams = computed(() => {
   const { from_date, to_date, employee_id } = filterForm.value;
-  if (authStore.isAdminUser) {
+  if (authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) {
     return { from_date, to_date, employee_id };
   }
-  const eid =
-    authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "";
+  const eid = authStore.payrollEmployeeId || "";
   return {
     from_date,
     to_date,
     employee_id: eid,
   };
 });
-
-const effectiveNonAdminEmployeeId = computed(
-  () => authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "",
-);
-
-async function resolvePayrollEmployeeFromDirectory() {
-  resolvedPayrollEmployeeId.value = "";
-  if (authStore.isAdminUser || authStore.payrollEmployeeId) return;
-
-  try {
-    await employeeStore.getEmployees();
-    const u = authStore.user;
-    if (!u) return;
-
-    const uid = u.id;
-    const email = String(u.email || "").trim().toLowerCase();
-    const list = employeeStore.employees || [];
-
-    const match = list.find((emp) => {
-      const linkedUserId = emp.user?.id ?? emp.user_id;
-      if (uid != null && linkedUserId != null && String(linkedUserId) === String(uid)) {
-        return true;
-      }
-      const empEmail = String(
-        emp.user?.email || emp.email || emp.personal_info?.email || "",
-      )
-        .trim()
-        .toLowerCase();
-      return email.length > 0 && empEmail === email;
-    });
-
-    if (match?.id != null) {
-      resolvedPayrollEmployeeId.value = String(match.id).trim();
-    }
-  } catch (e) {
-    console.warn("Attendance: could not resolve employee from directory", e);
-  }
-}
 
 // Modal States
 const showModal = ref(false);
@@ -260,7 +192,7 @@ const tableHeaders = computed(() => {
     { label: 'Check In', key: 'check_in' },
     { label: 'Check Out', key: 'check_out' },
   ];
-  if (authStore.isAdminUser) {
+  if (authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) {
     return [{ label: 'Employee', key: 'employee' }, ...row];
   }
   return row;
@@ -268,10 +200,7 @@ const tableHeaders = computed(() => {
 
 const fetchLogs = async () => {
   try {
-    if (!authStore.isAdminUser && !effectiveNonAdminEmployeeId.value) {
-      notyf.error('Your account is not linked to an employee record.');
-      return;
-    }
+    if (!authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) return;
     await store.getAttendanceLogs(attendanceQueryParams.value);
   } catch (e) {
     console.error("View: Failed to fetch logs:", e);
@@ -282,11 +211,17 @@ onMounted(async () => {
   if (!authStore.user && authStore.token) {
     await authStore.getUserByToken();
   }
-  if (authStore.isAdminUser) {
-    await Promise.all([employeeStore.getEmployees(), fetchLogs()]);
-  } else {
-    await resolvePayrollEmployeeFromDirectory();
+  if (!authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) {
+    if (authStore.isAdminUser || authStore.can(HR_PERMISSION.CREATE_ATTENDANCE_LOG)) {
+      await employeeStore.getEmployees();
+    }
+    return;
+  }
+  try {
+    await employeeStore.getEmployees();
     await fetchLogs();
+  } finally {
+    attendanceListReady.value = true;
   }
 });
 
@@ -301,7 +236,7 @@ const openAddModal = () => {
 const openEditModal = (item) => {
   isEditing.value = true;
   editingId.value = item.id;
-  form.value = { 
+  form.value = {
     employee_id: item.employee_id || item.employee?.id,
     date: item.date,
     check_in: item.check_in,
@@ -322,6 +257,10 @@ const openUploadModal = () => { showUploadModal.value = true; };
 const closeUploadModal = () => { showUploadModal.value = false; };
 
 const handleUpload = async (file) => {
+  if (!authStore.can(HR_PERMISSION.BULK_UPLOAD_ATTENDANCE)) {
+    notyf.error('You do not have permission to bulk upload attendance.');
+    return;
+  }
   const formData = new FormData();
   formData.append('file', file);
   try {
@@ -335,6 +274,14 @@ const handleSubmit = async (formData) => {
     notyf.error('Please fill in required fields');
     return;
   }
+  if (isEditing.value && !authStore.can(HR_PERMISSION.UPDATE_ATTENDANCE_LOG)) {
+    notyf.error('You do not have permission to update attendance logs.');
+    return;
+  }
+  if (!isEditing.value && !authStore.can(HR_PERMISSION.CREATE_ATTENDANCE_LOG)) {
+    notyf.error('You do not have permission to create attendance logs.');
+    return;
+  }
   try {
     if (isEditing.value) {
       await store.updateAttendanceLog(editingId.value, formData, attendanceQueryParams.value);
@@ -346,6 +293,7 @@ const handleSubmit = async (formData) => {
 };
 
 const openReportModal = () => {
+  if (!authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) return;
   reportDrawerRef.value?.reset();
   showReportModal.value = true;
 };
@@ -363,6 +311,10 @@ const requestForm = ref({
 });
 
 const openRequestForDay = (date) => {
+  if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
+    notyf.error('You do not have permission to create employee requests.');
+    return;
+  }
   requestForm.value = {
     request_type: 'leave',
     day: date,
@@ -376,6 +328,10 @@ const openRequestForDay = (date) => {
 };
 
 const handleRequestSubmit = async (payload) => {
+  if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
+    notyf.error('You do not have permission to create employee requests.');
+    return;
+  }
   if (!payload.day) {
     notyf.error('Please select a date');
     return;
@@ -416,6 +372,10 @@ const confirmDelete = (id) => {
 
 const handleDeleteConfirm = async () => {
   if (!deleteId.value) return;
+  if (!authStore.can(HR_PERMISSION.DELETE_ATTENDANCE_LOG)) {
+    notyf.error('You do not have permission to delete attendance logs.');
+    return;
+  }
   try {
     await store.deleteAttendanceLog(deleteId.value, attendanceQueryParams.value);
   } catch (e) { console.error(e); }
@@ -436,7 +396,7 @@ const cancelDelete = () => {
 
 <style scoped>
 /* Aggressive HEX Overrides for PDF generation (Avoid oklch) */
-#printable-report, 
+#printable-report,
 #printable-report * {
   color-scheme: light !important;
   --tw-text-opacity: 1 !important;
@@ -459,9 +419,12 @@ const cancelDelete = () => {
   body * {
     visibility: hidden;
   }
-  #printable-report, #printable-report * {
+
+  #printable-report,
+  #printable-report * {
     visibility: visible;
   }
+
   #printable-report {
     position: absolute;
     left: 0;
@@ -470,6 +433,7 @@ const cancelDelete = () => {
     padding: 20px;
     background: white !important;
   }
+
   .no-print {
     display: none !important;
   }

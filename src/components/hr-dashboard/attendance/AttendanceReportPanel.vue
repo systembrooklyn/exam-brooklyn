@@ -1,56 +1,57 @@
 <template>
   <div class="flex-1 overflow-y-auto p-6 space-y-6">
+    <template v-if="!hideControls">
+      <div class="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-xl"
+        :class="showEmployeeSelect ? 'md:grid-cols-3' : 'md:grid-cols-2'">
+        <div v-if="showEmployeeSelect">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+          <select v-model="reportForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
+            <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
+              {{
+                emp.name ||
+                (emp.personal_info
+                  ? emp.personal_info.first_name + " " + emp.personal_info.last_name
+                  : "Emp #" + emp.id)
+              }}
+            </option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+          <input v-model="reportForm.from_date" type="date"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+          <input v-model="reportForm.to_date" type="date"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white" />
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" @click="handleReport" :disabled="store.loading"
+          class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+          <span v-if="store.loading"
+            class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+          {{ store.loading ? "Generating..." : "Generate Report" }}
+        </button>
+      </div>
+    </template>
+
     <div
-      class="grid grid-cols-1 gap-4 p-4 bg-gray-50 rounded-xl"
-      :class="showEmployeeSelect ? 'md:grid-cols-3' : 'md:grid-cols-2'"
+      v-if="hideControls && !reportData && store.loading"
+      class="flex justify-center items-center min-h-[280px] rounded-xl border border-gray-100 bg-gray-50/40"
+      aria-busy="true"
+      aria-label="Loading report"
     >
-      <div v-if="showEmployeeSelect">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-        <select
-          v-model="reportForm.employee_id"
-          class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
-        >
-          <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-            {{
-              emp.name ||
-              (emp.personal_info
-                ? emp.personal_info.first_name + " " + emp.personal_info.last_name
-                : "Emp #" + emp.id)
-            }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-        <input
-          v-model="reportForm.from_date"
-          type="date"
-          class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-        <input
-          v-model="reportForm.to_date"
-          type="date"
-          class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
-        />
-      </div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
     </div>
 
-    <div class="flex gap-2">
-      <button
-        type="button"
-        @click="handleReport"
-        :disabled="store.loading"
-        class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-      >
-        <span
-          v-if="store.loading"
-          class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"
-        ></span>
-        {{ store.loading ? "Generating..." : "Generate Report" }}
-      </button>
+    <div
+      v-else-if="hideControls && !reportData && !store.loading && reportRequested"
+      class="rounded-xl border border-gray-100 bg-gray-50/40 px-6 py-10 text-center text-sm text-gray-600"
+    >
+      Could not load report data for this period. Try another month or refresh the page.
     </div>
 
     <div v-if="reportData" id="printable-report" class="space-y-6 animate-fade-in">
@@ -99,10 +100,8 @@
             </p>
           </div>
         </div>
-        <div
-          v-if="reportData.monthly_hours"
-          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3"
-        >
+        <div v-if="reportData.monthly_hours"
+          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3">
           <div class="p-2 bg-sky-100 rounded-lg text-sky-600">
             <CalendarClock class="w-4 h-4" />
           </div>
@@ -150,32 +149,31 @@
               <th class="p-4 font-extrabold text-center text-red-600">Lateness</th>
               <th class="p-4 font-extrabold text-center text-orange-600">Early Leave</th>
               <th class="p-4 font-extrabold text-center text-green-600">Overtime</th>
-              <th class="p-4 font-extrabold text-center no-print text-gray-700">Action</th>
+              <th
+                v-if="showDayRequestAction"
+                class="p-4 font-extrabold text-center no-print text-gray-700"
+              >
+                Action
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 text-[11px]">
-            <tr
-              v-for="day in paginatedDays"
-              :key="day.date"
+            <tr v-for="day in paginatedDays" :key="day.date"
               class="divide-x divide-gray-200 hover:bg-gray-50/30 transition-colors"
-              :class="{ 'bg-amber-50/80': day.status === 'day_off' }"
-            >
+              :class="{ 'bg-amber-50/80': day.status === 'day_off' }">
               <td class="p-3 font-bold text-center text-xs">{{ formatDate(day.date) }}</td>
               <td class="p-3 text-center">
                 <div v-if="day.main_shift" class="flex items-center justify-center gap-2">
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
                     <span
-                      class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 font-bold text-[10px]"
-                    >
+                      class="px-2 py-1 bg-indigo-50 text-indigo-700 rounded border border-indigo-100 font-bold text-[10px]">
                       {{ formatTime(getShiftIn(day), true) }}
                     </span>
                   </div>
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">Out</span>
-                    <span
-                      class="px-2 py-1 bg-sky-50 text-sky-700 rounded border border-sky-100 font-bold text-[10px]"
-                    >
+                    <span class="px-2 py-1 bg-sky-50 text-sky-700 rounded border border-sky-100 font-bold text-[10px]">
                       {{ formatTime(getShiftOut(day), true) }}
                     </span>
                   </div>
@@ -187,22 +185,17 @@
                   <div class="flex items-center justify-center gap-2">
                     <div class="flex flex-col items-center">
                       <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
-                      <span
-                        class="px-2 py-1 rounded border font-bold text-[10px]"
-                        :class="
-                          getLatenessValue(day) > 0
-                            ? 'bg-red-50 text-red-700 border-red-200'
-                            : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
-                        "
-                      >
+                      <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
+                        ">
                         {{ formatTime(day.attendance.check_in, true) }}
                       </span>
                     </div>
                     <div class="flex flex-col items-center">
                       <span class="text-[8px] uppercase font-bold text-gray-400">Out</span>
                       <span
-                        class="px-2 py-1 bg-sky-50/30 text-sky-700 rounded border border-sky-100/50 font-bold text-[10px]"
-                      >
+                        class="px-2 py-1 bg-sky-50/30 text-sky-700 rounded border border-sky-100/50 font-bold text-[10px]">
                         {{ formatTime(day.attendance.check_out, true) }}
                       </span>
                     </div>
@@ -211,19 +204,15 @@
                 <span v-else class="text-gray-300">--</span>
               </td>
               <td class="p-3 text-center">
-                <span
-                  v-if="getLatenessValue(day) > 0"
-                  class="inline-block px-2 py-1 bg-red-100 text-red-700 rounded font-bold text-[10px]"
-                >
+                <span v-if="getLatenessValue(day) > 0"
+                  class="inline-block px-2 py-1 bg-red-100 text-red-700 rounded font-bold text-[10px]">
                   {{ getLatenessValue(day) }}m
                 </span>
                 <span v-else class="text-gray-300">-</span>
               </td>
               <td class="p-3 text-center">
-                <span
-                  v-if="getEarlyLeaveValue(day) > 0"
-                  class="inline-block px-2 py-1 bg-orange-100 text-orange-700 rounded font-bold text-[10px]"
-                >
+                <span v-if="getEarlyLeaveValue(day) > 0"
+                  class="inline-block px-2 py-1 bg-orange-100 text-orange-700 rounded font-bold text-[10px]">
                   {{ getEarlyLeaveValue(day) }}m
                 </span>
                 <span v-else class="text-gray-300">-</span>
@@ -232,27 +221,19 @@
                 <div class="flex items-center justify-center gap-2">
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">Before</span>
-                    <span
-                      class="px-2 py-1 rounded border font-bold text-[10px]"
-                      :class="
-                        getOvertimeBefore(day) > 0
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : 'bg-gray-50 text-gray-400 border-gray-100'
-                      "
-                    >
+                    <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getOvertimeBefore(day) > 0
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                      ">
                       {{ getOvertimeBefore(day) }}m
                     </span>
                   </div>
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">After</span>
-                    <span
-                      class="px-2 py-1 rounded border font-bold text-[10px]"
-                      :class="
-                        getOvertimeAfter(day) > 0
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-gray-50 text-gray-400 border-gray-100'
-                      "
-                    >
+                    <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getOvertimeAfter(day) > 0
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                      ">
                       {{ getOvertimeAfter(day) }}m
                     </span>
                   </div>
@@ -261,12 +242,9 @@
                   Total: {{ getOvertimeValue(day) }}m
                 </div>
               </td>
-              <td class="p-3 text-center no-print">
-                <button
-                  type="button"
-                  @click="$emit('request-for-day', day.date)"
-                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
-                >
+              <td v-if="showDayRequestAction" class="p-3 text-center no-print">
+                <button type="button" @click="$emit('request-for-day', day.date)"
+                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer">
                   Request
                 </button>
               </td>
@@ -275,10 +253,8 @@
         </table>
       </div>
 
-      <div
-        v-if="totalPages > 1"
-        class="flex flex-wrap items-center justify-between gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl no-print"
-      >
+      <div v-if="totalPages > 1"
+        class="flex flex-wrap items-center justify-between gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl no-print">
         <div class="text-xs text-gray-500 font-medium">
           Showing
           <span class="text-indigo-600 font-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
@@ -291,38 +267,24 @@
           days
         </div>
         <div class="flex items-center gap-1">
-          <button
-            type="button"
-            @click="currentPage--"
-            :disabled="currentPage === 1"
-            class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer"
-          >
+          <button type="button" @click="currentPage--" :disabled="currentPage === 1"
+            class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div class="flex items-center gap-1 px-2">
-            <button
-              v-for="page in totalPages"
-              :key="page"
-              type="button"
-              @click="currentPage = page"
+            <button v-for="page in totalPages" :key="page" type="button" @click="currentPage = page"
               class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border cursor-pointer"
-              :class="
-                currentPage === page
+              :class="currentPage === page
                   ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
-              "
-            >
+                ">
               {{ page }}
             </button>
           </div>
-          <button
-            type="button"
-            @click="currentPage++"
-            :disabled="currentPage === totalPages"
-            class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer"
-          >
+          <button type="button" @click="currentPage++" :disabled="currentPage === totalPages"
+            class="p-2 rounded-lg border bg-white disabled:opacity-30 hover:bg-indigo-50 hover:border-indigo-200 transition-all text-gray-600 cursor-pointer">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
@@ -353,6 +315,9 @@ const props = defineProps({
   lockedEmployeeId: { type: [String, Number], default: null },
   initialFrom: { type: String, default: "" },
   initialTo: { type: String, default: "" },
+  hideControls: { type: Boolean, default: false },
+  suppressSuccessNotyf: { type: Boolean, default: false },
+  showDayRequestAction: { type: Boolean, default: true },
 });
 
 defineEmits(["request-for-day"]);
@@ -369,6 +334,8 @@ const reportForm = ref({
 const reportData = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = ref(15);
+/** True after a successful validation path attempted generate (for hidden-controls empty/error UI). */
+const reportRequested = ref(false);
 
 const paginatedDays = computed(() => {
   if (!reportData.value || !reportData.value.days) return [];
@@ -424,6 +391,7 @@ const handleReport = async () => {
     notyf.error("Please fill in all criteria");
     return;
   }
+  reportRequested.value = true;
   try {
     const payload = {
       employee_id: parseInt(String(eid), 10),
@@ -433,7 +401,9 @@ const handleReport = async () => {
     const data = await store.generateMonthlyReport(payload);
     reportData.value = data.data;
     currentPage.value = 1;
-    notyf.success("Report generated");
+    if (!props.suppressSuccessNotyf) {
+      notyf.success("Report generated");
+    }
   } catch (e) {
     console.error("Report Generation Failed:", e);
   }
@@ -504,10 +474,12 @@ const getTotalEarlyLeave = (report) => {
 };
 
 defineExpose({
+  generateReport: handleReport,
   reset: () => {
     reportForm.value = { employee_id: null, from_date: "", to_date: "" };
     reportData.value = null;
     currentPage.value = 1;
+    reportRequested.value = false;
     syncFormFromProps();
   },
 });

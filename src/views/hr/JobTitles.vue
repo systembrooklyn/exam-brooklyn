@@ -6,6 +6,7 @@
         <p class="text-gray-500 mt-1">Define job roles and responsibilities</p>
       </div>
       <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_JOB_TITLE)"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
@@ -28,6 +29,8 @@
       :items="jobTitles"
       :loading="store.loading"
       emptyMessage="No job titles found."
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_JOB_TITLE)"
+      :has-delete="authStore.can(HR_PERMISSION.DELETE_JOB_TITLE)"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -87,8 +90,11 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'; // Import HrDataTable
 import notyf from "@/components/global/notyf"; // Import Notyf
+import { useAuthStore } from "@/stores/auth";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
 
 const store = useHrJobTitlesStore();
+const authStore = useAuthStore();
 const jobTitles = computed(() => store.jobTitles);
 
 const headers = [

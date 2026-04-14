@@ -15,6 +15,17 @@ import {
 export const useHrRequestsStore = defineStore("hr-requests", () => {
   const requests = ref([]);
   const loading = ref(false);
+  /** Which list the UI last loaded: refresh after approve/reject must match it. */
+  const listSource = ref("me");
+
+  const setListSource = (source) => {
+    listSource.value = source === "pending" ? "pending" : "me";
+  };
+
+  const refreshCurrentList = async () => {
+    if (listSource.value === "pending") await getPendingRequests();
+    else await getMyRequests();
+  };
 
   const getMyRequests = async () => {
     loading.value = true;
@@ -69,7 +80,7 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     try {
       const response = await apiClient.post(PAYROLL_APPROVE_REQUEST(id));
       notyf.success(response.data.message || "Request approved");
-      await getPendingRequests();
+      await refreshCurrentList();
       return response.data;
     } catch (err) {
       handleError(err);
@@ -88,6 +99,7 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
         payload,
       );
       notyf.success(response.data.message || "Request rejected");
+      await refreshCurrentList();
       return response.data;
     } catch (err) {
       handleError(err);
@@ -115,6 +127,8 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
   return {
     requests,
     loading,
+    listSource,
+    setListSource,
     getMyRequests,
     getPendingRequests,
     createRequest,

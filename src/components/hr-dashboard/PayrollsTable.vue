@@ -4,6 +4,7 @@
       :headers="headers"
       :items="items"
       :loading="loading"
+      :has-actions="hasRowActions"
       emptyMessage="No payrolls found."
     >
 
@@ -52,6 +53,7 @@
         <div class="flex items-center gap-2">
           <!-- Eye / Loading Spinner -->
           <button
+            v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL)"
             @click="$emit('view', item)"
             class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
             title="View Details"
@@ -65,7 +67,10 @@
           </button>
 
           <!-- Approval Actions -->
-          <div class="flex items-center gap-1 border-l pl-2 ml-1">
+          <div
+            v-if="authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
+            class="flex items-center gap-1 border-l pl-2 ml-1"
+          >
             <!-- Approve -->
             <button
               @click="$emit('update-status', { item, status: 'approve' })"
@@ -105,6 +110,17 @@
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'
 import PayrollStatusBadge from './PayrollStatusBadge.vue'
 import { LucideEye, LucideCheckCircle, LucideXCircle } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { HR_PERMISSION } from '@/constants/hrPermissions'
+
+const authStore = useAuthStore()
+
+const hasRowActions = computed(
+  () =>
+    authStore.can(HR_PERMISSION.VIEW_PAYROLL) ||
+    authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS),
+)
 
 const props = defineProps({
   items: { type: Array, default: () => [] },

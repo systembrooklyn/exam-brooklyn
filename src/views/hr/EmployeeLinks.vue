@@ -6,6 +6,7 @@
         <p class="text-gray-500 mt-1">Link employees to departments and job titles</p>
       </div>
       <button
+        v-if="authStore.can(HR_PERMISSION.ASSIGN_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
@@ -33,6 +34,8 @@
       :items="filteredLinks"
       :loading="store.loading"
       emptyMessage="No assignments found."
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
+      :has-delete="authStore.can(HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -119,8 +122,11 @@ import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
 import { watch } from 'vue'; // Ensure watch is imported
+import { useAuthStore } from '@/stores/auth';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const store = useHrLinksStore();
+const authStore = useAuthStore();
 const empStore = useHrEmployeesStore();
 const deptStore = useHrDepartmentsStore();
 const jobStore = useHrJobTitlesStore();

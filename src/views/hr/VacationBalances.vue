@@ -69,7 +69,11 @@
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-2 flex-wrap">
           <button
-            v-if="item.contract"
+            v-if="
+              item.contract &&
+              (authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
+                authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE))
+            "
             type="button"
             :disabled="editModalPrefetching"
             @click="openEditModal(item)"
@@ -82,15 +86,15 @@
             />
             <Edit v-else class="w-5 h-5" />
           </button>
-          <button
-            v-if="authStore.isAdminUser"
+          <!-- <button
+            v-if="authStore.can(HR_PERMISSION.DELETE_VACATION_BALANCE)"
             type="button"
             @click="confirmDelete(pickBalanceId(item.balance))"
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
-            title="Delete (admin only)"
+            title="Delete balance"
           >
             <Trash2 class="w-5 h-5" />
-          </button>
+          </button> -->
         </div>
       </template>
     </HrDataTable>
@@ -298,6 +302,7 @@ import { useHrVacationBalancesStore } from "@/stores/hr/vacationBalances";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
 import { useHrRequestsStore } from "@/stores/hr/requests";
 import { useAuthStore } from "@/stores/auth";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
 import HrModal from "@/components/hr-dashboard/HrModal.vue";
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import HrDataTable from "@/components/hr-dashboard/HrDataTable.vue";

@@ -7,12 +7,14 @@
       </div>
       <div class="flex gap-2">
         <button
+          v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)"
           @click="openLinkModal"
           class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <LucideLink class="w-4 h-4" /> Link to Contract
         </button>
         <button
+          v-if="authStore.can(HR_PERMISSION.CREATE_OFFICIAL_HOLIDAYS)"
           @click="openAddModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
@@ -27,6 +29,8 @@
       :items="holidays"
       :loading="store.loading"
       emptyMessage="No holidays found."
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_OFFICIAL_HOLIDAYS)"
+      :has-delete="authStore.can(HR_PERMISSION.DELETE_OFFICIAL_HOLIDAYS)"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -68,6 +72,7 @@
     <HrModal
       :show="showLinkModal"
       title="Link Holiday to Contracts"
+      body-overflow-visible
       @close="closeLinkModal"
       @save="handleLink"
     >
@@ -75,20 +80,23 @@
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Select Holiday</label>
           <select v-model="linkForm.holiday_id" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+            <option :value="null">Select Holiday</option>
             <option v-for="h in holidays" :key="h.id" :value="h.id">{{ h.holiday_name }}</option>
           </select>
         </div>
-        <div>
+        <div class="relative z-10">
           <label class="block text-sm font-medium text-gray-700 mb-1">Select Contracts</label>
           <MultiSelect
             v-model="linkForm.contract_ids"
-            :options="contractStore.contracts"
-            labelKey="id"
-            valueKey="id"
+            :options="contractOptions"
+            label-key="label"
+            value-key="id"
             placeholder="Select Contracts"
             multiple
           />
-          <p class="text-xs text-gray-500 mt-1">Select one or more contracts (IDs) to apply this holiday to.</p>
+          <p class="text-xs text-gray-500 mt-1">
+            Select one or more contracts by employee name; IDs are sent when saving.
+          </p>
         </div>
       </div>
     </HrModal>
@@ -115,10 +123,28 @@ import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import notyf from "@/components/global/notyf";
 import MultiSelect from '@/components/global/MultiSelect.vue';
 import { LucideLink } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const store = useHrHolidaysStore();
 const contractStore = useHrContractsStore();
+const authStore = useAuthStore();
 const holidays = computed(() => store.holidays);
+
+/** Labels for MultiSelect: show employee + type; value stays contract id. */
+const contractOptions = computed(() =>
+  (contractStore.contracts || []).map((c) => {
+    const empName =
+      c.employee?.name ||
+      (c.employee?.personal_info
+        ? `${c.employee.personal_info.first_name || ""} ${c.employee.personal_info.last_name || ""}`.trim()
+        : "") ||
+      `Employee #${c.employee_id ?? "?"}`;
+    const type = c.type ? String(c.type) : "";
+    const label = `${empName} (${type})`;
+    return { id: c.id, label };
+  }),
+);
 
 const showModal = ref(false);
 const showLinkModal = ref(false);

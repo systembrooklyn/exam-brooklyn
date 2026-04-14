@@ -33,7 +33,7 @@
 
     <div 
       v-if="isOpen" 
-      class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto animate-fade-in-down"
+      class="absolute z-[999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto animate-fade-in-down"
     >
       <div class="p-2 sticky top-0 bg-white border-b border-gray-100">
         <input 

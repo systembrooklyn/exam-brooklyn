@@ -53,6 +53,7 @@
         </div>
 
         <button
+          v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)"
           @click="openCalcModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
@@ -233,10 +234,13 @@ import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue
 import PayrollSalaryDetails from '@/components/hr-dashboard/PayrollSalaryDetails.vue'
 import { LucideCalculator, LucideRefreshCw, LucideCalendar } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
+import { useAuthStore } from '@/stores/auth'
+import { HR_PERMISSION } from '@/constants/hrPermissions'
 
 // ─── Stores ──────────────────────────────────────────────
 const store = useHrPayrollStore()
 const employeeStore = useHrEmployeesStore()
+const authStore = useAuthStore()
 
 // ─── Helpers ──────────────────────────────────────────────
 // Given YYYY-MM, payroll cycle: day 21 of that month → day 20 of next month
@@ -320,6 +324,7 @@ const selectedPayroll = ref(null)
 const fetchingId = ref(null)
 
 const showDetails = async (item) => {
+  if (!authStore.can(HR_PERMISSION.VIEW_PAYROLL)) return
   fetchingId.value = item.payroll_id
   try {
     const empId = item.employee?.id || item.employee_id
@@ -348,6 +353,7 @@ const statusUpdateForm = ref({
 })
 
 const handleUpdateStatus = ({ item, status }) => {
+  if (!authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)) return
   statusUpdateForm.value = {
     employee_id: item.employee_id || item.employee?.id,
     period_from: filterForm.value.period_from,
@@ -360,6 +366,7 @@ const handleUpdateStatus = ({ item, status }) => {
 }
 
 const executeStatusUpdate = async () => {
+  if (!authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)) return
   try {
     await store.updatePayrollStatus(statusUpdateForm.value)
     showStatusModal.value = false

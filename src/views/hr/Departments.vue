@@ -6,6 +6,7 @@
         <p class="text-gray-500 mt-1">Manage company departments and structure</p>
       </div>
       <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_DEPARTMENT)"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
@@ -25,6 +26,8 @@
       :items="departments"
       :loading="store.loading"
       emptyMessage="No departments found."
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_DEPARTMENT)"
+      :has-delete="authStore.can(HR_PERMISSION.DELETE_DEPARTMENT)"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -73,8 +76,11 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
+import { useAuthStore } from "@/stores/auth";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
 
 const store = useHrDepartmentsStore();
+const authStore = useAuthStore();
 const departments = computed(() => store.departments);
 
 const headers = [

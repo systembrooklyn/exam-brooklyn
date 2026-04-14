@@ -23,7 +23,7 @@ import { ref, inject, onMounted, computed } from 'vue'
 import SidebarItem from './SidebarItem.vue'
 import { items } from './itemsLink'
 import { itemfinnance } from '../finnance-dahboard/sideItem'
-import { buildHrSidebarItems } from '../hr-dashboard/sideItem'
+import { buildHrSidebarItems, filterHrSidebarItems } from '../hr-dashboard/sideItem'
 import { X } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -70,7 +70,11 @@ const activeItems = computed(() => {
     
   }
   if (route.path.startsWith('/hr')) {
-    return buildHrSidebarItems(authStore.canManageFullAttendance)
+    const raw = buildHrSidebarItems(
+      authStore.canManageFullAttendance,
+      authStore.isAdminUser,
+    );
+    return filterHrSidebarItems(raw, (slug) => authStore.can(slug));
   }
     if (route.path.startsWith('/reservation')) {
     return itemReservation

@@ -123,9 +123,9 @@ router.beforeEach((to, from, next) => {
     }
   }
 
-  // ✅ Meta-based permission check
+  // ✅ Meta-based permission check (can() so admins align with HR UI)
   const required = to.meta?.requiresPermission;
-  if (required && !authStore.hasPermission(required)) {
+  if (required && !authStore.can(required)) {
     return next({ name: "SystemsPage" });
   }
 

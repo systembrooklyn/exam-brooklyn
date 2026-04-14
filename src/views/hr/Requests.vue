@@ -16,6 +16,7 @@
           {{ pendingQueueMode ? 'Show all my requests' : 'Pending approvals' }}
         </button>
         <button
+          v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
           type="button"
           @click="openAddModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
@@ -87,11 +88,23 @@
       </template>
       <template #actions="{ item }">
         <div v-if="item.status === 'pending'" class="flex gap-2 justify-center">
-          <button type="button" @click="confirmApprove(item.id)" class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Approve">
-             <LucideCheckCircle class="w-6 h-6" />
+          <button
+            v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+            type="button"
+            title="Approve"
+            class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125"
+            @click="confirmApprove(item.id)"
+          >
+            <LucideCheckCircle class="w-6 h-6" />
           </button>
-          <button type="button" @click="confirmReject(item.id)" class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125" title="Reject">
-             <LucideXCircle class="w-6 h-6" />
+          <button
+            v-if="authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
+            type="button"
+            title="Reject"
+            class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125"
+            @click="confirmReject(item.id)"
+          >
+            <LucideXCircle class="w-6 h-6" />
           </button>
         </div>
       </template>
@@ -207,6 +220,7 @@ import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import { LucideCheckCircle, LucideXCircle, LucideAlertTriangle } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
@@ -274,11 +288,16 @@ const authStore = useAuthStore();
 const store = useHrRequestsStore();
 const requests = computed(() => store.requests);
 
-const canAccessPendingQueue = computed(
+/** Hide Actions column entirely unless user may approve or reject (admin passes via `can`). */
+const canShowRequestActionsColumn = computed(
   () =>
-    authStore.isAdminUser ||
-    // collectJobTitleNamesFromUser(authStore.user).some(jobTitleIsApprover),
-    true,
+    authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
+    authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST),
+);
+
+/** Pending queue toggle + `/pending` API — requires `view-pending-requests` (admin bypasses via `can`). */
+const canAccessPendingQueue = computed(() =>
+  authStore.can(HR_PERMISSION.VIEW_PENDING_REQUESTS),
 );
 
 const pendingQueueMode = ref(false);
@@ -372,7 +391,7 @@ const headers = computed(() => {
   ];
 
   if (
-    canAccessPendingQueue.value &&
+    canShowRequestActionsColumn.value &&
     (pendingQueueMode.value || requests.value.some((r) => r.status === 'pending'))
   ) {
     baseHeaders.push({ label: 'Actions', key: 'actions', class: `${CELL_CENTER} w-28` });
@@ -385,8 +404,10 @@ const fetchData = async () => {
   profileError.value = false;
   try {
     if (canAccessPendingQueue.value && pendingQueueMode.value) {
+      store.setListSource("pending");
       await store.getPendingRequests();
     } else {
+      store.setListSource("me");
       await store.getMyRequests();
     }
   } catch (e) {
@@ -466,14 +487,18 @@ const handleSubmit = async () => {
 };
 
 const confirmApprove = (id) => {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
   targetId.value = id;
   showConfirmApprove.value = true;
 };
 
 const handleApprove = async () => {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) {
+    showConfirmApprove.value = false;
+    return;
+  }
   try {
     await store.approveRequest(targetId.value);
-    await fetchData();
   } catch (e) {
     console.error("Approval failed:", e);
   } finally {
@@ -482,15 +507,19 @@ const handleApprove = async () => {
 };
 
 const confirmReject = (id) => {
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) return;
   targetId.value = id;
   rejectionNote.value = '';
   showConfirmReject.value = true;
 };
 
 const handleReject = async () => {
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) {
+    showConfirmReject.value = false;
+    return;
+  }
   try {
     await store.rejectRequest(targetId.value, rejectionNote.value);
-    await fetchData();
     showConfirmReject.value = false;
   } catch (e) {
     console.error("Rejection failed:", e);

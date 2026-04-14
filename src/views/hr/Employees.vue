@@ -5,7 +5,9 @@
         <h1 class="text-2xl font-bold text-gray-800">Employees Directory</h1>
         <p class="text-gray-500 mt-1">Manage employee profiles and roles</p>
       </div>
-      <button @click="openAddModal"
+      <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)"
+        @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
         <span class="text-xl">+</span> Add Employee
       </button>
@@ -26,20 +28,32 @@
     </div>
 
     <!-- Table -->
-    <HrDataTable :headers="headers" :items="filteredEmployees" :loading="store.loading"
-      emptyMessage="No employees found.">
+    <HrDataTable
+      :headers="headers"
+      :items="filteredEmployees"
+      :loading="store.loading"
+      emptyMessage="No employees found."
+      :has-actions="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE) || authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)">
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-3">
-          <button type="button" :disabled="editLoadingId != null"
+          <button
+            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)"
+            type="button"
+            :disabled="editLoadingId != null"
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Edit" @click="openEditModal(item)">
+            title="Edit"
+            @click="openEditModal(item)">
             <Loader2 v-if="editLoadingId != null && Number(editLoadingId) === Number(item.id)"
               class="w-5 h-5 animate-spin text-blue-600" />
             <Edit v-else class="w-5 h-5" />
           </button>
-          <button type="button" :disabled="editLoadingId != null"
+          <button
+            v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)"
+            type="button"
+            :disabled="editLoadingId != null"
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Delete" @click="confirmDelete(item.id)">
+            title="Delete"
+            @click="confirmDelete(item.id)">
             <Trash2 class="w-5 h-5" />
           </button>
         </div>
@@ -100,7 +114,9 @@
             </svg>
             Status
           </button>
-          <button @click="activeTab = 'manager'"
+          <button
+            v-if="authStore.can(HR_PERMISSION.ASSIGN_MANAGER)"
+            @click="activeTab = 'manager'"
             class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer"
             :class="activeTab === 'manager' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -296,8 +312,11 @@ import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
 import MultiSelect from '@/components/global/MultiSelect.vue';
 import { Edit, Trash2, Loader2 } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const store = useHrEmployeesStore();
+const authStore = useAuthStore();
 const deptStore = useHrDepartmentsStore();
 const jobStore = useHrJobTitlesStore();
 const linksStore = useHrLinksStore(); // Add Links Store

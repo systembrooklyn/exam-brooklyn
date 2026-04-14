@@ -6,6 +6,7 @@
         <!-- <p class="text-gray-500 mt-1">Your vacation balances — link contracts to a balance when needed</p> -->
       </div>
       <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_VACATION_BALANCE)"
         type="button"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer w-fit"
@@ -18,6 +19,7 @@
       :headers="headers"
       :items="rows"
       :loading="tableLoading"
+      :has-actions="hasVacationRowActions"
       emptyMessage="No vacation records found."
     >
       <template #employee="{ item }">
@@ -31,6 +33,10 @@
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-2 flex-wrap">
           <button
+            v-if="
+              authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
+                authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)
+            "
             type="button"
             :disabled="isRowActionsLocked(item)"
             @click="openEditModal(item)"
@@ -40,6 +46,7 @@
             <Edit class="w-5 h-5" />
           </button>
           <button
+            v-if="authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)"
             type="button"
             :disabled="isRowActionsLocked(item)"
             @click="openAssignModal(item)"
@@ -53,12 +60,12 @@
             <Link2 v-else class="w-5 h-5" />
           </button>
           <button
-            v-if="authStore.isAdminUser"
+            v-if="authStore.can(HR_PERMISSION.DELETE_VACATION_BALANCE)"
             type="button"
             :disabled="isRowActionsLocked(item)"
             @click="confirmDelete(pickBalanceId(item))"
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[1.25rem]"
-            title="Delete (admin only)"
+            title="Delete"
           >
             <Loader2
               v-if="isDeleteActionLoading(item)"
@@ -206,6 +213,7 @@ import { useHrVacationBalancesStore } from "@/stores/hr/vacationBalances";
 import { useHrContractsStore } from "@/stores/hr/contracts";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
 import { useAuthStore } from "@/stores/auth";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
 import HrModal from "@/components/hr-dashboard/HrModal.vue";
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import HrDataTable from "@/components/hr-dashboard/HrDataTable.vue";
@@ -215,6 +223,13 @@ const store = useHrVacationBalancesStore();
 const contractStore = useHrContractsStore();
 const empStore = useHrEmployeesStore();
 const authStore = useAuthStore();
+
+const hasVacationRowActions = computed(
+  () =>
+    authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
+    authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE) ||
+    authStore.can(HR_PERMISSION.DELETE_VACATION_BALANCE),
+);
 
 const contracts = computed(() => contractStore.contracts);
 /** Same rules as Contracts.vue: API uses is_active (0/1/boolean), not status === 'active'. */

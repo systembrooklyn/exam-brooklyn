@@ -33,8 +33,11 @@
         </button>
       </div>
 
-      <!-- Body -->
-      <div class="p-6 overflow-y-auto custom-scrollbar">
+      <!-- Body: default scrolls; use bodyOverflowVisible for dropdowns that must escape (e.g. MultiSelect) -->
+      <div
+        class="p-6 custom-scrollbar"
+        :class="bodyOverflowVisible ? 'overflow-visible' : 'overflow-y-auto overflow-x-visible'"
+      >
         <slot></slot>
       </div>
 
@@ -83,6 +86,11 @@ defineProps({
   hasSave: {
     type: Boolean,
     default: true,
+  },
+  /** When true, body does not clip overflow (fixes MultiSelect inside modal). Tall content may need scrolling outside. */
+  bodyOverflowVisible: {
+    type: Boolean,
+    default: false,
   },
 });
 

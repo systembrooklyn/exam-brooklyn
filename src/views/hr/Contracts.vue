@@ -5,7 +5,9 @@
         <h1 class="text-2xl font-bold text-gray-800">Contracts</h1>
         <p class="text-gray-500 mt-1">Manage employee contracts and terms</p>
       </div>
-      <button @click="openAddModal"
+      <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_CONTRACT)"
+        @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
         <span class="text-xl">+</span> New Contract
       </button>
@@ -43,8 +45,15 @@
 
 
     <!-- Table -->
-    <HrDataTable :headers="headers" :items="filteredContracts" :loading="contractStore.loading"
-      emptyMessage="No contracts found." :hasDelete="false" @edit="openEditModal">
+    <HrDataTable
+      :headers="headers"
+      :items="filteredContracts"
+      :loading="contractStore.loading"
+      emptyMessage="No contracts found."
+      :has-delete="false"
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_CONTRACT)"
+      @edit="openEditModal"
+    >
       <template #employee="{ item }">
         <span class="font-medium text-gray-900">
           {{ item.employee?.name || '-' }}
@@ -311,8 +320,11 @@ import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import { handleError } from '@/stores/handleError';
+import { useAuthStore } from '@/stores/auth';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const contractStore = useHrContractsStore();
+const authStore = useAuthStore();
 const employeeStore = useHrEmployeesStore();
 const shiftStore = useHrShiftsStore();
 

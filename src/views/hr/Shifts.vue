@@ -6,6 +6,7 @@
         <p class="text-gray-500 mt-1">Configure work shifts and timings</p>
       </div>
       <button
+        v-if="authStore.can(HR_PERMISSION.CREATE_SHIFT)"
         @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
       >
@@ -26,6 +27,8 @@
       :items="shiftStore.shifts"
       :loading="shiftStore.loading"
       emptyMessage="No shifts found."
+      :has-edit="authStore.can(HR_PERMISSION.UPDATE_SHIFT)"
+      :has-delete="authStore.can(HR_PERMISSION.DELETE_SHIFT)"
       @edit="openEditModal"
       @delete="confirmDelete"
     >
@@ -114,8 +117,11 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'; // Import Interface
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import notyf from "@/components/global/notyf"; // Import Notyf
+import { useAuthStore } from "@/stores/auth";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
 
 const shiftStore = useHrShiftsStore();
+const authStore = useAuthStore();
 // const shifts = computed(() => shiftStore.shifts); // No longer needed, HrDataTable uses shiftStore.shifts directly
 
 onMounted(() => {
