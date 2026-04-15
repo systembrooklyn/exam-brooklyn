@@ -122,7 +122,7 @@ function cancelConfirm() {
       <!-- Submit Button -->
       <div class="md:col-span-2 text-center mt-6">
         <button
-          v-if="authStore.hasPermission('create-user')"                                                                                                                     
+          v-if="authStore.hasPermission('start-PlacementTest')"                                                                                                                     
           type="submit"
           :disabled="loading || !email"
           class="bg-primary text-white py-3 px-10 cursor-pointer rounded-xl hover:bg-blue-700 transition flex justify-center items-center gap-2 mx-auto"

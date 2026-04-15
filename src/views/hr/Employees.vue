@@ -485,13 +485,22 @@ const fingerprintDisplay = (emp) => pickFingerprintFromEmployee(emp) ?? '-';
 const filteredEmployees = computed(() => {
   let result = employees.value;
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(emp =>
-      emp.personal_info?.first_name?.toLowerCase().includes(query) ||
-      emp.personal_info?.last_name?.toLowerCase().includes(query) ||
-      (emp.user?.email || emp.personal_info?.email)?.toLowerCase().includes(query)
-    );
+  const q = searchQuery.value.trim().toLowerCase();
+  if (q) {
+    result = result.filter((emp) => {
+      const haystack = [
+        emp.name,
+        emp.personal_info?.first_name,
+        emp.personal_info?.last_name,
+        `${emp.personal_info?.first_name ?? ''} ${emp.personal_info?.last_name ?? ''}`,
+        emp.user?.email,
+        emp.personal_info?.email,
+        emp.id != null ? String(emp.id) : '',
+      ]
+        .map((v) => String(v ?? '').toLowerCase())
+        .join(' ');
+      return haystack.includes(q);
+    });
   }
 
   if (statusFilter.value) {

@@ -9,8 +9,10 @@ import {
   PAYROLL_REQUESTS_PENDING,
   PAYROLL_APPROVE_REQUEST,
   PAYROLL_REJECT_REQUEST,
+  PAYROLL_BULK_APPROVE_REQUESTS,
   PAYROLL_APPROVED_VACATIONS,
 } from "@/api/Api";
+import { applyEmployeeRequestTimeFields } from "@/utils/normalizeApiTime";
 
 export const useHrRequestsStore = defineStore("hr-requests", () => {
   const requests = ref([]);
@@ -64,7 +66,8 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
   const createRequest = async (payload) => {
     loading.value = true;
     try {
-      const response = await apiClient.post(PAYROLL_REQUESTS, payload);
+      const body = applyEmployeeRequestTimeFields(payload);
+      const response = await apiClient.post(PAYROLL_REQUESTS, body);
       notyf.success(response.data.message || "Request submitted");
       return response.data;
     } catch (err) {
@@ -109,6 +112,27 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
+  const bulkApproveRequests = async (requestIds) => {
+    const ids = Array.isArray(requestIds)
+      ? requestIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+      : [];
+    if (!ids.length) return;
+    loading.value = true;
+    try {
+      const response = await apiClient.post(PAYROLL_BULK_APPROVE_REQUESTS, {
+        request_ids: ids,
+      });
+      notyf.success(response.data.message || "Requests approved");
+      await refreshCurrentList();
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const getApprovedVacations = async (employeeId) => {
     loading.value = true;
     try {
@@ -134,6 +158,7 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     createRequest,
     approveRequest,
     rejectRequest,
+    bulkApproveRequests,
     getApprovedVacations,
   };
 });

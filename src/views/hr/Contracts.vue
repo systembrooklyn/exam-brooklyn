@@ -56,16 +56,26 @@
     >
       <template #employee="{ item }">
         <span class="font-medium text-gray-900">
-          {{ item.employee?.name || '-' }}
+          {{ item.employee?.name?.trim() || getEmployeeName(item.employee_id) || '—' }}
         </span>
       </template>
 
       <template #shift="{ item }">
-        <span class="text-gray-600 block text-xs">
-          {{ item.shift?.shift_name || '-' }}
-          <span v-if="item.shift">({{ formatTime(item.shift.start_time) }} - {{ formatTime(item.shift.end_time)
-            }})</span>
-        </span>
+        <div class="text-gray-600 text-xs space-y-1">
+          <template v-if="getContractShiftDisplayRows(item).length">
+            <div
+              v-for="(row, index) in getContractShiftDisplayRows(item)"
+              :key="`${item.id}-shift-row-${row.shift_id ?? row.shift?.id}-${index}`"
+            >
+              {{ formatContractShiftRow(row) }}
+            </div>
+          </template>
+          <span v-else class="block">
+            {{ item.shift?.shift_name || getShiftLabelById(item.shift_id) || '-' }}
+            <span v-if="item.shift">({{ formatTime(item.shift.start_time) }} - {{ formatTime(item.shift.end_time)
+              }})</span>
+          </span>
+        </div>
       </template>
 
       <template #fixed_monthly_salary="{ value }">
@@ -187,16 +197,72 @@
               </svg>
               Shift Configuration
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1">Shift Schedule</label>
-                <select v-model="form.shift_id"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
-                  <option :value="null">Select Shift</option>
-                  <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
-                    {{ shift.shift_name }} ({{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }})
-                  </option>
-                </select>
+            <div class="space-y-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  @click="setScheduleMode('single')"
+                  class="px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                  :class="scheduleMode === 'single' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+                >
+                  Single Shift
+                </button>
+                <button
+                  type="button"
+                  @click="setScheduleMode('double')"
+                  class="px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                  :class="scheduleMode === 'double' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
+                >
+                  Two Shifts
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4" :class="scheduleMode === 'double' ? 'lg:grid-cols-2' : ''">
+                <div
+                  v-for="(shiftEntry, index) in activeShiftEntries"
+                  :key="`form-shift-${index}`"
+                  class="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
+                >
+                  <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-gray-800">
+                      {{ scheduleMode === 'double' ? `Shift ${index + 1}` : 'Shift' }}
+                    </h4>
+                    <span class="text-xs text-gray-500">{{ shiftEntry.days.length }} day(s)</span>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Shift</label>
+                    <select
+                      v-model="shiftEntry.shift_id"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white"
+                    >
+                      <option :value="null">Select Shift</option>
+                      <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
+                        {{ shift.shift_name }} ({{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }})
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Assigned Days</label>
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        v-for="(day, dayIndex) in daysOfWeek"
+                        :key="`${index}-${dayIndex}`"
+                        type="button"
+                        @click="toggleShiftDay(index, dayIndex)"
+                        :disabled="isShiftDayDisabled(index, dayIndex)"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                        :class="shiftEntry.days.includes(dayIndex) ? 'bg-indigo-600 text-white ring-2 ring-indigo-600 ring-offset-1' : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'"
+                      >
+                        {{ day }}
+                      </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                      Pick only working days. Days off and duplicate selections are blocked.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -238,13 +304,15 @@
             </h3>
             <div>
               <div class="flex flex-wrap gap-2">
-                <button v-for="(day, index) in daysOfWeek" :key="index" @click="toggleDayOff(index)"
+                <button v-for="(day, index) in daysOfWeek" :key="index" type="button" @click="toggleDayOff(index)"
                   class="px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm cursor-pointer"
                   :class="form.day_off.includes(index) ? 'bg-indigo-600 text-white shadow-indigo-500/30 ring-2 ring-indigo-600 ring-offset-2' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'">
                   {{ day }}
                 </button>
               </div>
-              <p class="text-xs text-gray-500 mt-2">Click to select recurring days off for this contract.</p>
+              <p class="text-xs text-gray-500 mt-2">
+                Working days: {{ workingDaysCount }} / Assigned shift days: {{ assignedShiftDaysCount }}
+              </p>
             </div>
           </div>
         </div>
@@ -311,7 +379,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useHrContractsStore } from '@/stores/hr/contracts';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import { useHrShiftsStore } from '@/stores/hr/shifts';
@@ -332,8 +400,9 @@ const employees = computed(() => employeeStore.employees);
 const shifts = computed(() => shiftStore.shifts);
 const contracts = computed(() => contractStore.contracts);
 
-
 const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const defaultShiftEntry = () => ({ shift_id: null, days: [] });
+const scheduleMode = ref('single');
 
 const searchQuery = ref('');
 const typeFilter = ref('');
@@ -350,10 +419,34 @@ const headers = [
   { label: 'Active', key: 'is_active' },
 ];
 
+const getEmployeeName = (id) => {
+  const emp = employees.value.find((e) => Number(e.id) === Number(id));
+  if (!emp) return '';
+  if (emp.personal_info) {
+    return `${emp.personal_info.first_name ?? ''} ${emp.personal_info.last_name ?? ''}`.trim();
+  }
+  if (emp.name) return String(emp.name).trim();
+  return `Emp #${id}`;
+};
+
+/** Align search with table display: API `employee.name`, store name, id. */
+const contractEmployeeSearchText = (c) => {
+  const parts = [
+    c?.employee?.name,
+    getEmployeeName(c?.employee_id),
+    c?.employee_id != null && c?.employee_id !== '' ? String(c.employee_id) : '',
+  ];
+  return parts
+    .map((p) => String(p ?? '').trim())
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+};
+
 const filteredContracts = computed(() => {
-  const result = contracts.value.filter(c => {
-    const empName = getEmployeeName(c.employee_id)?.toLowerCase() || '';
-    const matchesSearch = empName.includes(searchQuery.value.toLowerCase());
+  const q = searchQuery.value.trim().toLowerCase();
+  return contracts.value.filter((c) => {
+    const matchesSearch = !q || contractEmployeeSearchText(c).includes(q);
     const matchesType = !typeFilter.value || c.type === typeFilter.value;
 
     // Handle boolean vs number 0/1 or string "0"/"1" for isActive
@@ -362,32 +455,6 @@ const filteredContracts = computed(() => {
 
     return matchesSearch && matchesType && matchesStatus;
   });
-
-  // Print table data to console
-  console.log('📊 Filtered Contracts (Table Data):', result);
-
-  return result;
-});
-
-// Pagination
-const currentPage = ref(1);
-const itemsPerPage = 7;
-
-const totalPages = computed(() => Math.ceil(filteredContracts.value.length / itemsPerPage));
-
-const paginatedContracts = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredContracts.value.slice(start, end);
-});
-
-const goToPage = (page) => {
-  currentPage.value = page;
-};
-
-// Reset pagination
-watch([searchQuery, typeFilter, statusFilter], () => {
-  currentPage.value = 1;
 });
 
 const showModal = ref(false);
@@ -399,39 +466,33 @@ const activeTab = ref('general');
 const showDeleteConfirm = ref(false);
 const deleteId = ref(null);
 
-const form = ref({
+const createDefaultForm = () => ({
   employee_id: null,
   shift_id: null,
+  shifts: [defaultShiftEntry()],
   type: 'new',
-  start_date: '',
+  start_date: new Date().toISOString().slice(0, 10),
   end_date: '',
   weekly_working_hours: 40,
   weekly_working_days: 5,
   days_off_count: 2,
-  day_off: [],
+  day_off: [5, 6],
   fixed_monthly_salary: '',
   max_hours_limit: 0,
   other_var_amounts: 0,
   description: '',
-  is_active: true
+  is_active: true,
+});
+
+const form = ref({
+  ...createDefaultForm(),
 });
 
 onMounted(async () => {
   await contractStore.getContracts();
   await employeeStore.getEmployees();
   await shiftStore.getShifts();
-
-  // Print shifts data to console
-  console.log('Shift Schedules:', shifts.value);
-
-  // Print contracts data to check shift structure
-  console.log('Contracts with shift data:', contracts.value);
 });
-
-const getEmployeeName = (id) => {
-  const emp = employees.value.find(e => e.id === id);
-  return emp?.personal_info ? `${emp.personal_info.first_name} ${emp.personal_info.last_name}` : `Emp #${id}`;
-};
 
 const formatTime = (time) => {
   if (!time) return '';
@@ -448,34 +509,158 @@ const formatTime = (time) => {
   return `${displayHour}:${min} ${period}`;
 };
 
+const getShiftLabelById = (shiftId) => {
+  const n = Number(shiftId);
+  if (!Number.isFinite(n)) return '-';
+  const shift = shifts.value.find((s) => Number(s.id) === n);
+  if (!shift) return `Shift #${n}`;
+  return `${shift.shift_name} (${formatTime(shift.start_time)} - ${formatTime(shift.end_time)})`;
+};
+
+const normalizeNumericDays = (days) => {
+  const unique = new Set();
+  (Array.isArray(days) ? days : []).forEach((day) => {
+    const n = Number(day);
+    if (Number.isInteger(n) && n >= 0 && n <= 6) unique.add(n);
+  });
+  return [...unique].sort((a, b) => a - b);
+};
+
+const normalizeShiftEntries = (entries) => {
+  const normalized = (Array.isArray(entries) ? entries : []).map((entry) => ({
+    shift_id: entry?.shift_id != null && entry?.shift_id !== '' ? Number(entry.shift_id) : null,
+    days: normalizeNumericDays(entry?.days),
+  }));
+  return normalized.filter((entry) => entry.shift_id || entry.days.length);
+};
+
+/** API list/detail: `contract_shifts[]` with nested `shift` and `days` / `day_names`. */
+const normalizeContractShiftsEntries = (rows) => {
+  if (!Array.isArray(rows) || !rows.length) return [];
+  return rows
+    .map((row) => {
+      const sid =
+        row?.shift_id != null && row?.shift_id !== ''
+          ? Number(row.shift_id)
+          : row?.shift?.id != null && row?.shift?.id !== ''
+            ? Number(row.shift.id)
+            : null;
+      return {
+        shift_id: Number.isFinite(sid) ? sid : null,
+        days: normalizeNumericDays(row?.days),
+      };
+    })
+    .filter((entry) => entry.shift_id != null && Number.isFinite(entry.shift_id));
+};
+
+/** Prefer `contract_shifts` (API), then flat `shifts`, for table display. */
+const getContractShiftDisplayRows = (item) => {
+  if (Array.isArray(item?.contract_shifts) && item.contract_shifts.length) {
+    return item.contract_shifts;
+  }
+  if (Array.isArray(item?.shifts) && item.shifts.length) {
+    return item.shifts;
+  }
+  return [];
+};
+
+const formatContractShiftRow = (row) => {
+  const embedded = row?.shift;
+  if (embedded?.shift_name) {
+    return `${embedded.shift_name} (${formatTime(embedded.start_time)} - ${formatTime(embedded.end_time)})`;
+  }
+  return getShiftLabelById(row?.shift_id);
+};
+
+const activeShiftEntries = computed(() =>
+  scheduleMode.value === 'double' ? form.value.shifts.slice(0, 2) : form.value.shifts.slice(0, 1),
+);
+
+const workingDaysCount = computed(() => 7 - form.value.day_off.length);
+
+const assignedShiftDaysCount = computed(() => {
+  const merged = activeShiftEntries.value.flatMap((entry) => entry.days);
+  return new Set(merged).size;
+});
+
+const ensureShiftEntriesForMode = (mode) => {
+  if (!Array.isArray(form.value.shifts) || form.value.shifts.length === 0) {
+    form.value.shifts = [defaultShiftEntry()];
+  }
+  if (mode === 'double') {
+    if (!form.value.shifts[1]) form.value.shifts.push(defaultShiftEntry());
+  } else {
+    form.value.shifts = [form.value.shifts[0] || defaultShiftEntry()];
+  }
+};
+
+const setScheduleMode = (mode) => {
+  scheduleMode.value = mode;
+  ensureShiftEntriesForMode(mode);
+};
+
 const toggleDayOff = (dayIndex) => {
   if (form.value.day_off.includes(dayIndex)) {
     form.value.day_off = form.value.day_off.filter(d => d !== dayIndex);
   } else {
     form.value.day_off.push(dayIndex);
   }
+  form.value.day_off = normalizeNumericDays(form.value.day_off);
+  form.value.days_off_count = form.value.day_off.length;
+  const offSet = new Set(form.value.day_off);
+  form.value.shifts = form.value.shifts.map((entry) => ({
+    ...entry,
+    days: normalizeNumericDays(entry.days).filter((day) => !offSet.has(day)),
+  }));
+};
+
+const isShiftDayDisabled = (shiftIndex, dayIndex) => {
+  if (form.value.day_off.includes(dayIndex)) return true;
+  return activeShiftEntries.value.some((entry, idx) => idx !== shiftIndex && entry.days.includes(dayIndex));
+};
+
+const toggleShiftDay = (shiftIndex, dayIndex) => {
+  const entry = activeShiftEntries.value[shiftIndex];
+  if (!entry || isShiftDayDisabled(shiftIndex, dayIndex)) return;
+  if (entry.days.includes(dayIndex)) {
+    entry.days = entry.days.filter((d) => d !== dayIndex);
+  } else {
+    entry.days = [...entry.days, dayIndex];
+  }
+  entry.days = normalizeNumericDays(entry.days);
+};
+
+const hydrateFormFromContract = (contract) => {
+  const normalizedDayOff = normalizeNumericDays(contract?.day_off);
+  const fromContractShifts = normalizeContractShiftsEntries(contract?.contract_shifts);
+  const fromFlatShifts = normalizeShiftEntries(contract?.shifts);
+  const incomingShifts = fromContractShifts.length ? fromContractShifts : fromFlatShifts;
+  const fallbackShiftId = contract?.shift?.id ?? contract?.shift_id ?? null;
+  const fallbackShifts = fallbackShiftId ? [{ shift_id: Number(fallbackShiftId), days: [] }] : [];
+  const shiftsPayload = incomingShifts.length ? incomingShifts : fallbackShifts;
+  const finalShifts = shiftsPayload.length ? shiftsPayload : [defaultShiftEntry()];
+
+  form.value = {
+    ...createDefaultForm(),
+    ...contract,
+    employee_id: contract?.employee ? Number(contract.employee.id) : Number(contract?.employee_id) || null,
+    shift_id: finalShifts[0]?.shift_id ?? null,
+    shifts: finalShifts,
+    day_off: normalizedDayOff,
+    days_off_count: normalizedDayOff.length,
+    is_active: contract?.is_active === 1 || contract?.is_active === true,
+  };
+
+  scheduleMode.value = finalShifts.length > 1 ? 'double' : 'single';
+  ensureShiftEntriesForMode(scheduleMode.value);
 };
 
 const openAddModal = () => {
   isEditing.value = false;
   editingId.value = null;
-  form.value = {
-    employee_id: null,
-    shift_id: null,
-    type: 'new',
-    start_date: new Date().toISOString().slice(0, 10),
-    end_date: '',
-    weekly_working_hours: 40,
-    weekly_working_days: 5,
-    days_off_count: 2,
-    day_off: [5, 6], // Default Fri/Sat
-    fixed_monthly_salary: '',
-    hourly_rate_egp: 0,
-    max_hours_limit: 0,
-    other_var_amounts: 0,
-    description: '',
-    is_active: true
-  };
+  form.value = createDefaultForm();
+  scheduleMode.value = 'single';
+  ensureShiftEntriesForMode('single');
   activeTab.value = 'general';
   showModal.value = true;
 };
@@ -483,35 +668,16 @@ const openAddModal = () => {
 const openEditModal = async (contract) => {
   isEditing.value = true;
   editingId.value = contract.id;
-
-  // 1. Immediately populate form with existing data for instant modal opening
-  form.value = {
-    ...contract,
-    day_off: Array.isArray(contract.day_off) ? contract.day_off : [],
-    employee_id: contract.employee ? contract.employee.id : contract.employee_id,
-    shift_id: contract.shift ? contract.shift.id : contract.shift_id,
-    is_active: contract.is_active === 1 || contract.is_active === true
-  };
+  hydrateFormFromContract(contract);
 
   activeTab.value = 'general';
-  showModal.value = true;  // Open modal immediately!
-
-  // 2. Fetch fresh data in background to ensure data accuracy
+  showModal.value = true;
   try {
     const fullContract = await contractStore.getContract(contract.id);
-
-    // Update form with fresh data only if modal is still open for this contract
     if (showModal.value && editingId.value === contract.id) {
-      form.value = {
-        ...fullContract,
-        day_off: Array.isArray(fullContract.day_off) ? fullContract.day_off : [],
-        employee_id: fullContract.employee ? fullContract.employee.id : fullContract.employee_id,
-        shift_id: fullContract.shift ? fullContract.shift.id : fullContract.shift_id,
-        is_active: fullContract.is_active === 1 || fullContract.is_active === true
-      };
+      hydrateFormFromContract(fullContract);
     }
   } catch (error) {
-    // Silently fail - we already have data from the table
     console.warn('Failed to fetch fresh contract data:', error);
   }
 };
@@ -520,21 +686,86 @@ const openEditModal = async (contract) => {
 
 const closeModal = () => {
   showModal.value = false;
-  // contractStore.error = null;
+};
+
+const buildValidatedShiftAssignments = () => {
+  const shiftsPayload = activeShiftEntries.value.map((entry) => ({
+    shift_id: entry.shift_id != null && entry.shift_id !== '' ? Number(entry.shift_id) : null,
+    days: normalizeNumericDays(entry.days),
+  }));
+
+  if (shiftsPayload.some((entry) => !Number.isFinite(entry.shift_id))) {
+    notyf.error('Please select shift for each configured schedule block.');
+    return null;
+  }
+
+  if (
+    scheduleMode.value === 'double' &&
+    shiftsPayload[0]?.shift_id != null &&
+    shiftsPayload[0].shift_id === shiftsPayload[1]?.shift_id
+  ) {
+    notyf.error('Please choose two different shifts for the double-shift mode.');
+    return null;
+  }
+
+  const offSet = new Set(form.value.day_off);
+  const flattened = shiftsPayload.flatMap((entry) => entry.days);
+
+  if (flattened.some((day) => offSet.has(day))) {
+    notyf.error('Shift days cannot include selected days off.');
+    return null;
+  }
+
+  if (new Set(flattened).size !== flattened.length) {
+    notyf.error('A day cannot be assigned to more than one shift.');
+    return null;
+  }
+
+  if (flattened.length !== workingDaysCount.value) {
+    notyf.error(`Please assign exactly ${workingDaysCount.value} working day(s) across shifts.`);
+    return null;
+  }
+
+  if (scheduleMode.value === 'single' && shiftsPayload[0].days.length !== workingDaysCount.value) {
+    notyf.error('Single-shift mode requires all working days assigned to the same shift.');
+    return null;
+  }
+
+  return shiftsPayload.map((entry) => ({
+    shift_id: Number(entry.shift_id),
+    days: normalizeNumericDays(entry.days),
+  }));
 };
 
 const handleSubmit = async () => {
-  if (!form.value.employee_id || !form.value.type || !form.value.start_date || !form.value.shift_id || !form.value.fixed_monthly_salary) {
-    notyf.error('Please fill in core fields (Employee, Shift, Salary)');
+  if (!form.value.employee_id || !form.value.type || !form.value.start_date || !form.value.fixed_monthly_salary) {
+    notyf.error('Please fill in core fields (Employee, Type, Start Date, Salary).');
     return;
   }
 
-  // Ensure types
+  const normalizedDayOff = normalizeNumericDays(form.value.day_off);
+  form.value.day_off = normalizedDayOff;
+  form.value.days_off_count = normalizedDayOff.length;
+
+  const shiftsPayload = buildValidatedShiftAssignments();
+  if (!shiftsPayload) {
+    return;
+  }
+
+  const { contract_shifts: _omitContractShifts, ...formRest } = form.value;
   const payload = {
-    ...form.value,
+    ...formRest,
+    shifts: shiftsPayload,
+    shift_id: shiftsPayload[0]?.shift_id ?? null,
     is_active: form.value.is_active ? 1 : 0,
-    employee_id: parseInt(form.value.employee_id),
-    shift_id: parseInt(form.value.shift_id),
+    employee_id: Number(form.value.employee_id),
+    weekly_working_hours: Number(form.value.weekly_working_hours) || 0,
+    weekly_working_days: workingDaysCount.value,
+    days_off_count: normalizedDayOff.length,
+    day_off: normalizedDayOff,
+    fixed_monthly_salary: Number(form.value.fixed_monthly_salary) || 0,
+    other_var_amounts: Number(form.value.other_var_amounts) || 0,
+    max_hours_limit: Number(form.value.max_hours_limit) || 0,
   };
 
   try {
@@ -543,7 +774,6 @@ const handleSubmit = async () => {
     } else {
       await contractStore.createContract(payload);
     }
-    closeModal();
     closeModal();
   } catch (error) {
     console.error("Submission failed:", error);

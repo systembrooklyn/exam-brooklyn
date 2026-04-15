@@ -511,9 +511,11 @@ const filteredBalances = computed(() => {
   const list = balanceTableRows.value.filter((r) => rowHasEmployeeName(r));
   const q = searchQuery.value.trim().toLowerCase();
   if (!q) return list;
-  return list.filter((r) =>
-    getRowEmployeeName(r).toLowerCase().includes(q)
-  );
+  return list.filter((r) => {
+    const name = getRowEmployeeName(r).toLowerCase();
+    const year = String(r.balance?.year ?? r.balance?.Year ?? "").toLowerCase();
+    return name.includes(q) || year.includes(q);
+  });
 });
 
 const showModal = ref(false);

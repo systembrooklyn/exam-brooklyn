@@ -16,6 +16,26 @@
           {{ pendingQueueMode ? 'Show all my requests' : 'Pending approvals' }}
         </button>
         <button
+          v-if="showBulkSelectionColumn"
+          type="button"
+          :disabled="
+            selectedRequestIds.length === 0 ||
+            !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
+            store.loading
+          "
+          class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
+          :class="
+            selectedRequestIds.length > 0 &&
+            authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+            !store.loading
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
+              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+          "
+          @click="confirmBulkApprove"
+        >
+          Bulk approve
+        </button>
+        <button
           v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
           type="button"
           @click="openAddModal"
@@ -37,6 +57,27 @@
         </div>
     </div>
 
+    <div
+      v-if="showBulkSelectionColumn && pendingSelectableIds.length"
+      class="flex flex-wrap items-center gap-2 mb-3"
+    >
+      <label
+        class="inline-flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700"
+        :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) }"
+      >
+        <input
+          ref="selectAllCheckboxRef"
+          type="checkbox"
+          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+          :checked="allPendingSelected"
+          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+          @change="toggleSelectAllPending"
+        />
+        <span>Select all</span>
+      </label>
+      <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} pending)</span>
+    </div>
+
     <!-- Table -->
     <HrDataTable
       :headers="headers"
@@ -48,6 +89,17 @@
       :hasEdit="false"
       @edit="null"
     >
+      <template #select="{ item }">
+        <div v-if="item.status === 'pending'" class="flex justify-center">
+          <input
+            type="checkbox"
+            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            :checked="isBulkSelected(item.id)"
+            :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+            @change="toggleBulkSelect(item.id)"
+          />
+        </div>
+      </template>
       <template #employee="{ item }">
         <span class="text-gray-800 font-medium">{{ employeeDisplayName(item) }}</span>
       </template>
@@ -161,11 +213,21 @@
           <!-- From/To Time (Optional for most, usually for Overtime/Leave) -->
           <div class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
-            <input v-model="form.from_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <input
+              v-model="form.from_time"
+              type="time"
+              step="1"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
           </div>
           <div class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
-            <input v-model="form.to_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <input
+              v-model="form.to_time"
+              type="time"
+              step="1"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
           </div>
         </div>
       </div>
@@ -181,6 +243,16 @@
       confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
       @confirm="handleApprove"
       @cancel="showConfirmApprove = false"
+    />
+    <SweetAlert2Modal
+      v-if="showConfirmBulkApprove"
+      title="Bulk approve requests?"
+      :text="bulkApproveConfirmText"
+      icon="question"
+      confirmButtonText="Yes, approve all"
+      confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
+      @confirm="handleBulkApprove"
+      @cancel="showConfirmBulkApprove = false"
     />
     <!-- Rejection Modal -->
     <HrModal
@@ -211,7 +283,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
@@ -221,6 +293,7 @@ import { LucideCheckCircle, LucideXCircle, LucideAlertTriangle } from 'lucide-vu
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
+import { normalizeApiTime } from '@/utils/normalizeApiTime';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
@@ -301,13 +374,22 @@ const canAccessPendingQueue = computed(() =>
 );
 
 const pendingQueueMode = ref(false);
+
+/** Same visibility as pending toggle: bulk checkboxes + button only in pending list view. */
+const showBulkSelectionColumn = computed(
+  () => canAccessPendingQueue.value && pendingQueueMode.value,
+);
 const showModal = ref(false);
 const profileError = ref(false);
 
 const showConfirmApprove = ref(false);
+const showConfirmBulkApprove = ref(false);
 const showConfirmReject = ref(false);
 const targetId = ref(null);
 const rejectionNote = ref('');
+/** Pending-queue bulk selection (numeric ids). */
+const selectedRequestIds = ref([]);
+const selectAllCheckboxRef = ref(null);
 
 const emptyMessage = computed(() => {
   if (canAccessPendingQueue.value && pendingQueueMode.value) {
@@ -379,7 +461,17 @@ function statusLabel(status) {
 }
 
 const headers = computed(() => {
-  const baseHeaders = [
+  const baseHeaders = [];
+
+  if (showBulkSelectionColumn.value) {
+    baseHeaders.push({
+      label: '',
+      key: 'select',
+      class: `${CELL_CENTER} w-12`,
+    });
+  }
+
+  baseHeaders.push(
     { label: 'Employee', key: 'employee', class: CELL_LEFT },
     { label: 'Type', key: 'request_type', class: CELL_LEFT },
     { label: 'Date', key: 'day', class: CELL_CENTER },
@@ -388,7 +480,7 @@ const headers = computed(() => {
     { label: 'Submitted', key: 'created_at', class: CELL_CENTER },
     { label: 'Reviewed by', key: 'action_by', class: CELL_LEFT },
     { label: 'Status', key: 'status', class: CELL_CENTER },
-  ];
+  );
 
   if (
     canShowRequestActionsColumn.value &&
@@ -400,7 +492,86 @@ const headers = computed(() => {
   return baseHeaders;
 });
 
+const bulkApproveConfirmText = computed(() => {
+  const n = selectedRequestIds.value.length;
+  if (n === 0) return 'No requests selected.';
+  return `Approve ${n} selected request${n === 1 ? '' : 's'}?`;
+});
+
+function clearBulkSelection() {
+  selectedRequestIds.value = [];
+}
+
+function normalizeRequestId(raw) {
+  const id = Number(raw);
+  return Number.isFinite(id) ? id : null;
+}
+
+function isBulkSelected(rawId) {
+  const id = normalizeRequestId(rawId);
+  if (id == null) return false;
+  return selectedRequestIds.value.includes(id);
+}
+
+function toggleBulkSelect(rawId) {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  const id = normalizeRequestId(rawId);
+  if (id == null) return;
+  const idx = selectedRequestIds.value.indexOf(id);
+  if (idx >= 0) selectedRequestIds.value.splice(idx, 1);
+  else selectedRequestIds.value.push(id);
+}
+
+/** Pending rows in the current list (bulk targets). */
+const pendingSelectableIds = computed(() => {
+  const out = [];
+  for (const r of requests.value) {
+    if (r.status !== 'pending') continue;
+    const id = normalizeRequestId(r.id);
+    if (id != null) out.push(id);
+  }
+  return out;
+});
+
+const allPendingSelected = computed(() => {
+  const ids = pendingSelectableIds.value;
+  if (!ids.length) return false;
+  return ids.every((id) => selectedRequestIds.value.includes(id));
+});
+
+const somePendingSelected = computed(() => {
+  const ids = pendingSelectableIds.value;
+  if (!ids.length) return false;
+  const n = ids.filter((id) => selectedRequestIds.value.includes(id)).length;
+  return n > 0 && n < ids.length;
+});
+
+function toggleSelectAllPending() {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  const ids = pendingSelectableIds.value;
+  if (!ids.length) return;
+  if (allPendingSelected.value) {
+    const remove = new Set(ids);
+    selectedRequestIds.value = selectedRequestIds.value.filter((id) => !remove.has(id));
+  } else {
+    selectedRequestIds.value = [...new Set([...selectedRequestIds.value, ...ids])];
+  }
+}
+
+async function syncSelectAllIndeterminate() {
+  await nextTick();
+  const el = selectAllCheckboxRef.value;
+  if (el && 'indeterminate' in el) {
+    el.indeterminate = somePendingSelected.value;
+  }
+}
+
+watch([somePendingSelected, allPendingSelected, pendingSelectableIds], syncSelectAllIndeterminate, {
+  flush: 'post',
+});
+
 const fetchData = async () => {
+  clearBulkSelection();
   profileError.value = false;
   try {
     if (canAccessPendingQueue.value && pendingQueueMode.value) {
@@ -427,6 +598,13 @@ watch(canAccessPendingQueue, (ok) => {
   }
 });
 
+watch(requests, (list) => {
+  const valid = new Set(
+    list.map((r) => normalizeRequestId(r.id)).filter((id) => id != null),
+  );
+  selectedRequestIds.value = selectedRequestIds.value.filter((id) => valid.has(id));
+});
+
 const openAddModal = () => {
   form.value = { 
     request_type: 'leave', 
@@ -446,12 +624,23 @@ const handleSubmit = async () => {
     return;
   }
 
+  const normalizedFromTime = normalizeApiTime(form.value.from_time);
+  const normalizedToTime = normalizeApiTime(form.value.to_time);
+  if (form.value.from_time && !normalizedFromTime) {
+    notyf.error('From time format is invalid.');
+    return;
+  }
+  if (form.value.to_time && !normalizedToTime) {
+    notyf.error('To time format is invalid.');
+    return;
+  }
+
   // Build clean payload based on API rules
   const payload = {
     request_type: form.value.request_type,
     day: form.value.day,
-    from_time: form.value.from_time || null,
-    to_time: form.value.to_time || null,
+    from_time: normalizedFromTime,
+    to_time: normalizedToTime,
   };
 
   // 1. duration_hours: required for "lateness and Leave" requests only
@@ -499,10 +688,40 @@ const handleApprove = async () => {
   }
   try {
     await store.approveRequest(targetId.value);
+    const tid = normalizeRequestId(targetId.value);
+    if (tid != null) {
+      const i = selectedRequestIds.value.indexOf(tid);
+      if (i >= 0) selectedRequestIds.value.splice(i, 1);
+    }
   } catch (e) {
     console.error("Approval failed:", e);
   } finally {
     showConfirmApprove.value = false;
+  }
+};
+
+const confirmBulkApprove = () => {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  if (selectedRequestIds.value.length === 0) return;
+  showConfirmBulkApprove.value = true;
+};
+
+const handleBulkApprove = async () => {
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) {
+    showConfirmBulkApprove.value = false;
+    return;
+  }
+  if (selectedRequestIds.value.length === 0) {
+    showConfirmBulkApprove.value = false;
+    return;
+  }
+  try {
+    await store.bulkApproveRequests([...selectedRequestIds.value]);
+    clearBulkSelection();
+  } catch (e) {
+    console.error("Bulk approval failed:", e);
+  } finally {
+    showConfirmBulkApprove.value = false;
   }
 };
 

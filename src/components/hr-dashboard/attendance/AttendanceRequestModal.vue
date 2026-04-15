@@ -49,11 +49,21 @@
         <!-- From/To Time (Optional for most, usually for Overtime/Leave) -->
         <div class="col-span-2 md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
-          <input v-model="localForm.from_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          <input
+            v-model="localForm.from_time"
+            type="time"
+            step="1"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
         </div>
         <div class="col-span-2 md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
-          <input v-model="localForm.to_time" type="time" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          <input
+            v-model="localForm.to_time"
+            type="time"
+            step="1"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
         </div>
       </div>
     </div>

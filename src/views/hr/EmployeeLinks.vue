@@ -41,7 +41,7 @@
     >
       <template #employee_id="{ item }">
         <span class="font-medium text-gray-900">
-           {{ getEmployeeName(item.employee_id) }}
+          {{ item.employee?.name?.trim() || getEmployeeName(item.employee_id) || '—' }}
         </span>
       </template>
 
@@ -121,7 +121,6 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
-import { watch } from 'vue'; // Ensure watch is imported
 import { useAuthStore } from '@/stores/auth';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 
@@ -161,40 +160,32 @@ const headers = [
   { label: 'Hired At', key: 'hired_at' },
 ];
 
-const filteredLinks = computed(() => {
-    return links.value.filter(link => {
-        const empName = getEmployeeName(link.employee_id).toLowerCase();
-        const jobName = getJobTitleName(link.job_title_id).toLowerCase();
-        const search = searchQuery.value.toLowerCase();
-        
-        const matchesSearch = empName.includes(search) || jobName.includes(search);
-        const matchesDept = !deptFilter.value || link.department_id === deptFilter.value;
-
-        return matchesSearch && matchesDept;
-    });
-});
-
-// Pagination
-const currentPage = ref(1);
-const itemsPerPage = 7;
-
-const totalPages = computed(() => Math.ceil(filteredLinks.value.length / itemsPerPage));
-
-const paginatedLinks = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage;
-  const end = start + itemsPerPage;
-  return filteredLinks.value.slice(start, end);
-});
-
-const goToPage = (page) => {
-  currentPage.value = page;
+const linkRowSearchText = (link) => {
+  const parts = [
+    link.employee?.name,
+    getEmployeeName(link.employee_id),
+    link.department?.department_name,
+    getDepartmentName(link.department_id),
+    link.job_title?.title_name,
+    getJobTitleName(link.job_title_id),
+    link.employee_id,
+    link.department_id,
+    link.job_title_id,
+  ];
+  return parts
+    .map((p) => String(p ?? '').trim().toLowerCase())
+    .filter(Boolean)
+    .join(' ');
 };
 
-// Reset pagination
-watch([searchQuery, deptFilter], () => {
-    currentPage.value = 1;
+const filteredLinks = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase();
+  return links.value.filter((link) => {
+    const matchesSearch = !q || linkRowSearchText(link).includes(q);
+    const matchesDept = !deptFilter.value || link.department_id === deptFilter.value;
+    return matchesSearch && matchesDept;
+  });
 });
-
 
 onMounted(() => {
   store.getEmployeeJobDeps();
@@ -204,8 +195,15 @@ onMounted(() => {
 });
 
 const getEmployeeName = (id) => {
-    const emp = employees.value.find(e => e.id === id);
-    return emp ? `${emp.first_name} ${emp.last_name}` : `ID: ${id}`;
+  const emp = employees.value.find((e) => Number(e.id) === Number(id));
+  if (!emp) return '';
+  const a = [emp.first_name, emp.last_name].filter(Boolean).join(' ').trim();
+  if (a) return a;
+  if (emp.personal_info) {
+    return `${emp.personal_info.first_name ?? ''} ${emp.personal_info.last_name ?? ''}`.trim();
+  }
+  if (emp.name) return String(emp.name).trim();
+  return id != null ? `Emp #${id}` : '';
 };
 
 const getDepartmentName = (id) => {
