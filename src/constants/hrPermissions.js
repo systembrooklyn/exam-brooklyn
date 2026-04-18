@@ -22,6 +22,8 @@ export const HR_PERMISSION = {
 
   // Requests
   CREATE_EMPLOYEE_REQUEST: "create-employee-request",
+  CREATE_REQUEST_FOR_OTHERS: "create-request-for-others",
+  UPDATE_EMPLOYEE_REQUEST: "update-employee-request",
   APPROVE_EMPLOYEE_REQUEST: "approve-employee-request",
   REJECT_EMPLOYEE_REQUEST: "reject-employee-request",
   VIEW_PENDING_REQUESTS: "view-pending-requests",

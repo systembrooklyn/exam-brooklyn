@@ -5,6 +5,7 @@ import { handleError } from "@/stores/handleError";
 import { ref } from "vue";
 import {
   PAYROLL_REQUESTS,
+  PAYROLL_UPDATE_REQUEST,
   PAYROLL_REQUESTS_ME,
   PAYROLL_REQUESTS_PENDING,
   PAYROLL_APPROVE_REQUEST,
@@ -69,6 +70,22 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
       const body = applyEmployeeRequestTimeFields(payload);
       const response = await apiClient.post(PAYROLL_REQUESTS, body);
       notyf.success(response.data.message || "Request submitted");
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const updateRequest = async (id, payload) => {
+    loading.value = true;
+    try {
+      const body = applyEmployeeRequestTimeFields(payload);
+      const response = await apiClient.put(PAYROLL_UPDATE_REQUEST(id), body);
+      notyf.success(response.data.message || "Request updated");
+      await refreshCurrentList();
       return response.data;
     } catch (err) {
       handleError(err);
@@ -156,6 +173,7 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     getMyRequests,
     getPendingRequests,
     createRequest,
+    updateRequest,
     approveRequest,
     rejectRequest,
     bulkApproveRequests,
