@@ -25,6 +25,18 @@ const mode = ref("all");
 let interval;
 const alertSound = new Audio(new URL("@/assets/alert.mp3", import.meta.url));
 
+const isOnline = ref(navigator.onLine);
+
+const handleOnline = () => {
+  isOnline.value = true;
+  notyf.success("Internet connection restored.");
+};
+
+const handleOffline = () => {
+  isOnline.value = false;
+  notyf.error("Internet connection lost. Timer paused.");
+};
+
 const currentQuestion = computed(
   () => questions.value[currentQuestionIndex.value] || null
 );
@@ -37,6 +49,9 @@ let tenMinuteWarningGiven = false;
 const seconds = ref(60);
 const startTimer = () => {
   interval = setInterval(() => {
+    if (!isOnline.value) {
+      return;
+    }
     if (timeLeft.value === 0) {
       clearInterval(interval);
       alertSound.play();
@@ -179,22 +194,34 @@ const submitFinalExam = async () => {
 
   isSubmitting.value = true;
   saveAnswer();
-  await studentStore.submitFinalExam(answersArray.value);
+  
+  if (!isOnline.value) {
+    notyf.error("Cannot submit exam while offline. Please restore connection.");
+    isSubmitting.value = false;
+    return;
+  }
 
-  isSubmitting.value = false;
-  clearInterval(interval);
-  quizStarted.value = false;
+  try {
+    await studentStore.submitFinalExam(answersArray.value);
 
-  studentStore.examAnswers = [];
-  answersArray.value = [];
-  selectedOptions.value = [];
-  currentQuestionIndex.value = null;
-  unansweredIndexes.value = [];
-  showUnansweredMessage.value = "";
-  sessionStorage.removeItem("answers");
-  sessionStorage.removeItem("attemptId");
+    isSubmitting.value = false;
+    clearInterval(interval);
+    quizStarted.value = false;
 
-  router.push("/exam-success");
+    studentStore.examAnswers = [];
+    answersArray.value = [];
+    selectedOptions.value = [];
+    currentQuestionIndex.value = null;
+    unansweredIndexes.value = [];
+    showUnansweredMessage.value = "";
+    sessionStorage.removeItem("answers");
+    sessionStorage.removeItem("attemptId");
+
+    router.push("/exam-success");
+  } catch (err) {
+    isSubmitting.value = false;
+    notyf.error("Failed to submit exam. Please try again.");
+  }
 };
 
 const handleBeforeUnload = (e) => {
@@ -205,10 +232,16 @@ const handleBeforeUnload = (e) => {
   return "";
 };
 
-onMounted(() => window.addEventListener("beforeunload", handleBeforeUnload));
-onBeforeUnmount(() =>
-  window.removeEventListener("beforeunload", handleBeforeUnload)
-);
+onMounted(() => {
+  window.addEventListener("beforeunload", handleBeforeUnload);
+  window.addEventListener("online", handleOnline);
+  window.addEventListener("offline", handleOffline);
+});
+onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload);
+  window.removeEventListener("online", handleOnline);
+  window.removeEventListener("offline", handleOffline);
+});
 </script>
 
 <template>
@@ -225,12 +258,17 @@ onBeforeUnmount(() =>
       >
         <div class="text-center mb-4">
           <h2 class="text-3xl font-bold text-blue-900">{{ examInfo.name }}</h2>
-          <div class="text-lg mt-2">
-            Time Remaining:
-            <span class="font-semibold text-blue-600">
-              {{ timeLeft.toFixed(0) }}:{{
-                timeLeft <= 0 ? "00" : seconds.toString().padStart(2, "0")
-              }}
+          <div class="text-lg mt-2 flex flex-col items-center">
+            <div>
+              Time Remaining:
+              <span class="font-semibold" :class="isOnline ? 'text-blue-600' : 'text-red-500'">
+                {{ timeLeft.toFixed(0) }}:{{
+                  timeLeft <= 0 ? "00" : seconds.toString().padStart(2, "0")
+                }}
+              </span>
+            </div>
+            <span v-if="!isOnline" class="text-red-500 text-sm mt-1 bg-red-100 px-3 py-1 rounded">
+              Connection lost. Timer paused. Progress saved locally.
             </span>
           </div>
         </div>

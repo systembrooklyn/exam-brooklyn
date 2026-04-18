@@ -95,6 +95,7 @@ export const usePlacementTestsExamStore = defineStore(
         clearInterval(autoSaveInterval);
       } catch (error) {
         console.error("Error submitting final exam:", error);
+        throw error;
       }
     }
 

@@ -18,6 +18,7 @@ const startExam = async () => {
 
   } catch (error) {
     console.error("Error starting exam:", error);
+    isLoading.value = false;
   } finally {
     loading.value = false;
   }
@@ -26,7 +27,13 @@ const startExam = async () => {
 onMounted(async () => {
   isLoading.value = true;
   await placementExamStore.getStudentPlacement();
-  isLoading.value = false;
+  
+  if (placementExamStore.studentPlacement?.length === 1) {
+    selectedModule.value = placementExamStore.studentPlacement[0].id;
+    await startExam();
+  } else {
+    isLoading.value = false;
+  }
 });
 </script>
 
