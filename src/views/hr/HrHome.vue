@@ -1,7 +1,9 @@
 <template>
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-fade-in">
-    <!-- Stat Card 1 -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
+    <!-- Stat cards + fetches use hasPermission (not can): avoids isAdminUser bypass firing APIs the token does not allow. -->
+    <div
+      v-if="authStore.hasPermission(HR_PERMISSION.VIEW_EMPLOYEE)"
+      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Total Employees</p>
         <h2 class="text-3xl font-bold text-gray-800">{{ employeesCount }}</h2>
@@ -15,7 +17,9 @@
     </div>
 
     <!-- Stat Card 2 -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
+    <div
+      v-if="authStore.hasPermission(HR_PERMISSION.VIEW_CONTRACT)"
+      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Active Contracts</p>
         <h2 class="text-3xl font-bold text-gray-800">{{ contractsCount }}</h2>
@@ -26,8 +30,10 @@
       </div>
     </div>
 
-     <!-- Stat Card 3 -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
+    <!-- Stat Card 3 -->
+    <div
+      v-if="authStore.hasPermission(HR_PERMISSION.VIEW_DEPARTMENT)"
+      class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-start justify-between">
       <div>
         <p class="text-sm font-semibold text-gray-500 mb-1">Departments</p>
         <h2 class="text-3xl font-bold text-gray-800">{{ departmentsCount }}</h2>
@@ -68,15 +74,20 @@ import { Users, FileText, Building, Briefcase } from 'lucide-vue-next';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import { useHrContractsStore } from '@/stores/hr/contracts';
 import { useHrDepartmentsStore } from '@/stores/hr/departments';
+import { useAuthStore } from '@/stores/auth';
+import { HR_PERMISSION } from '@/constants/hrPermissions';
 
+const authStore = useAuthStore();
 const empStore = useHrEmployeesStore();
 const contractStore = useHrContractsStore();
 const deptStore = useHrDepartmentsStore();
 
-onMounted(() => {
-  empStore.getEmployees();
-  contractStore.getContracts();
-  deptStore.getDepartments();
+onMounted(async () => {
+  const tasks = [];
+  if (authStore.hasPermission(HR_PERMISSION.VIEW_EMPLOYEE)) tasks.push(empStore.getEmployees());
+  if (authStore.hasPermission(HR_PERMISSION.VIEW_CONTRACT)) tasks.push(contractStore.getContracts());
+  if (authStore.hasPermission(HR_PERMISSION.VIEW_DEPARTMENT)) tasks.push(deptStore.getDepartments());
+  await Promise.all(tasks);
 });
 
 const employeesCount = computed(() => empStore.employees.length);
