@@ -167,7 +167,28 @@
               class="divide-x divide-gray-200 transition-colors"
               :class="rowAttendanceClass(day)"
             >
-              <td class="p-3 font-bold text-center text-xs">{{ formatDate(day.date) }}</td>
+              <td class="p-3 text-center text-xs align-top">
+                <div class="flex flex-col items-center gap-1">
+                  <span class="font-bold">{{ formatDate(day.date) }}</span>
+                  <template v-if="isReportDayHoliday(day)">
+                    <div
+                      class="rounded-md border border-violet-200 bg-violet-100/80 px-2 py-1 max-w-[13rem] text-center"
+                    >
+                      <span
+                        class="block text-[8px] font-extrabold uppercase tracking-wide text-violet-700"
+                      >
+                        Official holiday
+                      </span>
+                      <span
+                        v-if="holidayDisplayLabel(day)"
+                        class="block text-[10px] font-semibold text-violet-950 leading-snug mt-0.5"
+                      >
+                        {{ holidayDisplayLabel(day) }}
+                      </span>
+                    </div>
+                  </template>
+                </div>
+              </td>
               <td class="p-3 text-center">
                 <div v-if="day.main_shift" class="flex items-center justify-center gap-2">
                   <div class="flex flex-col items-center">
@@ -186,25 +207,39 @@
                 </div>
                 <span v-else class="text-gray-300">--</span>
               </td>
-              <td class="p-3 text-center">
+              <td class="p-3 text-center align-top">
                 <template v-if="day.attendance?.check_in">
-                  <div class="flex items-center justify-center gap-2">
-                    <div class="flex flex-col items-center">
-                      <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
-                      <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
-                          ? 'bg-red-50 text-red-700 border-red-200'
-                          : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
-                        ">
-                        {{ formatTime(day.attendance.check_in, true) }}
-                      </span>
+                  <div class="flex flex-col items-center gap-1.5">
+                    <div class="flex items-center justify-center gap-2">
+                      <div class="flex flex-col items-center">
+                        <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
+                        <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
+                          ">
+                          {{ formatTime(day.attendance.check_in, true) }}
+                        </span>
+                      </div>
+                      <div class="flex flex-col items-center">
+                        <span class="text-[8px] uppercase font-bold text-gray-400">Out</span>
+                        <span
+                          class="px-2 py-1 bg-sky-50/30 text-sky-700 rounded border border-sky-100/50 font-bold text-[10px]">
+                          {{ formatTime(day.attendance.check_out, true) }}
+                        </span>
+                      </div>
                     </div>
-                    <div class="flex flex-col items-center">
-                      <span class="text-[8px] uppercase font-bold text-gray-400">Out</span>
-                      <span
-                        class="px-2 py-1 bg-sky-50/30 text-sky-700 rounded border border-sky-100/50 font-bold text-[10px]">
-                        {{ formatTime(day.attendance.check_out, true) }}
+                    <span
+                      v-if="holidayWorkedDoublePay(day)"
+                      class="inline-flex flex-col items-center gap-0.5 rounded-lg border border-emerald-300 bg-emerald-100 px-2 py-1 text-center"
+                      title="Worked on a double-pay official holiday — counts as two working days"
+                    >
+                      <span class="text-[9px] font-extrabold uppercase tracking-wide text-emerald-900">
+                        2 work days
                       </span>
-                    </div>
+                      <span class="text-[8px] font-semibold text-emerald-800 leading-tight">
+                        (double pay)
+                      </span>
+                    </span>
                   </div>
                 </template>
                 <span v-else class="text-gray-300">--</span>
@@ -523,9 +558,25 @@ const getShiftOut = (day) => {
   return day.main_shift.out || day.main_shift.to;
 };
 
-/** Absent: API flag or scheduled shift with no check-in (excludes day off / vacation). */
+function isDoublePaidFlag(val) {
+  return (
+    val === true ||
+    val === 1 ||
+    String(val) === "1" ||
+    String(val).toLowerCase() === "yes"
+  );
+}
+
+/** Same monthly-report API embeds `holiday_details` on the day (e.g. worked Sham El Nessim while `status: present`). */
+function hasReportHolidayPayload(day) {
+  const d = day?.holiday_details;
+  return d != null && typeof d === "object";
+}
+
+/** Absent: API flag or scheduled shift with no check-in (excludes day off / vacation / holiday / days with `holiday_details`). */
 function isReportDayAbsent(day) {
   if (!day) return false;
+  if (hasReportHolidayPayload(day)) return false;
   const st = String(day.status ?? "").toLowerCase();
   if (st === "day_off" || st === "vacation" || st === "holiday") return false;
   if (st === "absent" || st === "missing" || st === "no_show") return true;
@@ -535,7 +586,30 @@ function isReportDayAbsent(day) {
   return !!(getShiftIn(day) || getShiftOut(day));
 }
 
+function isReportDayHoliday(day) {
+  if (String(day?.status ?? "").toLowerCase() === "holiday") return true;
+  return hasReportHolidayPayload(day);
+}
+
+/** Prefer official name from `holiday_details`, then `label` (e.g. "Worked on Holiday"). */
+function holidayDisplayLabel(day) {
+  if (!isReportDayHoliday(day)) return "";
+  const fromDetails = day.holiday_details?.name ?? "";
+  const name = String(fromDetails).trim();
+  if (name) return name;
+  return String(day.label ?? "").trim();
+}
+
+/** `holiday_details` + fingerprint + `is_double_paid` from the same report API. */
+function holidayWorkedDoublePay(day) {
+  if (!day.attendance?.check_in) return false;
+  const d = day.holiday_details;
+  if (!d || typeof d !== "object") return false;
+  return isDoublePaidFlag(d.is_double_paid);
+}
+
 function rowAttendanceClass(day) {
+  if (isReportDayHoliday(day)) return "bg-violet-50/90 hover:bg-violet-100/60";
   if (isReportDayAbsent(day)) return "bg-[#FEF2F2] hover:bg-[#fde8e8]";
   if (day.status === "day_off") return "bg-amber-50/80 hover:bg-amber-50/90";
   return "hover:bg-gray-50/30";
