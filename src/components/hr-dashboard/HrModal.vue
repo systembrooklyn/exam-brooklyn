@@ -52,8 +52,13 @@
         <button
           v-if="hasSave !== false"
           @click="$emit('save')"
-          class="px-4 py-2 bg-indigo-600 cursor-pointer text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-          :disabled="loading"
+          class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          :class="
+            loading || saveDisabled
+              ? 'opacity-50 cursor-not-allowed'
+              : 'cursor-pointer hover:bg-indigo-700'
+          "
+          :disabled="loading || saveDisabled"
         >
           <span
             v-if="loading"
@@ -89,6 +94,11 @@ defineProps({
   },
   /** When true, body does not clip overflow (fixes MultiSelect inside modal). Tall content may need scrolling outside. */
   bodyOverflowVisible: {
+    type: Boolean,
+    default: false,
+  },
+  /** Disable Save (e.g. policy validation) without hiding the button. */
+  saveDisabled: {
     type: Boolean,
     default: false,
   },

@@ -3,6 +3,7 @@
     :show="show"
     title="Create Request"
     :loading="loading"
+    :save-disabled="latenessSaveBlocked"
     @close="$emit('close')"
     @save="onSave"
   >
@@ -12,17 +13,43 @@
         <select v-model="localForm.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
           <option value="lateness">Lateness</option>
           <option value="leave">Leave</option>
-          <option value="overtime">Overtime</option>
+          <option value="overtime">Overtime (total)</option>
+          <option value="overtime_before">Overtime (before shift)</option>
+          <option value="overtime_after">Overtime (after shift)</option>
           <option value="vacation">Vacation</option>
           <option value="day_off_swap">Day Off Swap</option>
           <option value="work_from_home">Work From Home</option>
           <option value="shift_move">Shift Move</option>
         </select>
+        <p
+          v-if="shiftOvertimeHintLines.length"
+          class="mt-2 text-xs text-gray-600 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2"
+        >
+          <span class="font-semibold text-indigo-900 block mb-1">Report overtime this day</span>
+          <span v-for="(line, i) in shiftOvertimeHintLines" :key="i" class="block">{{ line }}</span>
+          <span class="block mt-1 text-gray-500">
+            Choose <strong>Overtime (total)</strong> for the full day, or <strong>before / after shift</strong> for one segment — date only; the server calculates minutes.
+          </span>
+        </p>
+        <p
+          v-if="latenessSaveBlocked"
+          class="mt-2 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
+          role="status"
+        >
+          Lateness of {{ latenessGraceMinutes }} minutes or less is covered by the grace period. You cannot submit a
+          lateness request for this amount.
+        </p>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div class="col-span-2 md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
           <input v-model="localForm.day" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+          <p
+            v-if="isDayOnlyOvertimeRequestTypeSlug(localForm.request_type)"
+            class="mt-1 text-xs text-gray-500"
+          >
+            Only this date is sent — minutes are calculated on the server from shift and punches.
+          </p>
         </div>
 
         <!-- Conditional: Duration — minutes from attendance table, or hours (HR Attendance page) -->
@@ -64,20 +91,7 @@
           </select>
         </div>
 
-        <!-- Overtime: minutes only (matches attendance report column). -->
-        <div v-if="localForm.request_type === 'overtime'" class="col-span-2 md:col-span-1">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Overtime (minutes)</label>
-          <input
-            v-model.number="localForm.overtime_minutes"
-            type="number"
-            min="1"
-            step="1"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            placeholder="Minutes you are requesting (not report total)"
-          />
-        </div>
-
-        <!-- From/To Time — not used for leave/lateness/vacation/day off swap/work from home/overtime. -->
+        <!-- From/To Time — not used for leave/lateness/vacation/day off swap/work from home/overtime (server-calculated). -->
         <template
           v-if="
             ![
@@ -87,6 +101,8 @@
               'day_off_swap',
               'work_from_home',
               'overtime',
+              'overtime_before',
+              'overtime_after',
             ].includes(localForm.request_type)
           "
         >
@@ -115,8 +131,13 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
+import {
+  isDayOnlyOvertimeRequestTypeSlug,
+  normalizeRequestTypeSlug,
+} from '@/utils/employeeRequestApi';
+import { LATENESS_GRACE_MINUTES as latenessGraceMinutes } from '@/constants/hrLateness';
 
 const props = defineProps({
   show: Boolean,
@@ -136,6 +157,8 @@ const defaultForm = () => ({
   prefill_early_leave_minutes: null,
   prefill_lateness_minutes: null,
   prefill_overtime_minutes: null,
+  prefill_overtime_before_minutes: null,
+  prefill_overtime_after_minutes: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -143,6 +166,36 @@ const defaultForm = () => ({
 });
 
 const localForm = ref(defaultForm());
+
+const shiftOvertimeHintLines = computed(() => {
+  const b = Number(localForm.value.prefill_overtime_before_minutes);
+  const a = Number(localForm.value.prefill_overtime_after_minutes);
+  const lines = [];
+  if (Number.isFinite(b) && b > 0) lines.push(`Before shift: ${b}m`);
+  if (Number.isFinite(a) && a > 0) lines.push(`After shift: ${a}m`);
+  return lines;
+});
+
+/** Effective lateness duration in minutes for grace check (table flow uses minutes; HR page may use hours). */
+const effectiveLatenessMinutes = computed(() => {
+  if (localForm.value.request_type !== 'lateness') return null;
+  if (localForm.value.use_minutes_for_duration) {
+    const m = Number(localForm.value.duration_minutes);
+    if (Number.isFinite(m) && m > 0) return m;
+    const p = Number(localForm.value.prefill_lateness_minutes);
+    if (Number.isFinite(p) && p > 0) return p;
+    return null;
+  }
+  const h = Number(localForm.value.duration_hours);
+  if (!Number.isFinite(h) || h <= 0) return null;
+  return Math.round(h * 60);
+});
+
+const latenessSaveBlocked = computed(() => {
+  const m = effectiveLatenessMinutes.value;
+  if (m == null) return false;
+  return m > 0 && m <= latenessGraceMinutes;
+});
 
 /** Sync only when the modal opens — avoids deep `initialForm` resets wiping user input (e.g. OT minutes). */
 watch(
@@ -164,6 +217,7 @@ watch(
   () => {
     if (!props.show || !localForm.value.use_minutes_for_duration) return;
     const t = localForm.value.request_type;
+    if (isDayOnlyOvertimeRequestTypeSlug(t)) return;
     if (t === 'leave') {
       const v = Number(props.initialForm?.prefill_early_leave_minutes);
       localForm.value.duration_minutes =
@@ -185,16 +239,19 @@ watch(
       t === 'vacation' ||
       t === 'day_off_swap' ||
       t === 'work_from_home' ||
-      t === 'overtime'
+      isDayOnlyOvertimeRequestTypeSlug(t)
     ) {
       localForm.value.from_time = '';
       localForm.value.to_time = '';
     }
-    /* Overtime minutes: only what the user types — do not inject report total (prefill). */
   },
 );
 
-const onSave = () => {
-  emit('save', { ...localForm.value });
+const onSave = async () => {
+  if (latenessSaveBlocked.value) return;
+  await nextTick();
+  const f = { ...localForm.value };
+  f.request_type = normalizeRequestTypeSlug(f.request_type);
+  emit('save', f);
 };
 </script>

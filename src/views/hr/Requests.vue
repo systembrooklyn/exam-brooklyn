@@ -134,7 +134,7 @@
       <template #overtime_minutes="{ item }">
         <span
           v-if="
-            item.request_type === 'overtime' &&
+            ['overtime', 'overtime_before', 'overtime_after'].includes(item.request_type) &&
             item.overtime_minutes != null &&
             item.overtime_minutes !== ''
           "
@@ -272,7 +272,9 @@
           <select v-model="form.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
             <option value="lateness">Lateness</option>
             <option value="leave">Leave</option>
-            <option value="overtime">Overtime</option>
+            <option value="overtime">Overtime (total)</option>
+            <option value="overtime_before">Overtime (before shift)</option>
+            <option value="overtime_after">Overtime (after shift)</option>
             <option value="vacation">Vacation</option>
             <option value="day_off_swap">Day Off Swap</option>
             <option value="work_from_home">Work From Home</option>
@@ -283,7 +285,17 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input v-model="form.day" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <input
+              v-model="form.day"
+              type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
+            <p
+              v-if="isServerCalculatedOvertime(form.request_type)"
+              class="mt-1 text-xs text-gray-500"
+            >
+              Overtime (total or before/after shift): only the date is sent — minutes are calculated on the server from shift and punches.
+            </p>
           </div>
 
           <!-- Conditional: Duration Hours (Lateness/Leave) -->
@@ -307,8 +319,10 @@
             </select>
           </div>
 
-          <!-- From/To Time — not used for absence (day only) -->
-          <template v-if="form.request_type !== 'absence'">
+          <!-- From/To Time — not used for absence or server-calculated overtime -->
+          <template
+            v-if="form.request_type !== 'absence' && !isServerCalculatedOvertime(form.request_type)"
+          >
             <div class="col-span-2 md:col-span-1">
               <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
               <input
@@ -400,11 +414,18 @@ import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 import { normalizeApiTime } from '@/utils/normalizeApiTime';
+import {
+  isDayOnlyOvertimeRequestTypeSlug as isServerCalculatedOvertime,
+  normalizeRequestTypeSlug,
+} from '@/utils/employeeRequestApi';
+import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
   leave: 'Leave',
-  overtime: 'Overtime',
+  overtime: 'Overtime (total)',
+  overtime_before: 'Overtime (before shift)',
+  overtime_after: 'Overtime (after shift)',
   vacation: 'Vacation',
   day_off_swap: 'Day off swap',
   work_from_home: 'Work from home',
@@ -594,12 +615,16 @@ const form = ref({
 });
 
 function formatRequestTypeLabel(type) {
-  if (!type) return '—';
-  return REQUEST_TYPE_LABELS[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const t = normalizeRequestTypeSlug(type);
+  if (!t) return '—';
+  return REQUEST_TYPE_LABELS[t] ?? t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatDuration(item) {
   const t = item.request_type;
+  if (t === 'overtime_before' || t === 'overtime_after') {
+    return '—';
+  }
   if (t === 'overtime') {
     return '—';
   }
@@ -805,6 +830,10 @@ watch(
       form.value.from_time = '';
       form.value.to_time = '';
     }
+    if (isServerCalculatedOvertime(t)) {
+      form.value.from_time = '';
+      form.value.to_time = '';
+    }
   },
 );
 
@@ -892,6 +921,15 @@ function buildRequestPayloadFromForm() {
     return null;
   }
 
+  const otRt = normalizeRequestTypeSlug(form.value.request_type);
+  if (isServerCalculatedOvertime(otRt)) {
+    const base = {
+      request_type: otRt,
+      day: form.value.day,
+    };
+    return attachEmployeeIdIfCreatingForOther(base);
+  }
+
   if (form.value.request_type === 'absence') {
     const base = {
       request_type: 'absence',
@@ -922,6 +960,19 @@ function buildRequestPayloadFromForm() {
     if (!form.value.duration_hours) {
       notyf.error('Duration hours is required for this request type');
       return null;
+    }
+    if (form.value.request_type === 'lateness') {
+      const lateMins = Math.round(Number(form.value.duration_hours) * 60);
+      if (
+        Number.isFinite(lateMins) &&
+        lateMins > 0 &&
+        lateMins <= LATENESS_GRACE_MINUTES
+      ) {
+        notyf.error(
+          `Lateness of ${LATENESS_GRACE_MINUTES} minutes or less is covered by the grace period. A request is not allowed.`,
+        );
+        return null;
+      }
     }
     payload.duration_hours = parseInt(form.value.duration_hours, 10);
   }

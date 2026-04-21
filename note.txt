@@ -1,0 +1,14 @@
+في الملف:
+
+src/components/hr-dashboard/sideItem.js
+
+غيّر سطر التاب من:
+
+permission: HR_PERMISSION.VIEW_EMPLOYEE,
+إلى:
+
+
+permission: HR_PERMISSION.VIEW_PAYROLL,
+
+
+*---------------------------*

@@ -1,18 +1,12 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
-    <div
-      v-if="!employeeResolveDone"
-      class="flex justify-center items-center min-h-[360px]"
-      aria-busy="true"
-      aria-label="Loading"
-    >
+    <div v-if="!employeeResolveDone" class="flex justify-center items-center min-h-[360px]" aria-busy="true"
+      aria-label="Loading">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
     </div>
 
-    <div
-      v-else-if="!effectiveEmployeeId"
-      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm"
-    >
+    <div v-else-if="!effectiveEmployeeId"
+      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
       Your account is not linked to an employee record. Contact HR if you need access.
     </div>
 
@@ -30,17 +24,10 @@
       </div>
 
       <div class="border border-indigo-100 rounded-2xl overflow-hidden">
-        <AttendanceReportPanel
-          ref="panelRef"
-          :show-employee-select="false"
-          :locked-employee-id="effectiveEmployeeId"
-          :initial-from="periodBounds.from_date"
-          :initial-to="periodBounds.to_date"
-          :hide-controls="true"
-          :suppress-success-notyf="true"
-          :show-day-request-action="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
-          @request-for-day="openRequestForDay"
-        />
+        <AttendanceReportPanel ref="panelRef" :show-employee-select="false" :locked-employee-id="effectiveEmployeeId"
+          :initial-from="periodBounds.from_date" :initial-to="periodBounds.to_date" :hide-controls="true"
+          :suppress-success-notyf="true" :show-day-request-action="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
+          @request-for-day="openRequestForDay" />
       </div>
     </div>
 
@@ -63,6 +50,11 @@ import {
   apiDurationHoursFromMinutes,
 } from "@/utils/hrEmployeeRequestDuration";
 import notyf from "@/components/global/notyf";
+import {
+  isDayOnlyOvertimeRequestTypeSlug,
+  normalizeRequestTypeSlug,
+} from "@/utils/employeeRequestApi";
+import { LATENESS_GRACE_MINUTES } from "@/constants/hrLateness";
 
 const authStore = useAuthStore();
 const employeeStore = useHrEmployeesStore();
@@ -157,11 +149,20 @@ const requestForm = ref({
   prefill_lateness_minutes: null,
   overtime_minutes: null,
   prefill_overtime_minutes: null,
+  prefill_overtime_before_minutes: null,
+  prefill_overtime_after_minutes: null,
   from_time: "",
   to_time: "",
   day_replacement: "",
   duration_type: "full",
 });
+
+function toDateInputValue(raw) {
+  if (raw == null || raw === "") return "";
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return s;
+}
 
 const openRequestForDay = (payload) => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
@@ -170,10 +171,14 @@ const openRequestForDay = (payload) => {
   }
   const isDayPayload =
     payload && typeof payload === "object" && payload.date != null;
-  const date = isDayPayload ? payload.date : payload;
+  const date = isDayPayload
+    ? toDateInputValue(payload.date)
+    : toDateInputValue(payload);
   const early = isDayPayload ? Number(payload.early_leave_minutes) || 0 : 0;
   const late = isDayPayload ? Number(payload.lateness_minutes) || 0 : 0;
   const ot = isDayPayload ? Number(payload.overtime_minutes) || 0 : 0;
+  const ob = isDayPayload ? Number(payload.overtime_before_minutes) || 0 : 0;
+  const oa = isDayPayload ? Number(payload.overtime_after_minutes) || 0 : 0;
   requestForm.value = {
     request_type: "leave",
     day: date,
@@ -184,6 +189,8 @@ const openRequestForDay = (payload) => {
     prefill_lateness_minutes: isDayPayload ? late : null,
     overtime_minutes: null,
     prefill_overtime_minutes: isDayPayload ? ot : null,
+    prefill_overtime_before_minutes: isDayPayload ? ob : null,
+    prefill_overtime_after_minutes: isDayPayload ? oa : null,
     from_time: "",
     to_time: "",
     day_replacement: "",
@@ -202,6 +209,27 @@ const handleRequestSubmit = async (payload) => {
     return;
   }
 
+  const rt = normalizeRequestTypeSlug(payload.request_type);
+  if (isDayOnlyOvertimeRequestTypeSlug(rt)) {
+    requestLoading.value = true;
+    try {
+      const { useHrRequestsStore } = await import("@/stores/hr/requests");
+      const requestsStore = useHrRequestsStore();
+      await requestsStore.createRequest({
+        request_type: rt,
+        day: payload.day,
+      });
+      showRequestModal.value = false;
+      notyf.success("Request created successfully");
+      await panelRef.value?.generateReport?.();
+    } catch (e) {
+      console.error("Request submission failed:", e);
+    } finally {
+      requestLoading.value = false;
+    }
+    return;
+  }
+
   if (["lateness", "leave"].includes(payload.request_type)) {
     if (payload.use_minutes_for_duration) {
       const mins = Number(payload.duration_minutes);
@@ -214,16 +242,25 @@ const handleRequestSubmit = async (payload) => {
       return;
     }
   }
+
+  if (payload.request_type === "lateness") {
+    const lateMins = payload.use_minutes_for_duration
+      ? Number(payload.duration_minutes)
+      : Math.round(Number(payload.duration_hours) * 60);
+    if (
+      Number.isFinite(lateMins) &&
+      lateMins > 0 &&
+      lateMins <= LATENESS_GRACE_MINUTES
+    ) {
+      notyf.error(
+        `Lateness of ${LATENESS_GRACE_MINUTES} minutes or less is covered by the grace period. A request is not allowed.`,
+      );
+      return;
+    }
+  }
   if (payload.request_type === "day_off_swap" && !payload.day_replacement) {
     notyf.error("Replacement date is required for day off swap");
     return;
-  }
-  if (payload.request_type === "overtime") {
-    const om = Number(payload.overtime_minutes);
-    if (!Number.isFinite(om) || om <= 0) {
-      notyf.error("Overtime (minutes) is required");
-      return;
-    }
   }
 
   const body = {
@@ -251,11 +288,6 @@ const handleRequestSubmit = async (payload) => {
       body.duration_hours = h;
     }
   }
-  if (payload.request_type === "overtime") {
-    body.overtime_minutes = Math.round(Number(payload.overtime_minutes));
-    body.is_paid = 1;
-  }
-
   requestLoading.value = true;
   try {
     const { useHrRequestsStore } = await import("@/stores/hr/requests");

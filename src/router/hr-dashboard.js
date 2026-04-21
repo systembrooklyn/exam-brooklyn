@@ -80,7 +80,7 @@ export default {
     {
       path: "employees",
       name: "hr-employees",
-      meta: { requiresPermission: HR_PERMISSION.VIEW_EMPLOYEE },
+      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
       component: () => import("@/views/hr/Employees.vue"),
     },
     {

@@ -214,7 +214,9 @@
                       <div class="flex flex-col items-center">
                         <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
                         <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
-                            ? 'bg-red-50 text-red-700 border-red-200'
+                            ? (getLatenessValue(day) <= latenessGraceMinutes
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                              : 'bg-red-50 text-red-700 border-red-200')
                             : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
                           ">
                           {{ formatTime(day.attendance.check_in, true) }}
@@ -245,8 +247,20 @@
                 <span v-else class="text-gray-300">--</span>
               </td>
               <td class="p-3 text-center">
-                <span v-if="getLatenessValue(day) > 0"
-                  class="inline-block px-2 py-1 bg-red-100 text-red-700 rounded font-bold text-[10px]">
+                <span
+                  v-if="getLatenessValue(day) > 0"
+                  class="inline-block px-2 py-1 rounded font-bold text-[10px] border"
+                  :class="
+                    getLatenessValue(day) <= latenessGraceMinutes
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-red-100 text-red-700 border-red-200'
+                  "
+                  :title="
+                    getLatenessValue(day) <= latenessGraceMinutes
+                      ? 'Within grace period — no lateness request needed'
+                      : ''
+                  "
+                >
                   {{ getLatenessValue(day) }}m
                 </span>
                 <span v-else class="text-gray-300">-</span>
@@ -312,9 +326,12 @@
                       early_leave_minutes: getEarlyLeaveValue(day),
                       lateness_minutes: getLatenessValue(day),
                       overtime_minutes: getOvertimeValue(day),
+                      overtime_before_minutes: getOvertimeBefore(day),
+                      overtime_after_minutes: getOvertimeAfter(day),
                     })
                   "
-                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer">
+                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
+                >
                   Request
                 </button>
               </td>
@@ -379,12 +396,15 @@ import {
   Zap,
 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
+import { LATENESS_GRACE_MINUTES as latenessGraceMinutes } from "@/constants/hrLateness";
 
 /** Aligns with HR Requests labels; API may send `type` or `request_type`. */
 const DAY_REQUEST_TYPE_LABELS = {
   lateness: "Lateness",
   leave: "Leave",
-  overtime: "Overtime",
+  overtime: "Overtime (total)",
+  overtime_before: "Overtime (before shift)",
+  overtime_after: "Overtime (after shift)",
   vacation: "Vacation",
   day_off_swap: "Day off swap",
   work_from_home: "Work from home",

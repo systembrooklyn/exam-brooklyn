@@ -34,13 +34,7 @@ function roleLabelFromShape(role) {
   if (role == null) return "";
   if (typeof role === "string") return role;
   if (typeof role !== "object") return "";
-  return (
-    role.name ??
-    role.slug ??
-    role.role_name ??
-    role.title ??
-    ""
-  );
+  return role.name ?? role.slug ?? role.role_name ?? role.title ?? "";
 }
 
 /**
@@ -106,11 +100,7 @@ function extractUserAndPermissionsFromResponseBody(body) {
     return { user: null, permissions: [] };
   }
   const userRecord =
-    body.User ??
-    body.user ??
-    body.data?.User ??
-    body.data?.user ??
-    null;
+    body.User ?? body.user ?? body.data?.User ?? body.data?.user ?? null;
 
   const merged = new Set([
     ...collectPermissionSlugsFromArray(body.permissions),
@@ -144,7 +134,9 @@ export const useAuthStore = defineStore("authStore", () => {
     Cookies.remove("token");
   };
 
-  const forceLogout = ({ message = "Session expired. Please log in again." } = {}) => {
+  const forceLogout = ({
+    message = "Session expired. Please log in again.",
+  } = {}) => {
     clearSession();
 
     if (message) {
@@ -256,7 +248,9 @@ export const useAuthStore = defineStore("authStore", () => {
       return true;
     if (u.is_superuser === true || u.is_superuser === 1) return true;
     if (u.super_admin === true || u.super_admin === 1) return true;
-    const userType = String(u.user_type ?? u.type ?? "").toLowerCase().trim();
+    const userType = String(u.user_type ?? u.type ?? "")
+      .toLowerCase()
+      .trim();
     if (userType === "admin" || userType === "administrator") return true;
     if (Array.isArray(u.roles) && u.roles.some(roleLooksAdmin)) return true;
     if (roleLooksAdmin(u.role)) return true;
@@ -288,7 +282,10 @@ export const useAuthStore = defineStore("authStore", () => {
    */
   const canManageFullAttendance = computed(() => {
     if (isAdminUser.value) return true;
-    if (hrAttendanceManagePermission && permissions.value.includes(hrAttendanceManagePermission)) {
+    if (
+      hrAttendanceManagePermission &&
+      permissions.value.includes(hrAttendanceManagePermission)
+    ) {
       return true;
     }
     return hasPermission(HR_PERMISSION.VIEW_ATTENDANCE_LOG);

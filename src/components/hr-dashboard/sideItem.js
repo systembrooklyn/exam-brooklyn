@@ -88,7 +88,7 @@ export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false
       name: "Employees",
       icon: Users,
       route: "hr-employees",
-      permission: HR_PERMISSION.VIEW_EMPLOYEE,
+      permission: HR_PERMISSION.VIEW_PAYROLL,
     },
     {
       name: "Contracts",
