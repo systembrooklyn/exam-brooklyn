@@ -5,23 +5,14 @@
         <h1 class="text-2xl font-bold text-gray-800"> Vacation Balances</h1>
         <!-- <p class="text-gray-500 mt-1">Your vacation balances — link contracts to a balance when needed</p> -->
       </div>
-      <button
-        v-if="authStore.can(HR_PERMISSION.CREATE_VACATION_BALANCE)"
-        type="button"
-        @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer w-fit"
-      >
+      <button v-if="authStore.can(HR_PERMISSION.CREATE_VACATION_BALANCE)" type="button" @click="openAddModal"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer w-fit">
         <span class="text-xl">+</span> Add Balance
       </button>
     </div>
 
-    <HrDataTable
-      :headers="headers"
-      :items="rows"
-      :loading="tableLoading"
-      :has-actions="hasVacationRowActions"
-      emptyMessage="No vacation records found."
-    >
+    <HrDataTable :headers="headers" :items="rows" :loading="tableLoading" :has-actions="hasVacationRowActions"
+      emptyMessage="No vacation records found.">
       <template #employee="{ item }">
         <span class="font-medium text-gray-900">{{ getBalanceEmployeeName(item) }}</span>
       </template>
@@ -32,84 +23,51 @@
 
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-2 flex-wrap">
-          <button
-            v-if="
-              authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
-                authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)
-            "
-            type="button"
-            :disabled="isRowActionsLocked(item)"
-            @click="openEditModal(item)"
+          <button v-if="
+            authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
+            authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)
+          " type="button" :disabled="isRowActionsLocked(item)" @click="openEditModal(item)"
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Edit"
-          >
+            title="Edit">
             <Edit class="w-5 h-5" />
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)"
-            type="button"
-            :disabled="isRowActionsLocked(item)"
-            @click="openAssignModal(item)"
+          <button v-if="authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE)" type="button"
+            :disabled="isRowActionsLocked(item)" @click="openAssignModal(item)"
             class="cursor-pointer text-emerald-600 hover:text-emerald-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[1.25rem]"
-            title="Assign contracts"
-          >
-            <Loader2
-              v-if="isAssignActionLoading(item)"
-              class="w-5 h-5 animate-spin text-emerald-600"
-            />
+            title="Assign contracts">
+            <Loader2 v-if="isAssignActionLoading(item)" class="w-5 h-5 animate-spin text-emerald-600" />
             <Link2 v-else class="w-5 h-5" />
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.DELETE_VACATION_BALANCE)"
-            type="button"
-            :disabled="isRowActionsLocked(item)"
-            @click="confirmDelete(pickBalanceId(item))"
+          <button v-if="authStore.can(HR_PERMISSION.DELETE_VACATION_BALANCE)" type="button"
+            :disabled="isRowActionsLocked(item)" @click="confirmDelete(pickBalanceId(item))"
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[1.25rem]"
-            title="Delete"
-          >
-            <Loader2
-              v-if="isDeleteActionLoading(item)"
-              class="w-5 h-5 animate-spin text-red-500"
-            />
+            title="Delete">
+            <Loader2 v-if="isDeleteActionLoading(item)" class="w-5 h-5 animate-spin text-red-500" />
             <Trash2 v-else class="w-5 h-5" />
           </button>
         </div>
       </template>
     </HrDataTable>
 
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Balance' : 'New Balance'"
-      :loading="store.loading || store.contractLinkUpdating"
-      max-width-class="max-w-lg"
-      @close="closeModal"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Balance' : 'New Balance'"
+      :loading="store.loading || store.contractLinkUpdating" max-width-class="max-w-lg" @close="closeModal"
+      @save="handleSubmit">
       <div class="space-y-6">
         <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
           <h3 class="text-sm font-semibold text-gray-900 mb-3">Balance</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Year <span v-if="!isEditing" class="text-red-500">*</span></label
-              >
-              <input
-                v-model.number="simpleForm.year"
-                type="number"
+              <label class="block text-sm font-medium text-gray-700 mb-1">Year <span v-if="!isEditing"
+                  class="text-red-500">*</span></label>
+              <input v-model.number="simpleForm.year" type="number"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                placeholder="2026"
-              />
+                placeholder="2026" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Available days <span v-if="!isEditing" class="text-red-500">*</span></label
-              >
-              <input
-                v-model.number="simpleForm.available_days"
-                type="number"
-                min="0"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-              />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Available days <span v-if="!isEditing"
+                  class="text-red-500">*</span></label>
+              <input v-model.number="simpleForm.available_days" type="number" min="0"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
             </div>
             <!-- <div v-if="isEditing" class="sm:col-span-2">
               <label class="block text-sm font-medium text-gray-700 mb-1"
@@ -129,80 +87,48 @@
       </div>
     </HrModal>
 
-    <HrModal
-      :show="showAssignModal"
-      title="Assign contracts"
-      :loading="store.loading || assignModalLoading"
-      max-width-class="max-w-lg"
-      @close="closeAssignModal"
-      @save="handleAssignSubmit"
-    >
+    <HrModal :show="showAssignModal" title="Assign contracts" :loading="store.loading || assignModalLoading"
+      max-width-class="max-w-lg" @close="closeAssignModal" @save="handleAssignSubmit">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">
           Vacation balance ID:
           <span class="font-mono font-semibold">{{ assignForm.vacation_balance_id }}</span>
         </p>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-            >Start date <span class="text-red-500">*</span></label
-          >
-          <input
-            v-model="assignForm.start_date"
-            type="date"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-          />
+          <label class="block text-sm font-medium text-gray-700 mb-1">Start date <span
+              class="text-red-500">*</span></label>
+          <input v-model="assignForm.start_date" type="date"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Contracts</label>
-          <div
-            class="max-h-56 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50"
-          >
-            <label
-              v-for="contract in contractsToPickInAssignModal"
-              :key="contract.id"
-              class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white/80 rounded px-1 py-0.5"
-            >
-              <input
-                v-model="assignForm.contract_ids"
-                type="checkbox"
-                :value="Number(contract.id)"
-                class="rounded border-gray-300"
-              />
-              <span class="text-gray-800"
-                >#{{ contract.id }} —
-                {{ contract.employee?.name || "Employee " + contract.employee_id }}</span
-              >
+          <div class="max-h-56 overflow-y-auto border border-gray-200 rounded-lg p-3 space-y-2 bg-gray-50">
+            <label v-for="contract in contractsToPickInAssignModal" :key="contract.id"
+              class="flex items-center gap-2 text-sm cursor-pointer hover:bg-white/80 rounded px-1 py-0.5">
+              <input v-model="assignForm.contract_ids" type="checkbox" :value="Number(contract.id)"
+                class="rounded border-gray-300" />
+              <span class="text-gray-800">#{{ assignContractFingerprintLabel(contract) }} —
+                {{ assignContractDisplayName(contract) }}</span>
             </label>
             <p v-if="!contracts.length" class="text-gray-500 text-sm">No contracts loaded.</p>
-            <p
-              v-else-if="!activeContractsForAssign.length"
-              class="text-gray-500 text-sm"
-            >
+            <p v-else-if="!activeContractsForAssign.length" class="text-gray-500 text-sm">
               No active contracts.
             </p>
-            <p
-              v-else-if="
-                !contractsToPickInAssignModal.length &&
-                assignModalAlreadyLinkedIds.size
-              "
-              class="text-gray-500 text-sm"
-            >
-              All active contracts are already linked to this balance. Add more from
-              Contracts if needed.
+            <p v-else-if="
+              showAssignModal &&
+              !contractsToPickInAssignModal.length &&
+              activeContractsForAssign.length
+            " class="text-gray-500 text-sm">
+              No contracts left to assign. Every active contract is already linked to this
+              vacation balance or another one shown in the list.
             </p>
           </div>
         </div>
       </div>
     </HrModal>
 
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Are you sure?"
-      text="This balance record will be deleted."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?" text="This balance record will be deleted."
+      icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
   </div>
 </template>
 
@@ -280,6 +206,55 @@ const getBalanceEmployeeName = (balance) => {
   return "—";
 };
 
+function pickFingerprintFromEmployeeLike(emp) {
+  if (!emp || typeof emp !== "object") return null;
+  const v =
+    emp.fingerprint ??
+    emp.user?.fingerPrint ??
+    emp.user?.finger_print ??
+    emp.personal_info?.fingerPrint ??
+    emp.personal_info?.finger_print ??
+    emp.fingerPrint;
+  if (v === null || v === undefined || v === "") return null;
+  const s = String(v).trim();
+  return s || null;
+}
+
+function resolveEmployeeRecordForAssignContract(contract) {
+  if (!contract) return null;
+  const eid = contract.employee_id ?? contract.employee?.id;
+  if (eid != null && eid !== "") {
+    const fromStore = employees.value.find(
+      (e) => Number(e.id) === Number(eid),
+    );
+    if (fromStore) return fromStore;
+  }
+  const nested = contract.employee;
+  if (nested && typeof nested === "object") return nested;
+  return null;
+}
+
+function assignContractFingerprintLabel(contract) {
+  return (
+    pickFingerprintFromEmployeeLike(
+      resolveEmployeeRecordForAssignContract(contract),
+    ) ?? "—"
+  );
+}
+
+function assignContractDisplayName(contract) {
+  const emp = resolveEmployeeRecordForAssignContract(contract);
+  if (emp?.name) return String(emp.name).trim();
+  const info = emp?.personal_info || emp;
+  if (info?.first_name || info?.last_name) {
+    const n = `${info.first_name ?? ""} ${info.last_name ?? ""}`.trim();
+    if (n) return n;
+  }
+  const eid = contract.employee_id;
+  if (eid != null && eid !== "") return `Employee ${eid}`;
+  return "—";
+}
+
 const pickBalanceId = (row) =>
   row?.Vacation_id ??
   row?.vacation_id ??
@@ -324,6 +299,27 @@ const linkedContractIdsFromApi = (contractRows) => {
   return ids;
 };
 
+/** Contract IDs linked on any vacation balance row other than `currentVacationBalanceId` (from loaded `displayRows`). */
+function contractIdsLinkedOnOtherBalances(currentVacationBalanceId) {
+  const out = new Set();
+  if (currentVacationBalanceId == null || currentVacationBalanceId === "") {
+    return out;
+  }
+  const cur = String(currentVacationBalanceId);
+  for (const row of displayRows.value || []) {
+    console.log(displayRows);
+    console.log(row);
+    const bid = pickBalanceId(row);
+    if (bid == null) continue;
+    if (String(bid) === cur) continue;
+    for (const raw of linkedContractIdsFromApi(row.contracts)) {
+      const n = Number(raw);
+      if (Number.isFinite(n)) out.add(n);
+    }
+  }
+  return out;
+}
+
 const defaultStartDateFromLinkedContracts = (contractRows) => {
   for (const row of contractRows || []) {
     const sd =
@@ -352,13 +348,20 @@ const assignForm = ref({
   start_date: "",
 });
 
-/** Active contracts not yet linked to this balance (linked ones stay in form but are not listed). */
+/**
+ * Active contracts pickable in Assign modal: not linked to this balance, and not linked to any
+ * other loaded vacation balance (avoids duplicate links across balances).
+ */
 const contractsToPickInAssignModal = computed(() => {
   if (!showAssignModal.value) return activeContractsForAssign.value;
   const skip = assignModalAlreadyLinkedIds.value;
+  const elsewhere = contractIdsLinkedOnOtherBalances(
+    assignForm.value.vacation_balance_id,
+  );
   return activeContractsForAssign.value.filter((c) => {
     const id = Number(c.id);
-    return !skip.has(id);
+    if (!Number.isFinite(id)) return false;
+    return !skip.has(id) && !elsewhere.has(id);
   });
 });
 
@@ -621,6 +624,7 @@ const cancelDelete = () => {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

@@ -13,7 +13,7 @@
           class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer"
           :class="pendingQueueMode ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
         >
-          {{ pendingQueueMode ? 'Show all my requests' : 'Pending approvals' }}
+          {{ pendingQueueMode ? 'Show all my requests' : 'Show all pending requests' }}
         </button>
         <button
           v-if="showBulkSelectionColumn"
@@ -36,13 +36,32 @@
           Bulk approve
         </button>
         <button
-          v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
+          v-if="
+            authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST) ||
+            authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)
+          "
           type="button"
           @click="openAddModal"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
           <span class="text-xl">+</span> New Request
         </button>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <div class="relative max-w-md">
+        <LucideSearch
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          aria-hidden="true"
+        />
+        <input
+          v-model="searchQuery"
+          type="search"
+          autocomplete="off"
+          placeholder="Search by employee name or fingerprint..."
+          class="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+        />
       </div>
     </div>
 
@@ -81,7 +100,7 @@
     <!-- Table -->
     <HrDataTable
       :headers="headers"
-      :items="requests"
+      :items="filteredRequests"
       :loading="store.loading"
       :emptyMessage="emptyMessage"
       :hasActions="false"
@@ -112,6 +131,19 @@
       <template #duration="{ item }">
         <span class="text-gray-700">{{ formatDuration(item) }}</span>
       </template>
+      <template #overtime_minutes="{ item }">
+        <span
+          v-if="
+            ['overtime', 'overtime_before', 'overtime_after'].includes(item.request_type) &&
+            item.overtime_minutes != null &&
+            item.overtime_minutes !== ''
+          "
+          class="text-gray-800 font-medium tabular-nums"
+        >
+          {{ Number(item.overtime_minutes) }}
+        </span>
+        <span v-else class="text-gray-400">—</span>
+      </template>
       <template #is_paid="{ item }">
         <span
           class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
@@ -139,7 +171,16 @@
         </span>
       </template>
       <template #actions="{ item }">
-        <div v-if="item.status === 'pending'" class="flex gap-2 justify-center">
+        <div v-if="item.status === 'pending'" class="flex flex-wrap gap-2 justify-center items-center">
+          <button
+            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)"
+            type="button"
+            title="Edit"
+            class="text-blue-600 hover:text-blue-800 p-1 cursor-pointer transition-transform hover:scale-125"
+            @click="openEditModal(item)"
+          >
+            <LucidePencil class="w-6 h-6" />
+          </button>
           <button
             v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
             type="button"
@@ -162,31 +203,99 @@
       </template>
     </HrDataTable>
 
-    <!-- New Request Modal -->
+    <!-- Create / Edit Request Modal -->
     <HrModal
       :show="showModal"
-      title="Create New Request"
+      :title="isEditing ? 'Edit Request' : 'Create New Request'"
       :loading="store.loading"
-      @close="showModal = false"
+      @close="closeRequestModal"
       @save="handleSubmit"
     >
       <div class="space-y-4">
+        <template v-if="!isEditing">
+          <div
+            v-if="showCreateTargetTabs"
+            class="flex p-1 bg-gray-100 rounded-xl gap-1"
+          >
+            <button
+              type="button"
+              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer"
+              :class="
+                createRequestTarget === 'self'
+                  ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                  : 'text-gray-500 hover:bg-gray-200/50'
+              "
+              @click="setCreateTargetSelf"
+            >
+              For myself
+            </button>
+            <button
+              type="button"
+              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer"
+              :class="
+                createRequestTarget === 'other'
+                  ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                  : 'text-gray-500 hover:bg-gray-200/50'
+              "
+              @click="setCreateTargetOther"
+            >
+              For another employee
+            </button>
+          </div>
+          <p
+            v-else-if="canCreateRequestForOthers && !canCreateEmployeeRequest"
+            class="text-sm text-gray-600"
+          >
+            Creating a request on behalf of another employee.
+          </p>
+        </template>
+
+        <div v-if="!isEditing && createRequestTarget === 'other'">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+          <select
+            v-model="forOtherEmployeeId"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          >
+            <option value="">Select employee…</option>
+            <option
+              v-for="emp in employeesListForPicker"
+              :key="emp.id"
+              :value="String(emp.id)"
+            >
+              {{ employeePickerLabel(emp) }}
+            </option>
+          </select>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
           <select v-model="form.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
             <option value="lateness">Lateness</option>
             <option value="leave">Leave</option>
-            <option value="overtime">Overtime</option>
+            <option value="overtime">Overtime (total)</option>
+            <option value="overtime_before">Overtime (before shift)</option>
+            <option value="overtime_after">Overtime (after shift)</option>
             <option value="vacation">Vacation</option>
             <option value="day_off_swap">Day Off Swap</option>
             <option value="work_from_home">Work From Home</option>
             <option value="shift_move">Shift Move</option>
+            <option value="absence">Absence</option>
           </select>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input v-model="form.day" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <input
+              v-model="form.day"
+              type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
+            <p
+              v-if="isServerCalculatedOvertime(form.request_type)"
+              class="mt-1 text-xs text-gray-500"
+            >
+              Overtime (total or before/after shift): only the date is sent — minutes are calculated on the server from shift and punches.
+            </p>
           </div>
 
           <!-- Conditional: Duration Hours (Lateness/Leave) -->
@@ -210,25 +319,29 @@
             </select>
           </div>
 
-          <!-- From/To Time (Optional for most, usually for Overtime/Leave) -->
-          <div class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
-            <input
-              v-model="form.from_time"
-              type="time"
-              step="1"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-          <div class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
-            <input
-              v-model="form.to_time"
-              type="time"
-              step="1"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
+          <!-- From/To Time — not used for absence or server-calculated overtime -->
+          <template
+            v-if="form.request_type !== 'absence' && !isServerCalculatedOvertime(form.request_type)"
+          >
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
+              <input
+                v-model="form.from_time"
+                type="time"
+                step="1"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2"
+              />
+            </div>
+            <div class="col-span-2 md:col-span-1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
+              <input
+                v-model="form.to_time"
+                type="time"
+                step="1"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2"
+              />
+            </div>
+          </template>
         </div>
       </div>
     </HrModal>
@@ -286,23 +399,38 @@
 import { onMounted, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
+import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
-import { LucideCheckCircle, LucideXCircle, LucideAlertTriangle } from 'lucide-vue-next';
+import {
+  LucideCheckCircle,
+  LucideXCircle,
+  LucideAlertTriangle,
+  LucidePencil,
+  LucideSearch,
+} from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 import { normalizeApiTime } from '@/utils/normalizeApiTime';
+import {
+  isDayOnlyOvertimeRequestTypeSlug as isServerCalculatedOvertime,
+  normalizeRequestTypeSlug,
+} from '@/utils/employeeRequestApi';
+import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
   leave: 'Leave',
-  overtime: 'Overtime',
+  overtime: 'Overtime (total)',
+  overtime_before: 'Overtime (before shift)',
+  overtime_after: 'Overtime (after shift)',
   vacation: 'Vacation',
   day_off_swap: 'Day off swap',
   work_from_home: 'Work from home',
   shift_move: 'Shift move',
+  absence: 'Absence',
 };
 
 const APPROVER_JOB_TITLES_NORMALIZED = new Set(['hr', 'hr manager', 'general manager']);
@@ -354,18 +482,90 @@ function jobTitleIsApprover(name) {
 }
 
 const CELL_TEXT = 'text-base text-gray-800';
-const CELL_LEFT = `${CELL_TEXT} text-left min-w-[140px]`;
 const CELL_CENTER = `${CELL_TEXT} text-center whitespace-nowrap`;
+const CELL_CENTER_WIDE = `${CELL_CENTER} min-w-[140px]`;
 
 const authStore = useAuthStore();
 const store = useHrRequestsStore();
+const empStore = useHrEmployeesStore();
 const requests = computed(() => store.requests);
 
-/** Hide Actions column entirely unless user may approve or reject (admin passes via `can`). */
+const searchQuery = ref('');
+
+const normalizedSearchQuery = computed(() =>
+  String(searchQuery.value ?? '')
+    .toLowerCase()
+    .trim(),
+);
+
+const filteredRequests = computed(() => {
+  const list = requests.value;
+  const q = normalizedSearchQuery.value;
+  if (!q) return list;
+  return list.filter((item) => {
+    const name = String(item.employee?.name ?? '')
+      .toLowerCase()
+      .trim();
+    const fp = String(item.employee?.fingerprint ?? '').trim();
+    return name.includes(q) || fp.toLowerCase().includes(q);
+  });
+});
+
+const canCreateEmployeeRequest = computed(() =>
+  authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST),
+);
+const canCreateRequestForOthers = computed(() =>
+  authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS),
+);
+/** Both permissions: show two tabs in create modal. */
+const showCreateTargetTabs = computed(
+  () => canCreateEmployeeRequest.value && canCreateRequestForOthers.value,
+);
+
+const createRequestTarget = ref('self');
+const forOtherEmployeeId = ref('');
+
+const employeesListForPicker = computed(() => empStore.employees || []);
+
+function employeePickerLabel(emp) {
+  if (!emp) return '';
+  const pi = emp.personal_info || {};
+  const name =
+    [pi.first_name, pi.last_name].filter(Boolean).join(' ').trim() ||
+    (emp.name ? String(emp.name).trim() : '') ||
+    `Employee #${emp.id}`;
+  return name;
+}
+
+async function ensureEmployeesForPicker() {
+  if (!canCreateRequestForOthers.value) return;
+  if (employeesListForPicker.value.length > 0) return;
+  try {
+    await empStore.getEmployees();
+  } catch {
+    /* store already notified */
+  }
+}
+
+function setCreateTargetSelf() {
+  createRequestTarget.value = 'self';
+  forOtherEmployeeId.value = '';
+}
+
+function setCreateTargetOther() {
+  createRequestTarget.value = 'other';
+  void ensureEmployeesForPicker();
+}
+
+/** Hide Actions column unless user may approve, reject, or update pending requests. */
 const canShowRequestActionsColumn = computed(
   () =>
     authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
     authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST),
+);
+
+const canUpdateEmployeeRequest = computed(() =>
+  authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST),
 );
 
 /** Pending queue toggle + `/pending` API — requires `view-pending-requests` (admin bypasses via `can`). */
@@ -380,6 +580,8 @@ const showBulkSelectionColumn = computed(
   () => canAccessPendingQueue.value && pendingQueueMode.value,
 );
 const showModal = ref(false);
+const isEditing = ref(false);
+const editingId = ref(null);
 const profileError = ref(false);
 
 const showConfirmApprove = ref(false);
@@ -392,6 +594,10 @@ const selectedRequestIds = ref([]);
 const selectAllCheckboxRef = ref(null);
 
 const emptyMessage = computed(() => {
+  const hasRows = requests.value.length > 0;
+  if (normalizedSearchQuery.value && hasRows && filteredRequests.value.length === 0) {
+    return 'No requests match your search.';
+  }
   if (canAccessPendingQueue.value && pendingQueueMode.value) {
     return 'No pending requests.';
   }
@@ -409,12 +615,19 @@ const form = ref({
 });
 
 function formatRequestTypeLabel(type) {
-  if (!type) return '—';
-  return REQUEST_TYPE_LABELS[type] ?? type.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const t = normalizeRequestTypeSlug(type);
+  if (!t) return '—';
+  return REQUEST_TYPE_LABELS[t] ?? t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function formatDuration(item) {
   const t = item.request_type;
+  if (t === 'overtime_before' || t === 'overtime_after') {
+    return '—';
+  }
+  if (t === 'overtime') {
+    return '—';
+  }
   if ((t === 'vacation' || t === 'work_from_home') && item.duration_type) {
     return item.duration_type === 'full' ? 'Full day' : 'Half day';
   }
@@ -441,8 +654,12 @@ function isPaidYes(item) {
 
 function employeeDisplayName(item) {
   const n = item.employee?.name;
-  if (n == null || String(n).trim() === '') return '—';
-  return String(n).trim();
+  const name = n == null || String(n).trim() === '' ? '—' : String(n).trim();
+  const fp = item.employee?.fingerprint;
+  if (fp == null || fp === '') return name;
+  const fpStr = String(fp).trim();
+  if (!fpStr) return name;
+  return `${name} (${fpStr})`;
 }
 
 function actionByDisplay(item) {
@@ -472,21 +689,22 @@ const headers = computed(() => {
   }
 
   baseHeaders.push(
-    { label: 'Employee', key: 'employee', class: CELL_LEFT },
-    { label: 'Type', key: 'request_type', class: CELL_LEFT },
+    { label: 'Employee', key: 'employee', class: CELL_CENTER_WIDE },
+    { label: 'Type', key: 'request_type', class: CELL_CENTER },
     { label: 'Date', key: 'day', class: CELL_CENTER },
     { label: 'Duration', key: 'duration', class: CELL_CENTER },
+    { label: 'OT (min)', key: 'overtime_minutes', class: CELL_CENTER },
     { label: 'Paid', key: 'is_paid', class: CELL_CENTER },
     { label: 'Submitted', key: 'created_at', class: CELL_CENTER },
-    { label: 'Reviewed by', key: 'action_by', class: CELL_LEFT },
+    { label: 'Reviewed by', key: 'action_by', class: CELL_CENTER_WIDE },
     { label: 'Status', key: 'status', class: CELL_CENTER },
   );
 
   if (
-    canShowRequestActionsColumn.value &&
+    (canShowRequestActionsColumn.value || canUpdateEmployeeRequest.value) &&
     (pendingQueueMode.value || requests.value.some((r) => r.status === 'pending'))
   ) {
-    baseHeaders.push({ label: 'Actions', key: 'actions', class: `${CELL_CENTER} w-28` });
+    baseHeaders.push({ label: 'Actions', key: 'actions', class: `${CELL_CENTER} min-w-[8rem]` });
   }
 
   return baseHeaders;
@@ -525,7 +743,7 @@ function toggleBulkSelect(rawId) {
 /** Pending rows in the current list (bulk targets). */
 const pendingSelectableIds = computed(() => {
   const out = [];
-  for (const r of requests.value) {
+  for (const r of filteredRequests.value) {
     if (r.status !== 'pending') continue;
     const id = normalizeRequestId(r.id);
     if (id != null) out.push(id);
@@ -605,37 +823,132 @@ watch(requests, (list) => {
   selectedRequestIds.value = selectedRequestIds.value.filter((id) => valid.has(id));
 });
 
+watch(
+  () => form.value.request_type,
+  (t) => {
+    if (t === 'absence') {
+      form.value.from_time = '';
+      form.value.to_time = '';
+    }
+    if (isServerCalculatedOvertime(t)) {
+      form.value.from_time = '';
+      form.value.to_time = '';
+    }
+  },
+);
+
+function toDateInputValue(raw) {
+  if (raw == null || raw === '') return '';
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return s;
+}
+
+function closeRequestModal() {
+  showModal.value = false;
+  isEditing.value = false;
+  editingId.value = null;
+  createRequestTarget.value = 'self';
+  forOtherEmployeeId.value = '';
+}
+
 const openAddModal = () => {
-  form.value = { 
-    request_type: 'leave', 
-    day: '', 
+  isEditing.value = false;
+  editingId.value = null;
+  forOtherEmployeeId.value = '';
+  if (canCreateEmployeeRequest.value) {
+    createRequestTarget.value = 'self';
+  } else if (canCreateRequestForOthers.value) {
+    createRequestTarget.value = 'other';
+    void ensureEmployeesForPicker();
+  } else {
+    createRequestTarget.value = 'self';
+  }
+  form.value = {
+    request_type: 'leave',
+    day: '',
     duration_hours: null,
     from_time: '',
     to_time: '',
     day_replacement: '',
-    duration_type: 'full'
+    duration_type: 'full',
   };
   showModal.value = true;
 };
 
-const handleSubmit = async () => {
+const openEditModal = (item) => {
+  if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)) return;
+  if (item.status !== 'pending') return;
+  const id = normalizeRequestId(item.id);
+  if (id == null) return;
+  isEditing.value = true;
+  editingId.value = id;
+  form.value = {
+    request_type: item.request_type || 'leave',
+    day: toDateInputValue(item.day),
+    duration_hours:
+      item.duration_hours != null && item.duration_hours !== ''
+        ? Number(item.duration_hours)
+        : null,
+    from_time: item.from_time ? normalizeApiTime(item.from_time) || '' : '',
+    to_time: item.to_time ? normalizeApiTime(item.to_time) || '' : '',
+    day_replacement: toDateInputValue(item.day_replacement),
+    duration_type: item.duration_type === 'half' ? 'half' : 'full',
+  };
+  showModal.value = true;
+};
+
+/** When creating for another employee, require `employee_id` on the payload. */
+function attachEmployeeIdIfCreatingForOther(payload) {
+  if (isEditing.value) return payload;
+  if (createRequestTarget.value !== 'other') return payload;
+  if (!authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)) return payload;
+  const eid = normalizeRequestId(forOtherEmployeeId.value);
+  if (eid == null) {
+    notyf.error('Please select an employee.');
+    return null;
+  }
+  return { ...payload, employee_id: eid };
+}
+
+/**
+ * Same shape as POST create — used for both create and PUT update.
+ * @returns {object|null}
+ */
+function buildRequestPayloadFromForm() {
   if (!form.value.day) {
     notyf.error('Please select a date');
-    return;
+    return null;
+  }
+
+  const otRt = normalizeRequestTypeSlug(form.value.request_type);
+  if (isServerCalculatedOvertime(otRt)) {
+    const base = {
+      request_type: otRt,
+      day: form.value.day,
+    };
+    return attachEmployeeIdIfCreatingForOther(base);
+  }
+
+  if (form.value.request_type === 'absence') {
+    const base = {
+      request_type: 'absence',
+      day: form.value.day,
+    };
+    return attachEmployeeIdIfCreatingForOther(base);
   }
 
   const normalizedFromTime = normalizeApiTime(form.value.from_time);
   const normalizedToTime = normalizeApiTime(form.value.to_time);
   if (form.value.from_time && !normalizedFromTime) {
     notyf.error('From time format is invalid.');
-    return;
+    return null;
   }
   if (form.value.to_time && !normalizedToTime) {
     notyf.error('To time format is invalid.');
-    return;
+    return null;
   }
 
-  // Build clean payload based on API rules
   const payload = {
     request_type: form.value.request_type,
     day: form.value.day,
@@ -643,35 +956,67 @@ const handleSubmit = async () => {
     to_time: normalizedToTime,
   };
 
-  // 1. duration_hours: required for "lateness and Leave" requests only
   if (['lateness', 'leave'].includes(form.value.request_type)) {
     if (!form.value.duration_hours) {
-        notyf.error('Duration hours is required for this request type');
-        return;
+      notyf.error('Duration hours is required for this request type');
+      return null;
     }
-    payload.duration_hours = parseInt(form.value.duration_hours);
+    if (form.value.request_type === 'lateness') {
+      const lateMins = Math.round(Number(form.value.duration_hours) * 60);
+      if (
+        Number.isFinite(lateMins) &&
+        lateMins > 0 &&
+        lateMins <= LATENESS_GRACE_MINUTES
+      ) {
+        notyf.error(
+          `Lateness of ${LATENESS_GRACE_MINUTES} minutes or less is covered by the grace period. A request is not allowed.`,
+        );
+        return null;
+      }
+    }
+    payload.duration_hours = parseInt(form.value.duration_hours, 10);
   }
 
-  // 2. day_replacement: required for "day off swap" requests only
   if (form.value.request_type === 'day_off_swap') {
     if (!form.value.day_replacement) {
-        notyf.error('Replacement date is required for day off swap');
-        return;
+      notyf.error('Replacement date is required for day off swap');
+      return null;
     }
     payload.day_replacement = form.value.day_replacement;
   }
 
-  // 3. duration_type: required for "vacation" requests only
   if (form.value.request_type === 'vacation') {
-    payload.duration_type = form.value.duration_type; // 'full' or 'half'
+    payload.duration_type = form.value.duration_type;
   }
 
+  return attachEmployeeIdIfCreatingForOther(payload);
+}
+
+const handleSubmit = async () => {
+  if (isEditing.value) {
+    if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)) return;
+    if (editingId.value == null) return;
+  } else {
+    if (createRequestTarget.value === 'self') {
+      if (!canCreateEmployeeRequest.value) return;
+    } else {
+      if (!canCreateRequestForOthers.value) return;
+    }
+  }
+
+  const payload = buildRequestPayloadFromForm();
+  if (!payload) return;
+
   try {
-    await store.createRequest(payload);
-    showModal.value = false;
-    await fetchData();
+    if (isEditing.value) {
+      await store.updateRequest(editingId.value, payload);
+    } else {
+      await store.createRequest(payload);
+      await fetchData();
+    }
+    closeRequestModal();
   } catch (e) {
-    console.error("Submission failed:", e);
+    console.error('Submission failed:', e);
   }
 };
 

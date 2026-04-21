@@ -89,8 +89,12 @@
 
     </HrDataTable>
 
-    <!-- Add/Edit Modal -->
-    <HrModal :show="showModal" :title="isEditing ? 'Edit Employee' : 'New Employee'" :loading="modalSaving"
+    <!-- Add/Edit Modal — mount only if user can create or update (read-only viewers skip form + link APIs) -->
+    <HrModal
+      v-if="canOpenEmployeeModal"
+      :show="showModal"
+      :title="isEditing ? 'Edit Employee' : 'New Employee'"
+      :loading="modalSaving"
       maxWidthClass="max-w-4xl" @close="closeModal" @save="handleSubmit">
       <div class="space-y-4">
         <!-- Tabs Header -->
@@ -186,12 +190,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Departments</label>
-                <MultiSelect v-model="form.department_ids" :options="departments" labelKey="department_name"
+                <MultiSelect v-model="form.department_ids" :options="departmentOptions" labelKey="department_name"
                   valueKey="id" placeholder="Select Departments" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Job Titles</label>
-                <MultiSelect v-model="form.job_title_ids" :options="jobTitles" labelKey="title_name" valueKey="id"
+                <MultiSelect v-model="form.job_title_ids" :options="jobTitleOptions" labelKey="title_name" valueKey="id"
                   placeholder="Select Job Titles" />
               </div>
               <div>
@@ -295,16 +299,17 @@
     </HrModal>
 
     <!-- Delete Confirmation -->
-    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?" text="This employee will be deleted permanently."
+    <SweetAlert2Modal
+      v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE) && showDeleteConfirm"
+      title="Are you sure?"
+      text="This employee will be deleted permanently."
       icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
-import { useHrDepartmentsStore } from '@/stores/hr/departments';
-import { useHrJobTitlesStore } from '@/stores/hr/jobTitles';
 import { useHrLinksStore } from '@/stores/hr/links';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
@@ -317,13 +322,77 @@ import { HR_PERMISSION } from '@/constants/hrPermissions';
 
 const store = useHrEmployeesStore();
 const authStore = useAuthStore();
-const deptStore = useHrDepartmentsStore();
-const jobStore = useHrJobTitlesStore();
-const linksStore = useHrLinksStore(); // Add Links Store
+const linksStore = useHrLinksStore();
+
+const canOpenEmployeeModal = computed(
+  () =>
+    authStore.can(HR_PERMISSION.CREATE_EMPLOYEE) ||
+    authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE),
+);
 
 const employees = computed(() => store.employees);
-const departments = computed(() => deptStore.departments);
-const jobTitles = computed(() => jobStore.jobTitles);
+
+/** API may send flat *_id fields or only nested department / job_title objects. */
+const parsePositiveInt = (raw) => {
+  const n = parseInt(raw, 10);
+  return Number.isInteger(n) && n > 0 ? n : null;
+};
+
+const departmentIdFromAssignmentRow = (jd) =>
+  parsePositiveInt(jd?.department_id ?? jd?.department?.id);
+
+const jobTitleIdFromAssignmentRow = (jd) =>
+  parsePositiveInt(jd?.job_title_id ?? jd?.job_title?.id);
+
+/**
+ * MultiSelect + table name fallbacks — derived only from GET /employees (`job_departments`),
+ * so we do not call /departments, /job-titles, or /managers (avoids permission errors for regular users).
+ */
+const departmentOptions = computed(() => {
+  const byId = new Map();
+  for (const emp of employees.value) {
+    const rows = emp?.job_departments;
+    if (!Array.isArray(rows)) continue;
+    for (const jd of rows) {
+      const id = departmentIdFromAssignmentRow(jd);
+      if (!id) continue;
+      const name = String(jd?.department?.department_name ?? '').trim();
+      if (!name) continue;
+      if (!byId.has(id)) byId.set(id, { id, department_name: name });
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.id - b.id);
+});
+
+const jobTitleOptions = computed(() => {
+  const byId = new Map();
+  for (const emp of employees.value) {
+    const rows = emp?.job_departments;
+    if (!Array.isArray(rows)) continue;
+    for (const jd of rows) {
+      const id = jobTitleIdFromAssignmentRow(jd);
+      if (!id) continue;
+      const name = String(jd?.job_title?.title_name ?? '').trim();
+      if (!name) continue;
+      if (!byId.has(id)) byId.set(id, { id, title_name: name });
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.id - b.id);
+});
+
+const jobTitleNameById = (id) => {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  const j = jobTitleOptions.value.find((x) => Number(x.id) === n);
+  return j?.title_name ?? null;
+};
+
+const departmentNameById = (id) => {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  const d = departmentOptions.value.find((x) => Number(x.id) === n);
+  return d?.department_name ?? null;
+};
 
 // Timeline Data
 const employeeLinks = ref([]);
@@ -362,19 +431,9 @@ const originalForm = ref({}); // Store original data for comparison
 
 onMounted(async () => {
   try {
-    await Promise.all([
-      store.getEmployees(),
-      store.getManagers(),
-      deptStore.getDepartments(),
-      jobStore.getJobTitles(),
-    ]);
-    try {
-      await linksStore.getEmployeeJobDeps();
-    } catch (e) {
-      console.error('Error fetching job assignment links:', e);
-    }
+    await store.getEmployees();
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching employees:', error);
   }
 });
 
@@ -386,32 +445,6 @@ const headers = [
   { label: 'Job Title', key: 'job_title' },
   { label: 'Hired At', key: 'hiring_date' },
 ];
-
-const jobTitleNameById = (id) => {
-  const n = Number(id);
-  if (!Number.isInteger(n) || n <= 0) return null;
-  const j = jobTitles.value.find((x) => Number(x.id) === n);
-  return j?.title_name ?? null;
-};
-
-const departmentNameById = (id) => {
-  const n = Number(id);
-  if (!Number.isInteger(n) || n <= 0) return null;
-  const d = departments.value.find((x) => Number(x.id) === n);
-  return d?.department_name ?? null;
-};
-
-/** API may send flat *_id fields or only nested department / job_title objects. */
-const parsePositiveInt = (raw) => {
-  const n = parseInt(raw, 10);
-  return Number.isInteger(n) && n > 0 ? n : null;
-};
-
-const departmentIdFromAssignmentRow = (jd) =>
-  parsePositiveInt(jd?.department_id ?? jd?.department?.id);
-
-const jobTitleIdFromAssignmentRow = (jd) =>
-  parsePositiveInt(jd?.job_title_id ?? jd?.job_title?.id);
 
 const linkSortKey = (link) => link.start_date || link.hired_at || '';
 
@@ -515,15 +548,22 @@ const filteredEmployees = computed(() => {
 
 
 const potentialManagers = computed(() => {
-  // Use store.managers fetch from the new API
-  let list = store.managers || [];
-  if (editingId.value) {
-    return list.filter(e => e.id !== editingId.value);
+  const list = (employees.value || []).map((e) => {
+    const pi = e.personal_info || {};
+    const name =
+      [pi.first_name, pi.last_name].filter(Boolean).join(' ').trim() ||
+      (e.name ? String(e.name).trim() : '') ||
+      `Employee #${e.id}`;
+    return { id: e.id, name };
+  });
+  if (editingId.value != null) {
+    return list.filter((row) => Number(row.id) !== Number(editingId.value));
   }
   return list;
 });
 
 const openAddModal = () => {
+  if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)) return;
   isEditing.value = false;
   editingId.value = null;
   form.value = {
@@ -553,6 +593,7 @@ const ensureLinksForEdit = async () => {
 
 /** Edit form uses the same list row as the table (`store.employees`); payroll links only if assignments/timeline need them. */
 const openEditModal = async (emp) => {
+  if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)) return;
   isEditing.value = true;
   editingId.value = emp.id;
   editLoadingId.value = emp.id;
@@ -673,6 +714,12 @@ const validateAssignmentPairs = () => {
 };
 
 const handleSubmit = async () => {
+  if (isEditing.value) {
+    if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)) return;
+  } else if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)) {
+    return;
+  }
+
   if (!form.value.first_name || !form.value.last_name || !form.value.email || !form.value.hiring_date) {
     notyf.error('Please fill in all required fields.');
     return;
@@ -775,11 +822,13 @@ const handleSubmit = async () => {
 };
 
 const confirmDelete = (id) => {
+  if (!authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)) return;
   deleteId.value = id;
   showDeleteConfirm.value = true;
 };
 
 const handleDeleteConfirm = async () => {
+  if (!authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)) return;
   if (deleteId.value) {
     try {
       await store.deleteEmployee(deleteId.value);

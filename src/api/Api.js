@@ -58,7 +58,10 @@ export const PAYROLL_VACATION_BALANCES_SIMPLE =
   "payroll-system/vacation-balances/simple";
 export const PAYROLL_VACATION_BALANCES_ASSIGN_CONTRACTS =
   "payroll-system/vacation-balances/assign-contracts";
-export const PAYROLL_VACATION_BALANCE_CONTRACT = (vacationBalanceId, contractId) =>
+export const PAYROLL_VACATION_BALANCE_CONTRACT = (
+  vacationBalanceId,
+  contractId,
+) =>
   `payroll-system/vacation-balances/${vacationBalanceId}/contracts/${contractId}`;
 export const PAYROLL_MANAGERS = "payroll-system/employees/managers";
 export const PAYROLL_ASSIGN_MANAGER = (id) =>
@@ -79,6 +82,8 @@ export const PAYROLL_ATTENDANCE_BULK =
 export const PAYROLL_ATTENDANCE_REPORT = "payroll-system/attendance-monthly";
 
 export const PAYROLL_REQUESTS = "payroll-system/employee-requests";
+export const PAYROLL_UPDATE_REQUEST = (id) =>
+  `payroll-system/employee-requests.update/${id}`;
 export const PAYROLL_REQUESTS_ME = "payroll-system/employee-requests/me";
 export const PAYROLL_REQUESTS_PENDING =
   "payroll-system/employee-requests/pending";

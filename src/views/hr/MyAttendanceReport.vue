@@ -1,18 +1,12 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
-    <div
-      v-if="!employeeResolveDone"
-      class="flex justify-center items-center min-h-[360px]"
-      aria-busy="true"
-      aria-label="Loading"
-    >
+    <div v-if="!employeeResolveDone" class="flex justify-center items-center min-h-[360px]" aria-busy="true"
+      aria-label="Loading">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
     </div>
 
-    <div
-      v-else-if="!effectiveEmployeeId"
-      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm"
-    >
+    <div v-else-if="!effectiveEmployeeId"
+      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
       Your account is not linked to an employee record. Contact HR if you need access.
     </div>
 
@@ -30,17 +24,10 @@
       </div>
 
       <div class="border border-indigo-100 rounded-2xl overflow-hidden">
-        <AttendanceReportPanel
-          ref="panelRef"
-          :show-employee-select="false"
-          :locked-employee-id="effectiveEmployeeId"
-          :initial-from="periodBounds.from_date"
-          :initial-to="periodBounds.to_date"
-          :hide-controls="true"
-          :suppress-success-notyf="true"
-          :show-day-request-action="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
-          @request-for-day="openRequestForDay"
-        />
+        <AttendanceReportPanel ref="panelRef" :show-employee-select="false" :locked-employee-id="effectiveEmployeeId"
+          :initial-from="periodBounds.from_date" :initial-to="periodBounds.to_date" :hide-controls="true"
+          :suppress-success-notyf="true" :show-day-request-action="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)"
+          @request-for-day="openRequestForDay" />
       </div>
     </div>
 
@@ -58,7 +45,16 @@ import AttendanceReportPanel from "@/components/hr-dashboard/attendance/Attendan
 import AttendanceRequestModal from "@/components/hr-dashboard/attendance/AttendanceRequestModal.vue";
 import { getPayrollDates, defaultPayrollMonthRange } from "@/utils/payrollPeriod";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
+import {
+  apiDurationHoursFromHoursInput,
+  apiDurationHoursFromMinutes,
+} from "@/utils/hrEmployeeRequestDuration";
 import notyf from "@/components/global/notyf";
+import {
+  isDayOnlyOvertimeRequestTypeSlug,
+  normalizeRequestTypeSlug,
+} from "@/utils/employeeRequestApi";
+import { LATENESS_GRACE_MINUTES } from "@/constants/hrLateness";
 
 const authStore = useAuthStore();
 const employeeStore = useHrEmployeesStore();
@@ -147,21 +143,54 @@ const requestForm = ref({
   request_type: "leave",
   day: "",
   duration_hours: null,
+  duration_minutes: null,
+  use_minutes_for_duration: false,
+  prefill_early_leave_minutes: null,
+  prefill_lateness_minutes: null,
+  overtime_minutes: null,
+  prefill_overtime_minutes: null,
+  prefill_overtime_before_minutes: null,
+  prefill_overtime_after_minutes: null,
   from_time: "",
   to_time: "",
   day_replacement: "",
   duration_type: "full",
 });
 
-const openRequestForDay = (date) => {
+function toDateInputValue(raw) {
+  if (raw == null || raw === "") return "";
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  return s;
+}
+
+const openRequestForDay = (payload) => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
     notyf.error("You do not have permission to create employee requests.");
     return;
   }
+  const isDayPayload =
+    payload && typeof payload === "object" && payload.date != null;
+  const date = isDayPayload
+    ? toDateInputValue(payload.date)
+    : toDateInputValue(payload);
+  const early = isDayPayload ? Number(payload.early_leave_minutes) || 0 : 0;
+  const late = isDayPayload ? Number(payload.lateness_minutes) || 0 : 0;
+  const ot = isDayPayload ? Number(payload.overtime_minutes) || 0 : 0;
+  const ob = isDayPayload ? Number(payload.overtime_before_minutes) || 0 : 0;
+  const oa = isDayPayload ? Number(payload.overtime_after_minutes) || 0 : 0;
   requestForm.value = {
     request_type: "leave",
     day: date,
     duration_hours: null,
+    duration_minutes: isDayPayload && early > 0 ? early : null,
+    use_minutes_for_duration: isDayPayload,
+    prefill_early_leave_minutes: isDayPayload ? early : null,
+    prefill_lateness_minutes: isDayPayload ? late : null,
+    overtime_minutes: null,
+    prefill_overtime_minutes: isDayPayload ? ot : null,
+    prefill_overtime_before_minutes: isDayPayload ? ob : null,
+    prefill_overtime_after_minutes: isDayPayload ? oa : null,
     from_time: "",
     to_time: "",
     day_replacement: "",
@@ -180,20 +209,90 @@ const handleRequestSubmit = async (payload) => {
     return;
   }
 
-  if (["lateness", "leave"].includes(payload.request_type) && !payload.duration_hours) {
-    notyf.error("Duration hours is required for this request type");
+  const rt = normalizeRequestTypeSlug(payload.request_type);
+  if (isDayOnlyOvertimeRequestTypeSlug(rt)) {
+    requestLoading.value = true;
+    try {
+      const { useHrRequestsStore } = await import("@/stores/hr/requests");
+      const requestsStore = useHrRequestsStore();
+      await requestsStore.createRequest({
+        request_type: rt,
+        day: payload.day,
+      });
+      showRequestModal.value = false;
+      notyf.success("Request created successfully");
+      await panelRef.value?.generateReport?.();
+    } catch (e) {
+      console.error("Request submission failed:", e);
+    } finally {
+      requestLoading.value = false;
+    }
     return;
+  }
+
+  if (["lateness", "leave"].includes(payload.request_type)) {
+    if (payload.use_minutes_for_duration) {
+      const mins = Number(payload.duration_minutes);
+      if (!Number.isFinite(mins) || mins <= 0) {
+        notyf.error("Duration (minutes) is required for this request type");
+        return;
+      }
+    } else if (!payload.duration_hours) {
+      notyf.error("Duration hours is required for this request type");
+      return;
+    }
+  }
+
+  if (payload.request_type === "lateness") {
+    const lateMins = payload.use_minutes_for_duration
+      ? Number(payload.duration_minutes)
+      : Math.round(Number(payload.duration_hours) * 60);
+    if (
+      Number.isFinite(lateMins) &&
+      lateMins > 0 &&
+      lateMins <= LATENESS_GRACE_MINUTES
+    ) {
+      notyf.error(
+        `Lateness of ${LATENESS_GRACE_MINUTES} minutes or less is covered by the grace period. A request is not allowed.`,
+      );
+      return;
+    }
   }
   if (payload.request_type === "day_off_swap" && !payload.day_replacement) {
     notyf.error("Replacement date is required for day off swap");
     return;
   }
 
+  const body = {
+    request_type: payload.request_type,
+    day: payload.day,
+    from_time: payload.from_time,
+    to_time: payload.to_time,
+    day_replacement: payload.day_replacement,
+    duration_type: payload.duration_type,
+  };
+  if (["lateness", "leave"].includes(payload.request_type)) {
+    if (payload.use_minutes_for_duration) {
+      const h = apiDurationHoursFromMinutes(payload.duration_minutes);
+      if (h == null) {
+        notyf.error("Duration (minutes) is required for this request type");
+        return;
+      }
+      body.duration_hours = h;
+    } else {
+      const h = apiDurationHoursFromHoursInput(payload.duration_hours);
+      if (h == null) {
+        notyf.error("Duration hours is required for this request type");
+        return;
+      }
+      body.duration_hours = h;
+    }
+  }
   requestLoading.value = true;
   try {
     const { useHrRequestsStore } = await import("@/stores/hr/requests");
     const requestsStore = useHrRequestsStore();
-    await requestsStore.createRequest(payload);
+    await requestsStore.createRequest(body);
     showRequestModal.value = false;
     notyf.success("Request created successfully");
   } catch (e) {

@@ -2,6 +2,14 @@ import Layout from "../components/hr-dashboard/Layout.vue";
 import { useAuthStore } from "@/stores/auth";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
+/** Any of these allows `/hr/requests` (view queue, create for self, or create for others). */
+const HR_REQUESTS_ROUTE_ACCESS = [
+  HR_PERMISSION.VIEW_EMPLOYEE_REQUEST,
+  HR_PERMISSION.VIEW_PENDING_REQUESTS,
+  HR_PERMISSION.CREATE_EMPLOYEE_REQUEST,
+  HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS,
+];
+
 function nextIfCanAny(permissions, next) {
   const auth = useAuthStore();
   if (permissions.some((p) => auth.can(p))) return next();
@@ -65,17 +73,14 @@ export default {
       path: "requests",
       name: "hr-requests",
       beforeEnter: (_to, _from, next) => {
-        nextIfCanAny(
-          [HR_PERMISSION.VIEW_EMPLOYEE_REQUEST, HR_PERMISSION.VIEW_PENDING_REQUESTS],
-          next,
-        );
+        nextIfCanAny(HR_REQUESTS_ROUTE_ACCESS, next);
       },
       component: () => import("@/views/hr/Requests.vue"),
     },
     {
       path: "employees",
       name: "hr-employees",
-      meta: { requiresPermission: HR_PERMISSION.VIEW_EMPLOYEE },
+      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
       component: () => import("@/views/hr/Employees.vue"),
     },
     {
