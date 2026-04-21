@@ -120,7 +120,7 @@
           <Clock class="w-4 h-4 text-red-600" />
           <div class="text-left">
             <span class="text-[10px] font-bold text-red-600 uppercase block">Lateness</span>
-            <p class="text-sm font-bold text-red-700">{{ reportData.summary?.total_lateness || 0 }}m</p>
+            <p class="text-sm font-bold text-red-700">{{ getTotalLateness(reportData) }}m</p>
           </div>
         </div>
         <div class="p-2 bg-orange-50 rounded-lg border border-orange-100 flex items-center justify-center gap-2">
@@ -134,7 +134,7 @@
           <Zap class="w-4 h-4 text-green-600" />
           <div class="text-left">
             <span class="text-[10px] font-bold text-green-600 uppercase block">Overtime</span>
-            <p class="text-sm font-bold text-green-700">{{ reportData.summary?.total_overtime || 0 }}m</p>
+            <p class="text-sm font-bold text-green-700">{{ getTotalOvertime(reportData) }}m</p>
           </div>
         </div>
       </div>
@@ -149,6 +149,9 @@
               <th class="p-4 font-extrabold text-center text-red-600">Lateness</th>
               <th class="p-4 font-extrabold text-center text-orange-600">Early Leave</th>
               <th class="p-4 font-extrabold text-center text-green-600">Overtime</th>
+              <th class="p-4 font-extrabold text-center text-gray-700 max-w-[12rem]">
+                Approved requests
+              </th>
               <th
                 v-if="showDayRequestAction"
                 class="p-4 font-extrabold text-center no-print text-gray-700"
@@ -158,9 +161,12 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 text-[11px]">
-            <tr v-for="day in paginatedDays" :key="day.date"
-              class="divide-x divide-gray-200 hover:bg-gray-50/30 transition-colors"
-              :class="{ 'bg-amber-50/80': day.status === 'day_off' }">
+            <tr
+              v-for="day in paginatedDays"
+              :key="day.date"
+              class="divide-x divide-gray-200 transition-colors"
+              :class="rowAttendanceClass(day)"
+            >
               <td class="p-3 font-bold text-center text-xs">{{ formatDate(day.date) }}</td>
               <td class="p-3 text-center">
                 <div v-if="day.main_shift" class="flex items-center justify-center gap-2">
@@ -242,8 +248,37 @@
                   Total: {{ getOvertimeValue(day) }}m
                 </div>
               </td>
+              <td class="p-3 text-left align-top max-w-[14rem]">
+                <ul
+                  v-if="approvedRequestsForDay(day).length"
+                  class="space-y-1.5 text-[10px] text-gray-800 list-none m-0 p-0"
+                >
+                  <li
+                    v-for="req in approvedRequestsForDay(day)"
+                    :key="req.id ?? `${day.date}-${req.type}-${req.created_at}`"
+                    class="leading-snug border-l-2 border-indigo-200 pl-2"
+                  >
+                    <span class="font-semibold text-indigo-800">{{
+                      formatDayRequestTypeLabel(req)
+                    }}</span>
+                    <span v-if="approvedRequestDetailLine(req)" class="block text-gray-600 mt-0.5">{{
+                      approvedRequestDetailLine(req)
+                    }}</span>
+                  </li>
+                </ul>
+                <span v-else class="text-gray-300 text-center block">—</span>
+              </td>
               <td v-if="showDayRequestAction" class="p-3 text-center no-print">
-                <button type="button" @click="$emit('request-for-day', day.date)"
+                <button
+                  type="button"
+                  @click="
+                    $emit('request-for-day', {
+                      date: day.date,
+                      early_leave_minutes: getEarlyLeaveValue(day),
+                      lateness_minutes: getLatenessValue(day),
+                      overtime_minutes: getOvertimeValue(day),
+                    })
+                  "
                   class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer">
                   Request
                 </button>
@@ -309,6 +344,18 @@ import {
   Zap,
 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
+
+/** Aligns with HR Requests labels; API may send `type` or `request_type`. */
+const DAY_REQUEST_TYPE_LABELS = {
+  lateness: "Lateness",
+  leave: "Leave",
+  overtime: "Overtime",
+  vacation: "Vacation",
+  day_off_swap: "Day off swap",
+  work_from_home: "Work from home",
+  shift_move: "Shift move",
+  absence: "Absence",
+};
 
 const props = defineProps({
   showEmployeeSelect: { type: Boolean, default: true },
@@ -431,14 +478,28 @@ const formatTime = (time, isShort = false) => {
 };
 
 const getLatenessValue = (day) => {
-  if (!day.lateness) return 0;
-  if (typeof day.lateness === "object") return Math.round(Number(day.lateness.minutes) || 0);
+  if (day?.lateness_minutes != null && day.lateness_minutes !== "")
+    return Math.round(Number(day.lateness_minutes) || 0);
+  if (!day?.lateness) return 0;
+  if (typeof day.lateness === "object") {
+    const m = day.lateness.minutes ?? day.lateness.total;
+    return Math.round(Number(m) || 0);
+  }
   return Math.round(Number(day.lateness) || 0);
 };
 
 const getOvertimeValue = (day) => {
-  if (!day.overtime) return 0;
-  if (typeof day.overtime === "object") return Math.round(Number(day.overtime.total) || 0);
+  if (day?.overtime_minutes != null && day.overtime_minutes !== "")
+    return Math.round(Number(day.overtime_minutes) || 0);
+  if (!day?.overtime) return 0;
+  if (typeof day.overtime === "object") {
+    const t = day.overtime.total ?? day.overtime.minutes ?? day.overtime.total_minutes;
+    if (t != null && t !== "") return Math.round(Number(t) || 0);
+    const before = Number(day.overtime.before) || 0;
+    const after = Number(day.overtime.after) || 0;
+    if (before || after) return Math.round(before + after);
+    return 0;
+  }
   return Math.round(Number(day.overtime) || 0);
 };
 
@@ -462,6 +523,24 @@ const getShiftOut = (day) => {
   return day.main_shift.out || day.main_shift.to;
 };
 
+/** Absent: API flag or scheduled shift with no check-in (excludes day off / vacation). */
+function isReportDayAbsent(day) {
+  if (!day) return false;
+  const st = String(day.status ?? "").toLowerCase();
+  if (st === "day_off" || st === "vacation" || st === "holiday") return false;
+  if (st === "absent" || st === "missing" || st === "no_show") return true;
+  if (day.is_absent === true || day.is_absent === 1 || String(day.is_absent) === "1") return true;
+  if (!day.main_shift) return false;
+  if (day.attendance?.check_in) return false;
+  return !!(getShiftIn(day) || getShiftOut(day));
+}
+
+function rowAttendanceClass(day) {
+  if (isReportDayAbsent(day)) return "bg-[#FEF2F2] hover:bg-[#fde8e8]";
+  if (day.status === "day_off") return "bg-amber-50/80 hover:bg-amber-50/90";
+  return "hover:bg-gray-50/30";
+}
+
 const getEarlyLeaveValue = (day) => {
   if (!day.early_leave) return 0;
   if (typeof day.early_leave === "object") return Math.round(Number(day.early_leave.minutes) || 0);
@@ -472,6 +551,71 @@ const getTotalEarlyLeave = (report) => {
   if (!report || !report.days) return 0;
   return report.days.reduce((total, day) => total + getEarlyLeaveValue(day), 0);
 };
+
+/** Sum per-day values (same idea as early leave). Fall back to API summary if days sum to 0. */
+const getTotalLateness = (report) => {
+  if (!report?.days?.length) {
+    return Math.round(Number(report?.summary?.total_lateness) || 0);
+  }
+  const fromDays = report.days.reduce((total, day) => total + getLatenessValue(day), 0);
+  if (fromDays > 0) return fromDays;
+  return Math.round(Number(report.summary?.total_lateness) || 0);
+};
+
+const getTotalOvertime = (report) => {
+  if (!report?.days?.length) {
+    return Math.round(Number(report?.summary?.total_overtime) || 0);
+  }
+  const fromDays = report.days.reduce((total, day) => total + getOvertimeValue(day), 0);
+  if (fromDays > 0) return fromDays;
+  return Math.round(Number(report.summary?.total_overtime) || 0);
+};
+
+function approvedRequestsForDay(day) {
+  const raw = day?.requests;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (r) => String(r?.status ?? "").toLowerCase() === "approved",
+  );
+}
+
+function formatDayRequestTypeLabel(req) {
+  const type = req?.type ?? req?.request_type ?? "";
+  const key = String(type).trim();
+  if (!key) return "Request";
+  return (
+    DAY_REQUEST_TYPE_LABELS[key] ??
+    key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+  );
+}
+
+function approvedRequestDetailLine(req) {
+  const parts = [];
+  if (req.from_time && req.to_time) {
+    parts.push(
+      `${formatTime(req.from_time, true)}–${formatTime(req.to_time, true)}`,
+    );
+  } else if (req.from_time) {
+    parts.push(formatTime(req.from_time, true));
+  }
+  if (req.overtime_minutes != null && req.overtime_minutes !== "") {
+    const paid =
+      req.is_paid === 1 ||
+      req.is_paid === true ||
+      String(req.is_paid) === "1";
+    parts.push(`${req.overtime_minutes}m OT${paid ? " (paid)" : ""}`);
+  }
+  if (req.duration_hours != null && req.duration_hours !== "") {
+    parts.push(`${req.duration_hours}h`);
+  }
+  if (req.day_replacement) {
+    parts.push(`swap → ${req.day_replacement}`);
+  }
+  if (req.duration_type && req.duration_type !== "full") {
+    parts.push(String(req.duration_type));
+  }
+  return parts.length ? parts.join(" · ") : "";
+}
 
 defineExpose({
   generateReport: handleReport,

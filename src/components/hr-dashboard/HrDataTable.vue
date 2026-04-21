@@ -12,7 +12,7 @@
 
     <!-- Table -->
     <div v-else class="overflow-x-auto">
-      <table class="w-full text-left min-w-[800px]">
+      <table class="w-full text-center min-w-[800px]">
         <thead class="bg-gray-50 border-b border-gray-200">
           <tr>
             <!-- Serial Number Header -->
@@ -46,7 +46,7 @@
             </td>
 
             <!-- Actions Column -->
-            <td v-if="hasActions" class="p-4">
+            <td v-if="hasActions" class="p-4 text-center">
               <div class="flex items-center justify-center gap-3">
                 <slot name="actions" :item="item">
                   <button v-if="hasEdit" @click="$emit('edit', item)"

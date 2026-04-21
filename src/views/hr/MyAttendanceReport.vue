@@ -58,6 +58,10 @@ import AttendanceReportPanel from "@/components/hr-dashboard/attendance/Attendan
 import AttendanceRequestModal from "@/components/hr-dashboard/attendance/AttendanceRequestModal.vue";
 import { getPayrollDates, defaultPayrollMonthRange } from "@/utils/payrollPeriod";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
+import {
+  apiDurationHoursFromHoursInput,
+  apiDurationHoursFromMinutes,
+} from "@/utils/hrEmployeeRequestDuration";
 import notyf from "@/components/global/notyf";
 
 const authStore = useAuthStore();
@@ -147,21 +151,39 @@ const requestForm = ref({
   request_type: "leave",
   day: "",
   duration_hours: null,
+  duration_minutes: null,
+  use_minutes_for_duration: false,
+  prefill_early_leave_minutes: null,
+  prefill_lateness_minutes: null,
+  overtime_minutes: null,
+  prefill_overtime_minutes: null,
   from_time: "",
   to_time: "",
   day_replacement: "",
   duration_type: "full",
 });
 
-const openRequestForDay = (date) => {
+const openRequestForDay = (payload) => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
     notyf.error("You do not have permission to create employee requests.");
     return;
   }
+  const isDayPayload =
+    payload && typeof payload === "object" && payload.date != null;
+  const date = isDayPayload ? payload.date : payload;
+  const early = isDayPayload ? Number(payload.early_leave_minutes) || 0 : 0;
+  const late = isDayPayload ? Number(payload.lateness_minutes) || 0 : 0;
+  const ot = isDayPayload ? Number(payload.overtime_minutes) || 0 : 0;
   requestForm.value = {
     request_type: "leave",
     day: date,
     duration_hours: null,
+    duration_minutes: isDayPayload && early > 0 ? early : null,
+    use_minutes_for_duration: isDayPayload,
+    prefill_early_leave_minutes: isDayPayload ? early : null,
+    prefill_lateness_minutes: isDayPayload ? late : null,
+    overtime_minutes: null,
+    prefill_overtime_minutes: isDayPayload ? ot : null,
     from_time: "",
     to_time: "",
     day_replacement: "",
@@ -180,20 +202,65 @@ const handleRequestSubmit = async (payload) => {
     return;
   }
 
-  if (["lateness", "leave"].includes(payload.request_type) && !payload.duration_hours) {
-    notyf.error("Duration hours is required for this request type");
-    return;
+  if (["lateness", "leave"].includes(payload.request_type)) {
+    if (payload.use_minutes_for_duration) {
+      const mins = Number(payload.duration_minutes);
+      if (!Number.isFinite(mins) || mins <= 0) {
+        notyf.error("Duration (minutes) is required for this request type");
+        return;
+      }
+    } else if (!payload.duration_hours) {
+      notyf.error("Duration hours is required for this request type");
+      return;
+    }
   }
   if (payload.request_type === "day_off_swap" && !payload.day_replacement) {
     notyf.error("Replacement date is required for day off swap");
     return;
+  }
+  if (payload.request_type === "overtime") {
+    const om = Number(payload.overtime_minutes);
+    if (!Number.isFinite(om) || om <= 0) {
+      notyf.error("Overtime (minutes) is required");
+      return;
+    }
+  }
+
+  const body = {
+    request_type: payload.request_type,
+    day: payload.day,
+    from_time: payload.from_time,
+    to_time: payload.to_time,
+    day_replacement: payload.day_replacement,
+    duration_type: payload.duration_type,
+  };
+  if (["lateness", "leave"].includes(payload.request_type)) {
+    if (payload.use_minutes_for_duration) {
+      const h = apiDurationHoursFromMinutes(payload.duration_minutes);
+      if (h == null) {
+        notyf.error("Duration (minutes) is required for this request type");
+        return;
+      }
+      body.duration_hours = h;
+    } else {
+      const h = apiDurationHoursFromHoursInput(payload.duration_hours);
+      if (h == null) {
+        notyf.error("Duration hours is required for this request type");
+        return;
+      }
+      body.duration_hours = h;
+    }
+  }
+  if (payload.request_type === "overtime") {
+    body.overtime_minutes = Math.round(Number(payload.overtime_minutes));
+    body.is_paid = 1;
   }
 
   requestLoading.value = true;
   try {
     const { useHrRequestsStore } = await import("@/stores/hr/requests");
     const requestsStore = useHrRequestsStore();
-    await requestsStore.createRequest(payload);
+    await requestsStore.createRequest(body);
     showRequestModal.value = false;
     notyf.success("Request created successfully");
   } catch (e) {

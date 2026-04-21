@@ -10,7 +10,7 @@
       @click.stop
     >
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
         <h2 class="text-xl font-bold text-gray-800">{{ title }}</h2>
         <button
           @click="$emit('close')"
@@ -35,14 +35,14 @@
 
       <!-- Body: default scrolls; use bodyOverflowVisible for dropdowns that must escape (e.g. MultiSelect) -->
       <div
-        class="p-6 custom-scrollbar"
+        class="p-6 custom-scrollbar flex-1 min-h-0"
         :class="bodyOverflowVisible ? 'overflow-visible' : 'overflow-y-auto overflow-x-visible'"
       >
         <slot></slot>
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-end gap-3 shrink-0">
         <button
           @click="$emit('close')"
           class="px-4 py-2 cursor-pointer text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors"

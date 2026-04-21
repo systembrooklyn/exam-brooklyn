@@ -49,6 +49,22 @@
       </div>
     </div>
 
+    <div class="mb-4">
+      <div class="relative max-w-md">
+        <LucideSearch
+          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          aria-hidden="true"
+        />
+        <input
+          v-model="searchQuery"
+          type="search"
+          autocomplete="off"
+          placeholder="Search by employee name or fingerprint..."
+          class="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+        />
+      </div>
+    </div>
+
     <!-- Profile Missing Error -->
     <div v-if="profileError" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6">
         <div class="flex items-center gap-3">
@@ -84,7 +100,7 @@
     <!-- Table -->
     <HrDataTable
       :headers="headers"
-      :items="requests"
+      :items="filteredRequests"
       :loading="store.loading"
       :emptyMessage="emptyMessage"
       :hasActions="false"
@@ -114,6 +130,19 @@
       </template>
       <template #duration="{ item }">
         <span class="text-gray-700">{{ formatDuration(item) }}</span>
+      </template>
+      <template #overtime_minutes="{ item }">
+        <span
+          v-if="
+            item.request_type === 'overtime' &&
+            item.overtime_minutes != null &&
+            item.overtime_minutes !== ''
+          "
+          class="text-gray-800 font-medium tabular-nums"
+        >
+          {{ Number(item.overtime_minutes) }}
+        </span>
+        <span v-else class="text-gray-400">—</span>
       </template>
       <template #is_paid="{ item }">
         <span
@@ -360,7 +389,13 @@ import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
-import { LucideCheckCircle, LucideXCircle, LucideAlertTriangle, LucidePencil } from 'lucide-vue-next';
+import {
+  LucideCheckCircle,
+  LucideXCircle,
+  LucideAlertTriangle,
+  LucidePencil,
+  LucideSearch,
+} from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
@@ -426,13 +461,34 @@ function jobTitleIsApprover(name) {
 }
 
 const CELL_TEXT = 'text-base text-gray-800';
-const CELL_LEFT = `${CELL_TEXT} text-left min-w-[140px]`;
 const CELL_CENTER = `${CELL_TEXT} text-center whitespace-nowrap`;
+const CELL_CENTER_WIDE = `${CELL_CENTER} min-w-[140px]`;
 
 const authStore = useAuthStore();
 const store = useHrRequestsStore();
 const empStore = useHrEmployeesStore();
 const requests = computed(() => store.requests);
+
+const searchQuery = ref('');
+
+const normalizedSearchQuery = computed(() =>
+  String(searchQuery.value ?? '')
+    .toLowerCase()
+    .trim(),
+);
+
+const filteredRequests = computed(() => {
+  const list = requests.value;
+  const q = normalizedSearchQuery.value;
+  if (!q) return list;
+  return list.filter((item) => {
+    const name = String(item.employee?.name ?? '')
+      .toLowerCase()
+      .trim();
+    const fp = String(item.employee?.fingerprint ?? '').trim();
+    return name.includes(q) || fp.toLowerCase().includes(q);
+  });
+});
 
 const canCreateEmployeeRequest = computed(() =>
   authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST),
@@ -517,6 +573,10 @@ const selectedRequestIds = ref([]);
 const selectAllCheckboxRef = ref(null);
 
 const emptyMessage = computed(() => {
+  const hasRows = requests.value.length > 0;
+  if (normalizedSearchQuery.value && hasRows && filteredRequests.value.length === 0) {
+    return 'No requests match your search.';
+  }
   if (canAccessPendingQueue.value && pendingQueueMode.value) {
     return 'No pending requests.';
   }
@@ -540,6 +600,9 @@ function formatRequestTypeLabel(type) {
 
 function formatDuration(item) {
   const t = item.request_type;
+  if (t === 'overtime') {
+    return '—';
+  }
   if ((t === 'vacation' || t === 'work_from_home') && item.duration_type) {
     return item.duration_type === 'full' ? 'Full day' : 'Half day';
   }
@@ -566,8 +629,12 @@ function isPaidYes(item) {
 
 function employeeDisplayName(item) {
   const n = item.employee?.name;
-  if (n == null || String(n).trim() === '') return '—';
-  return String(n).trim();
+  const name = n == null || String(n).trim() === '' ? '—' : String(n).trim();
+  const fp = item.employee?.fingerprint;
+  if (fp == null || fp === '') return name;
+  const fpStr = String(fp).trim();
+  if (!fpStr) return name;
+  return `${name} (${fpStr})`;
 }
 
 function actionByDisplay(item) {
@@ -597,13 +664,14 @@ const headers = computed(() => {
   }
 
   baseHeaders.push(
-    { label: 'Employee', key: 'employee', class: CELL_LEFT },
-    { label: 'Type', key: 'request_type', class: CELL_LEFT },
+    { label: 'Employee', key: 'employee', class: CELL_CENTER_WIDE },
+    { label: 'Type', key: 'request_type', class: CELL_CENTER },
     { label: 'Date', key: 'day', class: CELL_CENTER },
     { label: 'Duration', key: 'duration', class: CELL_CENTER },
+    { label: 'OT (min)', key: 'overtime_minutes', class: CELL_CENTER },
     { label: 'Paid', key: 'is_paid', class: CELL_CENTER },
     { label: 'Submitted', key: 'created_at', class: CELL_CENTER },
-    { label: 'Reviewed by', key: 'action_by', class: CELL_LEFT },
+    { label: 'Reviewed by', key: 'action_by', class: CELL_CENTER_WIDE },
     { label: 'Status', key: 'status', class: CELL_CENTER },
   );
 
@@ -650,7 +718,7 @@ function toggleBulkSelect(rawId) {
 /** Pending rows in the current list (bulk targets). */
 const pendingSelectableIds = computed(() => {
   const out = [];
-  for (const r of requests.value) {
+  for (const r of filteredRequests.value) {
     if (r.status !== 'pending') continue;
     const id = normalizeRequestId(r.id);
     if (id != null) out.push(id);
