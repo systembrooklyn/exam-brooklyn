@@ -60,6 +60,7 @@
               {{ header.label }}
             </th>
             <th
+              v-if="!hideActions"
               class="px-6 py-4 text-center text-md font-semibold tracking-wider"
             >
               Actions
@@ -119,7 +120,7 @@
               </span>
             </td>
 
-            <td class="px-6 py-4 whitespace-nowrap space-x-6">
+            <td v-if="!hideActions" class="px-6 py-4 whitespace-nowrap space-x-6">
               <button
                 v-if="canEdit"
                 @click="$emit('edit', item)"
@@ -140,7 +141,7 @@
           <!-- No results found for the search -->
           <tr v-if="filteredItems.length === 0 && search.length > 0">
             <td
-              :colspan="headers.length + 1"
+              :colspan="headers.length + (hideActions ? 0 : 1)"
               class="px-6 py-4 text-start font-bold text-gray-700"
             >
               No results found for "{{ search }}".
@@ -148,7 +149,7 @@
           </tr>
           <tr v-if="filteredItems.length === 0 && !loading">
             <td
-              :colspan="headers.length + 1"
+              :colspan="headers.length + (hideActions ? 0 : 1)"
               class="px-6 py-4 text-center font-bold text-gray-600"
             >
               No data found.
@@ -220,6 +221,7 @@ const props = defineProps({
   resourceType: String,
   isReservation: Boolean,
   isPlacementTests: Boolean,
+  hideActions: Boolean,
 });
 
 const search = ref("");
@@ -283,7 +285,7 @@ const paginatedItems = computed(() => {
 });
 
 function getValueByPath(obj, path) {
-  if (path === "created_at" || path === "Updated_at") {
+  if (path === "created_at" || path === "Updated_at" || path === "booking_datetime") {
     return formatDate(obj[path]);
   }
 
@@ -317,6 +319,12 @@ function getValueByPath(obj, path) {
     return obj.instructor && obj.instructor.length > 0
       ? obj.instructor.map((instructor) => `(${instructor.name})`).join(", ")
       : "No instructor";
+  }
+
+  if (path === "student.phones") {
+    return Array.isArray(obj.student?.phones)
+      ? obj.student.phones.join(", ")
+      : "";
   }
 
   return (

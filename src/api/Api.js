@@ -44,6 +44,8 @@ export const GROUP_BY_CODE = "groupByCode";
 export const SEND_STUDEND_MAIL = "sendStudentMail";
 export const SEND_STUDEND_SMS = "studentSrmSmsMessage";
 
+export const BOOKINGS = "bookings";
+
 // Payroll System APIs
 export const PAYROLL_EMPLOYEES = "payroll-system/employees";
 export const PAYROLL_DEPARTMENTS = "payroll-system/departments";
