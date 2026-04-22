@@ -463,6 +463,7 @@ const requestForm = ref({
   prefill_overtime_before_minutes: null,
   prefill_overtime_after_minutes: null,
   is_warning_hour: false,
+  subject_employee_id: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -474,6 +475,27 @@ function toDateInputValue(raw) {
   const s = String(raw).trim();
   if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
   return s;
+}
+
+function resolveSubjectEmployeeIdForPayrollRequest(payload) {
+  const fromPayload = payload?.subject_employee_id ?? payload?.employee_id;
+  if (fromPayload != null && String(fromPayload).trim() !== '') {
+    const n = Number(fromPayload);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  const p = authStore.payrollEmployeeId;
+  if (p != null && String(p).trim() !== '') {
+    const n = Number(String(p).trim());
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+
+function withEmployeeIdForHrPayrollApi(body, subjectEmployeeId) {
+  if (!authStore.hasHrRoleOrHrPermission) return body;
+  const n = Number(subjectEmployeeId);
+  if (!Number.isFinite(n) || n <= 0) return body;
+  return { ...body, employee_id: n };
 }
 
 const openRequestForDay = (payload) => {
@@ -496,6 +518,10 @@ const openRequestForDay = (payload) => {
     (payload.is_warning_hour === true ||
       payload.is_warning_hour === 1 ||
       String(payload.is_warning_hour) === '1');
+  const rowEmp =
+    isDayPayload && payload.employee_id != null && String(payload.employee_id).trim() !== ''
+      ? Number(payload.employee_id)
+      : null;
   requestForm.value = {
     request_type: 'leave',
     day: date,
@@ -509,6 +535,8 @@ const openRequestForDay = (payload) => {
     prefill_overtime_before_minutes: isDayPayload ? ob : null,
     prefill_overtime_after_minutes: isDayPayload ? oa : null,
     is_warning_hour: !!warnHour,
+    subject_employee_id:
+      rowEmp != null && Number.isFinite(rowEmp) && rowEmp > 0 ? rowEmp : null,
     from_time: '',
     to_time: '',
     day_replacement: '',
@@ -533,10 +561,15 @@ const handleRequestSubmit = async (payload) => {
     try {
       const { useHrRequestsStore } = await import('@/stores/hr/requests');
       const requestsStore = useHrRequestsStore();
-      await requestsStore.createRequest({
-        request_type: rt,
-        day: payload.day,
-      });
+      await requestsStore.createRequest(
+        withEmployeeIdForHrPayrollApi(
+          {
+            request_type: rt,
+            day: payload.day,
+          },
+          resolveSubjectEmployeeIdForPayrollRequest(payload),
+        ),
+      );
       showRequestModal.value = false;
       notyf.success('Request created successfully');
     } catch (e) {
@@ -622,7 +655,9 @@ const handleRequestSubmit = async (payload) => {
   try {
     const { useHrRequestsStore } = await import('@/stores/hr/requests');
     const requestsStore = useHrRequestsStore();
-    await requestsStore.createRequest(body);
+    await requestsStore.createRequest(
+      withEmployeeIdForHrPayrollApi(body, resolveSubjectEmployeeIdForPayrollRequest(payload)),
+    );
     showRequestModal.value = false;
     notyf.success('Request created successfully');
   } catch (e) {

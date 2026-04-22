@@ -51,6 +51,17 @@ function roleLooksAdmin(role, depth = 0) {
   return false;
 }
 
+/** Role name/slug "HR" (API may send `{ id, name: "HR" }` on `user.roles`). */
+function roleLooksHr(role, depth = 0) {
+  if (role == null || depth > MAX_ADMIN_ROLE_NEST_DEPTH) return false;
+  const label = roleLabelFromShape(role);
+  if (String(label).trim().toLowerCase() === "hr") return true;
+  if (typeof role === "object" && role.role != null) {
+    return roleLooksHr(role.role, depth + 1);
+  }
+  return false;
+}
+
 /** API may return permission slugs as strings or as `{ name }` objects. */
 function permissionSlugFromEntry(entry) {
   if (entry == null) return null;
@@ -267,6 +278,32 @@ export const useAuthStore = defineStore("authStore", () => {
   };
 
   /**
+   * Payroll API may require explicit `employee_id` for users with an HR role/permission,
+   * even when filing for themselves (token alone is not enough on some backends).
+   */
+  const hasHrRoleOrHrPermission = computed(() => {
+    for (const p of permissions.value) {
+      const slug = permissionSlugFromEntry(p);
+      if (slug != null && String(slug).trim().toLowerCase() === "hr") {
+        return true;
+      }
+      if (typeof p === "string" && String(p).trim().toLowerCase() === "hr") {
+        return true;
+      }
+    }
+    const u = user.value;
+    if (!u) return false;
+    if (Array.isArray(u.roles) && u.roles.some((r) => roleLooksHr(r))) {
+      return true;
+    }
+    if (roleLooksHr(u.role)) return true;
+    if (Array.isArray(u.role) && u.role.some((r) => roleLooksHr(r))) {
+      return true;
+    }
+    return false;
+  });
+
+  /**
    * Permission slug for HR users who may use full Attendance logs + admin report flows.
    * Set `VITE_HR_ATTENDANCE_MANAGE_PERMISSION` in `.env` to match your API `permissions` array.
    */
@@ -345,6 +382,7 @@ export const useAuthStore = defineStore("authStore", () => {
     isAdminUser,
     canManageFullAttendance,
     payrollEmployeeId,
+    hasHrRoleOrHrPermission,
     initAuth,
   };
 });

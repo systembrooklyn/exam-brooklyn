@@ -344,6 +344,7 @@
                       overtime_before_minutes: getOvertimeBefore(day),
                       overtime_after_minutes: getOvertimeAfter(day),
                       is_warning_hour: isReportDayWarningHour(day),
+                      employee_id: reportSubjectEmployeeId,
                     })
                   "
                   class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
@@ -501,6 +502,14 @@ const effectiveEmployeeId = computed(() => {
   if (lid == null || String(lid).trim() === "") return null;
   const n = Number(lid);
   return Number.isFinite(n) && n > 0 ? n : lid;
+});
+
+/** Numeric id for the employee this report is for (My attendance lock or HR drawer selection). */
+const reportSubjectEmployeeId = computed(() => {
+  const raw = effectiveEmployeeId.value;
+  if (raw == null || String(raw).trim() === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : null;
 });
 
 const handleReport = async () => {

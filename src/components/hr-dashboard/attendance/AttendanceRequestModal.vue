@@ -169,6 +169,8 @@ const defaultForm = () => ({
   prefill_overtime_after_minutes: null,
   /** Set from monthly report when API marks the day (is_warning_hour). */
   is_warning_hour: false,
+  /** Employee the monthly report row belongs to (HR drawer); passed through on save. */
+  subject_employee_id: null,
   from_time: '',
   to_time: '',
   day_replacement: '',

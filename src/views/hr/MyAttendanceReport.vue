@@ -165,6 +165,14 @@ function toDateInputValue(raw) {
   return s;
 }
 
+/** Payroll API: HR role users often must send explicit employee_id even for self-service from this screen. */
+function withEmployeeIdForHrPayrollApi(body) {
+  if (!authStore.hasHrRoleOrHrPermission) return body;
+  const n = Number(String(effectiveEmployeeId.value ?? "").trim());
+  if (!Number.isFinite(n) || n <= 0) return body;
+  return { ...body, employee_id: n };
+}
+
 const openRequestForDay = (payload) => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST)) {
     notyf.error("You do not have permission to create employee requests.");
@@ -222,10 +230,12 @@ const handleRequestSubmit = async (payload) => {
     try {
       const { useHrRequestsStore } = await import("@/stores/hr/requests");
       const requestsStore = useHrRequestsStore();
-      await requestsStore.createRequest({
-        request_type: rt,
-        day: payload.day,
-      });
+      await requestsStore.createRequest(
+        withEmployeeIdForHrPayrollApi({
+          request_type: rt,
+          day: payload.day,
+        }),
+      );
       showRequestModal.value = false;
       notyf.success("Request created successfully");
       await panelRef.value?.generateReport?.();
@@ -311,7 +321,7 @@ const handleRequestSubmit = async (payload) => {
   try {
     const { useHrRequestsStore } = await import("@/stores/hr/requests");
     const requestsStore = useHrRequestsStore();
-    await requestsStore.createRequest(body);
+    await requestsStore.createRequest(withEmployeeIdForHrPayrollApi(body));
     showRequestModal.value = false;
     notyf.success("Request created successfully");
   } catch (e) {
