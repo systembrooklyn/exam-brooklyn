@@ -151,6 +151,7 @@ const requestForm = ref({
   prefill_overtime_minutes: null,
   prefill_overtime_before_minutes: null,
   prefill_overtime_after_minutes: null,
+  is_warning_hour: false,
   from_time: "",
   to_time: "",
   day_replacement: "",
@@ -179,6 +180,11 @@ const openRequestForDay = (payload) => {
   const ot = isDayPayload ? Number(payload.overtime_minutes) || 0 : 0;
   const ob = isDayPayload ? Number(payload.overtime_before_minutes) || 0 : 0;
   const oa = isDayPayload ? Number(payload.overtime_after_minutes) || 0 : 0;
+  const warnHour =
+    isDayPayload &&
+    (payload.is_warning_hour === true ||
+      payload.is_warning_hour === 1 ||
+      String(payload.is_warning_hour) === "1");
   requestForm.value = {
     request_type: "leave",
     day: date,
@@ -191,6 +197,7 @@ const openRequestForDay = (payload) => {
     prefill_overtime_minutes: isDayPayload ? ot : null,
     prefill_overtime_before_minutes: isDayPayload ? ob : null,
     prefill_overtime_after_minutes: isDayPayload ? oa : null,
+    is_warning_hour: !!warnHour,
     from_time: "",
     to_time: "",
     day_replacement: "",
@@ -244,6 +251,18 @@ const handleRequestSubmit = async (payload) => {
   }
 
   if (payload.request_type === "lateness") {
+    const wh = payload.is_warning_hour;
+    if (
+      wh === true ||
+      wh === 1 ||
+      String(wh) === "1" ||
+      String(wh).toLowerCase() === "true"
+    ) {
+      notyf.error(
+        "Lateness does not apply on this date (adjusted hours). Choose another request type.",
+      );
+      return;
+    }
     const lateMins = payload.use_minutes_for_duration
       ? Number(payload.duration_minutes)
       : Math.round(Number(payload.duration_hours) * 60);

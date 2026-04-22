@@ -187,6 +187,21 @@
                       </span>
                     </div>
                   </template>
+                  <template v-else-if="isReportDayWarningHour(day)">
+                    <div
+                      class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 max-w-[13rem] text-center"
+                      title="This day was calculated with adjusted hour rules. Do not submit a lateness request for this date."
+                    >
+                      <span
+                        class="block text-[8px] font-extrabold uppercase tracking-wide text-amber-900"
+                      >
+                        Adjusted hours
+                      </span>
+                      <span class="block text-[9px] font-medium text-amber-800 mt-0.5 leading-snug">
+                        Lateness request not applicable
+                      </span>
+                    </div>
+                  </template>
                 </div>
               </td>
               <td class="p-3 text-center">
@@ -328,6 +343,7 @@
                       overtime_minutes: getOvertimeValue(day),
                       overtime_before_minutes: getOvertimeBefore(day),
                       overtime_after_minutes: getOvertimeAfter(day),
+                      is_warning_hour: isReportDayWarningHour(day),
                     })
                   "
                   class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
@@ -628,10 +644,24 @@ function holidayWorkedDoublePay(day) {
   return isDoublePaidFlag(d.is_double_paid);
 }
 
+/** API: hour-adjustment / policy flag — lateness requests must not be filed for this day. */
+function isReportDayWarningHour(day) {
+  const v = day?.is_warning_hour;
+  return (
+    v === true ||
+    v === 1 ||
+    String(v) === "1" ||
+    String(v).toLowerCase() === "true"
+  );
+}
+
 function rowAttendanceClass(day) {
   if (isReportDayHoliday(day)) return "bg-violet-50/90 hover:bg-violet-100/60";
   if (isReportDayAbsent(day)) return "bg-[#FEF2F2] hover:bg-[#fde8e8]";
   if (day.status === "day_off") return "bg-amber-50/80 hover:bg-amber-50/90";
+  if (isReportDayWarningHour(day)) {
+    return "bg-amber-50/35 hover:bg-amber-50/55 border-l-4 border-l-amber-500";
+  }
   return "hover:bg-gray-50/30";
 }
 

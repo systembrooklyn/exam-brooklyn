@@ -3,7 +3,7 @@
     :show="show"
     title="Create Request"
     :loading="loading"
-    :save-disabled="latenessSaveBlocked"
+    :save-disabled="latenessSaveBlocked || latenessBlockedByWarningHour"
     @close="$emit('close')"
     @save="onSave"
   >
@@ -38,6 +38,14 @@
         >
           Lateness of {{ latenessGraceMinutes }} minutes or less is covered by the grace period. You cannot submit a
           lateness request for this amount.
+        </p>
+        <p
+          v-if="latenessBlockedByWarningHour"
+          class="mt-2 text-sm text-amber-950 bg-amber-100 border border-amber-300 rounded-lg px-3 py-2"
+          role="status"
+        >
+          This day was calculated with <strong>adjusted hour</strong> rules. A <strong>lateness</strong> request does
+          not apply — choose another request type if needed.
         </p>
       </div>
       <div class="grid grid-cols-2 gap-4">
@@ -159,6 +167,8 @@ const defaultForm = () => ({
   prefill_overtime_minutes: null,
   prefill_overtime_before_minutes: null,
   prefill_overtime_after_minutes: null,
+  /** Set from monthly report when API marks the day (is_warning_hour). */
+  is_warning_hour: false,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -195,6 +205,17 @@ const latenessSaveBlocked = computed(() => {
   const m = effectiveLatenessMinutes.value;
   if (m == null) return false;
   return m > 0 && m <= latenessGraceMinutes;
+});
+
+const latenessBlockedByWarningHour = computed(() => {
+  if (localForm.value.request_type !== 'lateness') return false;
+  const w = localForm.value.is_warning_hour;
+  return (
+    w === true ||
+    w === 1 ||
+    String(w) === '1' ||
+    String(w).toLowerCase() === 'true'
+  );
 });
 
 /** Sync only when the modal opens — avoids deep `initialForm` resets wiping user input (e.g. OT minutes). */
@@ -248,7 +269,7 @@ watch(
 );
 
 const onSave = async () => {
-  if (latenessSaveBlocked.value) return;
+  if (latenessSaveBlocked.value || latenessBlockedByWarningHour.value) return;
   await nextTick();
   const f = { ...localForm.value };
   f.request_type = normalizeRequestTypeSlug(f.request_type);
