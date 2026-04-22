@@ -34,7 +34,7 @@
             >
               <Search v-if="!loading" class="w-5 h-5 group-hover:rotate-12 transition-transform" />
               <Loader2 v-else class="w-5 h-5 animate-spin" />
-              <span>Fetch Data</span>
+              <span>Get Data</span>
             </button>
           </div>
         </div>
@@ -101,11 +101,12 @@ const filters = ref({
 })
 
 const headers = [
-    { label: 'ID', key: 'id' },
+    { label: 'Student Num', key: 'student.st_num' },
     { label: 'Student Name', key: 'student.name' },
     { label: 'Email', key: 'student.email' },
     { label: 'Phone', key: 'student.phones' },
     { label: 'Course', key: 'exam.course_name' },
+  { label: 'Course code', key: 'exam.course_code' },
     { label: 'Exam', key: 'exam.name' },
     { label: 'Branch', key: 'branch.name' },
     { label: 'Booking Date', key: 'booking_datetime' }
