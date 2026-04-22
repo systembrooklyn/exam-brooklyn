@@ -208,6 +208,7 @@
       :show="showModal"
       :title="isEditing ? 'Edit Request' : 'Create New Request'"
       :loading="store.loading"
+      :save-disabled="latenessSaveBlocked"
       @close="closeRequestModal"
       @save="handleSubmit"
     >
@@ -281,6 +282,14 @@
             <option value="shift_move">Shift Move</option>
             <option value="absence">Absence</option>
           </select>
+          <p
+            v-if="latenessSaveBlocked"
+            class="mt-2 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
+            role="status"
+          >
+            Lateness of {{ LATENESS_GRACE_MINUTES }} minutes or less is covered by the grace period. You cannot submit a
+            lateness request for this amount.
+          </p>
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2 md:col-span-1">
@@ -298,10 +307,17 @@
             </p>
           </div>
 
-          <!-- Conditional: Duration Hours (Lateness/Leave) -->
+          <!-- Conditional: Duration minutes (Lateness/Leave) — API receives duration_hours via ceiling of minutes/60 -->
           <div v-if="['lateness', 'leave'].includes(form.request_type)" class="col-span-2 md:col-span-1">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (Hours)</label>
-            <input v-model="form.duration_hours" type="number" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 2" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+            <input
+              v-model.number="form.duration_minutes"
+              type="number"
+              min="1"
+              step="1"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+              placeholder="e.g. 24"
+            />
           </div>
 
           <!-- Conditional: Day Replacement (Day Off Swap) -->
@@ -319,10 +335,8 @@
             </select>
           </div>
 
-          <!-- From/To Time — not used for absence or server-calculated overtime -->
-          <template
-            v-if="form.request_type !== 'absence' && !isServerCalculatedOvertime(form.request_type)"
-          >
+          <!-- From/To Time — same visibility as AttendanceRequestModal (shift_move, etc.) -->
+          <template v-if="showFromToFields">
             <div class="col-span-2 md:col-span-1">
               <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
               <input
@@ -419,6 +433,7 @@ import {
   normalizeRequestTypeSlug,
 } from '@/utils/employeeRequestApi';
 import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
+import { apiDurationHoursFromMinutes } from '@/utils/hrEmployeeRequestDuration';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
@@ -607,11 +622,42 @@ const emptyMessage = computed(() => {
 const form = ref({
   request_type: 'leave',
   day: '',
-  duration_hours: null,
+  duration_minutes: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
-  duration_type: 'full'
+  duration_type: 'full',
+});
+
+/** Matches AttendanceRequestModal: From/To only for types that need a time range (e.g. shift_move). */
+function requestModalUsesFromToTime(rawType) {
+  const t = normalizeRequestTypeSlug(rawType);
+  if (!t || t === 'absence') return false;
+  if (isServerCalculatedOvertime(t)) return false;
+  if (['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home'].includes(t)) return false;
+  return true;
+}
+
+const showFromToFields = computed(() => requestModalUsesFromToTime(form.value.request_type));
+
+/** Grace for ≤15m still applies for self and when editing; create-for-others can file lateness for another employee inside grace. */
+const shouldEnforceLatenessGraceInModal = computed(() => {
+  if (isEditing.value) return true;
+  if (
+    createRequestTarget.value === 'other' &&
+    authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)
+  ) {
+    return false;
+  }
+  return true;
+});
+
+const latenessSaveBlocked = computed(() => {
+  if (!shouldEnforceLatenessGraceInModal.value) return false;
+  if (form.value.request_type !== 'lateness') return false;
+  const m = Number(form.value.duration_minutes);
+  if (!Number.isFinite(m) || m <= 0) return false;
+  return m <= LATENESS_GRACE_MINUTES;
 });
 
 function formatRequestTypeLabel(type) {
@@ -834,6 +880,12 @@ watch(
       form.value.from_time = '';
       form.value.to_time = '';
     }
+    if (
+      ['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home'].includes(t)
+    ) {
+      form.value.from_time = '';
+      form.value.to_time = '';
+    }
   },
 );
 
@@ -867,7 +919,7 @@ const openAddModal = () => {
   form.value = {
     request_type: 'leave',
     day: '',
-    duration_hours: null,
+    duration_minutes: null,
     from_time: '',
     to_time: '',
     day_replacement: '',
@@ -883,13 +935,15 @@ const openEditModal = (item) => {
   if (id == null) return;
   isEditing.value = true;
   editingId.value = id;
+  const dh =
+    item.duration_hours != null && item.duration_hours !== ''
+      ? Number(item.duration_hours)
+      : null;
   form.value = {
     request_type: item.request_type || 'leave',
     day: toDateInputValue(item.day),
-    duration_hours:
-      item.duration_hours != null && item.duration_hours !== ''
-        ? Number(item.duration_hours)
-        : null,
+    duration_minutes:
+      dh != null && Number.isFinite(dh) && dh > 0 ? Math.round(dh * 60) : null,
     from_time: item.from_time ? normalizeApiTime(item.from_time) || '' : '',
     to_time: item.to_time ? normalizeApiTime(item.to_time) || '' : '',
     day_replacement: toDateInputValue(item.day_replacement),
@@ -938,35 +992,40 @@ function buildRequestPayloadFromForm() {
     return attachEmployeeIdIfCreatingForOther(base);
   }
 
-  const normalizedFromTime = normalizeApiTime(form.value.from_time);
-  const normalizedToTime = normalizeApiTime(form.value.to_time);
-  if (form.value.from_time && !normalizedFromTime) {
-    notyf.error('From time format is invalid.');
-    return null;
-  }
-  if (form.value.to_time && !normalizedToTime) {
-    notyf.error('To time format is invalid.');
-    return null;
+  const usesFromTo = requestModalUsesFromToTime(form.value.request_type);
+  let normalizedFromTime = '';
+  let normalizedToTime = '';
+  if (usesFromTo) {
+    normalizedFromTime = normalizeApiTime(form.value.from_time);
+    normalizedToTime = normalizeApiTime(form.value.to_time);
+    if (form.value.from_time && !normalizedFromTime) {
+      notyf.error('From time format is invalid.');
+      return null;
+    }
+    if (form.value.to_time && !normalizedToTime) {
+      notyf.error('To time format is invalid.');
+      return null;
+    }
   }
 
   const payload = {
     request_type: form.value.request_type,
     day: form.value.day,
-    from_time: normalizedFromTime,
-    to_time: normalizedToTime,
+    from_time: usesFromTo ? normalizedFromTime : '',
+    to_time: usesFromTo ? normalizedToTime : '',
   };
 
   if (['lateness', 'leave'].includes(form.value.request_type)) {
-    if (!form.value.duration_hours) {
-      notyf.error('Duration hours is required for this request type');
+    const mins = Number(form.value.duration_minutes);
+    if (!Number.isFinite(mins) || mins <= 0) {
+      notyf.error('Duration (minutes) is required for this request type');
       return null;
     }
     if (form.value.request_type === 'lateness') {
-      const lateMins = Math.round(Number(form.value.duration_hours) * 60);
       if (
-        Number.isFinite(lateMins) &&
-        lateMins > 0 &&
-        lateMins <= LATENESS_GRACE_MINUTES
+        shouldEnforceLatenessGraceInModal.value &&
+        mins > 0 &&
+        mins <= LATENESS_GRACE_MINUTES
       ) {
         notyf.error(
           `Lateness of ${LATENESS_GRACE_MINUTES} minutes or less is covered by the grace period. A request is not allowed.`,
@@ -974,7 +1033,12 @@ function buildRequestPayloadFromForm() {
         return null;
       }
     }
-    payload.duration_hours = parseInt(form.value.duration_hours, 10);
+    const h = apiDurationHoursFromMinutes(mins);
+    if (h == null) {
+      notyf.error('Duration (minutes) is required for this request type');
+      return null;
+    }
+    payload.duration_hours = h;
   }
 
   if (form.value.request_type === 'day_off_swap') {
@@ -1003,6 +1067,8 @@ const handleSubmit = async () => {
       if (!canCreateRequestForOthers.value) return;
     }
   }
+
+  if (latenessSaveBlocked.value) return;
 
   const payload = buildRequestPayloadFromForm();
   if (!payload) return;
