@@ -512,7 +512,7 @@ const reportSubjectEmployeeId = computed(() => {
   return Number.isFinite(n) && n > 0 ? n : null;
 });
 
-const handleReport = async () => {
+const handleReport = async ({ preservePage = false } = {}) => {
   const eid = effectiveEmployeeId.value;
   if (!eid || !reportForm.value.from_date || !reportForm.value.to_date) {
     notyf.error("Please fill in all criteria");
@@ -527,7 +527,17 @@ const handleReport = async () => {
     };
     const data = await store.generateMonthlyReport(payload);
     reportData.value = data.data;
-    currentPage.value = 1;
+    if (!preservePage) {
+      currentPage.value = 1;
+    } else {
+      const totalDays = Array.isArray(reportData.value?.days)
+        ? reportData.value.days.length
+        : 0;
+      const pages = totalDays > 0
+        ? Math.ceil(totalDays / (itemsPerPage.value || 1))
+        : 1;
+      currentPage.value = Math.min(Math.max(currentPage.value, 1), pages);
+    }
     if (!props.suppressSuccessNotyf) {
       notyf.success("Report generated");
     }

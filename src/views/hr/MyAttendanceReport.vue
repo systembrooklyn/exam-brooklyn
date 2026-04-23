@@ -126,7 +126,11 @@ async function refreshAttendanceIfVisible() {
   if (isReportRefreshInFlight.value) return;
   isReportRefreshInFlight.value = true;
   try {
-    await triggerReportIfReady();
+    if (!effectiveEmployeeId.value) return;
+    const { from_date, to_date } = periodBounds.value;
+    if (!from_date || !to_date) return;
+    await nextTick();
+    await panelRef.value?.generateReport?.({ preservePage: true });
   } finally {
     isReportRefreshInFlight.value = false;
   }

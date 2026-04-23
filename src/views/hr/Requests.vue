@@ -103,6 +103,7 @@
       :items="filteredRequests"
       :loading="store.loading"
       :emptyMessage="emptyMessage"
+      :reset-page-on-items-change="false"
       :hasActions="false"
       :hasDelete="false"
       :hasEdit="false"

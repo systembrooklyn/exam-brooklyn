@@ -111,6 +111,10 @@ const props = defineProps({
   hasDelete: {
     type: Boolean,
     default: true
+  },
+  resetPageOnItemsChange: {
+    type: Boolean,
+    default: true,
   }
 });
 
@@ -129,8 +133,13 @@ const goToPage = (page) => {
   currentPage.value = page;
 };
 
-// Reset pagination when items change (e.g. filtering)
+// Reset or clamp pagination when items change (e.g. filtering / refresh).
 watch(() => props.items, () => {
-  currentPage.value = 1;
+  const pages = Math.max(1, totalPages.value || 1);
+  if (props.resetPageOnItemsChange) {
+    currentPage.value = 1;
+    return;
+  }
+  currentPage.value = Math.min(Math.max(currentPage.value, 1), pages);
 });
 </script>
