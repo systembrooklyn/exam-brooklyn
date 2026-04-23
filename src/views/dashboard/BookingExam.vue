@@ -3,9 +3,17 @@
     <div class="max-w-7xl mx-auto">
       <!-- Header Section -->
       <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
-        <div>
-          <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Booking Exam</h1>
-          <p class="text-gray-500 mt-1">Manage and view exam bookings within a specific time range.</p>
+        <div class="flex items-center gap-4">
+          <router-link 
+            to="/systems" 
+            class="p-2 hover:bg-white rounded-full transition-colors text-gray-600 hover:text-primary border border-transparent hover:border-gray-100"
+          >
+            <ArrowLeft class="w-6 h-6" />
+          </router-link>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Booking Exam</h1>
+            <p class="text-gray-500 mt-1">Manage and view exam bookings within a specific time range.</p>
+          </div>
         </div>
         
         <!-- Filter Card -->
@@ -82,7 +90,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { Search, Loader2 } from 'lucide-vue-next'
+import { Search, Loader2, ArrowLeft } from 'lucide-vue-next'
 import apiClient from '@/api/axiosInstance'
 import { BOOKINGS } from '@/api/Api'
 import DataTable from '@/components/dashboard/DataTable.vue'

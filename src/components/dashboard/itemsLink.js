@@ -48,13 +48,6 @@ export const items = [
     ]
   },
   {
-    name: 'Bookings',
-    icon: CalendarDays,
-    children: [
-      { name: 'Booking Exam', route: 'booking-exam' }
-    ]
-  },
-  {
     name: 'Settings',
     icon: Settings,  
     route: 'settings'

@@ -89,11 +89,6 @@ export default {
       meta: { requiresPermission: "create-placementTest" },
       component: () => import("@/views/dashboard/CreatePlacement.vue"),
     },
-    {
-      path: "booking-exam",
-      name: "booking-exam",
-      meta: { requiresPermission: "view-bookings" },
-      component: () => import("@/views/dashboard/BookingExam.vue"),
-    },
+
   ],
 };

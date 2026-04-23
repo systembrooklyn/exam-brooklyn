@@ -82,6 +82,12 @@ const routes = [
     name: "error",
     component: () => import("@/views/pages/Error404.vue"),
   },
+  {
+    path: "/booking-exam",
+    name: "booking-exam",
+    meta: { requiresPermission: "view-bookings" },
+    component: () => import("@/views/dashboard/BookingExam.vue"),
+  },
   // dashboard
   dashboardRoutes,
   // finance-dashboard
