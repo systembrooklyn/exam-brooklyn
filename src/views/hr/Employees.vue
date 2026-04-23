@@ -311,6 +311,7 @@
 import { onMounted, ref, computed } from 'vue';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import { useHrLinksStore } from '@/stores/hr/links';
+import { useHrJobTitlesStore } from '@/stores/hr/jobTitles';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
@@ -323,6 +324,7 @@ import { HR_PERMISSION } from '@/constants/hrPermissions';
 const store = useHrEmployeesStore();
 const authStore = useAuthStore();
 const linksStore = useHrLinksStore();
+const jobTitlesStore = useHrJobTitlesStore();
 
 const canOpenEmployeeModal = computed(
   () =>
@@ -364,7 +366,7 @@ const departmentOptions = computed(() => {
   return [...byId.values()].sort((a, b) => a.id - b.id);
 });
 
-const jobTitleOptions = computed(() => {
+const employeeDerivedJobTitleOptions = computed(() => {
   const byId = new Map();
   for (const emp of employees.value) {
     const rows = emp?.job_departments;
@@ -379,6 +381,22 @@ const jobTitleOptions = computed(() => {
   }
   return [...byId.values()].sort((a, b) => a.id - b.id);
 });
+
+const masterJobTitleOptions = computed(() => {
+  const rows = Array.isArray(jobTitlesStore.jobTitles) ? jobTitlesStore.jobTitles : [];
+  return rows
+    .map((jt) => ({
+      id: Number(jt?.id),
+      title_name: String(jt?.title_name ?? '').trim(),
+    }))
+    .filter((jt) => Number.isInteger(jt.id) && jt.id > 0 && jt.title_name);
+});
+
+const jobTitleOptions = computed(() =>
+  masterJobTitleOptions.value.length > 0
+    ? [...masterJobTitleOptions.value].sort((a, b) => a.id - b.id)
+    : employeeDerivedJobTitleOptions.value
+);
 
 const jobTitleNameById = (id) => {
   const n = Number(id);
@@ -434,6 +452,14 @@ onMounted(async () => {
     await store.getEmployees();
   } catch (error) {
     console.error('Error fetching employees:', error);
+  }
+
+  // Keep dropdown sourced from master Job Titles list when available.
+  try {
+    await jobTitlesStore.getJobTitles();
+  } catch (error) {
+    // Fallback remains employee-derived options when this request fails.
+    console.error('Error fetching job titles:', error);
   }
 });
 
@@ -564,6 +590,12 @@ const potentialManagers = computed(() => {
 
 const openAddModal = () => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)) return;
+
+  // Refresh to include newly created titles without page reload.
+  void jobTitlesStore.getJobTitles().catch((error) => {
+    console.error('Error refreshing job titles:', error);
+  });
+
   isEditing.value = false;
   editingId.value = null;
   form.value = {

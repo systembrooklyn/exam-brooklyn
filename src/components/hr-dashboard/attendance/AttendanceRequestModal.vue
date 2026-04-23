@@ -20,6 +20,7 @@
           <option value="day_off_swap">Day Off Swap</option>
           <option value="work_from_home">Work From Home</option>
           <option value="shift_move">Shift Move</option>
+          <option value="absence">Absence</option>
         </select>
         <p
           v-if="shiftOvertimeHintLines.length"
@@ -111,6 +112,7 @@
               'overtime',
               'overtime_before',
               'overtime_after',
+              'absence',
             ].includes(localForm.request_type)
           "
         >
@@ -262,6 +264,7 @@ watch(
       t === 'vacation' ||
       t === 'day_off_swap' ||
       t === 'work_from_home' ||
+      t === 'absence' ||
       isDayOnlyOvertimeRequestTypeSlug(t)
     ) {
       localForm.value.from_time = '';

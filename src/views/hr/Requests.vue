@@ -410,7 +410,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch, nextTick } from 'vue';
+import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
@@ -852,7 +852,38 @@ const fetchData = async () => {
   }
 };
 
-onMounted(fetchData);
+const REQUESTS_POLL_MS = 30000;
+const isPollingRefreshInFlight = ref(false);
+let requestsPollTimer = null;
+
+const refreshRequestsIfVisible = async () => {
+  if (document.visibilityState !== 'visible') return;
+  if (isPollingRefreshInFlight.value) return;
+  isPollingRefreshInFlight.value = true;
+  try {
+    await fetchData();
+  } finally {
+    isPollingRefreshInFlight.value = false;
+  }
+};
+
+onMounted(() => {
+  void refreshRequestsIfVisible();
+  requestsPollTimer = window.setInterval(() => {
+    void refreshRequestsIfVisible();
+  }, REQUESTS_POLL_MS);
+  document.addEventListener('visibilitychange', refreshRequestsIfVisible);
+  window.addEventListener('focus', refreshRequestsIfVisible);
+});
+
+onBeforeUnmount(() => {
+  if (requestsPollTimer != null) {
+    window.clearInterval(requestsPollTimer);
+    requestsPollTimer = null;
+  }
+  document.removeEventListener('visibilitychange', refreshRequestsIfVisible);
+  window.removeEventListener('focus', refreshRequestsIfVisible);
+});
 watch(pendingQueueMode, fetchData);
 
 watch(canAccessPendingQueue, (ok) => {

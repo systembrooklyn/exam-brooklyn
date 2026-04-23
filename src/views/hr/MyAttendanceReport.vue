@@ -37,7 +37,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch, nextTick } from "vue";
+import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from "vue";
 import { LucideCalendar } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
@@ -117,6 +117,21 @@ async function triggerReportIfReady() {
   }
 }
 
+const ATTENDANCE_POLL_MS = 10000;
+const isReportRefreshInFlight = ref(false);
+let attendancePollTimer = null;
+
+async function refreshAttendanceIfVisible() {
+  if (document.visibilityState !== "visible") return;
+  if (isReportRefreshInFlight.value) return;
+  isReportRefreshInFlight.value = true;
+  try {
+    await triggerReportIfReady();
+  } finally {
+    isReportRefreshInFlight.value = false;
+  }
+}
+
 watch(
   [filterPayrollMonth, effectiveEmployeeId, employeeResolveDone],
   () => {
@@ -135,6 +150,22 @@ onMounted(async () => {
   } finally {
     employeeResolveDone.value = true;
   }
+
+  void refreshAttendanceIfVisible();
+  attendancePollTimer = window.setInterval(() => {
+    void refreshAttendanceIfVisible();
+  }, ATTENDANCE_POLL_MS);
+  document.addEventListener("visibilitychange", refreshAttendanceIfVisible);
+  window.addEventListener("focus", refreshAttendanceIfVisible);
+});
+
+onBeforeUnmount(() => {
+  if (attendancePollTimer != null) {
+    window.clearInterval(attendancePollTimer);
+    attendancePollTimer = null;
+  }
+  document.removeEventListener("visibilitychange", refreshAttendanceIfVisible);
+  window.removeEventListener("focus", refreshAttendanceIfVisible);
 });
 
 const showRequestModal = ref(false);
@@ -247,7 +278,29 @@ const handleRequestSubmit = async (payload) => {
     return;
   }
 
-  if (["lateness", "leave"].includes(payload.request_type)) {
+  if (rt === "absence") {
+    requestLoading.value = true;
+    try {
+      const { useHrRequestsStore } = await import("@/stores/hr/requests");
+      const requestsStore = useHrRequestsStore();
+      await requestsStore.createRequest(
+        withEmployeeIdForHrPayrollApi({
+          request_type: "absence",
+          day: payload.day,
+        }),
+      );
+      showRequestModal.value = false;
+      notyf.success("Request created successfully");
+      await panelRef.value?.generateReport?.();
+    } catch (e) {
+      console.error("Request submission failed:", e);
+    } finally {
+      requestLoading.value = false;
+    }
+    return;
+  }
+
+  if (["lateness", "leave"].includes(rt)) {
     if (payload.use_minutes_for_duration) {
       const mins = Number(payload.duration_minutes);
       if (!Number.isFinite(mins) || mins <= 0) {
@@ -260,7 +313,7 @@ const handleRequestSubmit = async (payload) => {
     }
   }
 
-  if (payload.request_type === "lateness") {
+  if (rt === "lateness") {
     const wh = payload.is_warning_hour;
     if (
       wh === true ||
@@ -287,20 +340,20 @@ const handleRequestSubmit = async (payload) => {
       return;
     }
   }
-  if (payload.request_type === "day_off_swap" && !payload.day_replacement) {
+  if (rt === "day_off_swap" && !payload.day_replacement) {
     notyf.error("Replacement date is required for day off swap");
     return;
   }
 
   const body = {
-    request_type: payload.request_type,
+    request_type: rt,
     day: payload.day,
     from_time: payload.from_time,
     to_time: payload.to_time,
     day_replacement: payload.day_replacement,
     duration_type: payload.duration_type,
   };
-  if (["lateness", "leave"].includes(payload.request_type)) {
+  if (["lateness", "leave"].includes(rt)) {
     if (payload.use_minutes_for_duration) {
       const h = apiDurationHoursFromMinutes(payload.duration_minutes);
       if (h == null) {
