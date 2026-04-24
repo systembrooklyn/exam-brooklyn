@@ -7,12 +7,26 @@
       </div>
       <div class="flex gap-2">
         <button
+          type="button"
+          class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
+          :disabled="refreshingList || store.loading"
+          title="Refresh requests"
+          @click="handleManualRefresh"
+        >
+          <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshingList }" />
+        </button>
+        <button
           v-if="canAccessPendingQueue"
           type="button"
-          @click="pendingQueueMode = !pendingQueueMode"
-          class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer"
+          @click="togglePendingQueueMode"
+          :disabled="switchingQueueMode || store.loading"
+          class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
           :class="pendingQueueMode ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
         >
+          <LucideRefreshCw
+            v-if="switchingQueueMode || store.loading"
+            class="w-4 h-4 animate-spin"
+          />
           {{ pendingQueueMode ? 'Show all my requests' : 'Show all pending requests' }}
         </button>
         <button
@@ -411,7 +425,7 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from 'vue';
+import { onMounted, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
@@ -424,6 +438,7 @@ import {
   LucideAlertTriangle,
   LucidePencil,
   LucideSearch,
+  LucideRefreshCw,
 } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
@@ -853,39 +868,33 @@ const fetchData = async () => {
   }
 };
 
-const REQUESTS_POLL_MS = 30000;
-const isPollingRefreshInFlight = ref(false);
-let requestsPollTimer = null;
+const refreshingList = ref(false);
+const switchingQueueMode = ref(false);
 
-const refreshRequestsIfVisible = async () => {
-  if (document.visibilityState !== 'visible') return;
-  if (isPollingRefreshInFlight.value) return;
-  isPollingRefreshInFlight.value = true;
+const togglePendingQueueMode = async () => {
+  if (switchingQueueMode.value || store.loading) return;
+  switchingQueueMode.value = true;
+  pendingQueueMode.value = !pendingQueueMode.value;
   try {
     await fetchData();
   } finally {
-    isPollingRefreshInFlight.value = false;
+    switchingQueueMode.value = false;
+  }
+};
+
+const handleManualRefresh = async () => {
+  if (refreshingList.value || store.loading) return;
+  refreshingList.value = true;
+  try {
+    await fetchData();
+  } finally {
+    refreshingList.value = false;
   }
 };
 
 onMounted(() => {
-  void refreshRequestsIfVisible();
-  requestsPollTimer = window.setInterval(() => {
-    void refreshRequestsIfVisible();
-  }, REQUESTS_POLL_MS);
-  document.addEventListener('visibilitychange', refreshRequestsIfVisible);
-  window.addEventListener('focus', refreshRequestsIfVisible);
+  void fetchData();
 });
-
-onBeforeUnmount(() => {
-  if (requestsPollTimer != null) {
-    window.clearInterval(requestsPollTimer);
-    requestsPollTimer = null;
-  }
-  document.removeEventListener('visibilitychange', refreshRequestsIfVisible);
-  window.removeEventListener('focus', refreshRequestsIfVisible);
-});
-watch(pendingQueueMode, fetchData);
 
 watch(canAccessPendingQueue, (ok) => {
   if (!ok && pendingQueueMode.value) {

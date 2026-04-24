@@ -13,10 +13,21 @@
     <div v-else class="space-y-4">
       <div class="rounded-xl border border-sky-100 bg-sky-50/40 p-4">
         <label class="block text-sm font-semibold text-gray-800 mb-1">Payroll Month</label>
-        <div class="relative max-w-md">
-          <input v-model="filterPayrollMonth" type="month"
-            class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
-          <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+        <div class="flex items-center gap-2">
+          <div class="relative max-w-md w-full">
+            <input v-model="filterPayrollMonth" type="month"
+              class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+            <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+          <button
+            type="button"
+            class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
+            :disabled="refreshingReport"
+            title="Refresh attendance"
+            @click="handleManualRefresh"
+          >
+            <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshingReport }" />
+          </button>
         </div>
         <p v-if="filterPayrollMonth" class="text-xs text-gray-500 mt-2">
           Period: {{ periodBounds.from_date }} → {{ periodBounds.to_date }}
@@ -37,8 +48,8 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, ref, computed, watch, nextTick } from "vue";
-import { LucideCalendar } from "lucide-vue-next";
+import { onMounted, ref, computed, watch, nextTick } from "vue";
+import { LucideCalendar, LucideRefreshCw } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
 import AttendanceReportPanel from "@/components/hr-dashboard/attendance/AttendanceReportPanel.vue";
@@ -70,6 +81,7 @@ const periodBounds = computed(() => getPayrollDates(filterPayrollMonth.value));
 const effectiveEmployeeId = computed(
   () => authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "",
 );
+const refreshingReport = ref(false);
 
 async function resolvePayrollEmployeeFromDirectory() {
   resolvedPayrollEmployeeId.value = "";
@@ -105,34 +117,25 @@ async function resolvePayrollEmployeeFromDirectory() {
   }
 }
 
-async function triggerReportIfReady() {
+async function triggerReportIfReady({ preservePage = false } = {}) {
   if (!effectiveEmployeeId.value) return;
   const { from_date, to_date } = periodBounds.value;
   if (!from_date || !to_date) return;
   await nextTick();
   try {
-    await panelRef.value?.generateReport?.();
+    await panelRef.value?.generateReport?.({ preservePage });
   } catch {
     /* errors handled in store / panel */
   }
 }
 
-const ATTENDANCE_POLL_MS = 10000;
-const isReportRefreshInFlight = ref(false);
-let attendancePollTimer = null;
-
-async function refreshAttendanceIfVisible() {
-  if (document.visibilityState !== "visible") return;
-  if (isReportRefreshInFlight.value) return;
-  isReportRefreshInFlight.value = true;
+async function handleManualRefresh() {
+  if (refreshingReport.value) return;
+  refreshingReport.value = true;
   try {
-    if (!effectiveEmployeeId.value) return;
-    const { from_date, to_date } = periodBounds.value;
-    if (!from_date || !to_date) return;
-    await nextTick();
-    await panelRef.value?.generateReport?.({ preservePage: true });
+    await triggerReportIfReady({ preservePage: true });
   } finally {
-    isReportRefreshInFlight.value = false;
+    refreshingReport.value = false;
   }
 }
 
@@ -154,22 +157,6 @@ onMounted(async () => {
   } finally {
     employeeResolveDone.value = true;
   }
-
-  void refreshAttendanceIfVisible();
-  attendancePollTimer = window.setInterval(() => {
-    void refreshAttendanceIfVisible();
-  }, ATTENDANCE_POLL_MS);
-  document.addEventListener("visibilitychange", refreshAttendanceIfVisible);
-  window.addEventListener("focus", refreshAttendanceIfVisible);
-});
-
-onBeforeUnmount(() => {
-  if (attendancePollTimer != null) {
-    window.clearInterval(attendancePollTimer);
-    attendancePollTimer = null;
-  }
-  document.removeEventListener("visibilitychange", refreshAttendanceIfVisible);
-  window.removeEventListener("focus", refreshAttendanceIfVisible);
 });
 
 const showRequestModal = ref(false);
