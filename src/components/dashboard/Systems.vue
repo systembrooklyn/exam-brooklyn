@@ -51,6 +51,8 @@ import { useAuthStore } from "@/stores/auth";
 import groupsIcon from "@/assets/user-round.png";
 import emailIcon from "@/assets/email.png";
 import hrIcon from "@/assets/hr.png";
+import bookingExamIcon from "@/assets/booking-exam.png";
+
 
 const systems = [
   {
@@ -115,7 +117,14 @@ const systems = [
     image: hrIcon,
     requiresPermission: "view-hrSystemCard",
   },
+  {
+    name: "Booking Exam",
+    route: "/booking-exam",
+    image: bookingExamIcon,
+    requiresPermission: "view-bookings",
+  },
 ];
+
 
 const authStore = useAuthStore();
 
