@@ -39,7 +39,7 @@
       <!-- Net Salary -->
       <template #net_salary="{ item }">
         <span class="font-semibold text-gray-900">
-          {{ item.financials?.net_salary_due ?? '-' }}
+          {{ formatMoney(finalNetSalary(item)) }}
         </span>
       </template>
 
@@ -126,6 +126,7 @@ const props = defineProps({
   items: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   fetchingId: { type: [Number, String, null], default: null },
+  manualAdjustmentNetByEmployee: { type: Object, default: () => ({}) },
   /** When a row has no period fields (e.g. pending), match the filter strip */
   filterPeriodFrom: { type: String, default: '' },
   filterPeriodTo: { type: String, default: '' }
@@ -186,5 +187,27 @@ function periodRangeLine(item) {
   const { from, to } = effectivePeriodBounds(item)
   if (from && to) return `${from} → ${to}`
   return ''
+}
+
+function toNumber(v) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function formatMoney(v) {
+  return toNumber(v).toFixed(2)
+}
+
+function rowEmployeeId(item) {
+  const id = Number(item?.employee_id ?? item?.employee?.id)
+  return Number.isFinite(id) && id > 0 ? id : null
+}
+
+function finalNetSalary(item) {
+  const base = toNumber(item?.financials?.net_salary_due)
+  const employeeId = rowEmployeeId(item)
+  if (!employeeId) return base
+  const manual = toNumber(props.manualAdjustmentNetByEmployee?.[employeeId])
+  return base + manual
 }
 </script>

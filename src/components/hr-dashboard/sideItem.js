@@ -122,6 +122,12 @@ export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false
       ],
     },
     {
+      name: "Adjustments",
+      icon: Banknote,
+      route: "hr-employee-adjustments",
+      permission: HR_PERMISSION.VIEW_PAYROLL,
+    },
+    {
       name: "Payrolls",
       icon: Banknote,
       route: "hr-payrolls",

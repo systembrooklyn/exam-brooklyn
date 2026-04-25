@@ -100,3 +100,7 @@ export const PAYROLL_CALC = "payroll-system/payroll-details";
 export const PAYROLL_STATUS_UPDATE = "payroll-system/payroll-status/update";
 export const PAYROLL_DETAILS = "payroll-system/payroll-details";
 export const PAYROLL_ACTIONABLE = "payroll-system/payroll-actionable";
+export const PAYROLL_EMPLOYEE_ADJUSTMENTS =
+  "payroll-system/employee-adjustments";
+export const PAYROLL_EMPLOYEE_ADJUSTMENT_BY_ID = (id) =>
+  `payroll-system/employee-adjustments/${id}`;

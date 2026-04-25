@@ -120,5 +120,11 @@ export default {
       meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
       component: () => import("@/views/hr/Payrolls.vue"),
     },
+    {
+      path: "employee-adjustments",
+      name: "hr-employee-adjustments",
+      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
+      component: () => import("@/views/hr/EmployeeAdjustments.vue"),
+    },
   ],
 };

@@ -67,6 +67,7 @@
       :items="store.actionablePayrolls" 
       :loading="store.loading" 
       :fetchingId="fetchingId"
+      :manual-adjustment-net-by-employee="manualAdjustmentNetByEmployee"
       :filter-period-from="filterForm.period_from"
       :filter-period-to="filterForm.period_to"
       @view="showDetails"
@@ -149,7 +150,10 @@
           </div>
           <div class="bg-amber-50 rounded-lg p-4 border-2 border-amber-200 text-center">
             <p class="text-xs font-bold text-amber-600 uppercase mb-1">Net Salary Due</p>
-            <p class="text-xl font-bold text-indigo-700">{{ selectedPayroll.financials?.net_salary_due ?? '-' }}</p>
+            <p class="text-xl font-bold text-indigo-700">{{ formatMoney(finalNetSalaryDue) }}</p>
+            <p class="text-[11px] text-indigo-500 mt-1">
+              Base {{ formatMoney(baseNetSalaryDue) }} + Manual {{ formatMoney(adjustmentTotals.net) }}
+            </p>
           </div>
         </div>
 
@@ -160,6 +164,56 @@
           :deductions-total="selectedPayroll.financials?.deductions"
           :additions-total="selectedPayroll.financials?.additions"
         />
+
+        <!-- Employee Adjustments -->
+        <div class="space-y-3">
+          <div class="bg-slate-100 text-slate-700 font-bold text-sm py-2 px-4 rounded-lg text-center">
+            Employee Adjustments
+          </div>
+          <div v-if="adjustmentsLoading" class="text-sm text-gray-500 text-center py-3">
+            Loading adjustments...
+          </div>
+          <template v-else>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div class="bg-green-50 rounded-lg p-4 border-2 border-green-200 text-center">
+                <p class="text-xs font-bold text-green-600 uppercase mb-1">Total Bonus</p>
+                <p class="text-xl font-bold text-green-800">{{ formatMoney(adjustmentTotals.bonus) }}</p>
+              </div>
+              <div class="bg-red-50 rounded-lg p-4 border-2 border-red-200 text-center">
+                <p class="text-xs font-bold text-red-600 uppercase mb-1">Total Deductions</p>
+                <p class="text-xl font-bold text-red-800">{{ formatMoney(adjustmentTotals.deductions) }}</p>
+              </div>
+              <div class="bg-indigo-50 rounded-lg p-4 border-2 border-indigo-200 text-center">
+                <p class="text-xs font-bold text-indigo-600 uppercase mb-1">Net Manual Adjustment</p>
+                <p class="text-xl font-bold text-indigo-800">{{ formatMoney(adjustmentTotals.net) }}</p>
+              </div>
+            </div>
+
+            <div v-if="selectedAdjustments.length" class="overflow-hidden border border-gray-200 rounded-xl">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="p-3 text-left font-semibold text-gray-600">Month</th>
+                    <th class="p-3 text-left font-semibold text-gray-600">Bonus</th>
+                    <th class="p-3 text-left font-semibold text-gray-600">Deductions</th>
+                    <th class="p-3 text-left font-semibold text-gray-600">Notes</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr v-for="adj in selectedAdjustments" :key="adj.id">
+                    <td class="p-3 text-gray-700">{{ normalizeMonth(adj.month) || '-' }}</td>
+                    <td class="p-3 text-green-700 font-semibold">{{ formatMoney(adj.bonus) }}</td>
+                    <td class="p-3 text-red-700 font-semibold">{{ formatMoney(adj.deductions) }}</td>
+                    <td class="p-3 text-gray-700">{{ adj.notes || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div v-else class="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-xl p-3 text-center">
+              No manual adjustments found for this payroll month.
+            </div>
+          </template>
+        </div>
 
         <!-- Notes -->
         <div v-if="selectedPayroll.notes" class="bg-blue-50 p-3 rounded-xl border border-blue-100">
@@ -225,9 +279,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useHrPayrollStore } from '@/stores/hr/payroll'
 import { useHrEmployeesStore } from '@/stores/hr/employees'
+import { useHrEmployeeAdjustmentsStore } from '@/stores/hr/employeeAdjustments'
 import HrModal from '@/components/hr-dashboard/HrModal.vue'
 import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
 import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
@@ -240,6 +295,7 @@ import { HR_PERMISSION } from '@/constants/hrPermissions'
 // ─── Stores ──────────────────────────────────────────────
 const store = useHrPayrollStore()
 const employeeStore = useHrEmployeesStore()
+const adjustmentsStore = useHrEmployeeAdjustmentsStore()
 const authStore = useAuthStore()
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -322,21 +378,87 @@ const handleCalculate = async () => {
 const showDetailsModal = ref(false)
 const selectedPayroll = ref(null)
 const fetchingId = ref(null)
+const selectedAdjustments = ref([])
+const adjustmentsLoading = ref(false)
+const manualAdjustmentNetByEmployee = ref({})
+
+const toNumber = (v) => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+const normalizeMonth = (raw) => String(raw || '').slice(0, 7)
+
+const formatMoney = (v) => toNumber(v).toFixed(2)
+
+const adjustmentTotals = computed(() => {
+  const bonus = selectedAdjustments.value.reduce((sum, row) => sum + toNumber(row?.bonus), 0)
+  const deductions = selectedAdjustments.value.reduce((sum, row) => sum + toNumber(row?.deductions), 0)
+  return {
+    bonus,
+    deductions,
+    net: bonus - deductions,
+  }
+})
+
+const buildManualAdjustmentNetMap = (rows) => {
+  const map = {}
+  for (const row of rows || []) {
+    const employeeId = Number(row?.employee_id ?? row?.employee?.id)
+    if (!Number.isFinite(employeeId) || employeeId <= 0) continue
+    const net = toNumber(row?.bonus) - toNumber(row?.deductions)
+    map[employeeId] = toNumber(map[employeeId]) + net
+  }
+  return map
+}
+
+const baseNetSalaryDue = computed(() =>
+  toNumber(selectedPayroll.value?.financials?.net_salary_due),
+)
+
+const finalNetSalaryDue = computed(() =>
+  baseNetSalaryDue.value + adjustmentTotals.value.net,
+)
+
+const fetchAdjustmentsForPayroll = async (employeeId, payrollMonth) => {
+  const employee_id = Number(employeeId)
+  const month = normalizeMonth(payrollMonth)
+  if (!Number.isFinite(employee_id) || employee_id <= 0 || !month) {
+    selectedAdjustments.value = []
+    return
+  }
+  adjustmentsLoading.value = true
+  try {
+    const response = await adjustmentsStore.getAdjustments({ employee_id, month })
+    selectedAdjustments.value = response?.data ?? adjustmentsStore.adjustments ?? []
+  } catch (error) {
+    console.error('Failed to fetch adjustments:', error)
+    selectedAdjustments.value = []
+  } finally {
+    adjustmentsLoading.value = false
+  }
+}
 
 const showDetails = async (item) => {
   if (!authStore.can(HR_PERMISSION.VIEW_PAYROLL)) return
   fetchingId.value = item.payroll_id
+  selectedAdjustments.value = []
+  adjustmentsLoading.value = true
   try {
     const empId = item.employee?.id || item.employee_id
     const periodMonth = item.period?.payroll_month || item.period_from
     const response = await store.getPayrollDetails(empId, periodMonth)
     selectedPayroll.value = response.data?.data ?? response.data
+    const detailsMonth = selectedPayroll.value?.period?.payroll_month || periodMonth
+    await fetchAdjustmentsForPayroll(empId, detailsMonth)
     showDetailsModal.value = true
   } catch (error) {
     console.error('Failed to fetch payroll details:', error)
     selectedPayroll.value = item
+    await fetchAdjustmentsForPayroll(item.employee?.id || item.employee_id, item.period?.payroll_month || item.period_from)
     showDetailsModal.value = true
   } finally {
+    adjustmentsLoading.value = false
     fetchingId.value = null
   }
 }
@@ -384,9 +506,20 @@ const fetchPayrolls = async () => {
     if (filterForm.value.period_to) params.period_to = filterForm.value.period_to
     if (filterForm.value.status) params.status = filterForm.value.status
     if (filterForm.value.include_missing) params.include_missing = 1
+
+    const month = normalizeMonth(filterPayrollMonth.value)
+    if (month) {
+      const adjustmentRes = await adjustmentsStore.getAdjustments({ month })
+      const rows = adjustmentRes?.data ?? adjustmentsStore.adjustments ?? []
+      manualAdjustmentNetByEmployee.value = buildManualAdjustmentNetMap(rows)
+    } else {
+      manualAdjustmentNetByEmployee.value = {}
+    }
+
     await store.getActionablePayrolls(params)
   } catch (error) {
     console.error('Failed to fetch payrolls:', error)
+    manualAdjustmentNetByEmployee.value = {}
   }
 }
 
