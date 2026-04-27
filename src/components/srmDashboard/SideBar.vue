@@ -517,9 +517,9 @@ const saveChanges = async () => {
   }
 };
 
-const searchStudent = async () => {
+const searchStudent = async (lookupValue = studentId.value) => {
   try {
-    await studentStore.fetchStudent(studentId.value);
+    await studentStore.fetchStudent(lookupValue);
     student.value = studentStore.student.student;
     studentAllData.value = studentStore.student;
     emit("student-selected", studentAllData.value);
@@ -551,7 +551,12 @@ const searchStudentByOther = async () => {
 const handlePickStudent = (picked) => {
   if (picked?.st_num) {
     studentId.value = picked.st_num;
-    searchStudent();
+    searchStudent(picked.st_num);
+    return;
+  }
+
+  if (picked?.id) {
+    searchStudent(picked.id);
   }
 };
 
@@ -574,12 +579,13 @@ const handleSend = (message) => {
 const sendQrEmail = async () => {
   try {
     showConfirmModal.value = false;
-    if (!studentId.value) {
+    const studentNumber = student.value?.st_num ?? studentId.value;
+    if (!studentNumber) {
       notyf.error("No student selected");
       return;
     }
 
-    const payload = { st_num: studentId.value };
+    const payload = { st_num: studentNumber };
     await messageStore.sendMail(payload);
     notyf.success("Send QR successfully");
   } catch (error) {
@@ -591,9 +597,10 @@ const sendQrEmail = async () => {
 
 const handleEmailSend = async (message) => {
   try {
-    if (!studentId.value) return notyf.error("No student selected");
+    const studentNumber = student.value?.st_num ?? studentId.value;
+    if (!studentNumber) return notyf.error("No student selected");
 
-    const payload = { st_num: studentId.value, emailBody: message };
+    const payload = { st_num: studentNumber, emailBody: message };
     await messageStore.sendMail(payload);
     notyf.success("Email sent successfully!");
     showEmailModal.value = false;
@@ -605,9 +612,10 @@ const handleEmailSend = async (message) => {
 
 const handleSmsSend = async (message) => {
   try {
-    if (!studentId.value) return notyf.error("No student selected");
+    const studentNumber = student.value?.st_num ?? studentId.value;
+    if (!studentNumber) return notyf.error("No student selected");
 
-    const payload = { st_num: studentId.value, body: message };
+    const payload = { st_num: studentNumber, body: message };
     await messageStore.sendSms(payload);
     notyf.success("SMS sent successfully!");
     showSmsModal.value = false;

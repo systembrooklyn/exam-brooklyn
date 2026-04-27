@@ -2,7 +2,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { STUDENT, STUDENT_SEARCH } from "../api/Api";
+import { PT_ATTEMPTS, STUDENT, STUDENT_SEARCH } from "../api/Api";
 import { handleError } from "./handleError";
 
 export const useStudentStore = defineStore("studentStore", () => {
@@ -61,10 +61,18 @@ export const useStudentStore = defineStore("studentStore", () => {
     error.value = null;
 
     try {
-      const response = await apiClient.get(
-        `${STUDENT}/${studentId.value}/${name}`,
-      );
-      studentData.value = response.data.data;
+      if (name === "placement_test") {
+        const internalStudentId = Number(student.value?.student?.id);
+        const response = await apiClient.post(PT_ATTEMPTS, {
+          st_id: internalStudentId,
+        });
+        studentData.value = response.data.data;
+      } else {
+        const response = await apiClient.get(
+          `${STUDENT}/${studentId.value}/${name}`,
+        );
+        studentData.value = response.data.data;
+      }
     } catch (err) {
       studentData.value = null;
       handleError(err);

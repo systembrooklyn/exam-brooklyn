@@ -8,6 +8,7 @@ import InvoicesTable from "./tables/InvoicesTable.vue";
 import Deadlines from "./tables/Deadlines.vue";
 import RequestsTable from "./tables/RequestsTable.vue";
 import PapersTable from "./tables/PapersTable.vue";
+import PlacementAttemptsTable from "./tables/PlacementAttemptsTable.vue";
 import RequestFieldModal from "./RequestFieldModal.vue";
 
 const props = defineProps({
@@ -123,6 +124,18 @@ const pageNumbers = computed(() => {
 });
 
 const hasData = computed(() => props.data && props.data.length > 0);
+const usesCustomTable = computed(() =>
+  [
+    "Groups",
+    "Attendance",
+    "Invoices",
+    "Requests",
+    "Complains",
+    "Deadlines",
+    "Papers",
+    "Placement test",
+  ].includes(props.cardName)
+);
 
 function goToPage(page) {
   if (page === "...") return;
@@ -194,6 +207,41 @@ watch(
       />
 
       <PapersTable v-if="cardName === 'Papers'" :data="paginatedData" />
+      <PlacementAttemptsTable
+        v-if="cardName === 'Placement test'"
+        :data="paginatedData"
+      />
+
+      <div v-if="!usesCustomTable" class="overflow-x-auto rounded-xl border border-gray-100">
+        <table class="w-full text-sm text-left">
+          <thead class="bg-gray-50 text-gray-700">
+            <tr>
+              <th
+                v-for="header in headers"
+                :key="header"
+                class="px-4 py-3 font-semibold capitalize"
+              >
+                {{ header.replaceAll("_", " ") }}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(row, index) in paginatedData"
+              :key="index"
+              class="border-t border-gray-100"
+            >
+              <td
+                v-for="header in headers"
+                :key="`${index}-${header}`"
+                class="px-4 py-3 text-gray-700"
+              >
+                {{ displayValue(row?.[header]) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     
       <Pagination v-if="
         totalPages > 1 && cardName !== 'Groups' && cardName !== 'Attendance'

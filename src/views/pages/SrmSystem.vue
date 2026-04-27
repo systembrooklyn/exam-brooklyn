@@ -19,7 +19,7 @@
         <div class="min-w-0">
           <div class="max-w-6xl mx-auto">
             <div
-              class="flex justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20">
+              class="flex items-center justify-around gap-1 mb-6 p-1 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-lg shadow-[#6c63ff]/20">
               <button 
                 v-for="tab in filteredTabs" 
                 :key="tab.name" 
@@ -43,6 +43,33 @@
                   {{ tab.count || 0 }}
                 </span>
               </button>
+
+              <div class="relative">
+                <button
+                  class="p-2 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-[#6c63ff] dark:hover:text-[#a39eff] transition-colors"
+                  @click="showMoreTabs = !showMoreTabs"
+                  aria-label="More tabs"
+                >
+                  <MoreVertical class="w-5 h-5" />
+                </button>
+
+                <div
+                  v-if="showMoreTabs"
+                  class="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-20 py-1"
+                >
+                  <button
+                    v-for="tab in filteredMoreTabs"
+                    :key="tab.name"
+                    @click="selectMoreTab(tab.name, tab.label)"
+                    class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-between"
+                  >
+                    <span>{{ tab.label }}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-200">
+                      {{ tab.count || 0 }}
+                    </span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <CardDetails
@@ -68,11 +95,7 @@ import { useAuthStore } from "@/stores/auth";
 import Loader from "@/components/global/Loader.vue";
 import SideBar from "@/components/srmDashboard/SideBar.vue";
 import {
-  ClipboardList,
-  UsersRound,
-  AlarmClock,
-  FileText,
-  ArrowLeft
+  MoreVertical,
 } from "lucide-vue-next";
 import CardDetails from "../../components/srmDashboard/CardDetails.vue";
 
@@ -86,6 +109,8 @@ const data = ref([]);
 const loading = ref(false);
 const headers = ref([]);
 const tabs = ref([]);
+const moreTabs = ref([]);
+const showMoreTabs = ref(false);
 
 const studentInfo = computed(() => student.value?.student || {});
 const reservationInfo = computed(() => student.value?.reservation?.[0] || {});
@@ -97,12 +122,21 @@ const tabPermissions = {
   payments: 'view-payments',
   groups: 'view-groups',
   attendance: '',
-  invoices: ''
+  invoices: '',
+  documents: '',
+  placement_test: '',
 };
 
 
 const filteredTabs = computed(() => {
   return tabs.value.filter(tab => {
+    const permission = tabPermissions[tab.name];
+    return permission ? authStore.hasPermission(permission) : true;
+  });
+});
+
+const filteredMoreTabs = computed(() => {
+  return moreTabs.value.filter((tab) => {
     const permission = tabPermissions[tab.name];
     return permission ? authStore.hasPermission(permission) : true;
   });
@@ -136,6 +170,11 @@ const selectTab = async (name, label) => {
   } finally {
     loading.value = false;
   }
+};
+
+const selectMoreTab = async (name, label) => {
+  showMoreTabs.value = false;
+  await selectTab(name, label);
 };
 
 async function refreshPayments() {
@@ -174,8 +213,17 @@ watch(student, (newVal) => {
       },
       { name: "attendance", label: "Attendance" , count: counts.doneCourses || 0 },
       { name: "invoices", label: "Invoices", count: counts.invoices },
-      { name: "documents", label: "Papers", count: counts.documents || 0 },
     ];
+
+    moreTabs.value = [
+      { name: "documents", label: "Papers", count: counts.documents || 0 },
+      {
+        name: "placement_test",
+        label: "Placement test",
+        count: counts.placement_test || 0,
+      },
+    ];
+    showMoreTabs.value = false;
   }
 });
 
@@ -189,6 +237,7 @@ const columnMap = {
   requests: [],
   lectures: ["name", "notes", "start_time", "end_time", "status"],
   attendance: ["date", "group_name", "status"],
+  placement_test: [],
 };
 
 onUnmounted(() => {
