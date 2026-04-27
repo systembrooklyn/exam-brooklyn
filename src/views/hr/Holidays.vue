@@ -8,6 +8,20 @@
       <div class="flex gap-2">
         <button
           v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)"
+          type="button"
+          :disabled="!canBulkUnlink || store.loading"
+          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border"
+          :class="
+            canBulkUnlink && !store.loading
+              ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
+              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+          "
+          @click="handleBulkUnlink"
+        >
+          <LucideUnlink class="w-4 h-4" /> Unlink Selected
+        </button>
+        <button
+          v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)"
           @click="openLinkModal"
           class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
         >
@@ -42,6 +56,39 @@
           {{ item.is_double_paid ? 'Yes' : 'No' }}
         </span>
       </template>
+      <template #linked_employees="{ item }">
+        <div
+          v-if="Array.isArray(item.linked_employees) && item.linked_employees.length"
+          class="w-full min-w-[22rem]"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5">
+            <button
+              v-for="emp in visibleLinkedEmployees(item)"
+              :key="`${item.id}-${emp.contract_id}`"
+              type="button"
+              class="inline-flex items-center justify-between gap-1.5 px-2 py-1 rounded-full border text-xs transition-colors cursor-pointer w-full min-w-0"
+              :class="
+                isContractSelected(item.id, emp.contract_id)
+                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                  : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
+              "
+              @click="toggleContractSelection(item.id, emp.contract_id)"
+            >
+              <span class="font-medium truncate">{{ emp.employee_name || `Employee #${emp.employee_id ?? '?'}` }}</span>
+              <span class="opacity-70 whitespace-nowrap">(FP: {{ emp.fingerprint ?? '—' }})</span>
+            </button>
+          </div>
+          <button
+            v-if="hasMoreLinkedEmployees(item)"
+            type="button"
+            class="mt-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 cursor-pointer"
+            @click="toggleLinkedEmployeesExpanded(item.id)"
+          >
+            {{ isLinkedEmployeesExpanded(item.id) ? 'See less' : `See more (${(item.linked_employees?.length || 0) - LINKED_EMPLOYEE_PREVIEW_COUNT})` }}
+          </button>
+        </div>
+        <span v-else class="text-gray-300">—</span>
+      </template>
     </HrDataTable>
 
     <!-- Add/Edit Modal -->
@@ -72,6 +119,7 @@
     <HrModal
       :show="showLinkModal"
       title="Link Holiday to Contracts"
+      :loading="store.loading"
       body-overflow-visible
       @close="closeLinkModal"
       @save="handleLink"
@@ -122,7 +170,7 @@ import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import notyf from "@/components/global/notyf";
 import MultiSelect from '@/components/global/MultiSelect.vue';
-import { LucideLink } from 'lucide-vue-next';
+import { LucideLink, LucideUnlink } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 
@@ -152,6 +200,10 @@ const isEditing = ref(false);
 const editingId = ref(null);
 const showDeleteConfirm = ref(false);
 const deleteId = ref(null);
+const selectedHolidayId = ref(null);
+const selectedContractIds = ref([]);
+const expandedLinkedEmployeeHolidayIds = ref([]);
+const LINKED_EMPLOYEE_PREVIEW_COUNT = 4;
 
 const form = ref({
   holiday_name: '',
@@ -168,7 +220,74 @@ const headers = [
   { label: 'Holiday Name', key: 'holiday_name' },
   { label: 'Date', key: 'holiday_date' },
   { label: 'Double Paid', key: 'is_double_paid' },
+  { label: 'Linked Employees', key: 'linked_employees' },
 ];
+
+const canBulkUnlink = computed(
+  () => selectedHolidayId.value != null && selectedContractIds.value.length > 0,
+);
+
+function resetUnlinkSelection() {
+  selectedHolidayId.value = null;
+  selectedContractIds.value = [];
+}
+
+function isLinkedEmployeesExpanded(holidayId) {
+  const h = Number(holidayId);
+  if (!Number.isFinite(h)) return false;
+  return expandedLinkedEmployeeHolidayIds.value.includes(h);
+}
+
+function toggleLinkedEmployeesExpanded(holidayId) {
+  const h = Number(holidayId);
+  if (!Number.isFinite(h)) return;
+  const idx = expandedLinkedEmployeeHolidayIds.value.indexOf(h);
+  if (idx >= 0) {
+    expandedLinkedEmployeeHolidayIds.value.splice(idx, 1);
+  } else {
+    expandedLinkedEmployeeHolidayIds.value.push(h);
+  }
+}
+
+function visibleLinkedEmployees(item) {
+  const list = Array.isArray(item?.linked_employees) ? item.linked_employees : [];
+  if (isLinkedEmployeesExpanded(item?.id)) return list;
+  return list.slice(0, LINKED_EMPLOYEE_PREVIEW_COUNT);
+}
+
+function hasMoreLinkedEmployees(item) {
+  const list = Array.isArray(item?.linked_employees) ? item.linked_employees : [];
+  return list.length > LINKED_EMPLOYEE_PREVIEW_COUNT;
+}
+
+function isContractSelected(holidayId, contractId) {
+  const h = Number(holidayId);
+  const c = Number(contractId);
+  if (!Number.isFinite(h) || !Number.isFinite(c)) return false;
+  return selectedHolidayId.value === h && selectedContractIds.value.includes(c);
+}
+
+function toggleContractSelection(holidayId, contractId) {
+  const h = Number(holidayId);
+  const c = Number(contractId);
+  if (!Number.isFinite(h) || !Number.isFinite(c)) return;
+
+  if (selectedHolidayId.value == null || selectedHolidayId.value !== h) {
+    selectedHolidayId.value = h;
+    selectedContractIds.value = [c];
+    return;
+  }
+
+  const idx = selectedContractIds.value.indexOf(c);
+  if (idx >= 0) {
+    selectedContractIds.value.splice(idx, 1);
+    if (selectedContractIds.value.length === 0) {
+      selectedHolidayId.value = null;
+    }
+  } else {
+    selectedContractIds.value.push(c);
+  }
+}
 
 onMounted(async () => {
   await store.getHolidays();
@@ -248,6 +367,24 @@ const handleLink = async () => {
   try {
     await store.linkHolidayToContract(linkForm.value.holiday_id, linkForm.value.contract_ids);
     closeLinkModal();
+    await store.getHolidays();
+    resetUnlinkSelection();
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+const handleBulkUnlink = async () => {
+  if (!canBulkUnlink.value) {
+    notyf.error('Select at least one linked employee from one holiday row.');
+    return;
+  }
+  try {
+    await store.unlinkHolidayFromContract(
+      selectedHolidayId.value,
+      [...selectedContractIds.value],
+    );
+    resetUnlinkSelection();
   } catch (e) {
     console.error(e);
   }

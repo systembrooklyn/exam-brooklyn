@@ -90,6 +90,23 @@ export const useHrHolidaysStore = defineStore("hr-holidays", () => {
     }
   };
 
+  const unlinkHolidayFromContract = async (holidayId, contractIds) => {
+    loading.value = true;
+    try {
+      const response = await apiClient.delete(PAYROLL_UNLINK_HOLIDAY(holidayId), {
+        data: { contract_ids: contractIds },
+      });
+      notyf.success(response.data.message || "Holiday unlinked successfully");
+      await getHolidays();
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     holidays,
     loading,
@@ -98,5 +115,6 @@ export const useHrHolidaysStore = defineStore("hr-holidays", () => {
     updateHoliday,
     deleteHoliday,
     linkHolidayToContract,
+    unlinkHolidayFromContract,
   };
 });
