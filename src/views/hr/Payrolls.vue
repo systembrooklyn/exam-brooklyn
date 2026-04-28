@@ -189,22 +189,38 @@
               </div>
             </div>
 
-            <div v-if="selectedAdjustments.length" class="overflow-hidden border border-gray-200 rounded-xl">
-              <table class="w-full text-sm">
+            <div v-if="selectedAdjustments.length" class="overflow-x-auto border border-gray-200 rounded-xl">
+              <table class="w-full text-sm min-w-[760px]">
                 <thead class="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th class="p-3 text-left font-semibold text-gray-600">Month</th>
-                    <th class="p-3 text-left font-semibold text-gray-600">Bonus</th>
-                    <th class="p-3 text-left font-semibold text-gray-600">Deductions</th>
-                    <th class="p-3 text-left font-semibold text-gray-600">Notes</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Month</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Bonus</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Deductions</th>
+                    <th class="px-4 py-3 text-left font-semibold text-gray-600">Notes</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="adj in selectedAdjustments" :key="adj.id">
-                    <td class="p-3 text-gray-700">{{ normalizeMonth(adj.month) || '-' }}</td>
-                    <td class="p-3 text-green-700 font-semibold">{{ formatMoney(adj.bonus) }}</td>
-                    <td class="p-3 text-red-700 font-semibold">{{ formatMoney(adj.deductions) }}</td>
-                    <td class="p-3 text-gray-700">{{ adj.notes || '-' }}</td>
+                    <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap min-w-[6rem]">{{ normalizeMonth(adj.month) || '-' }}</td>
+                    <td class="px-4 py-3 text-green-700 font-semibold align-top whitespace-nowrap">{{ formatMoney(adj.bonus) }}</td>
+                    <td class="px-4 py-3 text-red-700 font-semibold align-top whitespace-nowrap">{{ formatMoney(adj.deductions) }}</td>
+                    <td class="px-4 py-3 text-gray-700 align-top leading-6">
+                      <template v-if="adj.notes">
+                        <template v-for="(part, i) in noteParts(adj.notes)" :key="`${adj.id}-${i}`">
+                          <a
+                            v-if="part.type === 'link'"
+                            :href="part.value"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-indigo-600 underline break-all hover:text-indigo-700"
+                          >
+                            {{ part.value }}
+                          </a>
+                          <span v-else class="whitespace-pre-wrap break-words">{{ part.value }}</span>
+                        </template>
+                      </template>
+                      <span v-else>-</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -390,6 +406,26 @@ const toNumber = (v) => {
 const normalizeMonth = (raw) => String(raw || '').slice(0, 7)
 
 const formatMoney = (v) => toNumber(v).toFixed(2)
+
+function noteParts(raw) {
+  const text = String(raw ?? '')
+  const re = /(https?:\/\/[^\s]+)/g
+  const out = []
+  let last = 0
+  let m
+
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) {
+      out.push({ type: 'text', value: text.slice(last, m.index) })
+    }
+    out.push({ type: 'link', value: m[0] })
+    last = re.lastIndex
+  }
+  if (last < text.length) {
+    out.push({ type: 'text', value: text.slice(last) })
+  }
+  return out.length ? out : [{ type: 'text', value: '-' }]
+}
 
 const adjustmentTotals = computed(() => {
   const bonus = selectedAdjustments.value.reduce((sum, row) => sum + toNumber(row?.bonus), 0)
