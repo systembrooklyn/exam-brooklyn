@@ -7,6 +7,7 @@ import mitt from "mitt";
 import VueTelInput from "vue-tel-input";
 import "vue-tel-input/vue-tel-input.css";
 import { useAuthStore } from "./stores/auth";
+import { startVersionWatcher } from "./utils/versionWatcher";
 
 const emitter = mitt();
 const pinia = createPinia();
@@ -22,4 +23,5 @@ app.use(router);
 const authStore = useAuthStore();
 authStore.initAuth().then(() => {
   app.mount("#app");
+  startVersionWatcher();
 });
