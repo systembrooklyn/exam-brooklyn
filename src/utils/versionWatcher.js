@@ -5,7 +5,6 @@ const CHECK_INTERVAL_MS = 60_000;
 const RELOAD_DELAY_MS = 4_000;
 
 
-
 let knownVersion = null;
 let timerId = null;
 let inFlight = false;
