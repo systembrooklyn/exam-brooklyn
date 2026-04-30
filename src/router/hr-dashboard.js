@@ -16,6 +16,12 @@ function nextIfCanAny(permissions, next) {
   return next({ name: "SystemsPage" });
 }
 
+function nextIfCanManagePayrollAdmin(next) {
+  const auth = useAuthStore();
+  if (auth.isAdminUser || auth.hasHrRoleOrHrPermission) return next();
+  return next({ name: "hr-my-payroll" });
+}
+
 export default {
   path: "/hr",
   component: Layout,
@@ -64,6 +70,21 @@ export default {
       component: () => import("@/views/hr/MyAttendanceReport.vue"),
     },
     {
+      path: "my-payroll",
+      name: "hr-my-payroll",
+      beforeEnter: (_to, _from, next) => {
+        const auth = useAuthStore();
+        if (auth.isAdminUser) {
+          return next({ name: "hr-home", replace: true });
+        }
+        if (!auth.can(HR_PERMISSION.VIEW_PAYROLL)) {
+          return next({ name: "hr-home", replace: true });
+        }
+        next();
+      },
+      component: () => import("@/views/hr/MyPayrollDetails.vue"),
+    },
+    {
       path: "attendance",
       name: "hr-attendance",
       meta: { requiresPermission: HR_PERMISSION.VIEW_ATTENDANCE_LOG },
@@ -80,7 +101,12 @@ export default {
     {
       path: "employees",
       name: "hr-employees",
-      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
+      beforeEnter: (_to, _from, next) => {
+        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+          return next({ name: "SystemsPage" });
+        }
+        return nextIfCanManagePayrollAdmin(next);
+      },
       component: () => import("@/views/hr/Employees.vue"),
     },
     {
@@ -117,13 +143,23 @@ export default {
     {
       path: "payrolls",
       name: "hr-payrolls",
-      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
+      beforeEnter: (_to, _from, next) => {
+        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+          return next({ name: "SystemsPage" });
+        }
+        return nextIfCanManagePayrollAdmin(next);
+      },
       component: () => import("@/views/hr/Payrolls.vue"),
     },
     {
       path: "employee-adjustments",
       name: "hr-employee-adjustments",
-      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL },
+      beforeEnter: (_to, _from, next) => {
+        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+          return next({ name: "SystemsPage" });
+        }
+        return nextIfCanManagePayrollAdmin(next);
+      },
       component: () => import("@/views/hr/EmployeeAdjustments.vue"),
     },
   ],

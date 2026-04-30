@@ -21,7 +21,11 @@ import { HR_PERMISSION } from "@/constants/hrPermissions";
  *
  * Optional `permission` (single slug) or `permissions` (any-of) gate sidebar visibility via `filterHrSidebarItems`.
  */
-export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false) {
+export function buildHrSidebarItems(
+  canManageFullAttendance,
+  isAdminUser = false,
+  canManagePayrollAdminPages = false,
+) {
   const items = [
     {
       name: "Dashboard",
@@ -61,6 +65,11 @@ export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false
       icon: CalendarClock,
       route: "hr-my-attendance",
     });
+    items.push({
+      name: "My payroll",
+      icon: Banknote,
+      route: "hr-my-payroll",
+    });
   }
 
   if (canManageFullAttendance) {
@@ -84,12 +93,16 @@ export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false
         HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS,
       ],
     },
-    {
-      name: "Employees",
-      icon: Users,
-      route: "hr-employees",
-      permission: HR_PERMISSION.VIEW_PAYROLL,
-    },
+    ...(canManagePayrollAdminPages
+      ? [
+          {
+            name: "Employees",
+            icon: Users,
+            route: "hr-employees",
+            permission: HR_PERMISSION.VIEW_PAYROLL,
+          },
+        ]
+      : []),
     {
       name: "Contracts",
       icon: FileText,
@@ -121,18 +134,22 @@ export function buildHrSidebarItems(canManageFullAttendance, isAdminUser = false
         },
       ],
     },
-    {
-      name: "Adjustments",
-      icon: Banknote,
-      route: "hr-employee-adjustments",
-      permission: HR_PERMISSION.VIEW_PAYROLL,
-    },
-    {
-      name: "Payrolls",
-      icon: Banknote,
-      route: "hr-payrolls",
-      permission: HR_PERMISSION.VIEW_PAYROLL,
-    },
+    ...(canManagePayrollAdminPages
+      ? [
+          {
+            name: "Adjustments",
+            icon: Banknote,
+            route: "hr-employee-adjustments",
+            permission: HR_PERMISSION.VIEW_PAYROLL,
+          },
+          {
+            name: "Payrolls",
+            icon: Banknote,
+            route: "hr-payrolls",
+            permission: HR_PERMISSION.VIEW_PAYROLL,
+          },
+        ]
+      : []),
   );
 
   return items;

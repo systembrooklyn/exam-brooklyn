@@ -70,9 +70,12 @@ const activeItems = computed(() => {
     
   }
   if (route.path.startsWith('/hr')) {
+    const canManagePayrollAdminPages =
+      authStore.isAdminUser || authStore.hasHrRoleOrHrPermission;
     const raw = buildHrSidebarItems(
       authStore.canManageFullAttendance,
       authStore.isAdminUser,
+      canManagePayrollAdminPages,
     );
     return filterHrSidebarItems(raw, (slug) => authStore.can(slug));
   }
