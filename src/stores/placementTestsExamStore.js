@@ -11,6 +11,9 @@ import {
 import Cookies from "js-cookie";
 import notyf from "@/components/global/notyf";
 
+/** Periodic saveAnswers during an attempt only (not used on final submit). */
+const PLACEMENT_AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000;
+
 export const usePlacementTestsExamStore = defineStore(
   "placementTestsExam",
   () => {
@@ -64,15 +67,21 @@ export const usePlacementTestsExamStore = defineStore(
       }
     }
 
+    function stopAutoSave() {
+      if (autoSaveInterval) {
+        clearInterval(autoSaveInterval);
+        autoSaveInterval = null;
+      }
+    }
+
     function startAutoSave(answersRef) {
-      if (autoSaveInterval) clearInterval(autoSaveInterval); 
+      stopAutoSave();
       autoSaveInterval = setInterval(() => {
         sessionStorage.setItem("answers", JSON.stringify(answersRef.value));
         autoSaveAnswers(answersRef.value);
-      }, 2 * 60 * 1000); 
+      }, PLACEMENT_AUTOSAVE_INTERVAL_MS);
     }
 
-    // placementTestsExamStore.js
     async function submitFinalExam(answers) {
       const attemptId = Cookies.get("attempt_id");
       const formattedAnswers = answers.map((ans) => ({
@@ -81,7 +90,6 @@ export const usePlacementTestsExamStore = defineStore(
       }));
 
       try {
-        await autoSaveAnswers(answers);
         const response = await apiClient.post(
           `${FINISH_PLACEMENT}/${attemptId}/submit`,
           {
@@ -92,7 +100,7 @@ export const usePlacementTestsExamStore = defineStore(
           response.data.message || "Final exam submitted successfully!"
         );
         isFinished.value = true;
-        clearInterval(autoSaveInterval);
+        stopAutoSave();
       } catch (error) {
         console.error("Error submitting final exam:", error);
         throw error;
@@ -140,6 +148,7 @@ export const usePlacementTestsExamStore = defineStore(
       submitFinalExam,
       autoSaveAnswers,
       startAutoSave,
+      stopAutoSave,
       isFinished,
     };
   }

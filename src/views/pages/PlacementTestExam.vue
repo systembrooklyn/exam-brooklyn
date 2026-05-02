@@ -16,7 +16,8 @@ const remainingTime = computed(() => examData.value.remaining_time || 0);
 const currentQuestionIndex = ref(null);
 const selectedOptions = ref([]);
 const answersArray = ref([]);
-const timeLeft = ref(remainingTime.value);
+/** Wall-clock countdown while quiz runs; API `remaining_time` is treated as minutes. */
+const remainingTotalSeconds = ref(0);
 const quizStarted = ref(false);
 const isSubmitting = ref(false);
 const showUnansweredMessage = ref("");
@@ -45,36 +46,45 @@ const isLastQuestion = computed(
 );
 const answeredCount = computed(() => studentStore.examAnswers.length);
 
-let tenMinuteWarningGiven = false;
-const seconds = ref(60);
+/** Seconds shown in header: API estimate before start, live countdown after. */
+const displayTotalSeconds = computed(() => {
+  if (!quizStarted.value) {
+    return Math.max(0, Math.round(remainingTime.value * 60));
+  }
+  return remainingTotalSeconds.value;
+});
+
+const timerFormatted = computed(() => {
+  const t = displayTotalSeconds.value;
+  const m = Math.floor(t / 60);
+  const s = t % 60;
+  return `${m}:${s.toString().padStart(2, "0")}`;
+});
+
+const runExamTimeoutSubmit = () => {
+  saveAnswer();
+  studentStore
+    .submitFinalExam(answersArray.value)
+    .then(() => {
+      router.replace({ name: "exam-success" });
+    })
+    .catch((err) => {
+      console.error("Auto submit failed:", err);
+      notyf.error("Failed to auto-submit exam, please try again.");
+    });
+};
+
 const startTimer = () => {
   interval = setInterval(() => {
     if (!isOnline.value) {
       return;
     }
-    if (timeLeft.value === 0) {
+    remainingTotalSeconds.value -= 1;
+    if (remainingTotalSeconds.value <= 0) {
       clearInterval(interval);
       alertSound.play();
       notyf.error("Time is up!");
-
-      studentStore.autoSaveAnswers(answersArray.value);
-
-      studentStore
-        .submitFinalExam(answersArray.value, true)
-        .then(() => {
-          router.replace({ name: "exam-success" });
-        })
-        .catch((err) => {
-          console.error("Auto submit failed:", err);
-          notyf.error("Failed to auto-submit exam, please try again.");
-        });
-    } else {
-      if (seconds.value === 0) {
-        timeLeft.value -= 1;
-        seconds.value = 59;
-      } else {
-        seconds.value -= 1;
-      }
+      runExamTimeoutSubmit();
     }
   }, 1000);
 };
@@ -124,7 +134,10 @@ const saveAnswer = () => {
 const handleStart = () => {
   currentQuestionIndex.value = 0;
   quizStarted.value = true;
-  timeLeft.value = remainingTime.value;
+  remainingTotalSeconds.value = Math.max(
+    0,
+    Math.round(remainingTime.value * 60)
+  );
 
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
@@ -144,6 +157,7 @@ const handleStart = () => {
   unansweredIndexes.value = questions.value
     .map((q, i) => (selectedOptions.value[i] == null ? i : null))
     .filter((i) => i !== null);
+  studentStore.startAutoSave(answersArray);
   startTimer();
   loadSelectedOption();
 };
@@ -238,6 +252,8 @@ onMounted(() => {
   window.addEventListener("offline", handleOffline);
 });
 onBeforeUnmount(() => {
+  if (interval) clearInterval(interval);
+  studentStore.stopAutoSave();
   window.removeEventListener("beforeunload", handleBeforeUnload);
   window.removeEventListener("online", handleOnline);
   window.removeEventListener("offline", handleOffline);
@@ -262,9 +278,7 @@ onBeforeUnmount(() => {
             <div>
               Time Remaining:
               <span class="font-semibold" :class="isOnline ? 'text-blue-600' : 'text-red-500'">
-                {{ timeLeft.toFixed(0) }}:{{
-                  timeLeft <= 0 ? "00" : seconds.toString().padStart(2, "0")
-                }}
+                {{ timerFormatted }}
               </span>
             </div>
             <span v-if="!isOnline" class="text-red-500 text-sm mt-1 bg-red-100 px-3 py-1 rounded">
