@@ -123,14 +123,14 @@
             <td v-if="!hideActions" class="px-6 py-4 whitespace-nowrap space-x-6">
               <button
                 v-if="canEdit"
-                @click="$emit('edit', item)"
+                @click="emit('edit', item)"
                 class="text-indigo-600 cursor-pointer hover:text-indigo-800 transition inline-flex items-center gap-1"
               >
                 <Edit class="w-4 h-4" />
               </button>
               <button
                 v-show="!isReservation || canDelete"
-                @click="$emit('delete', item.id)"
+                @click="emit('delete', item.id)"
                 class="text-red-600 cursor-pointer hover:text-red-800 transition inline-flex items-center gap-1"
               >
                 <Trash2 class="w-4 h-4" />
@@ -223,6 +223,8 @@ const props = defineProps({
   isPlacementTests: Boolean,
   hideActions: Boolean,
 });
+
+const emit = defineEmits(["edit", "delete", "open-scholarship-detail"]);
 
 const search = ref("");
 const currentPage = ref(1);
@@ -346,8 +348,12 @@ const goToNextPage = () => {
   }
 };
 
-const showDetails = (exam) => {
-  selectedExam.value = exam;
+const showDetails = (row) => {
+  if (props.resourceType === "scholarship") {
+    emit("open-scholarship-detail", row.id);
+    return;
+  }
+  selectedExam.value = row;
 };
 
 watch(search, () => {

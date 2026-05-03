@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { ALL_SCHOLARSHIPS } from "../api/Api";
+import { ALL_SCHOLARSHIPS, SCHOLARSHIPS_PLANS } from "../api/Api";
 import notyf from "../components/global/notyf";
 import { handleError } from "./handleError";
 
@@ -73,23 +73,33 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
   };
 
   const getScholarshipById = async (id) => {
-    // loading.value = true;
     error.value = null;
     try {
       const response = await apiClient.get(`${ALL_SCHOLARSHIPS}/${id}`);
-      return response.data.data; 
-    }  catch (err) {
+      return response.data.data;
+    } catch (err) {
       if (err.response && err.response.data) {
         const errorMessage = err.response.data.message || "An error occurred";
         error.value = errorMessage;
         notyf.error(errorMessage);
       } else {
-        error.value = "Failed to add scholarship";
+        error.value = "Failed to load scholarship";
         notyf.error(error.value);
       }
       console.error(err);
-    } finally {
-      // loading.value = false;
+    }
+  };
+
+  /** Full plan payload for dashboard detail + edit (GET /scholarshipsPlans/{id}) */
+  const fetchScholarshipPlanById = async (id) => {
+    error.value = null;
+    try {
+      const response = await apiClient.get(`${SCHOLARSHIPS_PLANS}/${id}`);
+      return response.data.data ?? response.data;
+    } catch (err) {
+      handleError(err);
+      console.error(err);
+      return null;
     }
   };
 
@@ -102,5 +112,6 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     updateScholarship,
     deleteScholarship,
     getScholarshipById,
+    fetchScholarshipPlanById,
   };
 });

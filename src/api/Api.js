@@ -21,6 +21,7 @@ export const ALL_EXAMS = "exams";
 export const ADD_EXAM = "addExam";
 export const QUESTIONS = "questions";
 export const ALL_SCHOLARSHIPS = "scholarships";
+export const SCHOLARSHIPS_PLANS = "scholarshipsPlans";
 export const FORGOT_PASSWORD = "forgotPassword";
 export const RESET_PASSWORD = "resetPassword";
 export const IMPORT_EXAMS = "importExams";

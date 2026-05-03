@@ -19,8 +19,15 @@
         { label: 'Type', key: 'study_type' }
        
       ]" :items="filteredScholarships" :search="search" resourceType="scholarship" @edit="editScholarship"
-        @delete="confirmDelete" :loading="scholarshipStore.loading" />
+        @delete="confirmDelete" @open-scholarship-detail="openScholarshipPlanDetail"
+        :loading="scholarshipStore.loading" />
     </div>
+
+    <ScholarshipPlanDetailModal
+      v-model="showPlanDetail"
+      :detail="planDetail"
+      :loading="planDetailLoading"
+    />
 
     <!-- Reuse Modal Component for Add/Edit Scholarship -->
     <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship' : 'Add Scholarship'"
@@ -36,9 +43,10 @@
 
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useScholarshipStore } from "@/stores/scholarships";
 import DataTable from "@/components/dashboard/DataTable.vue";
+import ScholarshipPlanDetailModal from "@/components/dashboard/ScholarshipPlanDetailModal.vue";
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import Modal from "@/components/global/Modal.vue";
 import { useAuthStore } from "@/stores/auth";
@@ -53,7 +61,13 @@ const form = ref({ name: "", courses: [], study_type: "" });
 const showDeleteAlert = ref(false);
 const scholarshipIdToDelete = ref(null);
 const search = ref("");
+const showPlanDetail = ref(false);
+const planDetail = ref(null);
+const planDetailLoading = ref(false);
 
+watch(showPlanDetail, (open) => {
+  if (!open) planDetail.value = null;
+});
 
 const filteredScholarships = computed(() => {
   return scholarshipStore.scholarships.filter((scholarship) => {
@@ -73,9 +87,31 @@ const closeModal = () => {
   saving.value = false;
 };
 
-const editScholarship = (scholarship) => {
+const openScholarshipPlanDetail = async (id) => {
+  showPlanDetail.value = true;
+  planDetailLoading.value = true;
+  planDetail.value = null;
+  try {
+    planDetail.value = await scholarshipStore.fetchScholarshipPlanById(id);
+  } finally {
+    planDetailLoading.value = false;
+  }
+};
+
+const editScholarship = async (scholarship) => {
   isEditing.value = true;
-  form.value = { ...scholarship };
+  const full = await scholarshipStore.fetchScholarshipPlanById(scholarship.id);
+  if (full) {
+    form.value = {
+      ...full,
+      courses: Array.isArray(full.courses) ? full.courses : [],
+    };
+  } else {
+    form.value = {
+      ...scholarship,
+      courses: Array.isArray(scholarship.courses) ? scholarship.courses : [],
+    };
+  }
   showModal.value = true;
 };
 
