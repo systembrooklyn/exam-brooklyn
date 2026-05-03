@@ -1,5 +1,9 @@
 <template>
-  <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
+  <HrFeatureUnderMaintenance
+    v-if="!authStore.isAdminUser"
+    feature-title="Employee Requests"
+  />
+  <div v-else class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Employee Requests</h1>
@@ -430,6 +434,7 @@ import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
+import HrFeatureUnderMaintenance from '@/components/hr-dashboard/HrFeatureUnderMaintenance.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import {
@@ -851,6 +856,7 @@ watch([somePendingSelected, allPendingSelected, pendingSelectableIds], syncSelec
 });
 
 const fetchData = async () => {
+  if (!authStore.isAdminUser) return;
   clearBulkSelection();
   profileError.value = false;
   try {
@@ -893,10 +899,11 @@ const handleManualRefresh = async () => {
 };
 
 onMounted(() => {
-  void fetchData();
+  if (authStore.isAdminUser) void fetchData();
 });
 
 watch(canAccessPendingQueue, (ok) => {
+  if (!authStore.isAdminUser) return;
   if (!ok && pendingQueueMode.value) {
     pendingQueueMode.value = false;
     fetchData();
