@@ -2,7 +2,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { ALL_COURSES } from "../api/Api";
+import { ALL_COURSES, COURSE_GROUPS } from "../api/Api";
 import notyf from "../components/global/notyf"; // Adjust the path as necessary
 import { handleError } from "./handleError";
 
@@ -65,6 +65,17 @@ export const useCourseStore = defineStore("courseStore", () => {
     }
   };
 
+  const fetchCourseGroups = async (courseId) => {
+    error.value = null;
+    try {
+      const response = await apiClient.get(COURSE_GROUPS(courseId));
+      return response.data.data ?? response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
   return {
     courses,
     loading,
@@ -73,5 +84,6 @@ export const useCourseStore = defineStore("courseStore", () => {
     addCourse,
     updateCourse,
     deleteCourse,
+    fetchCourseGroups,
   };
 });

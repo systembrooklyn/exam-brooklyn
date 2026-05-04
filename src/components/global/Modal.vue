@@ -44,7 +44,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, toRaw } from "vue";
 import EmployeeForm from "../dashboard/EmployeeForm.vue";
 import InstructorForm from "../dashboard/InstructorForm.vue";
 import ScholarshipForm from "../dashboard/ScholarshipForm.vue";
@@ -52,6 +52,7 @@ import CourseForm from "../dashboard/CourseForm.vue";
 import RoleForm from "../dashboard/RoleForm.vue";
 import ReservationsForm from "../dashboard/ReservationsForm.vue";
 import isEqual from "lodash/isEqual";
+import cloneDeep from "lodash/cloneDeep";
 
 const props = defineProps({
   showModal: Boolean,
@@ -68,14 +69,23 @@ const props = defineProps({
 
 const emit = defineEmits(["closeModal", "saveData"]);
 
-const originalForm = ref({ ...props.form });
+/** Plain snapshot for isEqual. toRaw only here — not in watch source — so Vue still tracks nested edits. */
+function snapshotForm(form) {
+  if (form == null) return {};
+  return cloneDeep(toRaw(form));
+}
+
+const originalForm = ref(snapshotForm(props.form ?? {}));
 
 const hasChanges = ref(false);
 
 watch(
   () => props.form,
-  (newForm) => {
-    hasChanges.value = !isEqual(newForm, originalForm.value);
+  () => {
+    hasChanges.value = !isEqual(
+      snapshotForm(props.form ?? {}),
+      originalForm.value
+    );
   },
   { deep: true }
 );
@@ -105,7 +115,7 @@ watch(
   () => props.showModal,
   (isOpen) => {
     if (isOpen) {
-      originalForm.value = { ...props.form };
+      originalForm.value = snapshotForm(props.form ?? {});
       hasChanges.value = false;
     }
   }

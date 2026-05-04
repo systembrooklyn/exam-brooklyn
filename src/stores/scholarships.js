@@ -7,6 +7,8 @@ import { handleError } from "./handleError";
 
 export const useScholarshipStore = defineStore("scholarshipStore", () => {
   const scholarships = ref([]);
+  /** Dashboard list: GET/POST/PUT/DELETE `scholarshipsPlans` */
+  const scholarshipPlans = ref([]);
   const loading = ref(false);
   const error = ref(null);
 
@@ -59,16 +61,14 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
   };
 
   const deleteScholarship = async (id) => {
-    // loading.value = true;
     try {
       await apiClient.delete(`${ALL_SCHOLARSHIPS}/${id}`);
       scholarships.value = scholarships.value.filter((s) => s.id !== id);
+      scholarshipPlans.value = scholarshipPlans.value.filter((s) => s.id !== id);
       notyf.success("Scholarship deleted successfully");
     } catch (err) {
       handleError(err);
       console.error(err);
-    } finally {
-      // loading.value = false;
     }
   };
 
@@ -103,8 +103,67 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     }
   };
 
+  /** Parses GET /scholarshipsPlans index: { data: { scholarships: [...] } } or plain array */
+  function normalizeScholarshipPlansList(response) {
+    const root = response?.data?.data ?? response?.data;
+    if (Array.isArray(root)) return root;
+    if (root && Array.isArray(root.scholarships)) return root.scholarships;
+    if (Array.isArray(response?.data?.scholarships)) {
+      return response.data.scholarships;
+    }
+    return [];
+  }
+
+  const fetchScholarshipPlans = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const response = await apiClient.get(SCHOLARSHIPS_PLANS);
+      scholarshipPlans.value = normalizeScholarshipPlansList(response);
+    } catch (err) {
+      handleError(err);
+      console.error(err);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const createScholarshipPlan = async (payload) => {
+    try {
+      const response = await apiClient.post(SCHOLARSHIPS_PLANS, payload);
+      const row = response.data.data ?? response.data;
+      if (row) scholarshipPlans.value.push(row);
+      notyf.success("Scholarship plan created successfully");
+      return row;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
+  const updateScholarshipPlan = async (id, payload) => {
+    try {
+      const response = await apiClient.put(
+        `${SCHOLARSHIPS_PLANS}/${id}`,
+        payload
+      );
+      const row = response.data.data ?? response.data;
+      if (row) {
+        scholarshipPlans.value = scholarshipPlans.value.map((s) =>
+          s.id === id ? row : s
+        );
+      }
+      notyf.success("Scholarship plan updated successfully");
+      return row;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
   return {
     scholarships,
+    scholarshipPlans,
     loading,
     error,
     fetchScholarships,
@@ -113,5 +172,8 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     deleteScholarship,
     getScholarshipById,
     fetchScholarshipPlanById,
+    fetchScholarshipPlans,
+    createScholarshipPlan,
+    updateScholarshipPlan,
   };
 });

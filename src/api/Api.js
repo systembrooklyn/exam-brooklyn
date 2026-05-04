@@ -17,6 +17,7 @@ export const PERMISSIONS = "permissions";
 export const SEND_OTP_API = "sendOTP";
 export const ALL_INSTRUCTORS = "instructors";
 export const ALL_COURSES = "courses";
+export const COURSE_GROUPS = (courseId) => `courses/${courseId}/groups`;
 export const ALL_EXAMS = "exams";
 export const ADD_EXAM = "addExam";
 export const QUESTIONS = "questions";

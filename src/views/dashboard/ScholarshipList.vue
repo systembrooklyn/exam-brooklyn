@@ -18,7 +18,7 @@
         { label: 'Courses', key: 'courses' },
         { label: 'Type', key: 'study_type' }
        
-      ]" :items="filteredScholarships" :search="search" resourceType="scholarship" @edit="editScholarship"
+      ]" :items="tableRows" :search="search" resourceType="scholarship" @edit="editScholarship"
         @delete="confirmDelete" @open-scholarship-detail="openScholarshipPlanDetail"
         :loading="scholarshipStore.loading" />
     </div>
@@ -30,12 +30,12 @@
     />
 
     <!-- Reuse Modal Component for Add/Edit Scholarship -->
-    <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship' : 'Add Scholarship'"
+    <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship Plan' : 'New Scholarship Plan'"
       :form="form" :saving="saving" :isScholarship="true" :isCourse="false" :scholarships="true"
       @closeModal="closeModal" @saveData="saveScholarship" />
 
     <!-- SweetAlert2 Modal for Confirmation -->
-    <SweetAlert2Modal v-if="showDeleteAlert" :title="'Are you sure?'" :text="'This scholarship will be deleted.'"
+    <SweetAlert2Modal v-if="showDeleteAlert" :title="'Are you sure?'" :text="'This scholarship plan will be deleted.'"
       :confirmButtonText="'Yes, delete it!'" :cancelButtonText="'Cancel'" @confirm="deleteScholarship"
       @cancel="cancelDelete" />
   </div>
@@ -50,6 +50,12 @@ import ScholarshipPlanDetailModal from "@/components/dashboard/ScholarshipPlanDe
 import SweetAlert2Modal from "@/components/global/SweetAlert2Modal.vue";
 import Modal from "@/components/global/Modal.vue";
 import { useAuthStore } from "@/stores/auth";
+import {
+  mapPlanDetailToForm,
+  buildScholarshipPlanPayload,
+  attachDisplayCourses,
+} from "@/utils/scholarshipPlan";
+import notyf from "@/components/global/notyf";
 
 
 const authStore = useAuthStore();
@@ -57,7 +63,16 @@ const scholarshipStore = useScholarshipStore();
 const showModal = ref(false);
 const saving = ref(false);
 const isEditing = ref(false);
-const form = ref({ name: "", courses: [], study_type: "" });
+
+function emptyPlanForm() {
+  return {
+    name: "",
+    study_type: "online",
+    course_groups: [],
+  };
+}
+
+const form = ref(emptyPlanForm());
 const showDeleteAlert = ref(false);
 const scholarshipIdToDelete = ref(null);
 const search = ref("");
@@ -70,15 +85,19 @@ watch(showPlanDetail, (open) => {
 });
 
 const filteredScholarships = computed(() => {
-  return scholarshipStore.scholarships.filter((scholarship) => {
+  return scholarshipStore.scholarshipPlans.filter((scholarship) => {
     return scholarship.name.toLowerCase().includes(search.value.toLowerCase());
   });
 });
 
+const tableRows = computed(() =>
+  filteredScholarships.value.map((row) => attachDisplayCourses(row))
+);
+
 const toggleForm = () => {
   showModal.value = true;
   isEditing.value = false;
-  form.value = { name: "", courses: [] };
+  form.value = emptyPlanForm();
 };
 
 const closeModal = () => {
@@ -102,34 +121,32 @@ const editScholarship = async (scholarship) => {
   isEditing.value = true;
   const full = await scholarshipStore.fetchScholarshipPlanById(scholarship.id);
   if (full) {
-    form.value = {
-      ...full,
-      courses: Array.isArray(full.courses) ? full.courses : [],
-    };
+    form.value = mapPlanDetailToForm(full);
   } else {
-    form.value = {
-      ...scholarship,
-      courses: Array.isArray(scholarship.courses) ? scholarship.courses : [],
-    };
+    form.value = mapPlanDetailToForm(scholarship);
   }
   showModal.value = true;
 };
 
 const saveScholarship = async () => {
+  const name = (form.value.name ?? "").trim();
+  if (!name) {
+    notyf.error("Please enter a scholarship name.");
+    return;
+  }
+
   saving.value = true;
 
-  const payload = {
-    ...form.value,
-    courses: form.value.courses?.map((course) => course.id),
-  };
+  const payload = buildScholarshipPlanPayload(form.value);
 
   try {
     if (isEditing.value) {
-      await scholarshipStore.updateScholarship(form.value.id, payload);
+      await scholarshipStore.updateScholarshipPlan(form.value.id, payload);
     } else {
-      await scholarshipStore.addScholarship(payload);
+      await scholarshipStore.createScholarshipPlan(payload);
     }
     closeModal();
+    await scholarshipStore.fetchScholarshipPlans();
   } catch (error) {
     console.error(error);
   } finally {
@@ -155,6 +172,6 @@ const cancelDelete = () => {
 };
 
 onMounted(() => {
-  scholarshipStore.fetchScholarships();
+  scholarshipStore.fetchScholarshipPlans();
 });
 </script>
