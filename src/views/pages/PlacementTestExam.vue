@@ -1,17 +1,44 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from "vue";
-import { usePlacementTestsExamStore } from "@/stores/placementTestsExamStore";
+import {
+  usePlacementTestsExamStore,
+  PLACEMENT_AUTOSAVE_INTERVAL_MS,
+} from "@/stores/placementTestsExamStore";
 import { useRouter } from "vue-router";
 import notyf from "@/components/global/notyf";
 
 const studentStore = usePlacementTestsExamStore();
 const router = useRouter();
 
+function sameQuestionId(a, b) {
+  if (a == null || b == null) return false;
+  return String(a) === String(b);
+}
+
+function normalizeOptionForUi(option) {
+  if (option == null || option === "") return option;
+  return String(option).trim().toLowerCase();
+}
+
 const examData = computed(() => studentStore.exam?.data || {});
 const questions = computed(() => examData.value.ptest?.questions || []);
 const examInfo = computed(() => examData.value.ptest || {});
 const previousAnswers = computed(() => examData.value.answers || []);
 const remainingTime = computed(() => examData.value.remaining_time || 0);
+
+/** Single source of truth for “what is answered now” (avoids sparse answersArray + push bugs). */
+function collectAnsweredFromUi() {
+  return questions.value
+    .map((q, i) => {
+      const opt = selectedOptions.value[i];
+      if (opt == null || opt === "") return null;
+      return {
+        q_id: q.id,
+        selected_option: normalizeOptionForUi(opt),
+      };
+    })
+    .filter(Boolean);
+}
 
 const currentQuestionIndex = ref(null);
 const selectedOptions = ref([]);
@@ -24,6 +51,24 @@ const showUnansweredMessage = ref("");
 const unansweredIndexes = ref([]);
 const mode = ref("all");
 let interval;
+let placementAutosaveInterval = null;
+/** Pending timeout-submit retry (keep trying until finalize succeeds). */
+let timeoutSubmitRetryHandle = null;
+
+function clearTimeoutSubmitRetries() {
+  if (timeoutSubmitRetryHandle != null) {
+    clearTimeout(timeoutSubmitRetryHandle);
+    timeoutSubmitRetryHandle = null;
+  }
+}
+
+function clearPlacementAutosaveInterval() {
+  if (placementAutosaveInterval != null) {
+    clearInterval(placementAutosaveInterval);
+    placementAutosaveInterval = null;
+  }
+}
+
 const alertSound = new Audio(new URL("@/assets/alert.mp3", import.meta.url));
 
 const isOnline = ref(navigator.onLine);
@@ -44,7 +89,7 @@ const currentQuestion = computed(
 const isLastQuestion = computed(
   () => currentQuestionIndex.value === questions.value.length - 1
 );
-const answeredCount = computed(() => studentStore.examAnswers.length);
+const answeredCount = computed(() => collectAnsweredFromUi().length);
 
 /** Seconds shown in header: API estimate before start, live countdown after. */
 const displayTotalSeconds = computed(() => {
@@ -62,16 +107,59 @@ const timerFormatted = computed(() => {
 });
 
 const runExamTimeoutSubmit = () => {
-  saveAnswer();
-  studentStore
-    .submitFinalExam(answersArray.value)
-    .then(() => {
-      router.replace({ name: "exam-success" });
-    })
-    .catch((err) => {
-      console.error("Auto submit failed:", err);
-      notyf.error("Failed to auto-submit exam, please try again.");
-    });
+  clearPlacementAutosaveInterval();
+  clearTimeoutSubmitRetries();
+
+  const TIMEOUT_SUBMIT_RETRY_MS = 3000;
+  let didNotifyTimeoutSubmitError = false;
+
+  /** Same cleanup as successful manual Submit, then navigate away. */
+  const finishAfterSuccessfulTimeoutSubmit = () => {
+    clearTimeoutSubmitRetries();
+    if (interval) clearInterval(interval);
+    quizStarted.value = false;
+    studentStore.examAnswers = [];
+    answersArray.value = [];
+    selectedOptions.value = [];
+    currentQuestionIndex.value = null;
+    unansweredIndexes.value = [];
+    showUnansweredMessage.value = "";
+    sessionStorage.removeItem("answers");
+    sessionStorage.removeItem("attemptId");
+    router.replace({ name: "exam-success" });
+  };
+
+  const attemptTimeoutSubmit = () => {
+    saveAnswer();
+    const answeredOnly = getAnsweredOnlyAnswers();
+
+    if (!isOnline.value) {
+      timeoutSubmitRetryHandle = window.setTimeout(() => {
+        timeoutSubmitRetryHandle = null;
+        attemptTimeoutSubmit();
+      }, TIMEOUT_SUBMIT_RETRY_MS);
+      return;
+    }
+
+    studentStore
+      .submitFinalExam(answeredOnly)
+      .then(() => finishAfterSuccessfulTimeoutSubmit())
+      .catch((err) => {
+        console.error("Auto submit failed:", err);
+        if (!didNotifyTimeoutSubmitError) {
+          didNotifyTimeoutSubmitError = true;
+          notyf.error(
+            "Time is up — could not finalize. Retrying until submitted…"
+          );
+        }
+        timeoutSubmitRetryHandle = window.setTimeout(() => {
+          timeoutSubmitRetryHandle = null;
+          attemptTimeoutSubmit();
+        }, TIMEOUT_SUBMIT_RETRY_MS);
+      });
+  };
+
+  attemptTimeoutSubmit();
 };
 
 const startTimer = () => {
@@ -92,27 +180,48 @@ const startTimer = () => {
 const loadSelectedOption = () => {
   if (!currentQuestion.value || !Array.isArray(studentStore.examAnswers))
     return;
-  const saved = studentStore.examAnswers.find(
-    (ans) => ans.q_id === currentQuestion.value.id
+  const saved = studentStore.examAnswers.find((ans) =>
+    sameQuestionId(ans.q_id, currentQuestion.value.id)
   );
+  const opt = saved?.selected_option;
   selectedOptions.value[currentQuestionIndex.value] =
-    saved?.selected_option || null;
+    opt != null && opt !== "" ? normalizeOptionForUi(opt) : null;
 };
 
 const saveAnswer = () => {
   if (!currentQuestion.value) return;
   const key = currentQuestion.value.id;
   const option = selectedOptions.value[currentQuestionIndex.value];
+
+  // Keep arrays limited to answered questions only.
+  if (option == null || option === "") {
+    studentStore.examAnswers = studentStore.examAnswers.filter(
+      (a) => !sameQuestionId(a.q_id, key)
+    );
+    answersArray.value = answersArray.value.filter(
+      (a) => !sameQuestionId(a.q_id, key)
+    );
+    if (!unansweredIndexes.value.includes(currentQuestionIndex.value)) {
+      unansweredIndexes.value.push(currentQuestionIndex.value);
+    }
+    sessionStorage.setItem("answers", JSON.stringify(collectAnsweredFromUi()));
+    return;
+  }
+
   const answer = { q_id: key, selected_option: option };
 
-  const existing = studentStore.examAnswers.findIndex((a) => a.q_id === key);
+  const existing = studentStore.examAnswers.findIndex((a) =>
+    sameQuestionId(a.q_id, key)
+  );
   if (existing !== -1) {
     studentStore.examAnswers[existing] = answer;
   } else {
     studentStore.examAnswers.push(answer);
   }
 
-  const answerIdx = answersArray.value.findIndex((a) => a.q_id === key);
+  const answerIdx = answersArray.value.findIndex((a) =>
+    sameQuestionId(a.q_id, key)
+  );
   if (answerIdx !== -1) {
     answersArray.value[answerIdx] = answer;
   } else {
@@ -128,8 +237,10 @@ const saveAnswer = () => {
     showUnansweredMessage.value = "";
   }
 
-  sessionStorage.setItem("answers", JSON.stringify(answersArray.value));
+  sessionStorage.setItem("answers", JSON.stringify(collectAnsweredFromUi()));
 };
+
+const getAnsweredOnlyAnswers = () => collectAnsweredFromUi();
 
 const handleStart = () => {
   currentQuestionIndex.value = 0;
@@ -142,22 +253,38 @@ const handleStart = () => {
   const restoredAnswers = studentStore.exam?.data?.answers || [];
 
   restoredAnswers.forEach((answer) => {
-    const qIndex = questions.value.findIndex((q) => q.id === answer.q_id);
-    if (qIndex !== -1) {
-      selectedOptions.value[qIndex] = answer.selected_option;
-      answersArray.value[qIndex] = {
-        q_id: answer.q_id,
-        selected_option: answer.selected_option,
-      };
-    }
+    const qIndex = questions.value.findIndex((q) =>
+      sameQuestionId(q.id, answer.q_id)
+    );
+    if (qIndex === -1) return;
+    const qId = questions.value[qIndex].id;
+    const opt = normalizeOptionForUi(answer.selected_option);
+    selectedOptions.value[qIndex] = opt;
+    answersArray.value[qIndex] = {
+      q_id: qId,
+      selected_option: opt,
+    };
   });
 
-  sessionStorage.setItem("answers", JSON.stringify(answersArray.value));
+  studentStore.examAnswers = questions.value.flatMap((q, i) => {
+    const opt = selectedOptions.value[i];
+    if (opt == null || opt === "") return [];
+    return [{ q_id: q.id, selected_option: opt }];
+  });
+
+  sessionStorage.setItem("answers", JSON.stringify(collectAnsweredFromUi()));
 
   unansweredIndexes.value = questions.value
     .map((q, i) => (selectedOptions.value[i] == null ? i : null))
     .filter((i) => i !== null);
-  studentStore.startAutoSave(answersArray);
+
+  clearPlacementAutosaveInterval();
+  placementAutosaveInterval = setInterval(() => {
+    const answers = collectAnsweredFromUi();
+    sessionStorage.setItem("answers", JSON.stringify(answers));
+    studentStore.autoSaveAnswers(answers);
+  }, PLACEMENT_AUTOSAVE_INTERVAL_MS);
+
   startTimer();
   loadSelectedOption();
 };
@@ -208,7 +335,7 @@ const submitFinalExam = async () => {
 
   isSubmitting.value = true;
   saveAnswer();
-  
+
   if (!isOnline.value) {
     notyf.error("Cannot submit exam while offline. Please restore connection.");
     isSubmitting.value = false;
@@ -216,10 +343,11 @@ const submitFinalExam = async () => {
   }
 
   try {
-    await studentStore.submitFinalExam(answersArray.value);
+    await studentStore.submitFinalExam(getAnsweredOnlyAnswers());
 
     isSubmitting.value = false;
     clearInterval(interval);
+    clearPlacementAutosaveInterval();
     quizStarted.value = false;
 
     studentStore.examAnswers = [];
@@ -252,8 +380,9 @@ onMounted(() => {
   window.addEventListener("offline", handleOffline);
 });
 onBeforeUnmount(() => {
+  clearTimeoutSubmitRetries();
   if (interval) clearInterval(interval);
-  studentStore.stopAutoSave();
+  clearPlacementAutosaveInterval();
   window.removeEventListener("beforeunload", handleBeforeUnload);
   window.removeEventListener("online", handleOnline);
   window.removeEventListener("offline", handleOffline);

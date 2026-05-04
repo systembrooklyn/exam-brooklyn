@@ -11,8 +11,14 @@ import {
 import Cookies from "js-cookie";
 import notyf from "@/components/global/notyf";
 
-/** Periodic saveAnswers during an attempt only (not used on final submit). */
-const PLACEMENT_AUTOSAVE_INTERVAL_MS = 5 * 60 * 1000;
+/** API often returns `"A"`; radios use lowercase `a`–`d`. */
+function normalizeOptionForUi(option) {
+  if (option == null || option === "") return option;
+  return String(option).trim().toLowerCase();
+}
+
+/** Periodic autosave cadence — used by PlacementTestExam.vue (interval lives on the component). */
+export const PLACEMENT_AUTOSAVE_INTERVAL_MS = 1 * 60 * 1000;
 
 export const usePlacementTestsExamStore = defineStore(
   "placementTestsExam",
@@ -21,7 +27,6 @@ export const usePlacementTestsExamStore = defineStore(
     const error = ref(null);
     const exam = ref(null);
     const isFinished = ref(false);
-    let autoSaveInterval = null;
     const studentPlacement = ref(null);
 
     const examAnswers = ref([]);
@@ -29,12 +34,21 @@ export const usePlacementTestsExamStore = defineStore(
       const studentId = Cookies.get("st_id");
       loading.value = true;
       error.value = null;
+      // New attempt starts: re-enable periodic autosave and submissions.
+      isFinished.value = false;
       try {
         const response = await apiClient.post(START_PLACEMENT, {
           pt_id: testId,
           st_id: studentId,
         });
-        examAnswers.value = response.data.data.answers || [];
+        const rawAnswers = response.data.data.answers || [];
+        examAnswers.value = rawAnswers.map((ans) => ({
+          ...ans,
+          selected_option:
+            ans?.selected_option == null || ans.selected_option === ""
+              ? ans.selected_option
+              : normalizeOptionForUi(ans.selected_option),
+        }));
         Cookies.set("attempt_id", response.data.data.attempt_id, {
           expires: 7,
         });
@@ -51,9 +65,17 @@ export const usePlacementTestsExamStore = defineStore(
 
     async function autoSaveAnswers(answers) {
       const attemptId = Cookies.get("attempt_id");
-      if (!attemptId || isFinished.value) return;
+      const list = Array.isArray(answers) ? answers : [];
+      const answeredOnly = list.filter(
+        (ans) =>
+          ans &&
+          ans.q_id != null &&
+          ans.selected_option != null &&
+          ans.selected_option !== ""
+      );
+      if (!attemptId || isFinished.value || answeredOnly.length === 0) return;
 
-      const formattedAnswers = answers.map((ans) => ({
+      const formattedAnswers = answeredOnly.map((ans) => ({
         q_id: ans.q_id,
         selected_option: ans.selected_option?.toUpperCase(),
       }));
@@ -67,24 +89,16 @@ export const usePlacementTestsExamStore = defineStore(
       }
     }
 
-    function stopAutoSave() {
-      if (autoSaveInterval) {
-        clearInterval(autoSaveInterval);
-        autoSaveInterval = null;
-      }
-    }
-
-    function startAutoSave(answersRef) {
-      stopAutoSave();
-      autoSaveInterval = setInterval(() => {
-        sessionStorage.setItem("answers", JSON.stringify(answersRef.value));
-        autoSaveAnswers(answersRef.value);
-      }, PLACEMENT_AUTOSAVE_INTERVAL_MS);
-    }
-
     async function submitFinalExam(answers) {
       const attemptId = Cookies.get("attempt_id");
-      const formattedAnswers = answers.map((ans) => ({
+      const answeredOnly = (Array.isArray(answers) ? answers : []).filter(
+        (ans) =>
+          ans &&
+          ans.q_id != null &&
+          ans.selected_option != null &&
+          ans.selected_option !== ""
+      );
+      const formattedAnswers = answeredOnly.map((ans) => ({
         q_id: ans.q_id,
         selected_option: ans.selected_option?.toUpperCase(),
       }));
@@ -100,7 +114,6 @@ export const usePlacementTestsExamStore = defineStore(
           response.data.message || "Final exam submitted successfully!"
         );
         isFinished.value = true;
-        stopAutoSave();
       } catch (error) {
         console.error("Error submitting final exam:", error);
         throw error;
@@ -147,8 +160,6 @@ export const usePlacementTestsExamStore = defineStore(
       saveSurveyAnswers,
       submitFinalExam,
       autoSaveAnswers,
-      startAutoSave,
-      stopAutoSave,
       isFinished,
     };
   }
