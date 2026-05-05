@@ -126,6 +126,24 @@
                 {{ cg.course_code }}
               </p>
             </div>
+            <span
+              v-if="cg.is_new_course"
+              class="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2.5 py-1 text-[11px] font-semibold border border-amber-200"
+            >
+              New course
+            </span>
+            <span
+              v-else
+              class="inline-flex items-center rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[11px] font-semibold border border-emerald-200"
+            >
+              Existing course
+            </span>
+            <span
+              v-if="cg.requires_group_setup"
+              class="inline-flex items-center rounded-full bg-rose-100 text-rose-700 px-2.5 py-1 text-[11px] font-semibold border border-rose-200"
+            >
+              Setup groups required
+            </span>
           </div>
           <button
             type="button"
@@ -155,7 +173,7 @@
             </button>
           </div>
 
-          <div v-if="!cg.groups?.length" class="text-xs text-gray-500 py-4 text-center rounded-lg bg-gray-50 border border-gray-100">
+          <div v-if="!visibleGroups(cg).length" class="text-xs text-gray-500 py-4 text-center rounded-lg bg-gray-50 border border-gray-100">
             No groups — click “Add group” or reload course code.
           </div>
 
@@ -175,9 +193,9 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <tr
-                  v-for="(g, gi) in cg.groups"
+                  v-for="(g, gi) in visibleGroups(cg)"
                   :key="groupRowKey(ci, g, gi)"
-                  class="hover:bg-slate-50/80"
+                  :class="isLockedExistingGroup(g) ? 'bg-gray-50/90' : 'hover:bg-slate-50/80'"
                 >
                   <td
                     class="px-2 py-2 align-middle text-center text-xs font-semibold text-indigo-700 tabular-nums"
@@ -188,6 +206,7 @@
                     <input
                       v-model="g.group_code"
                       type="text"
+                      :disabled="isLockedExistingGroup(g)"
                       class="w-full min-w-0 border border-gray-200 rounded px-2 py-1.5 text-xs font-mono"
                     />
                   </td>
@@ -247,13 +266,11 @@
                     </div>
                   </td>
                   <td class="px-1 py-1.5 align-middle text-center">
-                    <!-- API groups have `id`; only user-added rows can be removed -->
                     <button
-                      v-if="g.id == null"
                       type="button"
                       class="text-gray-400 hover:text-red-600 p-1 rounded"
                       title="Remove group"
-                      @click="removeGroup(ci, gi)"
+                      @click="removeGroup(ci, g)"
                     >
                       <Trash2 class="w-4 h-4" />
                     </button>
@@ -277,6 +294,10 @@ import { mapApiGroupToForm } from "@/utils/scholarshipPlan";
 
 const props = defineProps({
   form: Object,
+  isEditing: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const courseStore = useCourseStore();
@@ -295,7 +316,15 @@ function courseKey(cg, i) {
 
 function groupRowKey(ci, g, gi) {
   if (g.id != null) return `grp-${ci}-${g.id}`;
-  return `grp-${ci}-${gi}-${g.group_code ?? g.code ?? ""}`;
+  return g._uiKey ?? `grp-${ci}-${gi}`;
+}
+
+function isLockedExistingGroup(g) {
+  return !props.isEditing && g.id != null;
+}
+
+function visibleGroups(cg) {
+  return (cg?.groups ?? []).filter((g) => !g?._deleted);
 }
 
 function extractGroupsFromResponse(raw) {
@@ -303,6 +332,50 @@ function extractGroupsFromResponse(raw) {
   if (raw && Array.isArray(raw.groups)) return raw.groups;
   if (raw && raw.data && Array.isArray(raw.data)) return raw.data;
   return [];
+}
+
+function isMissingOrInvalidCourseError(err) {
+  const status = err?.response?.status;
+  const message = String(err?.response?.data?.message ?? "")
+    .trim()
+    .toLowerCase();
+  const courseCodeErrors = err?.response?.data?.errors?.course_code;
+  const hasCourseCodeInvalidError = Array.isArray(courseCodeErrors)
+    ? courseCodeErrors.some((msg) =>
+        String(msg ?? "").toLowerCase().includes("invalid")
+      )
+    : String(courseCodeErrors ?? "").toLowerCase().includes("invalid");
+  if (status === 404) return true;
+  if (status === 422) return true;
+  if (status >= 400 && status < 500) return true;
+  if (hasCourseCodeInvalidError) return true;
+  if (status === 400) {
+    return message.includes("invalid") || message.includes("not found");
+  }
+  return false;
+}
+
+function buildNewCourseEntry(code) {
+  const numCode = Number(code);
+  return {
+    course_code: Number.isFinite(numCode) ? numCode : code,
+    course_name: `Course ${code}`,
+    course_type: "module",
+    course_start_date: "",
+    course_is_active: true,
+    is_new_course: true,
+    requires_group_setup: true,
+    groups: [emptyGroup()],
+  };
+}
+
+/** Replace array reference so Vue reliably re-renders (esp. edit modal + nested form). */
+function appendCourseGroup(entry) {
+  const list = Array.isArray(props.form.course_groups)
+    ? [...props.form.course_groups]
+    : [];
+  list.push(entry);
+  props.form.course_groups = list;
 }
 
 async function loadCourseByCode() {
@@ -317,8 +390,11 @@ async function loadCourseByCode() {
   loadingGroups.value = true;
   try {
     /** GET /courses/{code}/groups — same value user typed, no catalog lookup */
-    const raw = await courseStore.fetchCourseGroups(code);
-    const groupsList = extractGroupsFromResponse(raw).map(mapApiGroupToForm);
+    const raw = await courseStore.fetchCourseGroups(code, { silent: true });
+    const groupsList = extractGroupsFromResponse(raw).map((g, index) => ({
+      ...mapApiGroupToForm(g),
+      _uiKey: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
+    }));
 
     const numCode = Number(code);
     const entry = {
@@ -327,14 +403,25 @@ async function loadCourseByCode() {
       course_type: "module",
       course_start_date: "",
       course_is_active: true,
+      is_new_course: false,
+      requires_group_setup: false,
       groups: groupsList.length ? groupsList : [emptyGroup()],
     };
 
-    props.form.course_groups.push(entry);
+    appendCourseGroup(entry);
     courseCodeInput.value = "";
     notyf.success("Groups loaded. Adjust groups if needed, then save the plan.");
-  } catch {
-    /* handleError in store */
+  } catch (err) {
+    if (isMissingOrInvalidCourseError(err)) {
+      const entry = buildNewCourseEntry(code);
+      appendCourseGroup(entry);
+      courseCodeInput.value = "";
+      notyf.success(
+        "Course code not found. Added as a new course, now add its groups before saving."
+      );
+    } else {
+      notyf.error("Failed to load course groups. Please try again.");
+    }
   } finally {
     loadingGroups.value = false;
   }
@@ -342,6 +429,7 @@ async function loadCourseByCode() {
 
 function emptyGroup() {
   return {
+    _uiKey: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     group_code: "",
     group_name: "",
     group_type: "online",
@@ -353,15 +441,28 @@ function emptyGroup() {
 
 function addEmptyGroup(courseIndex) {
   const cg = props.form.course_groups[courseIndex];
-  if (!cg.groups) cg.groups = [];
-  cg.groups.unshift(emptyGroup());
+  const groups = Array.isArray(cg.groups) ? [...cg.groups] : [];
+  groups.unshift(emptyGroup());
+  cg.groups = groups;
 }
 
-function removeGroup(courseIndex, groupIndex) {
-  props.form.course_groups[courseIndex].groups.splice(groupIndex, 1);
+function removeGroup(courseIndex, group) {
+  if (group?.id != null) {
+    group._deleted = true;
+    return;
+  }
+  const course = props.form.course_groups[courseIndex];
+  const groups = [...(course.groups ?? [])];
+  const idx = groups.findIndex((x) => x === group);
+  if (idx >= 0) {
+    groups.splice(idx, 1);
+    course.groups = groups;
+  }
 }
 
 function removeCourse(index) {
-  props.form.course_groups.splice(index, 1);
+  const list = [...(props.form.course_groups ?? [])];
+  list.splice(index, 1);
+  props.form.course_groups = list;
 }
 </script>

@@ -65,13 +65,16 @@ export const useCourseStore = defineStore("courseStore", () => {
     }
   };
 
-  const fetchCourseGroups = async (courseId) => {
+  const fetchCourseGroups = async (courseId, options = {}) => {
+    const { silent = false } = options;
     error.value = null;
     try {
       const response = await apiClient.get(COURSE_GROUPS(courseId));
       return response.data.data ?? response.data;
     } catch (err) {
-      handleError(err);
+      if (!silent) {
+        handleError(err);
+      }
       throw err;
     }
   };

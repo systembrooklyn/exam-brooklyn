@@ -14,7 +14,7 @@
        <EmployeeForm v-if="isEmployee" :form="form" />
       <InstructorForm v-if="isInstructor" :form="form" />
       <CourseForm v-if="isCourse" :form="form" />
-      <ScholarshipForm v-if="isScholarship" :form="form" />
+      <ScholarshipForm v-if="isScholarship" :form="form" :isEditing="isEditing" />
       <RoleForm v-if="isRole" :form="form" />
       <ReservationsForm v-if="isReservation" :form="form" />
      </div>
@@ -59,6 +59,7 @@ const props = defineProps({
   modalTitle: String,
   form: Object,
   saving: Boolean,
+  isEditing: Boolean,
   isInstructor: Boolean,
   isCourse: Boolean,
   isScholarship: Boolean,

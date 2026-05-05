@@ -31,7 +31,7 @@
 
     <!-- Reuse Modal Component for Add/Edit Scholarship -->
     <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship Plan' : 'New Scholarship Plan'"
-      :form="form" :saving="saving" :isScholarship="true" :isCourse="false" :scholarships="true"
+      :form="form" :saving="saving" :isEditing="isEditing" :isScholarship="true" :isCourse="false" :scholarships="true"
       @closeModal="closeModal" @saveData="saveScholarship" />
 
     <!-- SweetAlert2 Modal for Confirmation -->
@@ -133,6 +133,25 @@ const saveScholarship = async () => {
   if (!name) {
     notyf.error("Please enter a scholarship name.");
     return;
+  }
+
+  for (const course of form.value.course_groups ?? []) {
+    const activeGroups = (course.groups ?? []).filter((group) => !group?._deleted);
+    if (course.requires_group_setup && !(activeGroups.length > 0)) {
+      notyf.error(`Course ${course.course_code} needs at least one group before saving.`);
+      return;
+    }
+
+    for (const group of activeGroups) {
+      const groupCode = String(group.group_code ?? "").trim();
+      const groupName = String(group.group_name ?? "").trim();
+      if (!groupCode || !groupName) {
+        notyf.error(
+          `Please complete group code and group name for course ${course.course_code}.`
+        );
+        return;
+      }
+    }
   }
 
   saving.value = true;

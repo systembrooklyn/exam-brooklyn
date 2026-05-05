@@ -32,6 +32,13 @@ export function fromDatetimeLocal(localStr) {
   return s;
 }
 
+function toApiCodeValue(v) {
+  const raw = String(v ?? "").trim();
+  if (!raw) return null;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : raw;
+}
+
 /**
  * Supports nested plan shape (group_*) and flat GET /courses/{id}/groups rows (code, name, type, …).
  */
@@ -71,6 +78,7 @@ export function mapApiGroupToForm(g) {
 function mapIncomingCourse(c) {
   const groups = Array.isArray(c.groups) ? c.groups.map(mapIncomingGroup) : [];
   return {
+    id: c.id ?? c.course_id,
     course_code: c.course_code ?? c.code ?? "",
     course_name: c.course_name ?? c.name ?? "",
     course_type: (c.course_type ?? "module").toLowerCase(),
@@ -106,27 +114,37 @@ export function buildScholarshipPlanPayload(form) {
   return {
     name: (form.name ?? "").trim(),
     study_type: studyTypeForApi(form.study_type),
-    course_groups: (form.course_groups ?? []).map((c) => ({
-      course_code: Number(c.course_code),
-      course_name:
-        (c.course_name ?? "").trim() ||
-        (Number(c.course_code) ? `Course ${c.course_code}` : "Course"),
-      course_type: (c.course_type ?? "module").toLowerCase(),
-      course_start_date: c.course_start_date || null,
-      course_is_active:
-        c.course_is_active === undefined || c.course_is_active === null
-          ? true
-          : !!c.course_is_active,
-      groups: (c.groups ?? []).map((g) => ({
-        group_code: Number(g.group_code),
-        group_name: (g.group_name ?? "").trim(),
-        group_type: (g.group_type ?? "class").toLowerCase(),
-        group_start_date: fromDatetimeLocal(g.group_start_date),
-        group_total_lec: Number(g.group_total_lec) || 0,
-        group_is_active:
-          g.group_is_active !== false && g.group_is_active !== 0,
-      })),
-    })),
+    course_groups: (form.course_groups ?? []).map((c) => {
+      const visibleGroups = (c.groups ?? []).filter((g) => !g?._deleted);
+      const deletedGroupIds = (c.groups ?? [])
+        .filter((g) => g?._deleted && g?.id != null)
+        .map((g) => Number(g.id));
+
+      return {
+        id: c.id != null ? Number(c.id) : undefined,
+        course_code: toApiCodeValue(c.course_code),
+        course_name:
+          (c.course_name ?? "").trim() ||
+          (Number(c.course_code) ? `Course ${c.course_code}` : "Course"),
+        course_type: (c.course_type ?? "module").toLowerCase(),
+        course_start_date: c.course_start_date || null,
+        course_is_active:
+          c.course_is_active === undefined || c.course_is_active === null
+            ? true
+            : !!c.course_is_active,
+        deleted_group_ids: deletedGroupIds,
+        groups: visibleGroups.map((g) => ({
+          id: g.id != null ? Number(g.id) : undefined,
+          group_code: toApiCodeValue(g.group_code),
+          group_name: (g.group_name ?? "").trim(),
+          group_type: (g.group_type ?? "class").toLowerCase(),
+          group_start_date: fromDatetimeLocal(g.group_start_date),
+          group_total_lec: Number(g.group_total_lec) || 0,
+          group_is_active:
+            g.group_is_active !== false && g.group_is_active !== 0,
+        })),
+      };
+    }),
   };
 }
 
