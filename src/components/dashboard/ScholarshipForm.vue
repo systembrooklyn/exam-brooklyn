@@ -1,10 +1,10 @@
 <template>
-  <div class="max-h-[min(70vh,720px)] overflow-y-auto pr-1 -mr-1 space-y-6">
+  <div class="max-h-[min(74vh,760px)] overflow-y-auto pr-1 -mr-1 space-y-4">
     <!-- Plan basics -->
-    <section class="rounded-xl border border-gray-200 bg-slate-50/50 p-4 sm:p-5">
-      <h3 class="text-sm font-semibold text-indigo-900 mb-4">Plan details</h3>
+    <section class="rounded-xl border border-gray-200 bg-slate-50/50 p-3.5 sm:p-4">
+      <h3 class="text-sm font-semibold text-indigo-900 mb-3">Plan details</h3>
       <div
-        class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6"
+        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4"
       >
         <div class="min-w-0 flex-1">
           <label class="block text-sm font-medium text-gray-700 mb-1" for="sp-name"
@@ -19,7 +19,7 @@
               v-model="form.name"
               type="text"
               placeholder="e.g. BRC, MBA…"
-              class="w-full border border-gray-200 rounded-lg px-3 py-2.5 pl-10 text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
+              class="w-full border border-gray-200 rounded-lg px-3 py-2 pl-10 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
             />
           </div>
         </div>
@@ -31,7 +31,7 @@
             aria-label="Study format"
           >
             <label
-              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
               :class="
                 form.study_type === 'online'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -47,7 +47,7 @@
               Online
             </label>
             <label
-              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
               :class="
                 form.study_type === 'class'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -64,29 +64,37 @@
 
     <!-- Material / course code -->
     <section
-      class="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-4 sm:p-6 shadow-sm"
+      class="rounded-xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-3.5 sm:p-4 shadow-sm"
     >
-      <h3 class="text-base font-bold text-indigo-950 mb-4">Add course by code</h3>
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+      <h3 class="text-sm sm:text-base font-bold text-indigo-950 mb-3">Add course</h3>
+      <div class="flex flex-col gap-2.5 sm:flex-row sm:items-stretch">
         <div class="flex-1 min-w-0">
-          <label class="block text-xs font-semibold text-gray-700 mb-1.5" for="sp-code"
-            >Course code</label
+          <label class="block text-xs font-semibold text-gray-700 mb-1.5" for="sp-course-select"
+            >Course (name + code)</label
           >
-          <input
-            id="sp-code"
-            v-model="courseCodeInput"
-            type="text"
-            placeholder="e.g. 5001"
-            class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-lg font-mono font-semibold text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 outline-none"
-            @keydown.enter.prevent="loadCourseByCode"
+          <multiselect
+            id="sp-course-select"
+            v-model="selectedCourseOption"
+            :options="courseOptions"
+            :custom-label="formatCourseOption"
+            track-by="value"
+            placeholder="Select course by name or code"
+            :searchable="true"
+            :allow-empty="true"
+            :show-labels="false"
+            :close-on-select="true"
+            :taggable="true"
+            tag-placeholder="Type a new course code then press Enter"
+            @tag="handleNewCourseCodeTag"
+            class="course-select"
           />
         </div>
         <div class="flex items-end sm:pb-0">
           <button
             type="button"
-            :disabled="loadingGroups || !courseCodeInput.trim()"
-            class="w-full sm:w-auto sm:min-w-[200px] inline-flex justify-center items-center gap-2.5 px-6 py-3.5 rounded-xl text-base font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/40 hover:-translate-y-0.5 active:translate-y-0"
-            @click="loadCourseByCode"
+            :disabled="loadingGroups || !selectedCourseOption"
+            class="w-full sm:w-auto sm:min-w-[190px] inline-flex justify-center items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md shadow-indigo-600/25 hover:shadow-indigo-600/35 hover:-translate-y-0.5 active:translate-y-0"
+            @click="loadCourseByCode(selectedCourseOption?.value)"
           >
             <span
               v-if="loadingGroups"
@@ -100,31 +108,63 @@
     </section>
 
     <!-- Course groups -->
-    <section v-if="!form.course_groups?.length" class="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-12 px-4 text-center">
-      <BookOpen class="w-10 h-10 text-gray-300 mx-auto mb-2" />
+    <section v-if="!form.course_groups?.length" class="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-8 px-4 text-center">
+      <BookOpen class="w-8 h-8 text-gray-300 mx-auto mb-2" />
       <p class="text-sm font-medium text-gray-700">No courses in this plan yet</p>
       <p class="text-xs text-gray-500 mt-1">Use course code above to add the first one.</p>
     </section>
 
-    <div v-else class="space-y-4">
+    <div v-else class="space-y-3">
       <article
         v-for="(cg, ci) in form.course_groups"
         :key="courseKey(cg, ci)"
         class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
       >
         <header
-          class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-b border-gray-100"
+          class="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 bg-gray-50 border-b border-gray-100 cursor-pointer"
+          @click="toggleCourseExpansion(courseKey(cg, ci))"
         >
-          <div class="flex items-center gap-3 min-w-0">
+          <div class="flex items-center gap-2.5 min-w-0 flex-1">
+            <button
+              type="button"
+              class="shrink-0 text-indigo-600 hover:text-indigo-800 rounded p-1 hover:bg-indigo-50 transition-colors"
+              :aria-label="isCourseExpanded(courseKey(cg, ci)) ? 'Collapse course groups' : 'Expand course groups'"
+              @click.stop="toggleCourseExpansion(courseKey(cg, ci))"
+            >
+              <ChevronDown v-if="isCourseExpanded(courseKey(cg, ci))" class="w-4 h-4" />
+              <ChevronRight v-else class="w-4 h-4" />
+            </button>
             <span
-              class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-indigo-600 text-white text-sm font-bold shrink-0 shadow-sm"
+              class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-600 text-white text-xs font-bold shrink-0 shadow-sm"
               >{{ ci + 1 }}</span
             >
             <div class="min-w-0">
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Course code</p>
-              <p class="text-xl font-mono font-bold text-gray-900 tracking-tight">
-                {{ cg.course_code }}
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Course name</p>
+              <div class="flex items-center gap-2">
+              <p class="text-lg font-semibold text-gray-900 tracking-tight truncate max-w-[200px] sm:max-w-[280px]">
+                {{ cg.course_name || `Course ${cg.course_code}` }}
               </p>
+              <p class="text-[11px] text-gray-500 mt-0.5 font-mono tabular-nums">
+                #{{ cg.course_code }}
+              </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <span
+                  class="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-[10px] font-semibold border border-slate-200 capitalize"
+                >
+                  {{ (cg.course_type || "module").toLowerCase() }}
+                </span>
+                <span
+                  class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border"
+                  :class="
+                    isCourseActive(cg)
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      : 'bg-gray-100 text-gray-600 border-gray-200'
+                  "
+                >
+                  {{ isCourseActive(cg) ? "Active" : "Inactive" }}
+                </span>
+              </div>
             </div>
             <span
               v-if="cg.is_new_course"
@@ -145,9 +185,32 @@
               Setup groups required
             </span>
           </div>
+
+          <div class="ml-auto w-full sm:w-[300px] rounded-lg border border-indigo-100 bg-indigo-50/70 px-3 py-2">
+            <template v-if="bookingPriorityGroup(cg)">
+              <p class="text-[10px] uppercase tracking-wide font-semibold text-indigo-600">
+                Booking Group:
+                <span class="text-gray-900">
+                  {{ bookingPriorityGroup(cg).group_name || "—" }}
+                </span>
+                <span class="text-gray-900 font-bold">
+                  #Code: {{ bookingPriorityGroup(cg).group_code || "—" }}
+                </span>
+              </p>
+              <p class="text-[10px] uppercase tracking-wide font-semibold text-indigo-600">
+                Start:
+                <span class="text-gray-900 font-bold">
+                  {{ formatBookingDate(bookingPriorityGroup(cg).group_start_date) }}
+                </span>
+              </p>
+            </template>
+            <p v-else class="text-[11px] text-gray-500">No active group for booking.</p>
+          </div>
+
           <button
             type="button"
-            class="text-sm text-red-600 hover:text-red-800 font-semibold px-3 py-2 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100"
+            class="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100"
+            @click.stop
             @click="removeCourse(ci)"
           >
             Remove
@@ -155,8 +218,8 @@
         </header>
 
         <!-- Groups -->
-        <div class="px-4 pb-4">
-          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
+        <div v-show="isCourseExpanded(courseKey(cg, ci))" class="px-3.5 pb-3.5">
+          <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2.5">
             <h4
               class="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2"
             >
@@ -165,7 +228,7 @@
             </h4>
             <button
               type="button"
-              class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/25 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
+              class="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 transition-all hover:-translate-y-0.5 w-full sm:w-auto"
               @click="addEmptyGroup(ci)"
             >
               <Plus class="w-4 h-4 shrink-0" />
@@ -193,9 +256,9 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <tr
-                  v-for="(g, gi) in visibleGroups(cg)"
+                  v-for="(g, gi) in visibleGroupsSorted(cg)"
                   :key="groupRowKey(ci, g, gi)"
-                  :class="isLockedExistingGroup(g) ? 'bg-gray-50/90' : 'hover:bg-slate-50/80'"
+                  :class="groupRowClass(cg, g)"
                 >
                   <td
                     class="px-2 py-2 align-middle text-center text-xs font-semibold text-indigo-700 tabular-nums"
@@ -286,11 +349,22 @@
 </template>
 
 <script setup>
-import { LucideUser, BookOpen, Plus, Users, Trash2 } from "lucide-vue-next";
-import { ref, onMounted } from "vue";
+import {
+  LucideUser,
+  BookOpen,
+  Plus,
+  Users,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+} from "lucide-vue-next";
+import { ref, onMounted, computed } from "vue";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.min.css";
 import { useCourseStore } from "@/stores/courseStore";
 import notyf from "@/components/global/notyf";
 import { mapApiGroupToForm } from "@/utils/scholarshipPlan";
+import formatDate from "../global/FormDate";
 
 const props = defineProps({
   form: Object,
@@ -301,12 +375,61 @@ const props = defineProps({
 });
 
 const courseStore = useCourseStore();
-const courseCodeInput = ref("");
+const selectedCourseOption = ref(null);
 const loadingGroups = ref(false);
+const customCourseOptions = ref([]);
+const expandedCourseKeys = ref(new Set());
+const courseOptions = computed(() => {
+  const list = Array.isArray(courseStore.courses) ? courseStore.courses : [];
+  const base = list
+    .map((course) => {
+      const code = course?.code ?? course?.course_code ?? course?.id;
+      const name = course?.name ?? course?.course_name ?? "Course";
+      return {
+        label: `${name} (${code ?? "—"})`,
+        value: String(code ?? "").trim(),
+        name,
+        code,
+      };
+    })
+    .filter((opt) => opt.value);
+  return [...base, ...customCourseOptions.value];
+});
+
+function formatCourseOption(option) {
+  if (!option) return "";
+  return `${option.name} (${option.code})`;
+}
+
+function handleNewCourseCodeTag(rawValue) {
+  const code = String(rawValue ?? "").trim();
+  if (!code) return;
+  const alreadyExists = courseOptions.value.some(
+    (opt) => String(opt.value ?? "").toLowerCase() === code.toLowerCase()
+  );
+  if (alreadyExists) {
+    selectedCourseOption.value = courseOptions.value.find(
+      (opt) => String(opt.value ?? "").toLowerCase() === code.toLowerCase()
+    );
+    return;
+  }
+  const option = {
+    label: `Course ${code} (${code})`,
+    value: code,
+    name: `Course ${code}`,
+    code,
+  };
+  customCourseOptions.value = [...customCourseOptions.value, option];
+  selectedCourseOption.value = option;
+}
 
 onMounted(() => {
   if (!Array.isArray(props.form.course_groups)) {
     props.form.course_groups = [];
+  }
+  courseStore.fetchCourses();
+  if (props.form.course_groups.length) {
+    expandedCourseKeys.value = new Set([courseKey(props.form.course_groups[0], 0)]);
   }
 });
 
@@ -319,12 +442,51 @@ function groupRowKey(ci, g, gi) {
   return g._uiKey ?? `grp-${ci}-${gi}`;
 }
 
+function isCourseExpanded(key) {
+  return expandedCourseKeys.value.has(key);
+}
+
+function toggleCourseExpansion(key) {
+  const next = new Set(expandedCourseKeys.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  expandedCourseKeys.value = next;
+}
+
 function isLockedExistingGroup(g) {
   return !props.isEditing && g.id != null;
 }
 
+function isCourseActive(cg) {
+  const v = cg?.course_is_active;
+  return v === true || v === 1;
+}
+
 function visibleGroups(cg) {
   return (cg?.groups ?? []).filter((g) => !g?._deleted);
+}
+
+function parseGroupStartMs(raw) {
+  if (raw == null || raw === "") return Number.NEGATIVE_INFINITY;
+  const s = String(raw).trim();
+  const direct = Date.parse(s);
+  if (!Number.isNaN(direct)) return direct;
+  const [datePart = "", timePart = "00:00:00"] = s.split(" ");
+  const dmy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!dmy) return Number.NEGATIVE_INFINITY;
+  const [, dd, mm, yyyy] = dmy;
+  const normalizedTime = timePart.length === 5 ? `${timePart}:00` : timePart;
+  const isoLike = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${normalizedTime}`;
+  const parsed = Date.parse(isoLike);
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+}
+
+/** Display order: newest start date first (same idea as GroupTypeTabsTable). */
+function visibleGroupsSorted(cg) {
+  const list = visibleGroups(cg);
+  return [...list].sort(
+    (a, b) => parseGroupStartMs(b?.group_start_date) - parseGroupStartMs(a?.group_start_date)
+  );
 }
 
 function extractGroupsFromResponse(raw) {
@@ -332,6 +494,12 @@ function extractGroupsFromResponse(raw) {
   if (raw && Array.isArray(raw.groups)) return raw.groups;
   if (raw && raw.data && Array.isArray(raw.data)) return raw.data;
   return [];
+}
+
+function extractCourseMetaFromResponse(raw) {
+  if (raw?.meta?.course) return raw.meta.course;
+  if (raw?.course) return raw.course;
+  return null;
 }
 
 function isMissingOrInvalidCourseError(err) {
@@ -376,10 +544,14 @@ function appendCourseGroup(entry) {
     : [];
   list.push(entry);
   props.form.course_groups = list;
+  const key = courseKey(entry, list.length - 1);
+  const next = new Set(expandedCourseKeys.value);
+  next.add(key);
+  expandedCourseKeys.value = next;
 }
 
-async function loadCourseByCode() {
-  const code = String(courseCodeInput.value).trim();
+async function loadCourseByCode(inputCode) {
+  const code = String(inputCode ?? "").trim();
   if (!code) return;
 
   if (props.form.course_groups?.some((cg) => String(cg.course_code) === code)) {
@@ -390,7 +562,11 @@ async function loadCourseByCode() {
   loadingGroups.value = true;
   try {
     /** GET /courses/{code}/groups — same value user typed, no catalog lookup */
-    const raw = await courseStore.fetchCourseGroups(code, { silent: true });
+    const raw = await courseStore.fetchCourseGroups(code, {
+      silent: true,
+      fullResponse: true,
+    });
+    const courseMeta = extractCourseMetaFromResponse(raw);
     const groupsList = extractGroupsFromResponse(raw).map((g, index) => ({
       ...mapApiGroupToForm(g),
       _uiKey: `new-${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}`,
@@ -399,23 +575,26 @@ async function loadCourseByCode() {
     const numCode = Number(code);
     const entry = {
       course_code: Number.isFinite(numCode) ? numCode : code,
-      course_name: "",
-      course_type: "module",
-      course_start_date: "",
-      course_is_active: true,
+      course_name: String(courseMeta?.name ?? "").trim() || `Course ${code}`,
+      course_type: String(courseMeta?.type ?? "module").toLowerCase(),
+      course_start_date: courseMeta?.start_date ?? "",
+      course_is_active:
+        courseMeta?.is_active === undefined || courseMeta?.is_active === null
+          ? true
+          : courseMeta.is_active === 1 || courseMeta.is_active === true,
       is_new_course: false,
       requires_group_setup: false,
       groups: groupsList.length ? groupsList : [emptyGroup()],
     };
 
     appendCourseGroup(entry);
-    courseCodeInput.value = "";
+    selectedCourseOption.value = null;
     notyf.success("Groups loaded. Adjust groups if needed, then save the plan.");
   } catch (err) {
     if (isMissingOrInvalidCourseError(err)) {
       const entry = buildNewCourseEntry(code);
       appendCourseGroup(entry);
-      courseCodeInput.value = "";
+      selectedCourseOption.value = null;
       notyf.success(
         "Course code not found. Added as a new course, now add its groups before saving."
       );
@@ -462,7 +641,94 @@ function removeGroup(courseIndex, group) {
 
 function removeCourse(index) {
   const list = [...(props.form.course_groups ?? [])];
+  const removed = list[index];
   list.splice(index, 1);
   props.form.course_groups = list;
+  if (removed) {
+    const removedKey = courseKey(removed, index);
+    const next = new Set(expandedCourseKeys.value);
+    next.delete(removedKey);
+    expandedCourseKeys.value = next;
+  }
+}
+
+function normalizeType(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function toTimestamp(raw) {
+  if (raw == null || raw === "") return Number.NEGATIVE_INFINITY;
+  const s = String(raw).trim();
+
+  const direct = Date.parse(s);
+  if (!Number.isNaN(direct)) return direct;
+
+  const [datePart = "", timePart = "00:00:00"] = s.split(" ");
+  const dmy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!dmy) return Number.NEGATIVE_INFINITY;
+
+  const [, dd, mm, yyyy] = dmy;
+  const normalizedTime = timePart.length === 5 ? `${timePart}:00` : timePart;
+  const isoLike = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${normalizedTime}`;
+  const parsed = Date.parse(isoLike);
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+}
+
+function isActiveGroup(group) {
+  return group?.group_is_active === true || group?.group_is_active === 1;
+}
+
+function bookingPriorityGroup(course) {
+  const scholarshipType = normalizeType(props.form?.study_type);
+  const scopedGroups = visibleGroups(course).filter((group) => {
+    if (scholarshipType !== "online" && scholarshipType !== "class") return true;
+    return normalizeType(group?.group_type) === scholarshipType;
+  });
+
+  const activeGroups = scopedGroups.filter(isActiveGroup);
+  if (!activeGroups.length) return null;
+
+  const sortedByDateAsc = [...activeGroups].sort(
+    (a, b) => toTimestamp(a?.group_start_date) - toTimestamp(b?.group_start_date)
+  );
+
+  const now = new Date();
+  const tenDaysLater = new Date(now);
+  tenDaysLater.setDate(now.getDate() + 10);
+  const thresholdTs = tenDaysLater.getTime();
+
+  const upcoming = sortedByDateAsc.find(
+    (group) => toTimestamp(group?.group_start_date) >= thresholdTs
+  );
+  if (upcoming) return upcoming;
+
+  return sortedByDateAsc[sortedByDateAsc.length - 1] ?? null;
+}
+
+function isSameGroup(a, b) {
+  if (!a || !b) return false;
+  const aId = a?.id ?? a?.group_id ?? null;
+  const bId = b?.id ?? b?.group_id ?? null;
+  if (aId != null && bId != null) return String(aId) === String(bId);
+  return String(a?.group_code ?? "") === String(b?.group_code ?? "");
+}
+
+function groupRowClass(course, group) {
+  if (isSameGroup(group, bookingPriorityGroup(course))) {
+    return "bg-amber-50/70 ring-1 ring-inset ring-amber-200 hover:bg-amber-100/70";
+  }
+  return isLockedExistingGroup(group) ? "bg-gray-50/90" : "hover:bg-slate-50/80";
+}
+
+function formatBookingDate(raw) {
+  if (raw == null || raw === "") return "—";
+  const s = String(raw);
+  const parts = s.split(" ");
+  const datePart = formatDate(s);
+  if (parts.length >= 2 && parts[1]) {
+    const time = parts[1].slice(0, 5);
+    if (time && time !== "00:00") return `${datePart} ${time}`;
+  }
+  return datePart;
 }
 </script>

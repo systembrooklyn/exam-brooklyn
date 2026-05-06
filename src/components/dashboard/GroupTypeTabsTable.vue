@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col gap-4 md:flex-row md:items-start">
     <aside class="md:w-36 shrink-0 sticky top-4 self-start z-10">
-      <div class="rounded-lg border border-gray-200 bg-white/95 backdrop-blur-sm p-2 space-y-1.5 shadow-lg border-gray-300">
+      <div class="rounded-lg border border-gray-300 bg-white/95 backdrop-blur-sm p-2 space-y-1.5 shadow-lg">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -40,7 +40,7 @@
           <tr
             v-for="g in filteredGroups"
             :key="rowKey(g)"
-            class="hover:bg-indigo-50/40 transition-colors"
+            :class="rowClass(g)"
           >
             <td class="px-4 py-3 text-center font-medium text-gray-900 max-w-[220px]">
               <span class="line-clamp-2">{{ g.group_name }}</span>
@@ -85,6 +85,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  highlightedGroup: {
+    type: Object,
+    default: null,
+  },
   emptyText: {
     type: String,
     default: "No groups for this type.",
@@ -110,14 +114,53 @@ const tabs = computed(() => {
 
 const filteredGroups = computed(() => {
   const list = Array.isArray(props.groups) ? props.groups : [];
-  if (activeTab.value === "all") return list;
-  return list.filter(
+  const scoped =
+    activeTab.value === "all"
+      ? list
+      : list.filter(
     (g) => normalizeType(g?.group_type) === String(activeTab.value).toLowerCase()
   );
+  return [...scoped].sort((a, b) => parseStartDate(b?.group_start_date) - parseStartDate(a?.group_start_date));
 });
+
+function parseStartDate(raw) {
+  if (raw == null || raw === "") return -Infinity;
+  const s = String(raw).trim();
+
+  const parsed = Date.parse(s);
+  if (!Number.isNaN(parsed)) return parsed;
+
+  // Fallback for DD/MM/YYYY and DD/MM/YYYY HH:mm[:ss]
+  const [datePart = "", timePart = "00:00:00"] = s.split(" ");
+  const dmy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!dmy) return -Infinity;
+
+  const [, dd, mm, yyyy] = dmy;
+  const normalizedTime = timePart.length === 5 ? `${timePart}:00` : timePart;
+  const isoLike = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${normalizedTime}`;
+  const fallback = Date.parse(isoLike);
+  return Number.isNaN(fallback) ? -Infinity : fallback;
+}
 
 function rowKey(g) {
   return g?.group_id ?? g?.id ?? `${g?.group_code ?? "grp"}-${g?.group_name ?? ""}`;
+}
+
+function isSameGroup(a, b) {
+  if (!a || !b) return false;
+  const aId = a?.group_id ?? a?.id ?? null;
+  const bId = b?.group_id ?? b?.id ?? null;
+  if (aId != null && bId != null) {
+    return String(aId) === String(bId);
+  }
+  return String(a?.group_code ?? "") === String(b?.group_code ?? "");
+}
+
+function rowClass(group) {
+  if (isSameGroup(group, props.highlightedGroup)) {
+    return "bg-amber-50/70 ring-1 ring-inset ring-amber-200 hover:bg-amber-100/70 transition-colors";
+  }
+  return "hover:bg-indigo-50/40 transition-colors";
 }
 
 function activeLabel(val) {

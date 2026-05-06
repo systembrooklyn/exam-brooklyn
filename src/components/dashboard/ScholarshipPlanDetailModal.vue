@@ -106,7 +106,7 @@
               >
                 <button
                   type="button"
-                  class="w-full flex items-start gap-3 text-left px-4 py-3.5 bg-gray-50/90 hover:bg-gray-100/90 transition-colors"
+                  class="w-full flex items-start gap-3 sm:gap-4 text-left px-4 py-3.5 bg-gray-50/90 hover:bg-gray-100/90 transition-colors"
                   :aria-expanded="isExpanded(course.course_id)"
                   @click="toggleCourse(course.course_id)"
                 >
@@ -117,7 +117,7 @@
                     />
                     <ChevronRight v-else class="w-5 h-5" />
                   </span>
-                  <div class="min-w-0 flex-1">
+                  <div class="min-w-0 flex-1 pr-2">
                     <div class="flex flex-wrap items-center gap-2 gap-y-1">
                       <span class="font-semibold text-gray-900">{{ course.course_name }}</span>
                       <span
@@ -145,6 +145,27 @@
                       {{ groupCount(course) }}
                     </p>
                   </div>
+
+                  <div class="ml-auto w-[280px] lg:w-[350px] shrink-0">
+                    <div
+                      v-if="bookingPriorityGroup(course)"
+                      class="rounded-lg border border-indigo-100 bg-indigo-50/70 px-3 py-2.5"
+                    > 
+                      <p class="text-[10px] uppercase tracking-wide font-semibold text-indigo-600">
+                        Booking Group: <span class="text-gray-950">{{ bookingPriorityGroup(course).group_name || "—" }}</span> <span class="text-gray-950 font-bold">#code: {{ bookingPriorityGroup(course).group_code || "—" }}</span>
+                      </p>
+                      <p class="text-[10px] uppercase tracking-wide font-semibold text-indigo-600">
+                        Start: <span class="text-gray-950 font-bold">{{ formatDateTime(bookingPriorityGroup(course).group_start_date) }}</span>
+                      </p>
+                    </div>
+
+                    <div
+                      v-else
+                      class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-[11px] leading-4 text-gray-500"
+                    >
+                      No active group for booking.
+                    </div>
+                  </div>
                 </button>
 
                 <div
@@ -162,6 +183,7 @@
                     <GroupTypeTabsTable
                       v-else
                       :groups="groupList(course)"
+                      :highlighted-group="bookingPriorityGroup(course)"
                       empty-text="No groups for this type."
                     />
                   </div>
@@ -225,6 +247,62 @@ function groupList(course) {
 
 function groupCount(course) {
   return groupList(course).length;
+}
+
+function toTimestamp(raw) {
+  if (raw == null || raw === "") return Number.NEGATIVE_INFINITY;
+  const s = String(raw).trim();
+
+  const direct = Date.parse(s);
+  if (!Number.isNaN(direct)) return direct;
+
+  // Fallback for DD/MM/YYYY and DD/MM/YYYY HH:mm[:ss]
+  const [datePart = "", timePart = "00:00:00"] = s.split(" ");
+  const dmy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!dmy) return Number.NEGATIVE_INFINITY;
+
+  const [, dd, mm, yyyy] = dmy;
+  const normalizedTime = timePart.length === 5 ? `${timePart}:00` : timePart;
+  const isoLike = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${normalizedTime}`;
+  const parsed = Date.parse(isoLike);
+  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+}
+
+function isActiveGroup(group) {
+  return group?.group_is_active === true || group?.group_is_active === 1;
+}
+
+function normalizeType(value) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+function bookingPriorityGroup(course) {
+  const scholarshipType = normalizeType(props.detail?.study_type);
+  const typedGroups =
+    scholarshipType === "online" || scholarshipType === "class"
+      ? groupList(course).filter(
+          (group) => normalizeType(group?.group_type) === scholarshipType
+        )
+      : groupList(course);
+
+  const activeGroups = typedGroups.filter(isActiveGroup);
+  if (!activeGroups.length) return null;
+
+  const sortedByDateAsc = [...activeGroups].sort(
+    (a, b) => toTimestamp(a?.group_start_date) - toTimestamp(b?.group_start_date)
+  );
+
+  const now = new Date();
+  const tenDaysLater = new Date(now);
+  tenDaysLater.setDate(now.getDate() + 15);
+  const thresholdTs = tenDaysLater.getTime();
+
+  const upcoming = sortedByDateAsc.find(
+    (group) => toTimestamp(group?.group_start_date) >= thresholdTs
+  );
+  if (upcoming) return upcoming;
+
+  return sortedByDateAsc[sortedByDateAsc.length - 1] ?? null;
 }
 
 function isExpanded(courseId) {

@@ -4,9 +4,14 @@
     class="fixed inset-0 bg-[rgba(0,0,0,0.6)] bg-opacity-30 flex items-center justify-center z-50"
   >
     <div
-      class="bg-white p-6 rounded-lg shadow-lg w-full max-w-[70%] min-h-[90%] relative"
+      class="bg-white rounded-lg shadow-lg w-full relative"
+      :class="
+        isScholarship
+          ? 'max-w-[74%] max-h-[92vh] overflow-y-auto p-4 sm:p-5'
+          : 'max-w-[70%] min-h-[90%] p-6'
+      "
     >
-      <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+      <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
         {{ modalTitle }}
       </h2>
 
@@ -19,7 +24,7 @@
       <ReservationsForm v-if="isReservation" :form="form" />
      </div>
 
-      <div class="flex justify-end gap-3 mt-6">
+      <div class="flex justify-end gap-3 mt-4">
         <button
           @click="saveData"
           :disabled="!hasChanges"
