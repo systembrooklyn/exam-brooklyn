@@ -6,7 +6,7 @@
       @click.self="close"
     >
       <div
-        class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-gray-200/80"
+        class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[92vh] flex flex-col overflow-hidden border border-gray-200/80"
         role="dialog"
         aria-modal="true"
         aria-labelledby="scholarship-detail-title"
@@ -149,58 +149,21 @@
 
                 <div
                   v-show="isExpanded(course.course_id)"
-                  class="border-t border-gray-100 px-4 py-3 bg-white"
+                  class="border-t border-gray-100 bg-white relative overflow-y-auto"
+                  style="max-height: 500px;"
                 >
-                  <div
-                    v-if="!groupList(course).length"
-                    class="text-sm text-gray-500 py-4 text-center rounded-lg bg-gray-50"
-                  >
-                    No groups for this course.
-                  </div>
-                  <div v-else class="overflow-x-auto rounded-lg border border-gray-100">
-                    <table class="min-w-full text-sm">
-                      <thead>
-                        <tr class="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                          <th class="px-3 py-2.5">Group</th>
-                          <th class="px-3 py-2.5 whitespace-nowrap">Code</th>
-                          <th class="px-3 py-2.5">Type</th>
-                          <th class="px-3 py-2.5 whitespace-nowrap">Start</th>
-                          <th class="px-3 py-2.5 text-right whitespace-nowrap">Lectures</th>
-                          <th class="px-3 py-2.5 text-center whitespace-nowrap">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody class="divide-y divide-gray-100">
-                        <tr
-                          v-for="g in groupList(course)"
-                          :key="`${course.course_id}-${g.group_id}`"
-                          class="hover:bg-indigo-50/40 transition-colors"
-                        >
-                          <td class="px-3 py-2.5 font-medium text-gray-900 max-w-[200px]">
-                            <span class="line-clamp-2">{{ g.group_name }}</span>
-                          </td>
-                          <td class="px-3 py-2.5 font-mono text-gray-700 whitespace-nowrap">
-                            {{ g.group_code }}
-                          </td>
-                          <td class="px-3 py-2.5 capitalize text-gray-700">
-                            {{ g.group_type || "—" }}
-                          </td>
-                          <td class="px-3 py-2.5 text-gray-600 whitespace-nowrap text-xs sm:text-sm">
-                            {{ formatDateTime(g.group_start_date) }}
-                          </td>
-                          <td class="px-3 py-2.5 text-right tabular-nums text-gray-700">
-                            {{ g.group_total_lec ?? "—" }}
-                          </td>
-                          <td class="px-3 py-2.5 text-center">
-                            <span
-                              class="inline-flex text-xs px-2 py-0.5 rounded-full font-medium"
-                              :class="activePillClass(g.group_is_active)"
-                            >
-                              {{ activeLabel(g.group_is_active) }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div class="px-4 py-3">
+                    <div
+                      v-if="!groupList(course).length"
+                      class="text-sm text-gray-500 py-4 text-center rounded-lg bg-gray-50"
+                    >
+                      No groups for this course.
+                    </div>
+                    <GroupTypeTabsTable
+                      v-else
+                      :groups="groupList(course)"
+                      empty-text="No groups for this type."
+                    />
                   </div>
                 </div>
               </article>
@@ -235,6 +198,7 @@ import {
   ChevronRight,
   X,
 } from "lucide-vue-next";
+import GroupTypeTabsTable from "@/components/dashboard/GroupTypeTabsTable.vue";
 import formatDate from "../global/FormDate";
 
 const props = defineProps({
