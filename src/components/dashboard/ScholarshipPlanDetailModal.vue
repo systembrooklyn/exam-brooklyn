@@ -351,11 +351,8 @@ const close = () => emit("update:modelValue", false);
 
 watch(
   () => props.detail,
-  (d) => {
+  () => {
     expandedIds.value = new Set();
-    if (d?.courses?.length) {
-      expandedIds.value = new Set([d.courses[0].course_id]);
-    }
   },
   { immediate: true }
 );

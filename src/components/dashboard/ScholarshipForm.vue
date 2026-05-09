@@ -117,21 +117,40 @@
     <div v-else class="space-y-3">
       <article
         v-for="(cg, ci) in form.course_groups"
-        :key="courseKey(cg, ci)"
-        class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+        :key="ensureCourseItemKey(cg)"
+        class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-shadow"
+        :class="{
+          'opacity-60': draggingCourseIndex === ci,
+          'ring-2 ring-indigo-400 ring-offset-1':
+            dragOverCourseIndex === ci && draggingCourseIndex !== ci,
+        }"
+        @dragover="onCourseDragOver(ci, $event)"
+        @drop="onCourseDrop(ci, $event)"
       >
         <header
           class="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 bg-gray-50 border-b border-gray-100 cursor-pointer"
-          @click="toggleCourseExpansion(courseKey(cg, ci))"
+          @click="toggleCourseExpansion(ensureCourseItemKey(cg))"
         >
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
             <button
               type="button"
-              class="shrink-0 text-indigo-600 hover:text-indigo-800 rounded p-1 hover:bg-indigo-50 transition-colors"
-              :aria-label="isCourseExpanded(courseKey(cg, ci)) ? 'Collapse course groups' : 'Expand course groups'"
-              @click.stop="toggleCourseExpansion(courseKey(cg, ci))"
+              class="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 p-1 rounded-md hover:bg-gray-200/80 touch-none"
+              draggable="true"
+              aria-label="Drag to reorder course"
+              title="Drag to reorder"
+              @click.stop
+              @dragstart="onCourseDragStart(ci, $event)"
+              @dragend="onCourseDragEnd"
             >
-              <ChevronDown v-if="isCourseExpanded(courseKey(cg, ci))" class="w-4 h-4" />
+              <GripVertical class="w-4 h-4 pointer-events-none" />
+            </button>
+            <button
+              type="button"
+              class="shrink-0 text-indigo-600 hover:text-indigo-800 rounded p-1 hover:bg-indigo-50 transition-colors"
+              :aria-label="isCourseExpanded(ensureCourseItemKey(cg)) ? 'Collapse course groups' : 'Expand course groups'"
+              @click.stop="toggleCourseExpansion(ensureCourseItemKey(cg))"
+            >
+              <ChevronDown v-if="isCourseExpanded(ensureCourseItemKey(cg))" class="w-4 h-4" />
               <ChevronRight v-else class="w-4 h-4" />
             </button>
             <span
@@ -218,7 +237,7 @@
         </header>
 
         <!-- Groups -->
-        <div v-show="isCourseExpanded(courseKey(cg, ci))" class="px-3.5 pb-3.5">
+        <div v-show="isCourseExpanded(ensureCourseItemKey(cg))" class="px-3.5 pb-3.5">
           <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2.5">
             <h4
               class="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2"
@@ -256,7 +275,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <tr
-                  v-for="(g, gi) in visibleGroupsSorted(cg)"
+                  v-for="(g, gi) in visibleGroups(cg)"
                   :key="groupRowKey(ci, g, gi)"
                   :class="groupRowClass(cg, g)"
                 >
@@ -357,6 +376,7 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
+  GripVertical,
 } from "lucide-vue-next";
 import { ref, onMounted, computed } from "vue";
 import Multiselect from "vue-multiselect";
@@ -374,11 +394,21 @@ const props = defineProps({
   },
 });
 
+const emit = defineEmits(["update:courseGroups"]);
+
+/** Keep course list in sync with parent ref (Modal → list); avoids stale UI when nested prop assign does not re-render. */
+function replaceCourseGroups(nextList) {
+  const list = Array.isArray(nextList) ? [...nextList] : [];
+  emit("update:courseGroups", list);
+}
+
 const courseStore = useCourseStore();
 const selectedCourseOption = ref(null);
 const loadingGroups = ref(false);
 const customCourseOptions = ref([]);
 const expandedCourseKeys = ref(new Set());
+const draggingCourseIndex = ref(null);
+const dragOverCourseIndex = ref(null);
 const courseOptions = computed(() => {
   const list = Array.isArray(courseStore.courses) ? courseStore.courses : [];
   const base = list
@@ -424,17 +454,61 @@ function handleNewCourseCodeTag(rawValue) {
 }
 
 onMounted(() => {
-  if (!Array.isArray(props.form.course_groups)) {
-    props.form.course_groups = [];
+  if (!Array.isArray(props.form?.course_groups)) {
+    replaceCourseGroups([]);
   }
   courseStore.fetchCourses();
-  if (props.form.course_groups.length) {
-    expandedCourseKeys.value = new Set([courseKey(props.form.course_groups[0], 0)]);
-  }
 });
 
-function courseKey(cg, i) {
-  return cg.course_code != null ? `c-${cg.course_code}` : `idx-${i}`;
+/** Stable id for list :key, expand/collapse, and drag reorder (mutates cg once). */
+function ensureCourseItemKey(cg) {
+  if (cg._accordionKey) return cg._accordionKey;
+  const id = cg.id ?? cg.course_id;
+  if (id != null) {
+    cg._accordionKey = `course-${id}`;
+    return cg._accordionKey;
+  }
+  const code = cg.course_code;
+  if (code != null && code !== "") {
+    cg._accordionKey = `code-${code}`;
+    return cg._accordionKey;
+  }
+  cg._accordionKey = `cg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  return cg._accordionKey;
+}
+
+function onCourseDragStart(ci, e) {
+  draggingCourseIndex.value = ci;
+  try {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(ci));
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+function onCourseDragEnd() {
+  draggingCourseIndex.value = null;
+  dragOverCourseIndex.value = null;
+}
+
+function onCourseDragOver(ci, e) {
+  if (draggingCourseIndex.value == null) return;
+  e.preventDefault();
+  dragOverCourseIndex.value = ci;
+}
+
+function onCourseDrop(toIndex, e) {
+  e.preventDefault();
+  const from = draggingCourseIndex.value;
+  draggingCourseIndex.value = null;
+  dragOverCourseIndex.value = null;
+  if (from == null || from === toIndex) return;
+  const list = [...(props.form.course_groups ?? [])];
+  if (from < 0 || from >= list.length) return;
+  const [moved] = list.splice(from, 1);
+  list.splice(toIndex, 0, moved);
+  replaceCourseGroups(list);
 }
 
 function groupRowKey(ci, g, gi) {
@@ -464,29 +538,6 @@ function isCourseActive(cg) {
 
 function visibleGroups(cg) {
   return (cg?.groups ?? []).filter((g) => !g?._deleted);
-}
-
-function parseGroupStartMs(raw) {
-  if (raw == null || raw === "") return Number.NEGATIVE_INFINITY;
-  const s = String(raw).trim();
-  const direct = Date.parse(s);
-  if (!Number.isNaN(direct)) return direct;
-  const [datePart = "", timePart = "00:00:00"] = s.split(" ");
-  const dmy = datePart.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (!dmy) return Number.NEGATIVE_INFINITY;
-  const [, dd, mm, yyyy] = dmy;
-  const normalizedTime = timePart.length === 5 ? `${timePart}:00` : timePart;
-  const isoLike = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}T${normalizedTime}`;
-  const parsed = Date.parse(isoLike);
-  return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
-}
-
-/** Display order: newest start date first (same idea as GroupTypeTabsTable). */
-function visibleGroupsSorted(cg) {
-  const list = visibleGroups(cg);
-  return [...list].sort(
-    (a, b) => parseGroupStartMs(b?.group_start_date) - parseGroupStartMs(a?.group_start_date)
-  );
 }
 
 function extractGroupsFromResponse(raw) {
@@ -543,11 +594,7 @@ function appendCourseGroup(entry) {
     ? [...props.form.course_groups]
     : [];
   list.push(entry);
-  props.form.course_groups = list;
-  const key = courseKey(entry, list.length - 1);
-  const next = new Set(expandedCourseKeys.value);
-  next.add(key);
-  expandedCourseKeys.value = next;
+  replaceCourseGroups(list);
 }
 
 async function loadCourseByCode(inputCode) {
@@ -643,9 +690,9 @@ function removeCourse(index) {
   const list = [...(props.form.course_groups ?? [])];
   const removed = list[index];
   list.splice(index, 1);
-  props.form.course_groups = list;
+  replaceCourseGroups(list);
   if (removed) {
-    const removedKey = courseKey(removed, index);
+    const removedKey = ensureCourseItemKey(removed);
     const next = new Set(expandedCourseKeys.value);
     next.delete(removedKey);
     expandedCourseKeys.value = next;

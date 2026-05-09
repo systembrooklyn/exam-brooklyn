@@ -32,7 +32,7 @@
     <!-- Reuse Modal Component for Add/Edit Scholarship -->
     <Modal v-if="showModal" :showModal="showModal" :modalTitle="isEditing ? 'Edit Scholarship Plan' : 'New Scholarship Plan'"
       :form="form" :saving="saving" :isEditing="isEditing" :isScholarship="true" :isCourse="false" :scholarships="true"
-      @closeModal="closeModal" @saveData="saveScholarship" />
+      @closeModal="closeModal" @saveData="saveScholarship" @update:course-groups="onUpdateCourseGroups" />
 
     <!-- SweetAlert2 Modal for Confirmation -->
     <SweetAlert2Modal v-if="showDeleteAlert" :title="'Are you sure?'" :text="'This scholarship plan will be deleted.'"
@@ -105,6 +105,11 @@ const closeModal = () => {
   isEditing.value = false;
   saving.value = false;
 };
+
+function onUpdateCourseGroups(courseGroups) {
+  if (!form.value) return;
+  form.value.course_groups = Array.isArray(courseGroups) ? courseGroups : [];
+}
 
 const openScholarshipPlanDetail = async (id) => {
   showPlanDetail.value = true;

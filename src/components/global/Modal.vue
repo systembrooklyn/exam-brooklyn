@@ -19,7 +19,12 @@
        <EmployeeForm v-if="isEmployee" :form="form" />
       <InstructorForm v-if="isInstructor" :form="form" />
       <CourseForm v-if="isCourse" :form="form" />
-      <ScholarshipForm v-if="isScholarship" :form="form" :isEditing="isEditing" />
+      <ScholarshipForm
+        v-if="isScholarship"
+        :form="form"
+        :isEditing="isEditing"
+        @update:course-groups="(list) => emit('update:courseGroups', list)"
+      />
       <RoleForm v-if="isRole" :form="form" />
       <ReservationsForm v-if="isReservation" :form="form" />
      </div>
@@ -73,7 +78,7 @@ const props = defineProps({
   isReservation: Boolean,
 });
 
-const emit = defineEmits(["closeModal", "saveData"]);
+const emit = defineEmits(["closeModal", "saveData", "update:courseGroups"]);
 
 /** Plain snapshot for isEqual. toRaw only here — not in watch source — so Vue still tracks nested edits. */
 function snapshotForm(form) {

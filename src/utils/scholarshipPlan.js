@@ -77,8 +77,11 @@ export function mapApiGroupToForm(g) {
 
 function mapIncomingCourse(c) {
   const groups = Array.isArray(c.groups) ? c.groups.map(mapIncomingGroup) : [];
+  const courseId = c.id ?? c.course_id;
   return {
-    id: c.id ?? c.course_id,
+    id: courseId,
+    /** Stable Vue key + accordion state; not sent in API payload */
+    _accordionKey: courseId != null ? `course-${courseId}` : undefined,
     course_code: c.course_code ?? c.code ?? "",
     course_name: c.course_name ?? c.name ?? "",
     course_type: (c.course_type ?? "module").toLowerCase(),
