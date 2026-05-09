@@ -1,9 +1,5 @@
 <template>
-  <HrFeatureUnderMaintenance
-    v-if="!authStore.isAdminUser"
-    feature-title="Employee Requests"
-  />
-  <div v-else class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
+  <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
     <div class="flex justify-between items-center mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Employee Requests</h1>
@@ -67,7 +63,217 @@
       </div>
     </div>
 
-    <div class="mb-4">
+    <!-- My requests filters (API: GET .../employee-requests/me) -->
+    <div
+      v-if="!pendingQueueMode"
+      class="mb-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+    >
+      <!-- <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">
+        My requests filters
+      </p> -->
+      <div class="flex flex-col gap-4 xl:gap-2">
+        <div
+          class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3"
+        >
+          <div class="w-full min-w-0 xl:flex-1">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Payroll month</label>
+            <input
+              v-model="myFilterMonth"
+              type="month"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none"
+            />
+            <p v-if="myPeriodLabel" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
+              {{ myPeriodLabel }}
+            </p>
+          </div>
+          <div class="w-full min-w-0 xl:flex-1">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <select
+              v-model="myFilterStatus"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none"
+            >
+              <option value="">All statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <!-- <div class="w-full shrink-0 sm:w-auto xl:w-[9.75rem] xl:shrink-0 xl:flex xl:justify-stretch">
+            <button
+              type="button"
+              class="w-full h-10 px-4 rounded-lg text-sm font-medium bg-slate-700 text-white hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+              :disabled="store.loading"
+              @click="applyMyRequestFilters"
+            >
+              Apply filters
+            </button>
+          </div> -->
+        </div>
+        <div
+          class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start"
+        >
+          <div class="flex-1 min-w-0 text-[11px] text-gray-500 leading-snug break-words">
+            <template v-if="myPeriodLabel">{{ myPeriodLabel }}</template>
+          </div>
+          <div class="flex-1 min-w-0 text-[11px] text-gray-500 leading-snug break-words">
+            <template v-if="myFilterStatus">selected status is {{ myFilterStatus }}</template>
+            <template v-else>all statuses</template>
+          </div>
+          <div class="w-[9.75rem] shrink-0" aria-hidden="true" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending queue filters (API: GET .../employee-requests/pending) -->
+    <div
+      v-if="canAccessPendingQueue && pendingQueueMode"
+      class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"
+    >
+      <p class="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-3">
+        Pending queue filters
+      </p>
+      <!-- xl: controls stay on one row; helper text on a second row with matching column widths -->
+      <div class="flex flex-col gap-4 xl:gap-2">
+        <div
+          class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3"
+        >
+          <div class="w-full min-w-0 xl:flex-[1.05]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Payroll month</label>
+            <input
+              v-model="pendingFilterMonth"
+              type="month"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            />
+            <p v-if="pendingPeriodLabel" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
+              {{ pendingPeriodLabel }}
+            </p>
+          </div>
+          <div class="w-full min-w-0 xl:flex-[0.85]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <select
+              v-model="pendingFilterStatus"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+            >
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+
+          </div>
+          <div class="w-full min-w-0 xl:flex-[1.85]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Employee</label>
+            <div ref="pendingEmployeePickerRoot" class="relative">
+              <button
+                type="button"
+                class="w-full h-10 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                :disabled="store.loading"
+                :aria-expanded="pendingEmployeePickerOpen"
+                aria-haspopup="listbox"
+                @click.stop="pendingEmployeePickerOpen = !pendingEmployeePickerOpen"
+              >
+                <span class="min-w-0 flex-1 flex items-center gap-2">
+                  <template v-if="!String(pendingFilterEmployeeId ?? '').trim()">
+                    <span class="truncate text-gray-800">All employees</span>
+                  </template>
+                  <template v-else>
+                    <span class="truncate text-gray-800">
+                      {{
+                        selectedPendingEmployee
+                          ? pendingEmployeeBaseLabel(selectedPendingEmployee)
+                          : `Employee #${pendingFilterEmployeeId}`
+                      }}
+                    </span>
+                    <span
+                      v-if="selectedPendingEmployee && pendingEmployeeCountForBadge(selectedPendingEmployee) > 0"
+                      class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums"
+                    >
+                      {{ pendingEmployeeCountForBadge(selectedPendingEmployee) }}
+                    </span>
+                  </template>
+                </span>
+                <LucideChevronDown
+                  class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
+                  :class="{ 'rotate-180': pendingEmployeePickerOpen }"
+                  aria-hidden="true"
+                />
+              </button>
+              <div
+                v-show="pendingEmployeePickerOpen"
+                class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                role="listbox"
+              >
+                <button
+                  type="button"
+                  role="option"
+                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 cursor-pointer"
+                  :class="{
+                    'bg-indigo-50 text-indigo-900': !String(pendingFilterEmployeeId ?? '').trim(),
+                  }"
+                  @click="selectPendingFilterEmployee('')"
+                >
+                  <span>All employees</span>
+                </button>
+                <button
+                  v-for="emp in employeesSortedForPendingSelect"
+                  :key="emp.id"
+                  type="button"
+                  role="option"
+                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
+                  :class="{
+                    'bg-indigo-50 text-indigo-900':
+                      String(pendingFilterEmployeeId) === String(emp.id),
+                  }"
+                  @click="selectPendingFilterEmployee(String(emp.id))"
+                >
+                  <span class="min-w-0 truncate">{{ pendingEmployeeBaseLabel(emp) }}</span>
+                  <span
+                    v-if="pendingEmployeeCountForBadge(emp) > 0"
+                    class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums"
+                  >
+                    {{ pendingEmployeeCountForBadge(emp) }}
+                  </span>
+                </button>
+              </div>
+            </div>
+            <p v-if="pendingEmployeeCountsHint" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
+              {{ pendingEmployeeCountsHint }}
+            </p>
+          </div>
+          <div class="w-full shrink-0 sm:w-auto xl:w-[9.75rem] xl:shrink-0 xl:flex xl:justify-stretch">
+            <button
+              type="button"
+              class="w-full h-10 px-4 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
+              :disabled="store.loading"
+              @click="applyPendingFilters"
+            >
+              Apply filters
+            </button>
+          </div>
+        </div>
+        <div
+          class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start"
+        >
+          <div
+            class=" flex-[1.05] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
+          >
+            <template v-if="pendingPeriodLabel">{{ pendingPeriodLabel }}</template>
+          </div>
+          <div
+            class=" flex-[0.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
+          >
+            <template v-if="pendingFilterStatus">selected status is {{ pendingFilterStatus }}</template>
+          </div>
+          <div
+            class=" flex-[1.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
+          >
+            <template v-if="pendingEmployeeCountsHint">{{ pendingEmployeeCountsHint }}</template>
+          </div>
+          <div class="w-[9.75rem] shrink-0" aria-hidden="true" />
+        </div>
+      </div>
+    </div>
+
+    <div v-if="pendingQueueMode" class="mb-4">
       <div class="relative max-w-md">
         <LucideSearch
           class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
@@ -94,6 +300,26 @@
         </div>
     </div>
 
+    <!-- Pending queue: backend requires employee_id for /pending — prompt before first load -->
+    <div
+      v-if="pendingTableBlockedNoEmployee"
+      class="rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/80 to-white px-8 py-14 text-center"
+    >
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 mb-5">
+        <LucideUserRoundSearch class="w-8 h-8" aria-hidden="true" />
+      </div>
+      <p class="text-lg font-semibold text-gray-800 mb-2">Select an employee first</p>
+      <p class="text-sm text-gray-600 max-w-md mx-auto leading-relaxed mb-4">
+        Choose a specific employee in <strong>Pending queue filters</strong> above, then click
+        <strong>Apply filters</strong> to load their requests. Request counts in the dropdown still update for the
+        selected month and status.
+      </p>
+      <div class="inline-flex items-center gap-2 text-xs font-medium text-indigo-600">
+        <LucideCircleArrowUp class="w-4 h-4 shrink-0" aria-hidden="true" />
+        <span>Use the Employee field in the filter bar</span>
+      </div>
+    </div>
+
     <div
       v-if="showBulkSelectionColumn && pendingSelectableIds.length"
       class="flex flex-wrap items-center gap-2 mb-3"
@@ -117,6 +343,7 @@
 
     <!-- Table -->
     <HrDataTable
+      v-if="!pendingTableBlockedNoEmployee"
       :headers="headers"
       :items="filteredRequests"
       :loading="store.loading"
@@ -190,9 +417,9 @@
         </span>
       </template>
       <template #actions="{ item }">
-        <div v-if="item.status === 'pending'" class="flex flex-wrap gap-2 justify-center items-center">
+        <div class="flex flex-wrap gap-2 justify-center items-center">
           <button
-            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)"
+            v-if="canShowRequestEditPencil(item)"
             type="button"
             title="Edit"
             class="text-blue-600 hover:text-blue-800 p-1 cursor-pointer transition-transform hover:scale-125"
@@ -200,24 +427,26 @@
           >
             <LucidePencil class="w-6 h-6" />
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
-            type="button"
-            title="Approve"
-            class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125"
-            @click="confirmApprove(item.id)"
-          >
-            <LucideCheckCircle class="w-6 h-6" />
-          </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
-            type="button"
-            title="Reject"
-            class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125"
-            @click="confirmReject(item.id)"
-          >
-            <LucideXCircle class="w-6 h-6" />
-          </button>
+          <template v-if="item.status === 'pending'">
+            <button
+              v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+              type="button"
+              title="Approve"
+              class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125"
+              @click="confirmApprove(item.id)"
+            >
+              <LucideCheckCircle class="w-6 h-6" />
+            </button>
+            <button
+              v-if="authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
+              type="button"
+              title="Reject"
+              class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125"
+              @click="confirmReject(item.id)"
+            >
+              <LucideXCircle class="w-6 h-6" />
+            </button>
+          </template>
         </div>
       </template>
     </HrDataTable>
@@ -287,9 +516,32 @@
           </select>
         </div>
 
+        <div
+          v-if="isEditing && authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+          class="space-y-1"
+        >
+          <label class="block text-sm font-medium text-gray-700 mb-1">Request status</label>
+          <select
+            v-model="form.status"
+            :disabled="store.loading"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
+          >
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <p class="text-xs text-gray-500">
+            Saved with the request when you click Save (PUT update).
+          </p>
+        </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
-          <select v-model="form.request_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+          <select
+            v-model="form.request_type"
+            :disabled="editingIsApproverOnly || store.loading"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2"
+          >
             <option value="lateness">Lateness</option>
             <option value="leave">Leave</option>
             <option value="overtime">Overtime (total)</option>
@@ -316,6 +568,7 @@
             <input
               v-model="form.day"
               type="date"
+              :disabled="editingIsApproverOnly || store.loading"
               class="w-full border border-gray-300 rounded-lg px-4 py-2"
             />
             <p
@@ -334,6 +587,7 @@
               type="number"
               min="1"
               step="1"
+              :disabled="editingIsApproverOnly || store.loading"
               class="w-full border border-gray-300 rounded-lg px-4 py-2"
               placeholder="e.g. 24"
             />
@@ -342,13 +596,22 @@
           <!-- Conditional: Day Replacement (Day Off Swap) -->
           <div v-if="form.request_type === 'day_off_swap'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Replacement Date</label>
-            <input v-model="form.day_replacement" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <input
+              v-model="form.day_replacement"
+              type="date"
+              :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            />
           </div>
 
           <!-- Conditional: Duration Type (Vacation) -->
           <div v-if="form.request_type === 'vacation'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
-            <select v-model="form.duration_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
+            <select
+              v-model="form.duration_type"
+              :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            >
                 <option value="full">Full Day</option>
                 <option value="half">Half Day</option>
             </select>
@@ -362,6 +625,7 @@
                 v-model="form.from_time"
                 type="time"
                 step="1"
+                :disabled="editingIsApproverOnly || store.loading"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2"
               />
             </div>
@@ -371,6 +635,7 @@
                 v-model="form.to_time"
                 type="time"
                 step="1"
+                :disabled="editingIsApproverOnly || store.loading"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2"
               />
             </div>
@@ -429,12 +694,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, watch, nextTick } from 'vue';
+import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
-import HrFeatureUnderMaintenance from '@/components/hr-dashboard/HrFeatureUnderMaintenance.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import {
@@ -444,6 +708,9 @@ import {
   LucidePencil,
   LucideSearch,
   LucideRefreshCw,
+  LucideCircleArrowUp,
+  LucideUserRoundSearch,
+  LucideChevronDown,
 } from 'lucide-vue-next';
 import notyf from "@/components/global/notyf";
 import formatDate from '@/components/global/FormDate';
@@ -455,6 +722,7 @@ import {
 } from '@/utils/employeeRequestApi';
 import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
 import { apiDurationHoursFromMinutes } from '@/utils/hrEmployeeRequestDuration';
+import { defaultPayrollMonthRange, getPayrollDates } from '@/utils/payrollPeriod';
 
 const REQUEST_TYPE_LABELS = {
   lateness: 'Lateness',
@@ -611,6 +879,182 @@ const canAccessPendingQueue = computed(() =>
 
 const pendingQueueMode = ref(false);
 
+const myFilterMonth = ref(defaultPayrollMonthRange().payrollMonth);
+/** Use `''` in the select for “All statuses” (omits `status` on `/me`). */
+const myFilterStatus = ref('pending');
+
+const myPeriodBounds = computed(() => getPayrollDates(myFilterMonth.value));
+
+const myPeriodLabel = computed(() => {
+  const { from_date, to_date } = myPeriodBounds.value;
+  if (!from_date || !to_date) return '';
+  return `Period: ${from_date} → ${to_date}`;
+});
+
+function buildMyRequestsFiltersPayload() {
+  const { from_date, to_date } = myPeriodBounds.value;
+  const payload = {
+    from: from_date,
+    to: to_date,
+  };
+  const st = String(myFilterStatus.value ?? '').trim();
+  if (st) payload.status = st;
+  return payload;
+}
+
+function applyMyRequestFilters() {
+  void fetchData();
+}
+
+const pendingFilterMonth = ref(defaultPayrollMonthRange().payrollMonth);
+const pendingFilterStatus = ref('pending');
+const pendingFilterEmployeeId = ref('');
+const pendingEmployeePickerOpen = ref(false);
+const pendingEmployeePickerRoot = ref(null);
+
+/** `/pending` API requires `employee_id` — show guidance instead of the table until one is chosen. */
+const pendingTableBlockedNoEmployee = computed(
+  () =>
+    canAccessPendingQueue.value &&
+    pendingQueueMode.value &&
+    !String(pendingFilterEmployeeId.value ?? '').trim(),
+);
+
+const pendingPeriodBounds = computed(() => getPayrollDates(pendingFilterMonth.value));
+
+const pendingPeriodLabel = computed(() => {
+  const { from_date, to_date } = pendingPeriodBounds.value;
+  if (!from_date || !to_date) return '';
+  return `Period: ${from_date} → ${to_date}`;
+});
+
+function buildPendingFiltersPayload() {
+  const { from_date, to_date } = pendingPeriodBounds.value;
+  const payload = {
+    from: from_date,
+    to: to_date,
+  };
+  const st = String(pendingFilterStatus.value ?? '').trim();
+  if (st) payload.status = st;
+  const eid = String(pendingFilterEmployeeId.value ?? '').trim();
+  if (eid) payload.employee_id = eid;
+  return payload;
+}
+
+function applyPendingFilters() {
+  void fetchData();
+}
+
+/** Backend may use requests_count, request_count, or camelCase. */
+function pendingRowRequestsCount(row) {
+  if (!row || typeof row !== 'object') return 0;
+  const raw =
+    row.requests_count ??
+    row.request_count ??
+    row.requestsCount ??
+    row.count ??
+    row.total;
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+function pendingRowEmployeeId(row) {
+  if (!row || typeof row !== 'object') return null;
+  const id = row.id ?? row.employee_id ?? row.employee?.id;
+  const n = Number(id);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+const pendingRequestCountByEmployeeId = computed(() => {
+  const m = new Map();
+  for (const row of store.employeesWithRequests || []) {
+    const id = pendingRowEmployeeId(row);
+    if (id == null) continue;
+    const n = pendingRowRequestsCount(row);
+    m.set(id, n);
+  }
+  return m;
+});
+
+/** Employees with requests (API order) first, then the rest sorted by name. */
+const employeesSortedForPendingSelect = computed(() => {
+  const list = employeesListForPicker.value || [];
+  const byId = new Map(list.map((e) => [Number(e.id), e]));
+  const apiRows = [...(store.employeesWithRequests || [])].sort(
+    (a, b) => pendingRowRequestsCount(b) - pendingRowRequestsCount(a),
+  );
+  const ordered = [];
+  const seen = new Set();
+  for (const row of apiRows) {
+    const id = pendingRowEmployeeId(row);
+    if (id == null) continue;
+    const count = pendingRowRequestsCount(row);
+    const baseEmp =
+      byId.get(id) ||
+      ({
+        id,
+        name: row.name,
+        fingerprint: row.fingerprint,
+        personal_info: null,
+      });
+    ordered.push({
+      ...baseEmp,
+      pendingQueueRequestCount: count,
+    });
+    seen.add(id);
+  }
+  const rest = list
+    .filter((e) => !seen.has(Number(e.id)))
+    .sort((a, b) =>
+      employeePickerLabel(a).localeCompare(employeePickerLabel(b), undefined, {
+        sensitivity: 'base',
+      }),
+    );
+  return [...ordered, ...rest];
+});
+
+const selectedPendingEmployee = computed(() => {
+  const id = String(pendingFilterEmployeeId.value ?? '').trim();
+  if (!id) return null;
+  const n = Number(id);
+  if (!Number.isFinite(n)) return null;
+  return employeesSortedForPendingSelect.value.find((e) => Number(e.id) === n) ?? null;
+});
+
+function pendingEmployeeBaseLabel(emp) {
+  if (!emp) return '';
+  return `${employeePickerLabel(emp)} (#${emp.id})`;
+}
+
+function pendingEmployeeCountForBadge(emp) {
+  if (!emp) return 0;
+  return (
+    emp.pendingQueueRequestCount ??
+    pendingRequestCountByEmployeeId.value.get(Number(emp.id)) ??
+    0
+  );
+}
+
+function selectPendingFilterEmployee(id) {
+  pendingFilterEmployeeId.value = id;
+  pendingEmployeePickerOpen.value = false;
+}
+
+function closePendingEmployeePickerOnDocClick(e) {
+  const root = pendingEmployeePickerRoot.value;
+  if (pendingEmployeePickerOpen.value && root && !root.contains(e.target)) {
+    pendingEmployeePickerOpen.value = false;
+  }
+}
+
+const pendingEmployeeCountsHint = computed(() => {
+  const rows = store.employeesWithRequests || [];
+  if (!rows.length) return '';
+  const total = rows.reduce((s, r) => s + pendingRowRequestsCount(r), 0);
+  if (total <= 0) return '';
+  return `${rows.length} employee(s) with matching requests (${total} total in this period).`;
+});
+
 /** Same visibility as pending toggle: bulk checkboxes + button only in pending list view. */
 const showBulkSelectionColumn = computed(
   () => canAccessPendingQueue.value && pendingQueueMode.value,
@@ -635,7 +1079,10 @@ const emptyMessage = computed(() => {
     return 'No requests match your search.';
   }
   if (canAccessPendingQueue.value && pendingQueueMode.value) {
-    return 'No pending requests.';
+    return 'No requests for the selected filters.';
+  }
+  if (!pendingQueueMode.value) {
+    return 'No requests for the selected period or filters.';
   }
   return 'You have no requests yet.';
 });
@@ -648,6 +1095,7 @@ const form = ref({
   to_time: '',
   day_replacement: '',
   duration_type: 'full',
+  status: 'pending',
 });
 
 /** Matches AttendanceRequestModal: From/To only for types that need a time range (e.g. shift_move). */
@@ -660,6 +1108,26 @@ function requestModalUsesFromToTime(rawType) {
 }
 
 const showFromToFields = computed(() => requestModalUsesFromToTime(form.value.request_type));
+
+/** Pencil: pending + `update-employee-request`; approved/rejected + `approve-employee-request`. */
+function canShowRequestEditPencil(item) {
+  const st = item?.status;
+  if (st === 'pending') {
+    return authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST);
+  }
+  if (st === 'approved' || st === 'rejected') {
+    return authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST);
+  }
+  return false;
+}
+
+/** Edit modal opened by approver without update permission — only status should change. */
+const editingIsApproverOnly = computed(
+  () =>
+    isEditing.value &&
+    authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+    !authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST),
+);
 
 /** Grace for ≤15m still applies for self and when editing; create-for-others can file lateness for another employee inside grace. */
 const shouldEnforceLatenessGraceInModal = computed(() => {
@@ -856,16 +1324,15 @@ watch([somePendingSelected, allPendingSelected, pendingSelectableIds], syncSelec
 });
 
 const fetchData = async () => {
-  if (!authStore.isAdminUser) return;
   clearBulkSelection();
   profileError.value = false;
   try {
     if (canAccessPendingQueue.value && pendingQueueMode.value) {
       store.setListSource("pending");
-      await store.getPendingRequests();
+      await store.getPendingRequests(buildPendingFiltersPayload());
     } else {
       store.setListSource("me");
-      await store.getMyRequests();
+      await store.getMyRequests(buildMyRequestsFiltersPayload());
     }
   } catch (e) {
     if (e.response?.status === 404 && e.response?.data?.message?.includes('profile')) {
@@ -882,6 +1349,13 @@ const togglePendingQueueMode = async () => {
   switchingQueueMode.value = true;
   pendingQueueMode.value = !pendingQueueMode.value;
   try {
+    if (
+      pendingQueueMode.value &&
+      canAccessPendingQueue.value &&
+      employeesListForPicker.value.length === 0
+    ) {
+      await empStore.getEmployees();
+    }
     await fetchData();
   } finally {
     switchingQueueMode.value = false;
@@ -899,16 +1373,47 @@ const handleManualRefresh = async () => {
 };
 
 onMounted(() => {
-  if (authStore.isAdminUser) void fetchData();
+  void fetchData();
+  document.addEventListener('click', closePendingEmployeePickerOnDocClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closePendingEmployeePickerOnDocClick);
 });
 
 watch(canAccessPendingQueue, (ok) => {
-  if (!authStore.isAdminUser) return;
   if (!ok && pendingQueueMode.value) {
     pendingQueueMode.value = false;
     fetchData();
   }
 });
+
+watch(pendingQueueMode, (active) => {
+  if (!active) pendingEmployeePickerOpen.value = false;
+  if (active && canAccessPendingQueue.value && employeesListForPicker.value.length === 0) {
+    void empStore.getEmployees();
+  }
+});
+
+/** Reload table (and pending counts) whenever my-requests filters change. */
+watch(
+  [myFilterMonth, myFilterStatus],
+  () => {
+    if (pendingQueueMode.value) return;
+    void fetchData();
+  },
+  { flush: 'post' },
+);
+
+/** Reload whenever pending-queue filters change (`getPendingRequests` also refreshes employees-with-requests). */
+watch(
+  [pendingFilterMonth, pendingFilterStatus, pendingFilterEmployeeId],
+  () => {
+    if (!pendingQueueMode.value || !canAccessPendingQueue.value) return;
+    void fetchData();
+  },
+  { flush: 'post' },
+);
 
 watch(requests, (list) => {
   const valid = new Set(
@@ -972,13 +1477,22 @@ const openAddModal = () => {
     to_time: '',
     day_replacement: '',
     duration_type: 'full',
+    status: 'pending',
   };
   showModal.value = true;
 };
 
 const openEditModal = (item) => {
-  if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)) return;
-  if (item.status !== 'pending') return;
+  const st = item?.status;
+  const canUpdate = authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST);
+  const canApprove = authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST);
+  if (st === 'pending') {
+    if (!canUpdate) return;
+  } else if (st === 'approved' || st === 'rejected') {
+    if (!canApprove) return;
+  } else {
+    return;
+  }
   const id = normalizeRequestId(item.id);
   if (id == null) return;
   isEditing.value = true;
@@ -987,6 +1501,11 @@ const openEditModal = (item) => {
     item.duration_hours != null && item.duration_hours !== ''
       ? Number(item.duration_hours)
       : null;
+  const rawStatus = String(item.status ?? 'pending').toLowerCase();
+  const statusNorm =
+    rawStatus === 'approved' || rawStatus === 'rejected' || rawStatus === 'pending'
+      ? rawStatus
+      : 'pending';
   form.value = {
     request_type: item.request_type || 'leave',
     day: toDateInputValue(item.day),
@@ -996,6 +1515,7 @@ const openEditModal = (item) => {
     to_time: item.to_time ? normalizeApiTime(item.to_time) || '' : '',
     day_replacement: toDateInputValue(item.day_replacement),
     duration_type: item.duration_type === 'half' ? 'half' : 'full',
+    status: statusNorm,
   };
   showModal.value = true;
 };
@@ -1101,13 +1621,28 @@ function buildRequestPayloadFromForm() {
     payload.duration_type = form.value.duration_type;
   }
 
-  return attachEmployeeIdIfCreatingForOther(payload);
+  const out = attachEmployeeIdIfCreatingForOther(payload);
+  if (!out) return null;
+
+  if (
+    isEditing.value &&
+    authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)
+  ) {
+    const s = String(form.value.status ?? '').trim().toLowerCase();
+    if (s === 'pending' || s === 'approved' || s === 'rejected') {
+      out.status = s;
+    }
+  }
+
+  return out;
 }
 
 const handleSubmit = async () => {
   if (isEditing.value) {
-    if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST)) return;
     if (editingId.value == null) return;
+    const canUpd = authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST);
+    const canAppr = authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST);
+    if (!canUpd && !canAppr) return;
   } else {
     if (createRequestTarget.value === 'self') {
       if (!canCreateEmployeeRequest.value) return;

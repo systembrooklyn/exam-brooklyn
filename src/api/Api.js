@@ -90,6 +90,8 @@ export const PAYROLL_UPDATE_REQUEST = (id) =>
 export const PAYROLL_REQUESTS_ME = "payroll-system/employee-requests/me";
 export const PAYROLL_REQUESTS_PENDING =
   "payroll-system/employee-requests/pending";
+export const PAYROLL_REQUESTS_EMPLOYEES_WITH_REQUESTS =
+  "payroll-system/employee-requests/employees-with-requests";
 export const PAYROLL_APPROVE_REQUEST = (id) =>
   `payroll-system/employee-requests/${id}/approve`;
 export const PAYROLL_REJECT_REQUEST = (id) =>

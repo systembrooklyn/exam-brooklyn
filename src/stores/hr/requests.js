@@ -8,6 +8,7 @@ import {
   PAYROLL_UPDATE_REQUEST,
   PAYROLL_REQUESTS_ME,
   PAYROLL_REQUESTS_PENDING,
+  PAYROLL_REQUESTS_EMPLOYEES_WITH_REQUESTS,
   PAYROLL_APPROVE_REQUEST,
   PAYROLL_REJECT_REQUEST,
   PAYROLL_BULK_APPROVE_REQUESTS,
@@ -18,10 +19,53 @@ import {
   buildEmployeeRequestApiPayload,
   mapEmployeeRequestRowFromApi,
 } from "@/utils/employeeRequestApi";
+import { defaultPayrollMonthRange, getPayrollDates } from "@/utils/payrollPeriod";
+
+/** Query params for pending list and employees-with-requests (`status`, `from`, `to`, optional `employee_id`). */
+function buildPendingRequestParams(query) {
+  const params = {};
+  const q = query && typeof query === "object" ? query : {};
+  if (q.status != null && String(q.status).trim() !== "") {
+    params.status = String(q.status).trim();
+  }
+  if (q.employee_id != null && q.employee_id !== "") {
+    const n = Number(q.employee_id);
+    if (Number.isFinite(n) && n > 0) params.employee_id = n;
+  }
+  if (q.from != null && String(q.from).trim() !== "") {
+    params.from = String(q.from).trim().slice(0, 10);
+  }
+  if (q.to != null && String(q.to).trim() !== "") {
+    params.to = String(q.to).trim().slice(0, 10);
+  }
+  return params;
+}
+
+/** Query params for `GET .../me` only (`status`, `from`, `to` — never `employee_id`). */
+function buildMeRequestParams(query) {
+  const p = buildPendingRequestParams(query);
+  delete p.employee_id;
+  return p;
+}
+
+/** Fallback `/me` params when `refreshCurrentList` runs before any filtered load (matches UI defaults). */
+function defaultMeListParams() {
+  const { payrollMonth } = defaultPayrollMonthRange();
+  const { from_date, to_date } = getPayrollDates(payrollMonth);
+  return buildMeRequestParams({
+    from: from_date,
+    to: to_date,
+    status: "pending",
+  });
+}
 
 export const useHrRequestsStore = defineStore("hr-requests", () => {
   const requests = ref([]);
   const loading = ref(false);
+  const lastMeQuery = ref({});
+  const lastPendingQuery = ref({});
+  /** Rows from `GET .../employees-with-requests` (id, name, fingerprint, requests_count). */
+  const employeesWithRequests = ref([]);
   /** Which list the UI last loaded: refresh after approve/reject must match it. */
   const listSource = ref("me");
 
@@ -34,12 +78,31 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     else await getMyRequests();
   };
 
-  const getMyRequests = async () => {
+  /**
+   * @param {object} [query] When provided, replaces cached `/me` filters (`status`, `from`, `to`).
+   *   When omitted (e.g. after approve/reject), reuses the last query.
+   */
+  const getMyRequests = async (query) => {
     loading.value = true;
     try {
-      const response = await apiClient.get(PAYROLL_REQUESTS_ME);
-      // Map nested structure if necessary (message/data wrapper)
-      requests.value = response.data.data.map(mapEmployeeRequestRowFromApi);
+      let params;
+      if (query !== undefined) {
+        params = buildMeRequestParams(query);
+        lastMeQuery.value = params;
+      } else {
+        params = { ...lastMeQuery.value };
+        if (Object.keys(params).length === 0) {
+          params = defaultMeListParams();
+          lastMeQuery.value = params;
+        }
+      }
+      const response = await apiClient.get(PAYROLL_REQUESTS_ME, {
+        params,
+      });
+      employeesWithRequests.value = [];
+      const rows = response.data?.data ?? response.data ?? [];
+      const list = Array.isArray(rows) ? rows : [];
+      requests.value = list.map(mapEmployeeRequestRowFromApi);
       return response.data;
     } catch (err) {
       handleError(err);
@@ -49,12 +112,75 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
-  const getPendingRequests = async () => {
+  function normalizeEmployeesWithRequestsRows(body) {
+    if (!body) return [];
+    if (Array.isArray(body)) return body;
+    if (Array.isArray(body.data)) return body.data;
+    const inner = body.data?.data;
+    if (Array.isArray(inner)) return inner;
+    return [];
+  }
+
+  /**
+   * Updates dropdown counts only (`status` / `from` / `to`; never `employee_id`).
+   */
+  const prefetchEmployeesWithRequests = async (query) => {
+    const params = { ...buildPendingRequestParams(query) };
+    delete params.employee_id;
+    try {
+      const response = await apiClient.get(PAYROLL_REQUESTS_EMPLOYEES_WITH_REQUESTS, {
+        params,
+      });
+      employeesWithRequests.value = normalizeEmployeesWithRequestsRows(
+        response.data,
+      );
+      return response.data;
+    } catch (e) {
+      console.warn("employees-with-requests:", e);
+      employeesWithRequests.value = [];
+    }
+  };
+
+  /**
+   * @param {object} [query] When provided, replaces the cached pending filters and sends them as query params.
+   *   When omitted (e.g. after approve/reject), reuses the last query: `status`, `employee_id`, `from`, `to`.
+   */
+  const getPendingRequests = async (query) => {
     loading.value = true;
     try {
-      const response = await apiClient.get(PAYROLL_REQUESTS_PENDING);
-      // Map nested structure if necessary (message/data wrapper)
-      requests.value = response.data.data.map(mapEmployeeRequestRowFromApi);
+      let params;
+      if (query !== undefined) {
+        params = buildPendingRequestParams(query);
+        lastPendingQuery.value = params;
+      } else {
+        params = { ...lastPendingQuery.value };
+      }
+      const countsParams = { ...params };
+      delete countsParams.employee_id;
+
+      const countsPromise = apiClient
+        .get(PAYROLL_REQUESTS_EMPLOYEES_WITH_REQUESTS, {
+          params: countsParams,
+        })
+        .then((res) => normalizeEmployeesWithRequestsRows(res.data))
+        .catch((e) => {
+          console.warn("employees-with-requests:", e);
+          return [];
+        });
+
+      if (!params.employee_id) {
+        requests.value = [];
+        employeesWithRequests.value = await countsPromise;
+        return null;
+      }
+
+      const response = await apiClient.get(PAYROLL_REQUESTS_PENDING, {
+        params,
+      });
+      const rows = response.data?.data ?? response.data ?? [];
+      const list = Array.isArray(rows) ? rows : [];
+      requests.value = list.map(mapEmployeeRequestRowFromApi);
+      employeesWithRequests.value = await countsPromise;
       return response.data;
     } catch (err) {
       handleError(err);
@@ -172,10 +298,12 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
   return {
     requests,
     loading,
+    employeesWithRequests,
     listSource,
     setListSource,
     getMyRequests,
     getPendingRequests,
+    prefetchEmployeesWithRequests,
     createRequest,
     updateRequest,
     approveRequest,
