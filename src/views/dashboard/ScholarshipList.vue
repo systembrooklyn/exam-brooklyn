@@ -1,5 +1,5 @@
 <template>
-  <div class="px-3">
+  <div class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-gray-800">Scholarships</h1>
 

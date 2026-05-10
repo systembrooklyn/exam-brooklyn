@@ -1,6 +1,6 @@
 <template>
   <div
-    class="min-h-screen w-full bg-gray-50 dark:bg-gray-900 px-3 py-3 sm:px-4 sm:py-3"
+    class="min-h-screen w-full bg-gray-50 dark:bg-gray-900 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8"
   >
     <div class="w-full max-w-none">
       <div
@@ -301,9 +301,12 @@
         </div>
 
         <div
+          class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch"
+        >
+        <div
           v-for="(row, rowIndex) in paginatedRows"
           :key="row.id ?? rowIndex"
-          class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border border-gray-200 dark:border-gray-700"
+          class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 min-w-0 h-full flex flex-col"
         >
           <div
             class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2"
@@ -373,7 +376,7 @@
           </div>
 
           <div
-            class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3"
+            class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 flex-1 min-h-0"
             style="direction: ltr"
           >
             <div
@@ -451,7 +454,7 @@
             </div>
           </div>
 
-          <div class="space-y-4 text-sm pt-3">
+          <div class="space-y-4 text-sm pt-3 mt-auto">
             <div
               v-if="row.manager_response"
               class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-md border-s-4 border-indigo-400"
@@ -505,6 +508,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         <Pagination
@@ -591,8 +595,9 @@ const authStore = useAuthStore();
 const employeeStore = useHrEmployeesStore();
 const requestStore = useRequestStore();
 
-const loading = ref(false);
-/** Drives which button shows a spinner: refresh | apply | initial (none). */
+/** Start true so first paint shows the list loader (not an empty-state flash). */
+const loading = ref(true);
+/** Drives which button shows a spinner: refresh | apply | initial. */
 const fetchSource = ref(null);
 const apiMessage = ref("");
 const rows = ref([]);
@@ -760,14 +765,9 @@ async function handleReply({ key, value }) {
       { suppressError: true, suppressSuccess: true },
     );
     if (updated) {
-      const idx = rows.value.findIndex(
-        (r) => String(r.id) === String(updated.id ?? id),
-      );
-      if (idx !== -1) {
-        rows.value[idx] = { ...rows.value[idx], ...updated };
-      }
       showReplyModal.value = false;
       notyf.success("Reply saved");
+      await fetchRequests("reply-sync");
       return;
     }
 
@@ -932,6 +932,7 @@ function buildFilterBody() {
 
 /**
  * @param {'refresh' | 'apply' | 'initial' | 'reply-sync'} source
+ * `initial`: first page load (same UX as apply).
  * `reply-sync`: refetch after reply without full-page loading or button spinners.
  */
 async function fetchRequests(source = "apply") {
@@ -961,12 +962,13 @@ async function fetchRequests(source = "apply") {
 onMounted(async () => {
   document.addEventListener("mousedown", onDocumentMousedownEmployeeDropdown);
   employeesLoadError.value = false;
-  try {
-    await employeeStore.getEmployees();
-  } catch {
-    employeesLoadError.value = true;
-  }
-  await fetchRequests("initial");
+  // Do not block requests on employees: list API does not need the HR list unless a filter is set.
+  await Promise.all([
+    fetchRequests("initial"),
+    employeeStore.getEmployees().catch(() => {
+      employeesLoadError.value = true;
+    }),
+  ]);
 });
 
 onUnmounted(() => {
