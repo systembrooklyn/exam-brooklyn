@@ -42,6 +42,11 @@ const routes = [
     component: () => import("../views/dashboard/SystemsPage.vue"),
   },
   {
+    path: "/requests",
+    name: "student-requests-emp",
+    component: () => import("@/views/dashboard/StudentRequestsEmp.vue"),
+  },
+  {
     path: "/send-email",
     name: "send-email",
     component: () => import("../views/dashboard/SendMultipleCustomMail.vue"),

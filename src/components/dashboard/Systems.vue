@@ -52,6 +52,7 @@ import groupsIcon from "@/assets/user-round.png";
 import emailIcon from "@/assets/email.png";
 import hrIcon from "@/assets/hr.png";
 import bookingExamIcon from "@/assets/booking-exam.png";
+import requestsIcon from "@/assets/requests.jpg";
 
 
 const systems = [
@@ -122,6 +123,12 @@ const systems = [
     route: "/booking-exam",
     image: bookingExamIcon,
     requiresPermission: "view-bookings",
+  },
+  {
+    name: "Requests",
+    route: "/requests",
+    image: requestsIcon,
+    // requiresPermission: "view-requests",
   },
 ];
 

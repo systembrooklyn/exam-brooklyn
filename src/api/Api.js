@@ -38,6 +38,8 @@ export const FINISH_PLACEMENT = "ptest";
 export const PLACEMENT_TESTS_SURVEY = "saveSurveyAnswers";
 export const PT_ATTEMPTS = "ptAttempts";
 export const REQUESTS = "studentRequestEmp";
+/** POST body: optional filters; omit keys when unused (backend rejects null). */
+export const GET_STUDENT_REQUEST_EMP = "getStudentRequestEmp";
 export const DEADLINES = "deadlines";
 export const STUDENT_SEARCH = "students/search";
 export const UPDATE_STUDENT_BASIC_INFO = (id) => `students/${id}/basicInfo`;

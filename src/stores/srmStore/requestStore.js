@@ -46,7 +46,13 @@ export const useRequestStore = defineStore("requestStore", () => {
     }
   };
 
-  const updateRequest = async (id, updatedData) => {
+  /**
+   * @param {string|number} id
+   * @param {Record<string, unknown>} updatedData
+   * @param {{ suppressError?: boolean; suppressSuccess?: boolean }} [options]
+   */
+  const updateRequest = async (id, updatedData, options = {}) => {
+    const { suppressError = false, suppressSuccess = false } = options;
     try {
       const response = await apiClient.put(`${REQUESTS}/${id}`, updatedData);
       const updatedRequest = response.data.data;
@@ -62,10 +68,14 @@ export const useRequestStore = defineStore("requestStore", () => {
         }
       }
 
-      notyf.success("Request updated successfully");
+      if (!suppressSuccess) {
+        notyf.success("Request updated successfully");
+      }
       return updatedRequest;
     } catch (err) {
-      handleError(err);
+      if (!suppressError) {
+        handleError(err);
+      }
       return null;
     }
   };
