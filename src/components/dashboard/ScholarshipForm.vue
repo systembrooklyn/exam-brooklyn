@@ -118,32 +118,32 @@
       <article
         v-for="(cg, ci) in form.course_groups"
         :key="ensureCourseItemKey(cg)"
+        data-scholarship-course-item
         class="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-shadow"
         :class="{
           'opacity-60': draggingCourseIndex === ci,
           'ring-2 ring-indigo-400 ring-offset-1':
             dragOverCourseIndex === ci && draggingCourseIndex !== ci,
         }"
-        @dragover="onCourseDragOver(ci, $event)"
-        @drop="onCourseDrop(ci, $event)"
       >
         <header
           class="flex flex-wrap items-center justify-between gap-2.5 px-3.5 py-2.5 bg-gray-50 border-b border-gray-100 cursor-pointer"
           @click="toggleCourseExpansion(ensureCourseItemKey(cg))"
         >
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
-            <button
-              type="button"
-              class="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 p-1 rounded-md hover:bg-gray-200/80 touch-none"
-              draggable="true"
+            <span
+              class="shrink-0 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-700 p-1 rounded-md hover:bg-gray-200/80 touch-none inline-flex select-none"
+              role="button"
+              tabindex="0"
               aria-label="Drag to reorder course"
               title="Drag to reorder"
               @click.stop
-              @dragstart="onCourseDragStart(ci, $event)"
-              @dragend="onCourseDragEnd"
+              @keydown.enter.prevent
+              @keydown.space.prevent
+              @pointerdown="onCourseGripPointerDown(ci, $event)"
             >
               <GripVertical class="w-4 h-4 pointer-events-none" />
-            </button>
+            </span>
             <button
               type="button"
               class="shrink-0 text-indigo-600 hover:text-indigo-800 rounded p-1 hover:bg-indigo-50 transition-colors"
@@ -255,7 +255,7 @@
             </button>
           </div>
 
-          <div v-if="!visibleGroups(cg).length" class="text-xs text-gray-500 py-4 text-center rounded-lg bg-gray-50 border border-gray-100">
+          <div v-if="!visibleGroupsSorted(cg).length" class="text-xs text-gray-500 py-4 text-center rounded-lg bg-gray-50 border border-gray-100">
             No groups — click “Add group” or reload course code.
           </div>
 
@@ -275,7 +275,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <tr
-                  v-for="(g, gi) in visibleGroups(cg)"
+                  v-for="(g, gi) in visibleGroupsSorted(cg)"
                   :key="groupRowKey(ci, g, gi)"
                   :class="groupRowClass(cg, g)"
                 >
@@ -378,7 +378,7 @@ import {
   ChevronRight,
   GripVertical,
 } from "lucide-vue-next";
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.min.css";
 import { useCourseStore } from "@/stores/courseStore";
@@ -409,6 +409,87 @@ const customCourseOptions = ref([]);
 const expandedCourseKeys = ref(new Set());
 const draggingCourseIndex = ref(null);
 const dragOverCourseIndex = ref(null);
+
+let pointerReorderCleanup = null;
+
+function courseIndexFromPointer(clientY) {
+  const nodes = document.querySelectorAll("[data-scholarship-course-item]");
+  if (!nodes.length) return null;
+  for (let i = 0; i < nodes.length; i++) {
+    const r = nodes[i].getBoundingClientRect();
+    if (clientY >= r.top && clientY <= r.bottom) return i;
+  }
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < nodes.length; i++) {
+    const r = nodes[i].getBoundingClientRect();
+    const mid = (r.top + r.bottom) / 2;
+    const d = Math.abs(clientY - mid);
+    if (d < bestDist) {
+      bestDist = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
+function applyCourseReorder(fromIndex, toIndex) {
+  if (fromIndex == null || toIndex == null || fromIndex === toIndex) return;
+  const list = [...(props.form.course_groups ?? [])];
+  if (fromIndex < 0 || fromIndex >= list.length) return;
+  const [moved] = list.splice(fromIndex, 1);
+  list.splice(toIndex, 0, moved);
+  replaceCourseGroups(list);
+}
+
+function onCourseGripPointerDown(ci, e) {
+  if (e.pointerType === "mouse" && e.button !== 0) return;
+  e.preventDefault();
+  e.stopPropagation();
+  pointerReorderCleanup?.();
+  draggingCourseIndex.value = ci;
+  dragOverCourseIndex.value = ci;
+  const el = e.currentTarget;
+  try {
+    el.setPointerCapture(e.pointerId);
+  } catch (_) {
+    /* ignore */
+  }
+
+  const onMove = (ev) => {
+    const idx = courseIndexFromPointer(ev.clientY);
+    if (idx != null) dragOverCourseIndex.value = idx;
+  };
+
+  const onEnd = (ev) => {
+    try {
+      el.releasePointerCapture(ev.pointerId);
+    } catch (_) {
+      /* ignore */
+    }
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onEnd);
+    document.removeEventListener("pointercancel", onEnd);
+    pointerReorderCleanup = null;
+    const toIndex = courseIndexFromPointer(ev.clientY);
+    const from = draggingCourseIndex.value;
+    draggingCourseIndex.value = null;
+    dragOverCourseIndex.value = null;
+    applyCourseReorder(from, toIndex);
+  };
+
+  pointerReorderCleanup = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onEnd);
+    document.removeEventListener("pointercancel", onEnd);
+    draggingCourseIndex.value = null;
+    dragOverCourseIndex.value = null;
+  };
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onEnd);
+  document.addEventListener("pointercancel", onEnd);
+}
 const courseOptions = computed(() => {
   const list = Array.isArray(courseStore.courses) ? courseStore.courses : [];
   const base = list
@@ -460,6 +541,10 @@ onMounted(() => {
   courseStore.fetchCourses();
 });
 
+onBeforeUnmount(() => {
+  pointerReorderCleanup?.();
+});
+
 /** Stable id for list :key, expand/collapse, and drag reorder (mutates cg once). */
 function ensureCourseItemKey(cg) {
   if (cg._accordionKey) return cg._accordionKey;
@@ -475,40 +560,6 @@ function ensureCourseItemKey(cg) {
   }
   cg._accordionKey = `cg-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   return cg._accordionKey;
-}
-
-function onCourseDragStart(ci, e) {
-  draggingCourseIndex.value = ci;
-  try {
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(ci));
-  } catch (_) {
-    /* ignore */
-  }
-}
-
-function onCourseDragEnd() {
-  draggingCourseIndex.value = null;
-  dragOverCourseIndex.value = null;
-}
-
-function onCourseDragOver(ci, e) {
-  if (draggingCourseIndex.value == null) return;
-  e.preventDefault();
-  dragOverCourseIndex.value = ci;
-}
-
-function onCourseDrop(toIndex, e) {
-  e.preventDefault();
-  const from = draggingCourseIndex.value;
-  draggingCourseIndex.value = null;
-  dragOverCourseIndex.value = null;
-  if (from == null || from === toIndex) return;
-  const list = [...(props.form.course_groups ?? [])];
-  if (from < 0 || from >= list.length) return;
-  const [moved] = list.splice(from, 1);
-  list.splice(toIndex, 0, moved);
-  replaceCourseGroups(list);
 }
 
 function groupRowKey(ci, g, gi) {
@@ -538,6 +589,12 @@ function isCourseActive(cg) {
 
 function visibleGroups(cg) {
   return (cg?.groups ?? []).filter((g) => !g?._deleted);
+}
+
+function visibleGroupsSorted(cg) {
+  return [...visibleGroups(cg)].sort(
+    (a, b) => toTimestamp(b?.group_start_date) - toTimestamp(a?.group_start_date)
+  );
 }
 
 function extractGroupsFromResponse(raw) {

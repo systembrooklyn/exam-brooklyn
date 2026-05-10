@@ -23,7 +23,7 @@
         v-if="isScholarship"
         :form="form"
         :isEditing="isEditing"
-        @update:course-groups="(list) => emit('update:courseGroups', list)"
+        @update:courseGroups="forwardCourseGroups"
       />
       <RoleForm v-if="isRole" :form="form" />
       <ReservationsForm v-if="isReservation" :form="form" />
@@ -134,4 +134,8 @@ watch(
 
 const closeModal = () => emit("closeModal");
 const saveData = () => emit("saveData");
+
+function forwardCourseGroups(list) {
+  emit("update:courseGroups", list);
+}
 </script>
