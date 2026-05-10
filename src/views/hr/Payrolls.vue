@@ -33,6 +33,7 @@
               <option value="hr-approved">HR Approved</option>
               <option value="hr-manager-approved">HR Manager Approved</option>
               <option value="gm-approved">GM Approved</option>
+              <option value="suspended">Suspended</option>
               <option value="paid">Paid</option>
               <option value="received">Received</option>
               <option value="rejected">Rejected</option>
@@ -273,13 +274,13 @@
     <!-- Update Status Modal (Notes) -->
     <HrModal
       :show="showStatusModal"
-      :title="'Update Status: ' + nextStatus"
+      :title="payrollStatusModalTitle"
       :loading="store.loading"
       @close="showStatusModal = false"
       @save="executeStatusUpdate"
     >
       <div class="space-y-4">
-        <p class="text-sm text-gray-600">Are you sure you want to update the status of this payroll to <strong>{{ nextStatus }}</strong>?</p>
+        <p class="text-sm text-gray-600">{{ payrollStatusModalMessage }}</p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
           <textarea 
@@ -329,6 +330,23 @@ const getPayrollDates = (month) => {
 
   return { from_date: fromDate, to_date: toDate };
 };
+
+/** Match PayrollsTable period resolution: row first, then payroll_month, then screen filter. */
+function resolvePayrollRowPeriodForStatus(item) {
+  let from = item.period_from || item.period?.from || item.period?.period_from;
+  let to = item.period_to || item.period?.to || item.period?.period_to;
+  const ym = item.period?.payroll_month;
+  if ((!from || !to) && ym && /^\d{4}-\d{2}$/.test(String(ym))) {
+    const { from_date, to_date } = getPayrollDates(ym);
+    from = from || from_date;
+    to = to || to_date;
+  }
+  if (!from || !to) {
+    from = filterForm.value.period_from;
+    to = filterForm.value.period_to;
+  }
+  return { period_from: from || '', period_to: to || '' };
+}
 
 // Default: 21st previous calendar month → 20th current month (same as old From/To default)
 const now = new Date()
@@ -510,13 +528,28 @@ const statusUpdateForm = ref({
   notes: ''
 })
 
+const payrollStatusModalTitle = computed(() => {
+  const s = String(nextStatus.value || '').toLowerCase()
+  if (s === 'suspend') return 'Stop salary (suspend)'
+  return `Update Status: ${nextStatus.value}`
+})
+
+const payrollStatusModalMessage = computed(() => {
+  const s = String(nextStatus.value || '').toLowerCase()
+  if (s === 'suspend') {
+    return 'Suspend payroll for this employee and period? Add an optional note below.'
+  }
+  return `Are you sure you want to update the status of this payroll to ${nextStatus.value}?`
+})
+
 const handleUpdateStatus = ({ item, status }) => {
   if (!authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)) return
+  const { period_from, period_to } = resolvePayrollRowPeriodForStatus(item)
   statusUpdateForm.value = {
     employee_id: item.employee_id || item.employee?.id,
-    period_from: filterForm.value.period_from,
-    period_to: filterForm.value.period_to,
-    action: status, // approve or reject
+    period_from,
+    period_to,
+    action: status,
     notes: ''
   }
   nextStatus.value = status

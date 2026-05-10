@@ -80,15 +80,13 @@
               <LucideCheckCircle class="w-4 h-4" />
             </button>
 
-            <!-- Suspend (restored later if needed — was: status 'suspended')
             <button
-              @click="$emit('update-status', { item, status: 'suspended' })"
-              class="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors cursor-pointer"
-              title="Suspend"
+              @click="$emit('update-status', { item, status: 'suspend' })"
+              class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+              title="Stop salary (suspend)"
             >
               <LucidePauseCircle class="w-4 h-4" />
             </button>
-            -->
 
             <!-- Reject -->
             <button
@@ -109,7 +107,7 @@
 <script setup>
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'
 import PayrollStatusBadge from './PayrollStatusBadge.vue'
-import { LucideEye, LucideCheckCircle, LucideXCircle } from 'lucide-vue-next'
+import { LucideEye, LucideCheckCircle, LucidePauseCircle, LucideXCircle } from 'lucide-vue-next'
 import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'

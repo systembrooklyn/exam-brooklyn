@@ -20,6 +20,7 @@ const statusMap = {
   'hr-manager-approved': { label: 'HR Manager Approved', class: 'bg-teal-100 text-teal-700' },
   'gm-approved': { label: 'GM Approved', class: 'bg-purple-100 text-purple-700' },
   'gm-approved-suspended': { label: 'GM Approved (Suspended)', class: 'bg-orange-100 text-orange-700' },
+  'suspend': { label: 'Suspended', class: 'bg-orange-100 text-orange-700' },
   'suspended': { label: 'Suspended', class: 'bg-orange-100 text-orange-700' },
   'rejected': { label: 'Rejected', class: 'bg-red-100 text-red-700' },
   'paid': { label: 'Paid', class: 'bg-emerald-100 text-emerald-700' },
