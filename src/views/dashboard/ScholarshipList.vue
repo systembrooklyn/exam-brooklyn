@@ -20,7 +20,7 @@
        
       ]" :items="tableRows" :search="search" resourceType="scholarship" @edit="editScholarship"
         @delete="confirmDelete" @open-scholarship-detail="openScholarshipPlanDetail"
-        :loading="scholarshipStore.loading" />
+        :loading="scholarshipStore.loading" :loading-edit-id="scholarshipEditLoadingId" />
     </div>
 
     <ScholarshipPlanDetailModal
@@ -79,6 +79,8 @@ const search = ref("");
 const showPlanDetail = ref(false);
 const planDetail = ref(null);
 const planDetailLoading = ref(false);
+/** Inline spinner on the matching DataTable edit button while plan detail loads */
+const scholarshipEditLoadingId = ref(null);
 
 watch(showPlanDetail, (open) => {
   if (!open) planDetail.value = null;
@@ -104,6 +106,7 @@ const closeModal = () => {
   showModal.value = false;
   isEditing.value = false;
   saving.value = false;
+  scholarshipEditLoadingId.value = null;
 };
 
 function onUpdateCourseGroups(courseGroups) {
@@ -124,13 +127,18 @@ const openScholarshipPlanDetail = async (id) => {
 
 const editScholarship = async (scholarship) => {
   isEditing.value = true;
-  const full = await scholarshipStore.fetchScholarshipPlanById(scholarship.id);
-  if (full) {
-    form.value = mapPlanDetailToForm(full);
-  } else {
-    form.value = mapPlanDetailToForm(scholarship);
+  scholarshipEditLoadingId.value = scholarship.id;
+  try {
+    const full = await scholarshipStore.fetchScholarshipPlanById(scholarship.id);
+    if (full) {
+      form.value = mapPlanDetailToForm(full);
+    } else {
+      form.value = mapPlanDetailToForm(scholarship);
+    }
+    showModal.value = true;
+  } finally {
+    scholarshipEditLoadingId.value = null;
   }
-  showModal.value = true;
 };
 
 const saveScholarship = async () => {

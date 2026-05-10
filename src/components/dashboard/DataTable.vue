@@ -123,10 +123,17 @@
             <td v-if="!hideActions" class="px-6 py-4 whitespace-nowrap space-x-6">
               <button
                 v-if="canEdit"
+                type="button"
+                :disabled="isEditLoadingForRow(item)"
                 @click="emit('edit', item)"
-                class="text-indigo-600 cursor-pointer hover:text-indigo-800 transition inline-flex items-center gap-1"
+                class="text-indigo-600 hover:text-indigo-800 transition inline-flex items-center justify-center min-w-[1.25rem] min-h-[1.25rem] cursor-pointer disabled:opacity-60 disabled:cursor-pointer"
               >
-                <Edit class="w-4 h-4" />
+                <span
+                  v-if="isEditLoadingForRow(item)"
+                  class="inline-block h-4 w-4 shrink-0 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin"
+                  aria-hidden="true"
+                />
+                <Edit v-else class="w-4 h-4 shrink-0" />
               </button>
               <button
                 v-show="!isReservation || canDelete"
@@ -222,6 +229,11 @@ const props = defineProps({
   isReservation: Boolean,
   isPlacementTests: Boolean,
   hideActions: Boolean,
+  /** When set to an item id, that row's edit button shows an inline spinner */
+  loadingEditId: {
+    type: [Number, String],
+    default: null,
+  },
 });
 
 const emit = defineEmits(["edit", "delete", "open-scholarship-detail"]);
@@ -239,6 +251,12 @@ const canEdit = computed(() =>
 const canDelete = computed(() =>
   authStore.hasPermission(`delete-${props.resourceType}`)
 );
+
+function isEditLoadingForRow(item) {
+  const lid = props.loadingEditId;
+  if (lid == null || lid === "") return false;
+  return String(lid) === String(item?.id);
+}
 
 const toggleExpand = (rowId, totalCourses) => {
   if (!expandedRows.value[rowId]) {
