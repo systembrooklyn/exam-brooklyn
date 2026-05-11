@@ -4,24 +4,18 @@
       class="mx-auto w-full min-w-0 max-w-[1800px] px-2.5 sm:px-4 md:px-5 lg:px-6 xl:px-8"
     >
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
-        <div class="flex items-center gap-2 min-w-0">
-          <router-link to="/systems"
-            class="shrink-0 p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
-            <ArrowLeft class="w-5 h-5" />
-          </router-link>
-          <div class="min-w-0">
-            <h1 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
-              Student requests
-            </h1>
-            <p v-if="apiMessage" class="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mt-0.5 truncate">
-              {{ apiMessage }}
-              <span v-if="rows.length" class="text-gray-500">
-                — {{ rows.length }} record(s)</span>
-            </p>
-            <p v-else class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
-              Student requests and complaints from API.
-            </p>
-          </div>
+        <div class="min-w-0">
+          <h1 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+            Student requests
+          </h1>
+          <p v-if="apiMessage" class="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mt-0.5 truncate">
+            {{ apiMessage }}
+            <span v-if="rows.length" class="text-gray-500">
+              — {{ rows.length }} record(s)</span>
+          </p>
+          <p v-else class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
+            Student requests and complaints from API.
+          </p>
         </div>
         <button type="button"
           class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#624ff6] text-white text-xs sm:text-sm font-medium shadow hover:opacity-95 disabled:opacity-50"
@@ -413,7 +407,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import {
   ArrowDownUp,
-  ArrowLeft,
   ArrowUpDown,
   Calendar,
   ChevronDown,

@@ -47,6 +47,12 @@ const routes = [
     component: () => import("@/views/dashboard/StudentRequestsEmp.vue"),
   },
   {
+    path: "/placement-test-attempts",
+    name: "placement-test-attempts",
+    meta: { requiresPermission: "view-placementTest" },
+    component: () => import("@/views/dashboard/PlacementTestAttempts.vue"),
+  },
+  {
     path: "/send-email",
     name: "send-email",
     component: () => import("../views/dashboard/SendMultipleCustomMail.vue"),

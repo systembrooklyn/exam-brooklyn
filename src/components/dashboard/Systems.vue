@@ -130,6 +130,12 @@ const systems = [
     image: requestsIcon,
     requiresPermission: "view-studentRequests",
   },
+  {
+    name: "Placement Test Scores",
+    route: "/placement-test-attempts",
+    image: Placement,
+    // requiresPermission: "view-placementTest",
+  },
 ];
 
 
