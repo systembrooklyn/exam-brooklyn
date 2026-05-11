@@ -1,9 +1,9 @@
 <template>
-  <div v-if="totalPages > 1" class="mt-6 flex justify-center items-center space-x-2">
+  <div v-if="totalPages > 1" class="mt-2 flex flex-wrap justify-center items-center gap-1.5">
     <button
       @click="goToPage(currentPage - 1)"
       :disabled="currentPage === 1"
-      class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      class="px-2 py-0.5 text-sm border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
     >
       Previous
     </button>
@@ -12,7 +12,7 @@
       v-for="(page, index) in pageNumbers"
       :key="index"
       @click="goToPage(page)"
-      class="px-3 py-1 border rounded"
+      class="px-2 py-0.5 text-sm border rounded"
       :class="{
         'bg-indigo-600 text-white font-bold rounded-full': page === currentPage,
         'bg-white text-gray-700 hover:bg-gray-100': page !== currentPage,
@@ -26,7 +26,7 @@
     <button
       @click="goToPage(currentPage + 1)"
       :disabled="currentPage === totalPages"
-      class="px-3 py-1 border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+      class="px-2 py-0.5 text-sm border rounded bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
     >
       Next
     </button>

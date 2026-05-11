@@ -1,28 +1,30 @@
 <template>
-  <div class="min-h-screen w-full bg-gray-50 dark:bg-gray-900 px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 animate-fade-in">
-    <div class="w-full max-w-none">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-3">
-        <div class="flex items-center gap-3 min-w-0">
+  <div class="min-h-screen w-full bg-gray-50 dark:bg-gray-900 py-2 sm:py-3 animate-fade-in">
+    <div
+      class="mx-auto w-full min-w-0 max-w-[1800px] px-2.5 sm:px-4 md:px-5 lg:px-6 xl:px-8"
+    >
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+        <div class="flex items-center gap-2 min-w-0">
           <router-link to="/systems"
-            class="shrink-0 p-1.5 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
+            class="shrink-0 p-1 hover:bg-white dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-gray-600">
             <ArrowLeft class="w-5 h-5" />
           </router-link>
           <div class="min-w-0">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            <h1 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
               Student requests
             </h1>
-            <p v-if="apiMessage" class="text-gray-600 dark:text-gray-300 text-sm mt-1 truncate">
+            <p v-if="apiMessage" class="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mt-0.5 truncate">
               {{ apiMessage }}
               <span v-if="rows.length" class="text-gray-500">
                 — {{ rows.length }} record(s)</span>
             </p>
-            <p v-else class="text-gray-500 dark:text-gray-400 text-sm mt-1">
+            <p v-else class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
               Student requests and complaints from API.
             </p>
           </div>
         </div>
         <button type="button"
-          class="shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#624ff6] text-white text-sm font-medium shadow hover:opacity-95 disabled:opacity-50"
+          class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#624ff6] text-white text-xs sm:text-sm font-medium shadow hover:opacity-95 disabled:opacity-50"
           :disabled="loading" @click="fetchRequests('refresh')">
           <Loader2 v-if="loading && fetchSource === 'refresh'" class="w-4 h-4 animate-spin" />
           <RefreshCw v-else class="w-4 h-4" />
@@ -31,48 +33,52 @@
       </div>
 
       <div
-        class="mb-2 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-3 py-3 space-y-3 shadow-sm">
+        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm">
         <p
-          class="flex items-center gap-1.5 text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-          <SlidersHorizontal class="h-3.5 w-3.5 text-[#624ff6]" aria-hidden="true" />
+          class="flex items-center gap-1 text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+          <SlidersHorizontal class="h-3 w-3 text-[#624ff6]" aria-hidden="true" />
           Filters
         </p>
-        <!-- Row 1: four filters (employee with first row) -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-end">
-          <div>
-            <label :class="filterLabelClass">From date</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <Calendar class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <input v-model="filters.from_date" type="date" :class="filterInputInnerClass" />
+        <div
+          class="min-w-0 overflow-x-auto pb-0.5 [scrollbar-width:thin] xl:overflow-x-visible [-webkit-overflow-scrolling:touch]"
+        >
+          <div
+            class="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-2 xl:grid-cols-6 xl:gap-x-3 xl:gap-y-1.5 2xl:gap-x-4 items-end"
+          >
+            <div class="min-w-0">
+              <label :class="filterLabelClass">From date</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <Calendar class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <input v-model="filters.from_date" type="date" :class="filterInputInnerClass" />
+              </div>
             </div>
-          </div>
-          <div>
-            <label :class="filterLabelClass">To date</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <Calendar class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <input v-model="filters.to_date" type="date" :class="filterInputInnerClass" />
+            <div class="min-w-0">
+              <label :class="filterLabelClass">To date</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <Calendar class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <input v-model="filters.to_date" type="date" :class="filterInputInnerClass" />
+              </div>
             </div>
-          </div>
-          <div>
-            <label :class="filterLabelClass">Status</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <ListFilter class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <select v-model="filters.status" :class="filterSelectInnerClass">
-                <option value="">All</option>
-                <option value="pending">Pending</option>
-                <option value="closed">Closed</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+            <div class="min-w-0">
+              <label :class="filterLabelClass">Status</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <ListFilter class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <select v-model="filters.status" :class="filterSelectInnerClass">
+                  <option value="">All</option>
+                  <option value="pending">Pending</option>
+                  <option value="closed">Closed</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <!-- <div ref="employeeDropdownRootRef" class="relative min-w-0">
+            <!-- <div ref="employeeDropdownRootRef" class="relative min-w-0">
             <label :class="filterLabelClass">Employee</label>
             <button type="button" :class="[filterShellClass, 'p-0 cursor-pointer text-left w-full']"
               :aria-expanded="employeeDropdownOpen" aria-haspopup="listbox" @click="toggleEmployeeDropdown">
@@ -123,60 +129,58 @@
               </ul>
             </div>
           </div> -->
-        </div>
-        <!-- Row 2: type, field, search -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-          <div>
-            <label :class="filterLabelClass">Type</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <Tags class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <select v-model="filters.type" :class="filterSelectInnerClass">
-                <option value="">All</option>
-                <option value="request">Request</option>
-                <option value="complain">Complain</option>
-                <option value="edit">Edit</option>
-              </select>
+            <div class="min-w-0">
+              <label :class="filterLabelClass">Type</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <Tags class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <select v-model="filters.type" :class="filterSelectInnerClass">
+                  <option value="">All</option>
+                  <option value="request">Request</option>
+                  <option value="complain">Complain</option>
+                  <option value="edit">Edit</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div>
-            <label :class="filterLabelClass">Field</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <TextCursor class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <select v-model="filters.field" :class="filterSelectInnerClass">
-                <option value="">All</option>
-                <option value="Material">Material</option>
-                <option value="Scholarship">Scholarship</option>
-                <option value="Information">Information</option>
-                <option value="Accreditation">Accreditation</option>
-                <option value="Other">Other</option>
-              </select>
+            <div class="min-w-0">
+              <label :class="filterLabelClass">Field</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <TextCursor class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <select v-model="filters.field" :class="filterSelectInnerClass">
+                  <option value="">All</option>
+                  <option value="Material">Material</option>
+                  <option value="Scholarship">Scholarship</option>
+                  <option value="Information">Information</option>
+                  <option value="Accreditation">Accreditation</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div>
-            <label :class="filterLabelClass">Search with comman word</label>
-            <div :class="filterShellClass">
-              <span :class="filterIconSlotClass">
-                <SearchIcon class="h-4 w-4" aria-hidden="true" />
-              </span>
-              <input v-model="filters.value" type="search" placeholder="Search" :class="filterInputInnerClass"
-                @keydown.enter.prevent="fetchRequests('apply')" />
+            <div class="min-w-0">
+              <label :class="filterLabelClass">Search with comman word</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <SearchIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <input v-model="filters.value" type="search" placeholder="Search" :class="filterInputInnerClass"
+                  @keydown.enter.prevent="fetchRequests('apply')" />
+              </div>
             </div>
           </div>
         </div>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end pt-0.5">
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end pt-0.5">
+          <div class="flex flex-wrap items-center gap-1.5 shrink-0">
             <button type="button"
-              class="inline-flex h-10 items-center justify-center rounded-md bg-[#624ff6] px-4 text-sm font-medium text-white shadow hover:opacity-95 disabled:opacity-50"
+              class="inline-flex h-8 items-center justify-center rounded-md bg-[#624ff6] px-3 text-xs sm:text-sm font-medium text-white shadow hover:opacity-95 disabled:opacity-50"
               :disabled="loading" @click="fetchRequests('apply')">
-              <Loader2 v-if="loading && fetchSource === 'apply'" class="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 v-if="loading && fetchSource === 'apply'" class="mr-1.5 h-3.5 w-3.5 animate-spin" />
               Apply filters
             </button>
             <button type="button"
-              class="inline-flex h-10 items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
+              class="inline-flex h-8 items-center justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50"
               :disabled="loading" @click="clearFilters">
               Clear
             </button>
@@ -188,63 +192,83 @@
       </div>
 
       <div v-if="loading && rows.length === 0"
-        class="w-full flex flex-col justify-center items-center py-16 min-h-[220px] bg-white dark:bg-gray-800 rounded-t-xl rounded-b-lg border border-[#624ff6]/20 dark:border-[#624ff6]/35 shadow-md fade-in"
+        class="w-full flex flex-col justify-center items-center py-10 min-h-[160px] bg-white dark:bg-gray-800 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/35 shadow-sm fade-in"
         role="status" aria-live="polite">
-        <div class="animate-spin rounded-full h-10 w-10 border-4 border-[#624ff6] border-t-transparent" />
-        <p class="mt-4 text-sm text-gray-500 dark:text-gray-400">
+        <div class="animate-spin rounded-full h-8 w-8 border-[3px] border-[#624ff6] border-t-transparent" />
+        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
           Loading requests…
         </p>
       </div>
 
-      <div v-else-if="rows.length > 0" class="fade-in w-full space-y-4">
-        <div class="flex flex-wrap justify-between items-center gap-3">
+      <div v-else-if="rows.length > 0" class="fade-in w-full space-y-2">
+        <div class="flex flex-wrap justify-between items-center gap-2">
           <button type="button"
-            class="flex items-center gap-2 text-indigo-800 dark:text-indigo-300 font-bold text-lg cursor-pointer select-none"
+            class="flex items-center gap-1.5 text-indigo-800 dark:text-indigo-300 font-semibold text-sm cursor-pointer select-none"
             @click="toggleSortByDate">
             Sort by date
             <span>
-              <ArrowDownUp v-if="sortOrder === 'asc'" class="w-4 h-4" />
-              <ArrowUpDown v-else class="w-4 h-4" />
+              <ArrowDownUp v-if="sortOrder === 'asc'" class="w-3.5 h-3.5" />
+              <ArrowUpDown v-else class="w-3.5 h-3.5" />
             </span>
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+        <div class="flex w-full flex-col gap-2">
           <div v-for="(row, rowIndex) in paginatedRows" :key="row.id ?? rowIndex"
-            class="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 min-w-0 h-full flex flex-col">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-              <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{
+            class="bg-white dark:bg-gray-800 p-2 sm:p-2.5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 min-w-0 flex flex-col w-full">
+            <!-- Row 1: context left | type / field / status / actions right -->
+            <div
+              class="flex flex-col gap-2 border-b border-gray-100 dark:border-gray-700/80 pb-2 lg:flex-row lg:items-start lg:justify-between lg:gap-3"
+            >
+              <div
+                class="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 flex-1 text-xs sm:text-sm md:gap-x-3"
+              >
+                <span class="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{{
                   formatDate(row.created_at)
                 }}</span>
-                <span class="text-sm font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-1">
-                  <GraduationCap class="w-4 h-4 shrink-0" aria-hidden="true" />
-                  <span dir="auto" class="truncate max-w-[14rem] sm:max-w-xs">{{
+                <span class="font-semibold text-gray-800 dark:text-gray-100 inline-flex min-w-0 max-w-full items-start gap-1">
+                  <GraduationCap class="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                  <span dir="auto" class="min-w-0 max-w-[min(100%,32rem)] break-words lg:max-w-[min(100%,42rem)]">{{
                     row.student?.name || "—"
                   }}</span>
                 </span>
-                <span v-if="row.student?.st_num != null || row.id != null"
-                  class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
-                  {{ formatStudentNums(row) }}
+                <span v-if="row.student?.st_num != null && String(row.student.st_num).trim() !== ''"
+                  class="text-gray-700 dark:text-gray-300 inline-flex items-center gap-1 min-w-0">
+                  <IdCard class="w-3 h-3 shrink-0" aria-hidden="true" />
+                  <span dir="auto" class="truncate text-gray-700 dark:text-gray-300">{{
+                    formatStudentNums(row) || "—"
+                  }}</span>
+                </span>
+                <span v-if="row.student?.email" dir="auto"
+                  class="text-gray-700 dark:text-gray-300 inline-flex items-center gap-1 min-w-0">
+                  <Mail class="w-3 h-3 shrink-0" aria-hidden="true" />
+                  <span dir="auto" class="min-w-0 max-w-[min(100%,20rem)] break-words text-[11px] sm:text-xs">{{
+                    row.student.email
+                  }}</span>
                 </span>
                 <span v-if="row.employee?.name"
-                  class="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
-                  <UserPen class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                  <span dir="auto">{{ row.comment }}</span>
+                  class="text-gray-700 dark:text-gray-300 inline-flex items-center gap-1 min-w-0">
+                  <UserPen class="w-3 h-3 shrink-0" aria-hidden="true" />
+                  <span dir="auto" class="min-w-0 max-w-[min(100%,20rem)] break-words text-[11px] sm:text-xs">{{
+                    row.comment
+                  }}</span>
                 </span>
               </div>
-              <div class="flex flex-wrap items-center gap-2">
+              <div
+                class="flex w-full min-w-0 flex-wrap items-center gap-1.5 sm:gap-2 lg:w-auto lg:max-w-[min(100%,28rem)] xl:max-w-none lg:shrink-0 lg:justify-end"
+                style="direction: ltr; unicode-bidi: isolate"
+              >
                 <span v-if="row.field" dir="auto"
-                  class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 px-3 py-1 rounded-full text-sm font-medium">
+                  class="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 px-2 py-0.5 rounded-full text-xs font-medium">
                   {{ row.field }}
                 </span>
                 <span v-if="row.type"
-                  class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2.5 py-1 rounded-full text-xs font-medium capitalize">
+                  class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-2 py-0.5 rounded-full text-[11px] font-medium capitalize">
                   {{ row.type }}
                 </span>
-                <div class="relative inline-block min-w-[120px] text-center">
+                <div class="relative inline-block min-w-[6.5rem] text-center">
                   <select v-if="canChangeRequestStatus" v-model="row.status"
-                    class="w-full text-center cursor-pointer px-3 py-1 rounded-full text-sm font-medium capitalize appearance-none pr-6 focus:outline-none focus:ring-0 border-0"
+                    class="w-full text-center cursor-pointer px-2 py-0.5 rounded-full text-xs font-medium capitalize appearance-none pr-5 focus:outline-none focus:ring-0 border-0"
                     :class="statusSelectClass(row.status)" @change="updateRowStatus(row)">
                     <option value="pending">Pending</option>
                     <option value="closed">Closed</option>
@@ -252,104 +276,104 @@
                   <option value="rejected">Rejected</option> -->
                   </select>
                   <span v-else
-                    class="inline-flex items-center justify-center w-full px-3 py-1 rounded-full text-sm font-medium capitalize"
+                    class="inline-flex items-center justify-center w-full px-2 py-0.5 rounded-full text-xs font-medium capitalize"
                     :class="statusSelectClass(row.status)">
                     {{ row.status || "—" }}
                   </span>
                   <div v-if="canChangeRequestStatus && loadingStatusId === row.id"
-                    class="absolute top-1/2 right-2 -translate-y-1/2 pointer-events-none">
-                    <div class="border-2 border-gray-300 border-t-green-600 rounded-full w-4 h-4 animate-spin" />
+                    class="absolute top-1/2 right-1.5 -translate-y-1/2 pointer-events-none">
+                    <div class="border-2 border-gray-300 border-t-green-600 rounded-full w-3.5 h-3.5 animate-spin" />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 flex-1 min-h-0"
-              style="direction: ltr">
-              <div
-                class="max-w-none text-gray-800 dark:text-gray-200 font-medium text-sm leading-relaxed mb-2 sm:mb-0 flex-1 min-w-0">
-                <div class="mixed-text-container" dir="auto">
-                  <div v-if="expandKey(row.id, 'value') === expandedCell.key" class="mixed-text-content">
-                    {{ displayCell(row.value) }}
-                    <button type="button" dir="ltr"
-                      class="ms-2 inline text-sm text-indigo-600 dark:text-indigo-400 underline align-baseline"
-                      @click.stop="toggleExpand(row.id, 'value')">
-                      Less
-                    </button>
-                  </div>
-                  <div v-else class="mixed-text-content">
-                    {{ truncateWords(displayCell(row.value)) }}
-                    <button v-if="wordCount(displayCell(row.value)) > 35" type="button" dir="ltr"
-                      class="ms-1 inline text-sm text-indigo-600 dark:text-indigo-400 underline align-baseline"
-                      @click.stop="toggleExpand(row.id, 'value')">
-                      More
-                    </button>
-                  </div>
-                </div>
-                <p v-if="row.comment"
-                  class="text-xs text-gray-500 dark:text-gray-400 mt-2 border-t border-gray-100 dark:border-gray-600 pt-2">
-                  <span class="font-semibold text-gray-600 dark:text-gray-300">Comment:</span>
-                  <span dir="auto" class="inline pl-1 align-top">{{
-                    row.comment
-                  }}</span>
-                </p>
-                <p v-if="row.student?.email" dir="ltr" class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
-                  {{ row.student.email }}
-                </p>
-              </div>
-              <div class="flex items-center gap-2 shrink-0" style="direction: ltr; unicode-bidi: isolate">
                 <button v-if="!hasEmployeeReply(row) && canEmpReply" type="button"
-                  class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
+                  class="inline-flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-medium text-xs px-2 py-1 rounded-md transition"
                   @click="openReplyModal(row, 'emp_res')">
                   Employee Reply
-                  <MessageCircleReply class="w-[15px] h-[15px]" aria-hidden="true" />
+                  <MessageCircleReply class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 </button>
-                <button v-if="!row.manager_response && canMngReply && row.employee_response" type="button"
-                  class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
+                <button v-if="hasEmployeeReply(row) && !hasManagerReply(row) && canMngReply" type="button"
+                  class="inline-flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-medium text-xs px-2 py-1 rounded-md transition"
                   @click="openReplyModal(row, 'mng_res')">
                   Manager Reply
-                  <MessageCircleReply class="w-[15px] h-[15px]" aria-hidden="true" />
+                  <MessageCircleReply class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
-            <div class="space-y-4 text-sm pt-3 mt-auto">
-              <div v-if="row.manager_response"
-                class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-md border-s-4 border-indigo-400">
-                <strong dir="ltr" class="text-indigo-600 dark:text-indigo-400 block mb-1">Manager reply:</strong>
+            <!-- Row 2: request body + comment + email (full width) -->
+            <div class="pt-2 text-gray-800 dark:text-gray-200 text-sm leading-snug min-w-0" style="direction: ltr">
+              <div class="mixed-text-container" dir="auto">
+                <div v-if="expandKey(row.id, 'value') === expandedCell.key" class="mixed-text-content">
+                  {{ displayCell(row.value) }}
+                  <button type="button" dir="ltr"
+                    class="ms-1.5 inline text-xs text-indigo-600 dark:text-indigo-400 underline align-baseline"
+                    @click.stop="toggleExpand(row.id, 'value')">
+                    Less
+                  </button>
+                </div>
+                <div v-else class="mixed-text-content">
+                  {{ truncateValuePreview(row.value) }}
+                  <button v-if="valueNeedsExpand(row.value)" type="button" dir="ltr"
+                    class="ms-1 inline text-xs text-indigo-600 dark:text-indigo-400 underline align-baseline"
+                    @click.stop="toggleExpand(row.id, 'value')">
+                    More
+                  </button>
+                </div>
+              </div>
+              <!-- <p v-if="row.comment"
+                class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-1.5 border-t border-gray-100 dark:border-gray-600 pt-1.5">
+                <span class="font-semibold text-gray-600 dark:text-gray-300">Comment:</span>
+                <span dir="auto" class="inline pl-1 align-top">{{
+                  row.comment
+                }}</span>
+              </p> -->
+              <p v-if="row.student?.email" dir="ltr"
+                class="mt-1 min-w-0 break-all text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
+                {{ row.student.email }}
+              </p>
+            </div>
+
+            <!-- Row 3: threaded replies -->
+            <div v-if="hasManagerReply(row) || hasEmployeeReply(row)"
+              class="mt-2 space-y-2 border-t border-gray-100 dark:border-gray-700/80 pt-2 text-sm">
+              <div v-if="hasManagerReply(row)"
+                class="bg-gray-50 dark:bg-gray-900/50 px-2 py-1.5 rounded border-s-[3px] border-indigo-400">
+                <strong dir="ltr" class="text-indigo-600 dark:text-indigo-400 block text-xs mb-0.5">Manager
+                  reply:</strong>
                 <div class="mixed-text-container" dir="auto">
                   <div class="mixed-text-content">{{ row.manager_response }}</div>
                 </div>
-                <div class="flex flex-wrap items-center gap-4 mt-3">
+                <div class="flex flex-wrap items-center gap-2 mt-1.5">
                   <span v-if="row.manager_response_at"
-                    class="text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                    <Clock class="w-[13px] h-[13px]" />
+                    class="text-[11px] text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                    <Clock class="w-3 h-3 shrink-0" />
                     {{ formatDate(row.manager_response_at) }}
                   </span>
                   <span v-if="row.manager?.name"
-                    class="text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                    <UsersRound class="w-[13px] h-[13px]" />
+                    class="text-[11px] text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                    <UsersRound class="w-3 h-3 shrink-0" />
                     {{ row.manager.name }}
                   </span>
                 </div>
               </div>
 
               <div v-if="hasEmployeeReply(row)"
-                class="bg-gray-50 dark:bg-gray-900/50 p-2 rounded-md border-s-4 border-blue-400">
-                <strong dir="ltr" class="text-blue-600 dark:text-blue-400 block mb-1">Employee reply:</strong>
+                class="bg-gray-50 dark:bg-gray-900/50 px-2 py-1.5 rounded border-s-[3px] border-blue-400">
+                <strong dir="ltr" class="text-blue-600 dark:text-blue-400 block text-xs mb-0.5">Employee reply:</strong>
                 <div class="mixed-text-container" dir="auto">
                   <div class="mixed-text-content">{{ row.employee_response }}</div>
                 </div>
-                <div class="flex flex-wrap items-center gap-4 mt-3">
+                <div class="flex flex-wrap items-center gap-2 mt-1.5">
                   <span v-if="row.employee_response_at"
-                    class="text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                    <Clock class="w-[13px] h-[13px]" />
+                    class="text-[11px] text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                    <Clock class="w-3 h-3 shrink-0" />
                     {{ formatDate(row.employee_response_at) }}
                   </span>
                   <span v-if="row.employee?.name"
-                    class="text-xs text-gray-800 dark:text-gray-200 flex items-center gap-1">
-                    <UsersRound class="w-[13px] h-[13px]" />
-                    {{ row.employee.name }}_{{ row.employee.fingerPrint }}
+                    class="text-[11px] text-gray-800 dark:text-gray-200 flex items-center gap-1">
+                    <UsersRound class="w-3 h-3 shrink-0" />
+                    {{ row.employee.name }}<span v-if="employeeFingerprintLabel(row)">
+                      · {{ employeeFingerprintLabel(row) }}</span>
                   </span>
 
                 </div>
@@ -363,8 +387,8 @@
       </div>
 
       <div v-else-if="!loading"
-        class="text-center py-12 px-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 fade-in">
-        <div class="relative inline-block mb-6">
+        class="text-center py-8 px-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 fade-in">
+        <div class="relative inline-block mb-4">
           <div class="absolute inset-0 rounded-full bg-[#624ff6]/10 dark:bg-[#624ff6]/20 blur-3xl scale-150" />
           <img src="@/assets/undraw_empty_4zx0.png" alt=""
             class="relative mx-auto w-56 sm:w-72 md:w-80 max-w-full drop-shadow-xl" />
@@ -395,6 +419,8 @@ import {
   ChevronDown,
   Clock,
   GraduationCap,
+  IdCard,
+  Mail,
   ListFilter,
   Loader2,
   MessageCircleReply,
@@ -526,18 +552,28 @@ function hasEmployeeReply(row) {
   );
 }
 
-function truncateWords(text) {
-  const s = displayCell(text);
-  const words = String(s).split(/\s+/);
-  if (words.length > 25) return words.slice(0, 25).join(" ") + "...";
-  return s;
+function hasManagerReply(row) {
+  return (
+    hasMeaningfulText(row?.manager_response) &&
+    row?.manager_response_at != null
+  );
 }
 
-function wordCount(text) {
-  return String(displayCell(text))
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean).length;
+function employeeFingerprintLabel(row) {
+  return pickEmployeeFingerprint(row?.employee);
+}
+
+/** Preview length for `row.value` before showing More/Less. */
+const VALUE_PREVIEW_MAX_CHARS = 250;
+
+function valueNeedsExpand(val) {
+  return String(displayCell(val)).length > VALUE_PREVIEW_MAX_CHARS;
+}
+
+function truncateValuePreview(val) {
+  const s = String(displayCell(val));
+  if (s.length <= VALUE_PREVIEW_MAX_CHARS) return s;
+  return `${s.slice(0, VALUE_PREVIEW_MAX_CHARS)}...`;
 }
 
 function toggleExpand(rowId, field) {
@@ -640,15 +676,15 @@ async function handleReply({ key, value }) {
 }
 
 const filterLabelClass =
-  "block text-[9px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-1";
+  "block text-[8px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-0.5";
 const filterShellClass =
-  "flex min-h-[2.5rem] rounded-lg border border-[#624ff6]/25 dark:border-[#624ff6]/35 bg-white dark:bg-gray-900 overflow-hidden shadow-sm focus-within:ring-2 focus-within:ring-[#624ff6]/25 focus-within:border-[#624ff6]/45";
+  "flex min-h-[2.25rem] rounded-md border border-[#624ff6]/25 dark:border-[#624ff6]/35 bg-white dark:bg-gray-900 overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-[#624ff6]/25 focus-within:border-[#624ff6]/45";
 const filterIconSlotClass =
-  "flex w-10 shrink-0 items-center justify-center self-stretch border-r border-[#624ff6]/15 dark:border-[#624ff6]/25 bg-[#624ff6]/[0.07] dark:bg-[#624ff6]/12 text-[#624ff6]";
+  "flex w-8 shrink-0 items-center justify-center self-stretch border-r border-[#624ff6]/15 dark:border-[#624ff6]/25 bg-[#624ff6]/[0.07] dark:bg-[#624ff6]/12 text-[#624ff6]";
 const filterInputInnerClass =
-  "min-h-[2.5rem] min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
+  "min-h-[2.25rem] min-w-0 flex-1 border-0 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
 const filterSelectInnerClass =
-  "min-h-[2.5rem] min-w-0 flex-1 cursor-pointer border-0 bg-transparent px-3 py-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
+  "min-h-[2.25rem] min-w-0 flex-1 cursor-pointer border-0 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
 
 /** Filter fields — sent only when set (server rejects null). */
 const filters = ref({
@@ -843,7 +879,7 @@ onUnmounted(() => {
    unicode-bidi: plaintext keeps order natural for mixed scripts. */
 .mixed-text-container {
   width: 100%;
-  margin: 0.25rem 0;
+  margin: 0.1rem 0;
 }
 
 .mixed-text-content {
@@ -852,8 +888,8 @@ onUnmounted(() => {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   word-break: normal;
-  line-height: 1.65;
-  padding: 0.25rem 0;
+  line-height: 1.45;
+  padding: 0.1rem 0;
 }
 
 @media (max-width: 640px) {
