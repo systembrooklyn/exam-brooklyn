@@ -106,7 +106,7 @@ const form = ref({
 
   field: "",
   value: "",
-  comment:"comment"
+  comment:""
 });
 
 watch(

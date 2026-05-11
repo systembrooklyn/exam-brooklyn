@@ -182,7 +182,13 @@ function truncateText(text) {
           <span
             class="text-sm font-semibold text-gray-800 flex items-center gap-1"
           >
-            <UserPen size="15" /> {{ row.employee?.name }}
+            <span class="flex items-center gap-1">
+              <UserPen size="15" /> {{ row.comment }} 
+            </span>
+            <span v-if="!row.comment"
+              class="text-xs text-gray-500 dark:text-gray-400 tabular-nums">
+              {{ row.employee.name }}
+            </span>
           </span>
         </div>
         <div class="flex items-center gap-2">
@@ -260,7 +266,7 @@ function truncateText(text) {
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
             style="direction: auto; unicode-bidi: plaintext"
           >
-            Reply
+            Employee Reply
             <MessageCircleReply size="15" />
           </button>
           <button
@@ -269,7 +275,7 @@ function truncateText(text) {
             class="flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold text-sm px-3 py-1 rounded-lg shadow-sm transition"
             style="direction: auto; unicode-bidi: plaintext"
           >
-             Reply
+             Manager Reply
             <MessageCircleReply size="15" />
           </button>
         </div>

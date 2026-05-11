@@ -128,7 +128,7 @@ const systems = [
     name: "Requests",
     route: "/requests",
     image: requestsIcon,
-    // requiresPermission: "view-requests",
+    requiresPermission: "view-studentRequests",
   },
 ];
 
