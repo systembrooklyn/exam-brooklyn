@@ -66,10 +66,10 @@
                 </span>
                 <input
                   v-model="stId"
-                  type="number"
-                  min="1"
+                  type="text"
                   inputmode="numeric"
-                  placeholder="Student ID"
+                  autocomplete="off"
+                  placeholder="Optional"
                   :class="filterInputInnerClass"
                   @keydown.enter.prevent="fetchAttempts('apply')"
                 />
@@ -166,7 +166,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="row in attempts"
+                v-for="row in paginatedAttempts"
                 :key="row._key"
                 class="border-b border-gray-100 dark:border-gray-700/80 hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors"
               >
@@ -214,6 +214,14 @@
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          v-if="totalPages > 1"
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :page-numbers="pageNumbers"
+          @update:current-page="(p) => (currentPage = p)"
+        />
       </section>
 
       <div
@@ -257,10 +265,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
 import { PT_ATTEMPTS } from "@/api/Api";
+import Pagination from "@/components/srmDashboard/Pagination.vue";
 import notyf from "@/components/global/notyf";
 
 const filterLabelClass =
@@ -271,6 +280,31 @@ const filterIconSlotClass =
   "flex w-8 shrink-0 items-center justify-center self-stretch border-r border-[#624ff6]/15 dark:border-[#624ff6]/25 bg-[#624ff6]/[0.07] dark:bg-[#624ff6]/12 text-[#624ff6]";
 const filterInputInnerClass =
   "min-h-[2.25rem] min-w-0 flex-1 border-0 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
+
+/** YYYY-MM-DD in local calendar */
+function todayIsoLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+/** First day of current month, local */
+function firstOfMonthIsoLocal() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}-01`;
+}
+
+function defaultFromIso() {
+  return firstOfMonthIsoLocal();
+}
+
+function defaultToIso() {
+  return todayIsoLocal();
+}
 
 function toApiDate(iso) {
   if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return "";
@@ -324,22 +358,23 @@ function phonesList(phones) {
   return String(phones);
 }
 
-const fromIso = ref("");
-const toIso = ref("");
+const fromIso = ref(defaultFromIso());
+const toIso = ref(defaultToIso());
 const stId = ref("");
 
 const fromApi = computed(() => toApiDate(fromIso.value));
 const toApi = computed(() => toApiDate(toIso.value));
 
-const loading = ref(false);
+/** Start true: avoid empty-state flash before initial fetch with default dates. */
+const loading = ref(true);
 /** Drives spinners: apply | refresh */
 const fetchSource = ref(null);
 const errorText = ref("");
 const rawPayload = ref(null);
 
 function clearFilters() {
-  fromIso.value = "";
-  toIso.value = "";
+  fromIso.value = defaultFromIso();
+  toIso.value = defaultToIso();
   stId.value = "";
   errorText.value = "";
   rawPayload.value = null;
@@ -356,8 +391,8 @@ const emptyStateTitle = computed(() =>
 
 const emptyStateSubtitle = computed(() =>
   rawPayload.value == null
-    ? "Choose from / to dates and student ID, then click Apply or Refresh."
-    : "No placement attempts in this range for this student. Try different dates or another student ID.",
+    ? "From defaults to the first day of this month through today; results load automatically. Student ID is optional."
+    : "No placement attempts for these filters. Try different dates or add a student ID.",
 );
 
 /** Phones once, outside the table (same student for all rows). */
@@ -404,35 +439,71 @@ const attempts = computed(() => {
   return mapped;
 });
 
+const currentPage = ref(1);
+/** Same page size as Student requests. */
+const pageSize = 10;
+
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(attempts.value.length / pageSize)),
+);
+
+const paginatedAttempts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize;
+  return attempts.value.slice(start, start + pageSize);
+});
+
+const pageNumbers = computed(() => {
+  const total = totalPages.value;
+  const current = currentPage.value;
+  const pages = [];
+  if (total <= 2) {
+    for (let i = 1; i <= total; i++) pages.push(i);
+  } else {
+    pages.push(1);
+    if (current > 3) pages.push("...");
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (current < total - 2) pages.push("...");
+    pages.push(total);
+  }
+  return pages;
+});
+
+watch(
+  () => rawPayload.value,
+  () => {
+    currentPage.value = 1;
+  },
+);
+
 /**
- * @param {"apply" | "refresh"} source
+ * @param {"apply" | "refresh" | "initial"} source — `initial`: page load (no button spinners).
  */
 async function fetchAttempts(source = "apply") {
   errorText.value = "";
   fetchSource.value = source;
-  const sid = Number(String(stId.value).trim());
-  if (!Number.isFinite(sid) || sid < 1) {
-    errorText.value = "Enter a valid student ID.";
+  const sidRaw = String(stId.value ?? "").trim();
+  const sid = sidRaw === "" ? NaN : Number(sidRaw);
+  if (sidRaw !== "" && (!Number.isFinite(sid) || sid < 1)) {
+    errorText.value = "If you enter a student ID, it must be a valid positive number.";
     fetchSource.value = null;
     notyf.error(errorText.value);
     return;
   }
   const from = fromApi.value;
   const to = toApi.value;
-  if (!from || !to) {
-    errorText.value = "Pick valid from and to dates.";
-    fetchSource.value = null;
-    notyf.error(errorText.value);
-    return;
+  /** Dates & st_id optional; omit empty keys (backend may reject null). */
+  const payload = {};
+  if (from) payload.from = from;
+  if (to) payload.to = to;
+  if (sidRaw !== "" && Number.isFinite(sid) && sid >= 1) {
+    payload.st_id = sid;
   }
 
   loading.value = true;
   try {
-    const { data } = await apiClient.post(PT_ATTEMPTS, {
-      from,
-      to,
-      st_id: sid,
-    });
+    const { data } = await apiClient.post(PT_ATTEMPTS, payload);
     rawPayload.value = data;
   } catch (e) {
     const msg =
@@ -448,6 +519,10 @@ async function fetchAttempts(source = "apply") {
     fetchSource.value = null;
   }
 }
+
+onMounted(() => {
+  fetchAttempts("initial");
+});
 </script>
 
 <style scoped>

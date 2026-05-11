@@ -53,6 +53,7 @@ import emailIcon from "@/assets/email.png";
 import hrIcon from "@/assets/hr.png";
 import bookingExamIcon from "@/assets/booking-exam.png";
 import requestsIcon from "@/assets/requests.jpg";
+import Placement2 from "@/assets/plasment2.jpeg";
 
 
 const systems = [
@@ -133,7 +134,7 @@ const systems = [
   {
     name: "Placement Test Scores",
     route: "/placement-test-attempts",
-    image: Placement,
+    image: Placement2,
     // requiresPermission: "view-placementTest",
   },
 ];
