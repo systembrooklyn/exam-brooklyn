@@ -26,7 +26,7 @@
       </div>
 
       <div
-        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[95%] mx-auto"
+        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[40%] "
       >
         <p
           class="flex items-center gap-1 text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
@@ -38,7 +38,7 @@
           class="min-w-0 overflow-x-auto pb-0.5 [scrollbar-width:thin] xl:overflow-x-visible [-webkit-overflow-scrolling:touch]"
         >
           <div
-            class="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-2 xl:grid-cols-4 xl:gap-x-3 xl:gap-y-1.5 2xl:gap-x-4 items-end"
+            class="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-2 xl:grid-cols-3 xl:gap-x-3 xl:gap-y-1.5 2xl:gap-x-4 items-end"
           >
             <div class="min-w-0">
               <label :class="filterLabelClass">From date</label>
@@ -56,23 +56,6 @@
                   <Calendar class="h-3.5 w-3.5" aria-hidden="true" />
                 </span>
                 <input v-model="toIso" type="date" :title="toApi || undefined" :class="filterInputInnerClass" />
-              </div>
-            </div>
-            <div class="min-w-0">
-              <label :class="filterLabelClass">Student Number</label>
-              <div :class="filterShellClass">
-                <span :class="filterIconSlotClass">
-                  <IdCard class="h-3.5 w-3.5" aria-hidden="true" />
-                </span>
-                <input
-                  v-model="stId"
-                  type="text"
-                  inputmode="numeric"
-                  autocomplete="off"
-                  placeholder="Student Number"
-                  :class="filterInputInnerClass"
-                  @keydown.enter.prevent="fetchAttempts('apply')"
-                />
               </div>
             </div>
             <div class="min-w-0">
