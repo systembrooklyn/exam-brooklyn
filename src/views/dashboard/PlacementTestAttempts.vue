@@ -101,7 +101,7 @@
       </div>
 
       <div
-        v-if="loading && !attempts.length"
+        v-if="loading && !studentGroups.length"
         class="flex flex-col items-center justify-center py-16 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
       >
         <span class="h-10 w-10 animate-spin rounded-full border-2 border-[#624ff6] border-t-transparent" />
@@ -109,110 +109,106 @@
       </div>
 
       <section
-        v-else-if="attempts.length"
-        class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden"
+        v-else-if="studentGroups.length"
+        class="space-y-4"
       >
         <div
-          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-4 py-3 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-[#624ff6]/[0.06] to-transparent dark:from-[#624ff6]/10"
+          v-for="group in paginatedGroups"
+          :key="group.student.id"
+          class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden"
         >
-          <p class="text-sm font-medium text-gray-800 dark:text-gray-100">
-            {{ apiMessage || "Results" }}
-            <span class="text-gray-500 dark:text-gray-400 font-normal">
-              — {{ attempts.length }} attempt(s)
-            </span>
-          </p>
-        </div>
+          <!-- Accordion Header -->
+          <button
+            class="w-full flex items-center justify-between px-4 py-4 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left"
+            @click="toggleStudent(group.student.id)"
+          >
+            <div class="flex items-center gap-4 min-w-0">
+              <div class="h-10 w-10 rounded-full bg-[#624ff6]/10 flex items-center justify-center text-[#624ff6] shrink-0">
+                <User class="h-5 w-5" />
+              </div>
+              <div class="min-w-0">
+                <h3 class="text-base font-bold text-gray-900 dark:text-white truncate">
+                  {{ group.student.name || 'Unknown Student' }}
+                </h3>
+                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  <span class="flex items-center gap-1">
+                    <IdCard class="h-3 w-3" />
+                    ID: {{ group.student.id }}
+                  </span>
+                  <span v-if="group.student.email" class="flex items-center gap-1 text-[11px] sm:text-xs">
+                    <Mail class="h-3 w-3" />
+                    {{ group.student.email }}
+                  </span>
+                  <span class="bg-[#624ff6]/10 text-[#624ff6] px-2 py-0.5 rounded-full font-semibold">
+                    {{ group.attempts.length }} attempt(s)
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <ChevronDown
+                class="h-5 w-5 text-gray-400 transition-transform duration-200"
+                :class="{ 'rotate-180': expandedStudents.includes(group.student.id) }"
+              />
+            </div>
+          </button>
 
-        <div
-          v-if="contactPhones"
-          class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 px-4 py-2 border-b border-gray-100 dark:border-gray-700 bg-slate-50/90 dark:bg-slate-900/40"
-        >
-          <span class="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Phone(s)</span>
-          <span class="text-[11px] sm:text-xs font-mono text-gray-700 dark:text-gray-200 tracking-tight break-all">{{
-            contactPhones
-          }}</span>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="min-w-full text-left text-sm">
-            <thead>
-              <tr class="border-b-2 border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900/60">
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">
-                  Test
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden md:table-cell">
-                  Student
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap w-[1%]">Score</th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden lg:table-cell">
-                  Duration
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden xl:table-cell">
-                  Questions
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">Started</th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap">Status</th>
-
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden sm:table-cell">
-                  Completed
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden lg:table-cell">
-                  Started by
-                </th>
-                <th class="px-4 sm:px-5 py-4 text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 whitespace-nowrap hidden xl:table-cell">
-                  Branch
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="row in paginatedAttempts"
-                :key="row._key"
-                class="border-b border-gray-100 dark:border-gray-700/80 hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors"
-              >
-                <td class="px-4 py-3 align-top">
-                  <span class="font-medium text-gray-900 dark:text-gray-100">{{ row.testName }}</span>
-                  <dl v-if="row.studentLine" class="mt-1 md:hidden text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-                    <dt class="sr-only">Student</dt>
-                    <dd>{{ row.studentLine }}</dd>
-                  </dl>
-                </td>
-                <td class="px-4 py-3 align-top text-gray-700 dark:text-gray-300 hidden md:table-cell max-w-[220px]">
-                  <div class="font-medium text-gray-900 dark:text-gray-100 truncate" :title="row.studentName">
-                    {{ row.studentName }}
-                  </div>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 truncate" :title="row.studentEmail">
-                    {{ row.studentEmail }}
-                  </div>
-                </td>
-                <td class="px-4 py-3 align-middle">
-                  <span :class="scoreCellClass(row.scoreRaw)">{{ row.scoreDisplay }}</span>
-                </td>
-                
-                <td class="px-4 py-3 align-top text-gray-600 dark:text-gray-300 tabular-nums hidden lg:table-cell">
-                  {{ row.durationDisplay }}
-                </td>
-                <td class="px-4 py-3 align-top text-gray-600 dark:text-gray-300 tabular-nums hidden xl:table-cell">
-                  {{ row.questionsDisplay }}
-                </td>
-                <td class="px-4 py-3 align-top text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap">
-                  {{ row.startedDisplay }}
-                </td>
-                <td class="px-4 py-3 align-top">
-                  <span :class="statusClass(row.status)">{{ formatStatus(row.status) }}</span>
-                </td>
-                <td class="px-4 py-3 align-top text-gray-600 dark:text-gray-300 text-xs whitespace-nowrap hidden sm:table-cell">
-                  {{ row.completedDisplay }}
-                </td>
-                <td class="px-4 py-3 align-top text-gray-700 dark:text-gray-300 hidden lg:table-cell max-w-[140px] truncate" :title="row.staffName">
-                  {{ row.staffName }}
-                </td>
-                <td class="px-4 py-3 align-top text-gray-600 dark:text-gray-400 text-sm hidden xl:table-cell max-w-[120px] truncate" :title="row.branch">
-                  {{ row.branch }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Accordion Body -->
+          <div
+            v-if="expandedStudents.includes(group.student.id)"
+            class="border-t border-gray-100 dark:border-gray-700 overflow-x-auto"
+          >
+            <table class="min-w-full text-left text-sm">
+              <thead>
+                <tr class="bg-gray-50/50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Test</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Score</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden md:table-cell">Questions</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden lg:table-cell">Duration</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden sm:table-cell">Dates</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden xl:table-cell">Branch</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                <tr
+                  v-for="row in group.attempts"
+                  :key="row._key"
+                  class="hover:bg-gray-50/50 dark:hover:bg-gray-700/20 transition-colors"
+                >
+                  <td class="px-5 py-4">
+                    <div class="font-medium text-gray-900 dark:text-white">{{ row.testName }}</div>
+                  </td>
+                  <td class="px-5 py-4">
+                    <div class="flex flex-col gap-1.5">
+                      <div class="flex items-center gap-2">
+                        <span class="font-bold text-base tabular-nums">{{ row.scoreDisplay }}</span>
+                        <span v-if="row.passFail" :class="passFailClass(row.passFail)">
+                          {{ row.passFail }}
+                        </span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-5 py-4 hidden md:table-cell text-gray-600 dark:text-gray-400">
+                    {{ row.questionsCount }}
+                  </td>
+                  <td class="px-5 py-4 hidden lg:table-cell text-gray-600 dark:text-gray-400">
+                    {{ row.durationDisplay }}
+                  </td>
+                  <td class="px-5 py-4">
+                    <span :class="statusClass(row.status)">{{ formatStatus(row.status) }}</span>
+                  </td>
+                  <td class="px-5 py-4 hidden sm:table-cell text-xs text-gray-500 dark:text-gray-400">
+                    <div>Started: {{ row.startedDisplay }}</div>
+                    <div v-if="row.status === 'completed'">Finished: {{ row.completedDisplay }}</div>
+                  </td>
+                  <td class="px-5 py-4 hidden xl:table-cell text-gray-600 dark:text-gray-400 max-w-[120px] truncate" :title="row.branch">
+                    {{ row.branch }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <Pagination
@@ -225,7 +221,7 @@
       </section>
 
       <div
-        v-else-if="!loading && !attempts.length"
+        v-else-if="!loading && !studentGroups.length"
         class="rounded-xl border border-dashed border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-6 py-12 sm:py-16 text-center"
       >
         <div class="relative mx-auto mb-6 max-w-md">
@@ -266,7 +262,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal } from "lucide-vue-next";
+import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal, ChevronDown, User, Mail } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
 import { PT_ATTEMPTS } from "@/api/Api";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
@@ -334,17 +330,20 @@ function displayScore(score) {
 /** Distinct score pill: strong purple gradient when numeric, muted pill for empty. */
 function scoreCellClass(score) {
   const base =
-    "inline-flex min-w-[2.75rem] items-center justify-center rounded-xl font-extrabold tabular-nums leading-none shadow-sm ";
+    "inline-flex min-w-[2.75rem] items-center justify-center rounded-lg font-bold tabular-nums leading-none ";
   if (score === null || score === undefined || score === "") {
     return (
       base +
-      "px-3 py-2 text-sm bg-gray-100 text-gray-500 ring-1 ring-gray-200/80 dark:bg-gray-700/80 dark:text-gray-400 dark:ring-gray-600"
+      "px-2 py-1 text-xs bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400"
     );
   }
-  return (
-    base +
-    "px-3.5 py-2.5 text-lg sm:text-xl text-white bg-gradient-to-br from-[#624ff6] via-[#5746e6] to-[#4338ca] ring-2 ring-[#624ff6]/35 shadow-md shadow-[#624ff6]/30"
-  );
+  return base + "px-2.5 py-1.5 text-sm bg-[#624ff6]/10 text-[#624ff6]";
+}
+
+function passFailClass(status) {
+  const base = "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider";
+  if (status === "Pass") return `${base} bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50`;
+  return `${base} bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/50`;
 }
 
 function displayDateTime(v) {
@@ -405,38 +404,80 @@ const contactPhones = computed(() => {
   return phonesList(st?.phones);
 });
 
-const attempts = computed(() => {
+const expandedStudents = ref([]);
+
+function toggleStudent(id) {
+  const idx = expandedStudents.value.indexOf(id);
+  if (idx > -1) expandedStudents.value.splice(idx, 1);
+  else expandedStudents.value.push(id);
+}
+
+const studentGroups = computed(() => {
   const p = rawPayload.value;
   let rows = [];
   if (Array.isArray(p)) rows = p;
   else if (p?.data != null && Array.isArray(p.data)) rows = p.data;
 
-  const mapped = rows.map((r, idx) => {
+  const groups = {};
+  rows.forEach((r) => {
     const st = r.student || {};
+    const stId = st.id || "unknown";
+    if (!groups[stId]) {
+      groups[stId] = {
+        student: {
+          id: stId,
+          name: st.name || "Unknown Student",
+          email: st.email || "",
+          phones: st.phones || []
+        },
+        attempts: []
+      };
+    }
+
     const pt = r.ptest || {};
     const u = r.user || {};
     const started = r.started_at;
-    return {
-      _key: `${started ?? "row"}-${idx}`,
+    const score = r.score;
+    const questionsCount = Number(pt.questions_count) || 0;
+    const status = r.status || "";
+
+    let passFail = null;
+    if (status === "completed") {
+      const numericScore = score === null || score === undefined ? 0 : Number(score);
+      // Logic: score >= questions_count / 2 -> Pass, else Fail
+      passFail = numericScore >= questionsCount / 2 ? "Pass" : "Fail";
+    }
+
+    groups[stId].attempts.push({
+      _key: `${started ?? "row"}-${Math.random()}`,
       testName: pt.name?.trim?.() || pt.name || "—",
-      studentName: st.name || "—",
-      studentEmail: st.email || "",
-      studentLine: [st.name, st.email].filter(Boolean).join(" · ") || "—",
-      scoreRaw: r.score,
-      scoreDisplay: displayScore(r.score),
-      status: r.status,
+      scoreRaw: score,
+      scoreDisplay: displayScore(score),
+      questionsCount: questionsCount || "—",
       durationDisplay: pt.duration != null && pt.duration !== "" ? `${pt.duration} min` : "—",
-      questionsDisplay: pt.questions_count != null && pt.questions_count !== "" ? String(pt.questions_count) : "—",
+      status: status,
       startedDisplay: displayDateTime(r.started_at),
       completedDisplay: displayDateTime(r.completed_at),
       staffName: u.name || "—",
       branch: u.branch || "—",
+      passFail: passFail,
       _sort: started ? new Date(started.replace(" ", "T")).getTime() : 0,
-    };
+    });
   });
 
-  mapped.sort((a, b) => b._sort - a._sort);
-  return mapped;
+  const result = Object.values(groups).map((g) => {
+    g.attempts.sort((a, b) => b._sort - a._sort);
+    return g;
+  });
+
+  // Sort groups by latest attempt
+  result.sort((a, b) => {
+    const latestA = a.attempts[0]?._sort || 0;
+    const latestB = b.attempts[0]?._sort || 0;
+    return latestB - latestA;
+  });
+
+  return result;
 });
 
 const currentPage = ref(1);
@@ -444,12 +485,12 @@ const currentPage = ref(1);
 const pageSize = 10;
 
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(attempts.value.length / pageSize)),
+  Math.max(1, Math.ceil(studentGroups.value.length / pageSize)),
 );
 
-const paginatedAttempts = computed(() => {
+const paginatedGroups = computed(() => {
   const start = (currentPage.value - 1) * pageSize;
-  return attempts.value.slice(start, start + pageSize);
+  return studentGroups.value.slice(start, start + pageSize);
 });
 
 const pageNumbers = computed(() => {
