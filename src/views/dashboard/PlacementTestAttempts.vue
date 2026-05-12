@@ -3,7 +3,7 @@
     <div
       class="mx-auto w-full min-w-0 max-w-[1800px] px-2.5 sm:px-4 md:px-5 lg:px-6 xl:px-8"
     >
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-2 max-w-[90%] mx-auto">
         <div class="min-w-0">
           <h1 class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
             Placement test attempts
@@ -26,7 +26,7 @@
       </div>
 
       <div
-        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm"
+        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[95%] mx-auto"
       >
         <p
           class="flex items-center gap-1 text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
@@ -59,7 +59,7 @@
               </div>
             </div>
             <div class="min-w-0">
-              <label :class="filterLabelClass">Student ID</label>
+              <label :class="filterLabelClass">Student Number</label>
               <div :class="filterShellClass">
                 <span :class="filterIconSlotClass">
                   <IdCard class="h-3.5 w-3.5" aria-hidden="true" />
@@ -69,10 +69,23 @@
                   type="text"
                   inputmode="numeric"
                   autocomplete="off"
-                  placeholder="Optional"
+                  placeholder="Student Number"
                   :class="filterInputInnerClass"
                   @keydown.enter.prevent="fetchAttempts('apply')"
                 />
+              </div>
+            </div>
+            <div class="min-w-0">
+              <label :class="filterLabelClass">Status</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <Activity class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <select v-model="stStatus" :class="filterInputInnerClass">
+                  <option value="">All Statuses</option>
+                  <option value="completed">Completed</option>
+                  <option value="in_progress">In Progress</option>
+                </select>
               </div>
             </div>
           </div>
@@ -110,7 +123,7 @@
 
       <section
         v-else-if="studentGroups.length"
-        class="space-y-4"
+        class="space-y-4 max-w-[90%] mx-auto"
       >
         <div
           v-for="group in paginatedGroups"
@@ -126,26 +139,43 @@
               <div class="h-10 w-10 rounded-full bg-[#624ff6]/10 flex items-center justify-center text-[#624ff6] shrink-0">
                 <User class="h-5 w-5" />
               </div>
-              <div class="min-w-0">
-                <h3 class="text-base font-bold text-gray-900 dark:text-white truncate">
-                  {{ group.student.name || 'Unknown Student' }}
-                </h3>
-                <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                  <span class="flex items-center gap-1">
-                    <IdCard class="h-3 w-3" />
-                    ID: {{ group.student.id }}
-                  </span>
-                  <span v-if="group.student.email" class="flex items-center gap-1 text-[11px] sm:text-xs">
-                    <Mail class="h-3 w-3" />
-                    {{ group.student.email }}
-                  </span>
-                  <span class="bg-[#624ff6]/10 text-[#624ff6] px-2 py-0.5 rounded-full font-semibold">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate">
+                    {{ group.student.name || 'Unknown Student' }}
+                  </h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <div
+                    v-if="group.student.phonesString"
+                    class="flex items-center gap-1.5 group/copy cursor-pointer hover:text-[#624ff6] transition-colors"
+                    title="Click to copy phone"
+                    @click.stop="copyToClipboard(group.student.phonesString, 'Phone')"
+                  >
+                    <Phone class="h-3.5 w-3.5" />
+                    <span>{{ group.student.phonesString }}</span>
+                    <Copy class="h-3 w-3 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                  </div>
+                  <div
+                    v-if="group.student.email"
+                    class="flex items-center gap-1.5 group/copy cursor-pointer hover:text-[#624ff6] transition-colors"
+                    title="Click to copy email"
+                    @click.stop="copyToClipboard(group.student.email, 'Email')"
+                  >
+                    <Mail class="h-3.5 w-3.5" />
+                    <span class="truncate max-w-[150px] sm:max-w-none">{{ group.student.email }}</span>
+                    <Copy class="h-3 w-3 opacity-0 group-hover/copy:opacity-100 transition-opacity" />
+                  </div>
+                  <span class="bg-[#624ff6]/10 text-[#624ff6] px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider">
                     {{ group.attempts.length }} attempt(s)
                   </span>
                 </div>
               </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 shrink-0">
+              <span :class="statusClass(group.overallStatus)" class="text-[10px] sm:text-xs">
+                {{ formatStatus(group.overallStatus) }}
+              </span>
               <ChevronDown
                 class="h-5 w-5 text-gray-400 transition-transform duration-200"
                 :class="{ 'rotate-180': expandedStudents.includes(group.student.id) }"
@@ -162,8 +192,7 @@
               <thead>
                 <tr class="bg-gray-50/50 dark:bg-gray-900/40 border-b border-gray-100 dark:border-gray-700">
                   <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Test</th>
-                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Score</th>
-                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden md:table-cell">Questions</th>
+                  <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Score / Total</th>
                   <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden lg:table-cell">Duration</th>
                   <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300">Status</th>
                   <th class="px-5 py-3 font-semibold text-gray-700 dark:text-gray-300 hidden sm:table-cell">Dates</th>
@@ -182,15 +211,14 @@
                   <td class="px-5 py-4">
                     <div class="flex flex-col gap-1.5">
                       <div class="flex items-center gap-2">
-                        <span class="font-bold text-base tabular-nums">{{ row.scoreDisplay }}</span>
+                        <span class="font-bold text-base tabular-nums text-gray-900 dark:text-white">
+                          {{ row.scoreDisplay }} / {{ row.questionsCount }}
+                        </span>
                         <span v-if="row.passFail" :class="passFailClass(row.passFail)">
                           {{ row.passFail }}
                         </span>
                       </div>
                     </div>
-                  </td>
-                  <td class="px-5 py-4 hidden md:table-cell text-gray-600 dark:text-gray-400">
-                    {{ row.questionsCount }}
                   </td>
                   <td class="px-5 py-4 hidden lg:table-cell text-gray-600 dark:text-gray-400">
                     {{ row.durationDisplay }}
@@ -262,7 +290,7 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal, ChevronDown, User, Mail } from "lucide-vue-next";
+import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal, ChevronDown, User, Mail, Copy, Phone, Activity } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
 import { PT_ATTEMPTS } from "@/api/Api";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
@@ -360,6 +388,18 @@ function phonesList(phones) {
 const fromIso = ref(defaultFromIso());
 const toIso = ref(defaultToIso());
 const stId = ref("");
+const stStatus = ref("");
+
+function copyToClipboard(text, label) {
+  if (!text) return;
+  navigator.clipboard.writeText(text)
+    .then(() => {
+      notyf.success(`${label} copied to clipboard`);
+    })
+    .catch(() => {
+      notyf.error(`Failed to copy ${label}`);
+    });
+}
 
 const fromApi = computed(() => toApiDate(fromIso.value));
 const toApi = computed(() => toApiDate(toIso.value));
@@ -372,9 +412,10 @@ const errorText = ref("");
 const rawPayload = ref(null);
 
 function clearFilters() {
-  fromIso.value = defaultFromIso();
-  toIso.value = defaultToIso();
+  fromIso.value = "";
+  toIso.value = "";
   stId.value = "";
+  stStatus.value = "";
   errorText.value = "";
   rawPayload.value = null;
 }
@@ -428,7 +469,7 @@ const studentGroups = computed(() => {
           id: stId,
           name: st.name || "Unknown Student",
           email: st.email || "",
-          phones: st.phones || []
+          phonesString: Array.isArray(st.phones) ? st.phones.filter(Boolean).map(String).join(" - ") : (st.phones ? String(st.phones) : "")
         },
         attempts: []
       };
@@ -453,7 +494,7 @@ const studentGroups = computed(() => {
       testName: pt.name?.trim?.() || pt.name || "—",
       scoreRaw: score,
       scoreDisplay: displayScore(score),
-      questionsCount: questionsCount || "—",
+      questionsCount: questionsCount || 0,
       durationDisplay: pt.duration != null && pt.duration !== "" ? `${pt.duration} min` : "—",
       status: status,
       startedDisplay: displayDateTime(r.started_at),
@@ -467,6 +508,15 @@ const studentGroups = computed(() => {
 
   const result = Object.values(groups).map((g) => {
     g.attempts.sort((a, b) => b._sort - a._sort);
+    
+    // Overall Status Logic
+    const anyInProgress = g.attempts.some(a => a.status === 'in_progress');
+    const allCompleted = g.attempts.every(a => a.status === 'completed');
+    
+    if (anyInProgress) g.overallStatus = 'in_progress';
+    else if (allCompleted && g.attempts.length > 0) g.overallStatus = 'completed';
+    else g.overallStatus = 'other';
+    
     return g;
   });
 
@@ -477,7 +527,9 @@ const studentGroups = computed(() => {
     return latestB - latestA;
   });
 
-  return result;
+  // Frontend Filter by Status
+  if (!stStatus.value) return result;
+  return result.filter(g => g.overallStatus === stStatus.value);
 });
 
 const currentPage = ref(1);
@@ -534,6 +586,7 @@ async function fetchAttempts(source = "apply") {
   }
   const from = fromApi.value;
   const to = toApi.value;
+
   /** Dates & st_id optional; omit empty keys (backend may reject null). */
   const payload = {};
   if (from) payload.from = from;
