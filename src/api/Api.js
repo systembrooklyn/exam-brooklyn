@@ -71,6 +71,8 @@ export const PAYROLL_VACATION_BALANCE_CONTRACT = (
 export const PAYROLL_MANAGERS = "payroll-system/employees/managers";
 export const PAYROLL_ASSIGN_MANAGER = (id) =>
   `payroll-system/employees/${id}/assign-manager`;
+export const PAYROLL_TERMINATE_EMPLOYEE = (id) =>
+  `payroll-system/employees/${id}/terminate`;
 
 // New Modules
 export const PAYROLL_HOLIDAYS = "payroll-system/official-holidays";

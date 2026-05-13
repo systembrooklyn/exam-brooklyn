@@ -21,9 +21,13 @@
           <option value="work_from_home">Work From Home</option>
           <option value="shift_move">Shift Move</option>
           <option value="absence">Absence</option>
+          <option value="double_paid">Double Paid</option>
         </select>
         <p
-          v-if="shiftOvertimeHintLines.length"
+          v-if="
+            shiftOvertimeHintLines.length &&
+              isDayOnlyOvertimeRequestTypeSlug(localForm.request_type)
+          "
           class="mt-2 text-xs text-gray-600 rounded-lg border border-indigo-100 bg-indigo-50/60 px-3 py-2"
         >
           <span class="font-semibold text-indigo-900 block mb-1">Report overtime this day</span>
@@ -109,6 +113,7 @@
               'vacation',
               'day_off_swap',
               'work_from_home',
+              'double_paid',
               'overtime',
               'overtime_before',
               'overtime_after',
@@ -153,6 +158,8 @@ const props = defineProps({
   show: Boolean,
   loading: Boolean,
   initialForm: Object,
+  /** When true (e.g. payroll `old` contract), lateness grace + warning-hour do not block save. */
+  exemptFromNewContractLatenessPolicy: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['close', 'save']);
@@ -173,6 +180,8 @@ const defaultForm = () => ({
   is_warning_hour: false,
   /** Employee the monthly report row belongs to (HR drawer); passed through on save. */
   subject_employee_id: null,
+  /** Payroll contract slug from monthly attendance `employee.contract_type` (panel → modal). */
+  report_contract_type: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -206,12 +215,14 @@ const effectiveLatenessMinutes = computed(() => {
 });
 
 const latenessSaveBlocked = computed(() => {
+  if (props.exemptFromNewContractLatenessPolicy) return false;
   const m = effectiveLatenessMinutes.value;
   if (m == null) return false;
   return m > 0 && m <= latenessGraceMinutes;
 });
 
 const latenessBlockedByWarningHour = computed(() => {
+  if (props.exemptFromNewContractLatenessPolicy) return false;
   if (localForm.value.request_type !== 'lateness') return false;
   const w = localForm.value.is_warning_hour;
   return (
@@ -264,6 +275,7 @@ watch(
       t === 'vacation' ||
       t === 'day_off_swap' ||
       t === 'work_from_home' ||
+      t === 'double_paid' ||
       t === 'absence' ||
       isDayOnlyOvertimeRequestTypeSlug(t)
     ) {

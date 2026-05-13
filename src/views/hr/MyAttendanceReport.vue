@@ -17,15 +17,12 @@
           <div class="relative max-w-md w-full">
             <input v-model="filterPayrollMonth" type="month"
               class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
-            <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <LucideCalendar
+              class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-          <button
-            type="button"
+          <button type="button"
             class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
-            :disabled="refreshingReport"
-            title="Refresh attendance"
-            @click="handleManualRefresh"
-          >
+            :disabled="refreshingReport" title="Refresh attendance" @click="handleManualRefresh">
             <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshingReport }" />
           </button>
         </div>
@@ -43,7 +40,8 @@
     </div>
 
     <AttendanceRequestModal :show="showRequestModal" :loading="requestLoading" :initialForm="requestForm"
-      @close="showRequestModal = false" @save="handleRequestSubmit" />
+      :exempt-from-new-contract-lateness-policy="myReportExemptNewLatenessPolicy" @close="showRequestModal = false"
+      @save="handleRequestSubmit" />
   </div>
 </template>
 
@@ -52,13 +50,16 @@ import { onMounted, ref, computed, watch, nextTick } from "vue";
 import { LucideCalendar, LucideRefreshCw } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
+import { useHrContractsStore } from "@/stores/hr/contracts";
 import AttendanceReportPanel from "@/components/hr-dashboard/attendance/AttendanceReportPanel.vue";
 import AttendanceRequestModal from "@/components/hr-dashboard/attendance/AttendanceRequestModal.vue";
 import { getPayrollDates, defaultPayrollMonthRange } from "@/utils/payrollPeriod";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 import {
+  activeContractTypeForEmployee,
+  apiDurationHoursForLatenessLeaveFromMinutes,
   apiDurationHoursFromHoursInput,
-  apiDurationHoursFromMinutes,
+  contractExemptsNewLatenessAttendanceRules,
 } from "@/utils/hrEmployeeRequestDuration";
 import notyf from "@/components/global/notyf";
 import {
@@ -69,6 +70,7 @@ import { LATENESS_GRACE_MINUTES } from "@/constants/hrLateness";
 
 const authStore = useAuthStore();
 const employeeStore = useHrEmployeesStore();
+const contractStore = useHrContractsStore();
 
 const resolvedPayrollEmployeeId = ref("");
 const panelRef = ref(null);
@@ -80,6 +82,22 @@ const periodBounds = computed(() => getPayrollDates(filterPayrollMonth.value));
 
 const effectiveEmployeeId = computed(
   () => authStore.payrollEmployeeId || resolvedPayrollEmployeeId.value || "",
+);
+
+function myReportContractTypeSlug(formOrPayload) {
+  const fromReport = String(formOrPayload?.report_contract_type ?? "").trim().toLowerCase();
+  if (fromReport) return fromReport;
+  const eid = Number(String(effectiveEmployeeId.value ?? "").trim());
+  return activeContractTypeForEmployee(
+    contractStore.contracts,
+    Number.isFinite(eid) && eid > 0 ? eid : null,
+  );
+}
+
+const myReportExemptNewLatenessPolicy = computed(() =>
+  contractExemptsNewLatenessAttendanceRules(
+    myReportContractTypeSlug(requestForm.value),
+  ),
 );
 const refreshingReport = ref(false);
 
@@ -153,7 +171,12 @@ onMounted(async () => {
     await authStore.getUserByToken();
   }
   try {
-    await resolvePayrollEmployeeFromDirectory();
+    await Promise.all([
+      resolvePayrollEmployeeFromDirectory(),
+      ...(authStore.can(HR_PERMISSION.VIEW_CONTRACT)
+        ? [contractStore.getContracts().catch(() => { })]
+        : []),
+    ]);
   } finally {
     employeeResolveDone.value = true;
   }
@@ -174,6 +197,7 @@ const requestForm = ref({
   prefill_overtime_before_minutes: null,
   prefill_overtime_after_minutes: null,
   is_warning_hour: false,
+  report_contract_type: null,
   from_time: "",
   to_time: "",
   day_replacement: "",
@@ -215,6 +239,9 @@ const openRequestForDay = (payload) => {
     (payload.is_warning_hour === true ||
       payload.is_warning_hour === 1 ||
       String(payload.is_warning_hour) === "1");
+  const reportContract = isDayPayload
+    ? String(payload.contract_type ?? "").trim().toLowerCase()
+    : "";
   requestForm.value = {
     request_type: "leave",
     day: date,
@@ -228,6 +255,7 @@ const openRequestForDay = (payload) => {
     prefill_overtime_before_minutes: isDayPayload ? ob : null,
     prefill_overtime_after_minutes: isDayPayload ? oa : null,
     is_warning_hour: !!warnHour,
+    report_contract_type: reportContract || null,
     from_time: "",
     to_time: "",
     day_replacement: "",
@@ -305,22 +333,28 @@ const handleRequestSubmit = async (payload) => {
   }
 
   if (rt === "lateness") {
-    const wh = payload.is_warning_hour;
-    if (
-      wh === true ||
-      wh === 1 ||
-      String(wh) === "1" ||
-      String(wh).toLowerCase() === "true"
-    ) {
-      notyf.error(
-        "Lateness does not apply on this date (adjusted hours). Choose another request type.",
-      );
-      return;
+    const exempt = contractExemptsNewLatenessAttendanceRules(
+      myReportContractTypeSlug(payload),
+    );
+    if (!exempt) {
+      const wh = payload.is_warning_hour;
+      if (
+        wh === true ||
+        wh === 1 ||
+        String(wh) === "1" ||
+        String(wh).toLowerCase() === "true"
+      ) {
+        notyf.error(
+          "Lateness does not apply on this date (adjusted hours). Choose another request type.",
+        );
+        return;
+      }
     }
     const lateMins = payload.use_minutes_for_duration
       ? Number(payload.duration_minutes)
       : Math.round(Number(payload.duration_hours) * 60);
     if (
+      !exempt &&
       Number.isFinite(lateMins) &&
       lateMins > 0 &&
       lateMins <= LATENESS_GRACE_MINUTES
@@ -346,7 +380,17 @@ const handleRequestSubmit = async (payload) => {
   };
   if (["lateness", "leave"].includes(rt)) {
     if (payload.use_minutes_for_duration) {
-      const h = apiDurationHoursFromMinutes(payload.duration_minutes);
+      const eid = Number(String(effectiveEmployeeId.value ?? "").trim());
+      const contractType =
+        String(payload.report_contract_type ?? "").trim().toLowerCase() ||
+        activeContractTypeForEmployee(
+          contractStore.contracts,
+          Number.isFinite(eid) && eid > 0 ? eid : null,
+        );
+      const h = apiDurationHoursForLatenessLeaveFromMinutes(
+        payload.duration_minutes,
+        contractType,
+      );
       if (h == null) {
         notyf.error("Duration (minutes) is required for this request type");
         return;

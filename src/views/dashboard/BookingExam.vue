@@ -1,86 +1,125 @@
 <template>
-  <div class="p-6 bg-gray-50 min-h-screen">
-    <div class="max-w-7xl mx-auto">
-      <!-- Header Section -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-6">
-        <div class="flex items-center gap-4">
-          <router-link 
-            to="/systems" 
-            class="p-2 hover:bg-white rounded-full transition-colors text-gray-600 hover:text-primary border border-transparent hover:border-gray-100"
+  <div class="min-h-screen bg-slate-50/80">
+    <div class="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 sm:py-8">
+      <!-- Page title -->
+      <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="flex items-start gap-3">
+          <router-link
+            to="/systems"
+            class="mt-1 shrink-0 rounded-xl border border-slate-200/80 bg-white p-2.5 text-slate-600 shadow-sm transition hover:border-primary/25 hover:bg-slate-50 hover:text-primary"
+            aria-label="Back to systems"
           >
-            <ArrowLeft class="w-6 h-6" />
+            <ArrowLeft class="h-5 w-5" />
           </router-link>
           <div>
-            <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Booking Exam</h1>
-            <p class="text-gray-500 mt-1">Manage and view exam bookings within a specific time range.</p>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Booking Exam
+            </h1>
+            <!-- <p class="mt-1 max-w-xl text-sm text-slate-600 sm:text-[15px]">
+              Manage and view exam bookings within a specific date range.
+            </p> -->
           </div>
         </div>
-        
-        <!-- Filter Card -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-4 transition-all hover:shadow-md">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">From</label>
-            <input 
-              v-model="filters.from" 
-              type="date" 
-              class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-sm font-medium transition-all"
-            />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">To</label>
-            <input 
-              v-model="filters.to" 
-              type="date" 
-              class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none text-sm font-medium transition-all"
-            />
-          </div>
-          <div class="flex items-end pt-5">
-            <button 
-              @click="fetchBookings" 
+      </header>
+
+      <!-- Single surface: filters + table (horizontal scroll contained) -->
+      <div
+        class="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/5"
+      >
+        <div
+          class="flex flex-col gap-4 border-b border-slate-100 bg-gradient-to-b from-slate-50/90 to-white p-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-x-6 sm:p-5"
+        >
+          <!-- <div>
+            <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Date range
+            </h2>
+            <p class="mt-0.5 text-sm text-slate-600">
+              Results load for the interval you choose.
+            </p>
+          </div> -->
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="booking-from">
+                From
+              </label>
+              <input
+                id="booking-from"
+                v-model="filters.from"
+                type="date"
+                class="h-11 min-w-[10.5rem] rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-inner shadow-slate-900/5 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="booking-to">
+                To
+              </label>
+              <input
+                id="booking-to"
+                v-model="filters.to"
+                type="date"
+                class="h-11 min-w-[10.5rem] rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 shadow-inner shadow-slate-900/5 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+            <button
+              type="button"
+              class="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white shadow-md shadow-primary/25 transition hover:bg-[#5346e0] hover:shadow-lg hover:shadow-primary/30 disabled:cursor-not-allowed disabled:opacity-55"
+              @click="fetchBookings"
               :disabled="loading"
-              class="px-8 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center gap-2 group"
             >
-              <Search v-if="!loading" class="w-5 h-5 group-hover:rotate-12 transition-transform" />
-              <Loader2 v-else class="w-5 h-5 animate-spin" />
-              <span>Get Data</span>
+              <Search v-if="!loading" class="h-4 w-4 shrink-0 opacity-95" aria-hidden="true" />
+              <Loader2 v-else class="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>Get Bookings</span>
             </button>
           </div>
         </div>
-      </div>
 
-      <!-- Content Area -->
-      <div class="relative min-h-[400px]">
         <!-- Loading Overlay -->
-        <div v-if="loading" class="absolute inset-0 z-10 flex justify-center items-center backdrop-blur-[2px] bg-white/30 rounded-2xl">
-          <div class="flex flex-col items-center gap-4">
-            <div class="relative w-16 h-16">
-              <div class="absolute inset-0 border-4 border-primary/20 rounded-full"></div>
-              <div class="absolute inset-0 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div
+          v-if="loading"
+          class="absolute inset-0 z-10 flex items-center justify-center bg-white/65 backdrop-blur-[1px]"
+        >
+          <div class="flex flex-col items-center gap-3 rounded-2xl border border-slate-100 bg-white px-8 py-6 shadow-lg">
+            <div class="relative h-11 w-11">
+              <div class="absolute inset-0 rounded-full border-[3px] border-primary/20" />
+              <div
+                class="absolute inset-0 animate-spin rounded-full border-[3px] border-primary border-t-transparent"
+              />
             </div>
-            <p class="text-primary font-bold animate-pulse">Loading bookings...</p>
+            <p class="text-sm font-semibold text-slate-700">Loading bookings…</p>
           </div>
         </div>
 
-        <!-- Data Table -->
-        <div v-if="bookings.length > 0" class="fade-in">
-          <DataTable 
-            :headers="headers" 
-            :items="bookings" 
+        <div v-if="bookings.length > 0" class="fade-in min-w-0 max-w-full">
+          <DataTable
+            embedded
+            compact
+            cells-centered
+            :tabular-column-keys="bookingTabularKeys"
+            :rounded-top="false"
+            :headers="headers"
+            :items="bookings"
             :loading="loading"
-            resourceType="bookings"
-            :hideActions="true"
+            resource-type="bookings"
+            :hide-actions="true"
+            :link-name-to-details="false"
+            :collapsible-text-keys="bookingCollapsibleKeys"
           />
         </div>
 
-        <!-- Empty State / Welcome State -->
-        <div v-else-if="!loading" class="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 fade-in">
-          <div class="relative inline-block mb-8">
-            <div class="absolute inset-0 bg-primary/5 rounded-full blur-3xl scale-150"></div>
-            <img src="@/assets/undraw_empty_4zx0.png" alt="No Data" class="relative mx-auto w-72 md:w-96 drop-shadow-xl" />
+        <div v-else-if="!loading" class="fade-in px-4 py-14 text-center sm:px-8 sm:py-20">
+          <div class="relative mx-auto mb-6 inline-block max-w-lg">
+            <div class="absolute inset-0 scale-150 rounded-full bg-primary/[0.06] blur-3xl" />
+            <img
+              src="@/assets/undraw_empty_4zx0.png"
+              alt=""
+              class="relative mx-auto w-64 drop-shadow-md sm:w-80"
+            />
           </div>
-          <h2 class="text-3xl font-extrabold text-gray-900 tracking-tight">No Bookings to Display</h2>
-          <p class="text-gray-500 mt-3 max-w-md mx-auto text-lg leading-relaxed">
-            Choose your desired date range above and click <span class="text-primary font-semibold">Fetch Data</span> to retrieve the booking results.
+          <h2 class="text-xl font-bold text-slate-900 sm:text-2xl">No bookings to display</h2>
+          <p class="mx-auto mt-2 max-w-md text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+            Choose a date range in the bar above and click
+            <span class="font-semibold text-primary">Get data</span>
+            to load booking results.
           </p>
         </div>
       </div>
@@ -109,16 +148,21 @@ const filters = ref({
 })
 
 const headers = [
-    { label: 'Student Num', key: 'student.st_num' },
-    { label: 'Student Name', key: 'student.name' },
-    { label: 'Email', key: 'student.email' },
-    { label: 'Phone', key: 'student.phones' },
-    { label: 'Course', key: 'exam.course_name' },
+  { label: 'Student #', key: 'student.st_num' },
+  { label: 'Student name', key: 'student.name' },
+  { label: 'Email', key: 'student.email' },
+  { label: 'Phone', key: 'student.phones' },
+  { label: 'Course', key: 'exam.course_name' },
   { label: 'Course code', key: 'exam.course_code' },
-    { label: 'Exam', key: 'exam.name' },
-    { label: 'Branch', key: 'branch.name' },
-    { label: 'Booking Date', key: 'booking_datetime' }
+  { label: 'Exam', key: 'exam.name' },
+  { label: 'Branch', key: 'branch.name' },
+  { label: 'Booking date', key: 'booking_datetime', sortable: true },
 ]
+
+/** Keep long course/exam text readable without blowing row height; DataTable adds See more. */
+const bookingCollapsibleKeys = ['exam.course_name', 'exam.name']
+
+const bookingTabularKeys = ['student.st_num', 'exam.course_code']
 
 const fetchBookings = async () => {
   if (!filters.value.from || !filters.value.to) {
@@ -168,14 +212,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .bg-primary {
-  background-color: #624ff6; /* Fallback to theme primary color found in SidebarItem.vue */
+  background-color: #092C67; /* Fallback to theme primary color found in SidebarItem.vue */
 }
 
 .text-primary {
   color: #624ff6;
-}
-
-.shadow-primary\/20 {
-  shadow-color: rgba(98, 79, 246, 0.2);
 }
 </style>

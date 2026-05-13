@@ -18,75 +18,45 @@
             <template v-if="authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)">
               <div ref="employeeDropdownRootRef" class="relative flex flex-col px-2 min-w-[140px]">
                 <label class="text-[10px] uppercase font-bold text-gray-400">Employee</label>
-                <button
-                  type="button"
+                <button type="button"
                   class="flex items-center justify-between gap-1 bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 min-h-[1.25rem] text-left w-full cursor-pointer"
-                  :aria-expanded="employeeDropdownOpen"
-                  aria-haspopup="listbox"
-                  @click="toggleEmployeeDropdown"
-                >
+                  :aria-expanded="employeeDropdownOpen" aria-haspopup="listbox" @click="toggleEmployeeDropdown">
                   <span class="truncate">{{ selectedEmployeeTriggerLabel }}</span>
-                  <LucideChevronDown
-                    class="w-4 h-4 flex-shrink-0 text-gray-500 transition-transform"
-                    :class="{ 'rotate-180': employeeDropdownOpen }"
-                  />
+                  <LucideChevronDown class="w-4 h-4 flex-shrink-0 text-gray-500 transition-transform"
+                    :class="{ 'rotate-180': employeeDropdownOpen }" />
                 </button>
-                <div
-                  v-show="employeeDropdownOpen"
+                <div v-show="employeeDropdownOpen"
                   class="absolute left-0 top-full z-50 mt-1 w-[min(100vw-2rem,280px)] rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-                  role="listbox"
-                  @mousedown.prevent
-                >
+                  role="listbox" @mousedown.prevent>
                   <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
-                    <input
-                      ref="employeeSelectSearchInputRef"
-                      v-model="employeeSelectSearchQuery"
-                      type="search"
-                      autocomplete="off"
-                      placeholder="Search name or fingerprint..."
+                    <input ref="employeeSelectSearchInputRef" v-model="employeeSelectSearchQuery" type="search"
+                      autocomplete="off" placeholder="Search name or fingerprint..."
                       class="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none"
-                      @keydown.escape.prevent="closeEmployeeDropdown"
-                    />
+                      @keydown.escape.prevent="closeEmployeeDropdown" />
                   </div>
                   <ul class="max-h-56 overflow-y-auto text-sm">
                     <li>
-                      <button
-                        type="button"
-                        role="option"
-                        class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer"
-                        :class="{
+                      <button type="button" role="option"
+                        class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
                           'bg-indigo-50 font-medium text-indigo-800':
                             filterForm.employee_id === '' || filterForm.employee_id == null,
-                        }"
-                        @click="selectEmployeeFilter('')"
-                      >
+                        }" @click="selectEmployeeFilter('')">
                         All Employees
                       </button>
                     </li>
                     <li v-for="emp in filteredEmployeesForSelect" :key="emp.id">
-                      <button
-                        type="button"
-                        role="option"
-                        class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer"
-                        :class="{
+                      <button type="button" role="option"
+                        class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
                           'bg-indigo-50 font-medium text-indigo-800':
                             String(filterForm.employee_id) === String(emp.id),
-                        }"
-                        @click="selectEmployeeFilter(emp.id)"
-                      >
+                        }" @click="selectEmployeeFilter(emp.id)">
                         <span>{{ employeeRowLabel(emp) }}</span>
-                        <span
-                          v-if="pickEmployeeFingerprint(emp)"
-                          class="text-xs text-gray-500"
-                        >
+                        <span v-if="pickEmployeeFingerprint(emp)" class="text-xs text-gray-500">
                           ({{ pickEmployeeFingerprint(emp) }})
                         </span>
                       </button>
                     </li>
-                    <li
-                      v-if="filteredEmployeesForSelect.length === 0"
-                      class="px-3 py-2 text-gray-400 text-xs"
-                    >
+                    <li v-if="filteredEmployeesForSelect.length === 0" class="px-3 py-2 text-gray-400 text-xs">
                       No employees match.
                     </li>
                   </ul>
@@ -160,6 +130,7 @@
         @request-for-day="openRequestForDay" />
 
       <AttendanceRequestModal :show="showRequestModal" :loading="requestLoading" :initialForm="requestForm"
+        :exempt-from-new-contract-lateness-policy="requestModalExemptNewLatenessPolicy"
         @close="showRequestModal = false" @save="handleRequestSubmit" />
 
       <!-- Delete Confirmation -->
@@ -174,6 +145,7 @@
 import { onMounted, onUnmounted, ref, computed, nextTick } from 'vue';
 import { useHrAttendanceStore } from '@/stores/hr/attendance';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
+import { useHrContractsStore } from '@/stores/hr/contracts';
 import { useAuthStore } from '@/stores/auth';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
@@ -192,12 +164,15 @@ import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
 import { getPayrollDates, defaultPayrollMonthRange } from '@/utils/payrollPeriod';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 import {
+  activeContractTypeForEmployee,
+  apiDurationHoursForLatenessLeaveFromMinutes,
   apiDurationHoursFromHoursInput,
-  apiDurationHoursFromMinutes,
+  contractExemptsNewLatenessAttendanceRules,
 } from '@/utils/hrEmployeeRequestDuration';
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
+const contractStore = useHrContractsStore();
 const authStore = useAuthStore();
 
 const attendanceLogs = computed(() => store.attendanceLogs);
@@ -361,10 +336,17 @@ onMounted(async () => {
     if (authStore.isAdminUser || authStore.can(HR_PERMISSION.CREATE_ATTENDANCE_LOG)) {
       await employeeStore.getEmployees();
     }
+    if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
+      void contractStore.getContracts().catch(() => { });
+    }
     return;
   }
   try {
-    await employeeStore.getEmployees();
+    const extras = [];
+    if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
+      extras.push(contractStore.getContracts().catch(() => { }));
+    }
+    await Promise.all([employeeStore.getEmployees(), ...extras]);
     await fetchLogs();
   } finally {
     attendanceListReady.value = true;
@@ -464,6 +446,7 @@ const requestForm = ref({
   prefill_overtime_after_minutes: null,
   is_warning_hour: false,
   subject_employee_id: null,
+  report_contract_type: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -490,6 +473,19 @@ function resolveSubjectEmployeeIdForPayrollRequest(payload) {
   }
   return null;
 }
+
+function payloadExemptsNewContractLatenessRules(payload) {
+  const fromReport = String(payload?.report_contract_type ?? '').trim().toLowerCase();
+  if (fromReport) return contractExemptsNewLatenessAttendanceRules(fromReport);
+  const sid = resolveSubjectEmployeeIdForPayrollRequest(payload);
+  return contractExemptsNewLatenessAttendanceRules(
+    activeContractTypeForEmployee(contractStore.contracts, sid),
+  );
+}
+
+const requestModalExemptNewLatenessPolicy = computed(() =>
+  payloadExemptsNewContractLatenessRules(requestForm.value),
+);
 
 function withEmployeeIdForHrPayrollApi(body, subjectEmployeeId) {
   if (!authStore.hasHrRoleOrHrPermission) return body;
@@ -518,6 +514,9 @@ const openRequestForDay = (payload) => {
     (payload.is_warning_hour === true ||
       payload.is_warning_hour === 1 ||
       String(payload.is_warning_hour) === '1');
+  const reportContract = isDayPayload
+    ? String(payload.contract_type ?? '').trim().toLowerCase()
+    : '';
   const rowEmp =
     isDayPayload && payload.employee_id != null && String(payload.employee_id).trim() !== ''
       ? Number(payload.employee_id)
@@ -537,6 +536,7 @@ const openRequestForDay = (payload) => {
     is_warning_hour: !!warnHour,
     subject_employee_id:
       rowEmp != null && Number.isFinite(rowEmp) && rowEmp > 0 ? rowEmp : null,
+    report_contract_type: reportContract || null,
     from_time: '',
     to_time: '',
     day_replacement: '',
@@ -594,22 +594,26 @@ const handleRequestSubmit = async (payload) => {
   }
 
   if (payload.request_type === 'lateness') {
-    const wh = payload.is_warning_hour;
-    if (
-      wh === true ||
-      wh === 1 ||
-      String(wh) === '1' ||
-      String(wh).toLowerCase() === 'true'
-    ) {
-      notyf.error(
-        'Lateness does not apply on this date (adjusted hours). Choose another request type.',
-      );
-      return;
+    const exempt = payloadExemptsNewContractLatenessRules(payload);
+    if (!exempt) {
+      const wh = payload.is_warning_hour;
+      if (
+        wh === true ||
+        wh === 1 ||
+        String(wh) === '1' ||
+        String(wh).toLowerCase() === 'true'
+      ) {
+        notyf.error(
+          'Lateness does not apply on this date (adjusted hours). Choose another request type.',
+        );
+        return;
+      }
     }
     const lateMins = payload.use_minutes_for_duration
       ? Number(payload.duration_minutes)
       : Math.round(Number(payload.duration_hours) * 60);
     if (
+      !exempt &&
       Number.isFinite(lateMins) &&
       lateMins > 0 &&
       lateMins <= LATENESS_GRACE_MINUTES
@@ -636,7 +640,15 @@ const handleRequestSubmit = async (payload) => {
   };
   if (['lateness', 'leave'].includes(payload.request_type)) {
     if (payload.use_minutes_for_duration) {
-      const h = apiDurationHoursFromMinutes(payload.duration_minutes);
+      const subjectId = resolveSubjectEmployeeIdForPayrollRequest(payload);
+      const fromReport = String(payload.report_contract_type ?? '').trim().toLowerCase();
+      const contractType =
+        fromReport ||
+        activeContractTypeForEmployee(contractStore.contracts, subjectId);
+      const h = apiDurationHoursForLatenessLeaveFromMinutes(
+        payload.duration_minutes,
+        contractType,
+      );
       if (h == null) {
         notyf.error('Duration (minutes) is required for this request type');
         return;

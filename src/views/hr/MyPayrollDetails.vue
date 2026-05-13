@@ -1,18 +1,12 @@
 <template>
   <div class="bg-white rounded-2xl shadow-sm p-6 animate-fade-in min-h-[400px]">
-    <div
-      v-if="!employeeResolveDone"
-      class="flex justify-center items-center min-h-[360px]"
-      aria-busy="true"
-      aria-label="Loading"
-    >
+    <div v-if="!employeeResolveDone" class="flex justify-center items-center min-h-[360px]" aria-busy="true"
+      aria-label="Loading">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
     </div>
 
-    <div
-      v-else-if="!effectiveEmployeeId"
-      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm"
-    >
+    <div v-else-if="!effectiveEmployeeId"
+      class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
       Your account is not linked to an employee record. Contact HR if you need access.
     </div>
 
@@ -21,20 +15,14 @@
         <label class="block text-sm font-semibold text-gray-800 mb-1">Payroll Month</label>
         <div class="flex items-center gap-2">
           <div class="relative max-w-md w-full">
-            <input
-              v-model="filterPayrollMonth"
-              type="month"
-              class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-            />
-            <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input v-model="filterPayrollMonth" type="month"
+              class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
+            <LucideCalendar
+              class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
-          <button
-            type="button"
+          <button type="button"
             class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
-            :disabled="loading"
-            title="Refresh payroll"
-            @click="handleManualRefresh"
-          >
+            :disabled="loading" title="Refresh payroll" @click="handleManualRefresh">
             <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': loading }" />
           </button>
         </div>
@@ -43,17 +31,13 @@
         </p>
       </div>
 
-      <div
-        v-if="loading && !payrollData"
-        class="flex justify-center items-center min-h-[280px] rounded-xl border border-gray-100 bg-gray-50/40"
-      >
+      <div v-if="loading && !payrollData"
+        class="flex justify-center items-center min-h-[280px] rounded-xl border border-gray-100 bg-gray-50/40">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600" />
       </div>
 
-      <div
-        v-else-if="!loading && !payrollData"
-        class="rounded-xl border border-gray-100 bg-gray-50/40 px-6 py-10 text-center text-sm text-gray-600"
-      >
+      <div v-else-if="!loading && !payrollData"
+        class="rounded-xl border border-gray-100 bg-gray-50/40 px-6 py-10 text-center text-sm text-gray-600">
         No payroll details found for this period.
       </div>
 
@@ -80,26 +64,18 @@
           </div>
           <div class="flex items-center gap-2">
             <PayrollStatusBadge :status="payrollData.current_status || payrollData.status" />
-            <template
-              v-if="
-                canConfirmReceipt &&
-                String(payrollData.current_status || payrollData.status || '').toLowerCase() === 'paid'
-              "
-            >
-              <button
-                type="button"
+            <template v-if="
+              canConfirmReceipt &&
+              String(payrollData.current_status || payrollData.status || '').toLowerCase() === 'paid'
+            ">
+              <button type="button"
                 class="px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 rounded-lg transition-colors cursor-pointer"
-                title="Confirm received"
-                @click="openStatusModal('approve')"
-              >
+                title="Confirm received" @click="openStatusModal('approve')">
                 Salary received
               </button>
-              <button
-                type="button"
+              <button type="button"
                 class="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                title="Mark not received"
-                @click="openStatusModal('reject')"
-              >
+                title="Mark not received" @click="openStatusModal('reject')">
                 Not received
               </button>
             </template>
@@ -123,9 +99,7 @@
         <PayrollSalaryDetails
           :deduction-details="payrollData.deduction_details ?? payrollData.financials?.deductions?.details"
           :additions-details="payrollData.additions_details ?? payrollData.financials?.additions?.details"
-          :deductions-total="payrollData.financials?.deductions"
-          :additions-total="payrollData.financials?.additions"
-        />
+          :deductions-total="payrollData.financials?.deductions" :additions-total="payrollData.financials?.additions" />
 
         <div class="space-y-3">
           <div class="bg-slate-100 text-slate-700 font-bold text-sm py-2 px-4 rounded-lg text-center">
@@ -166,33 +140,22 @@
               </tbody>
             </table>
           </div>
-          <div
-            v-else
-            class="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-xl p-3 text-center"
-          >
+          <div v-else class="text-sm text-gray-500 bg-gray-50 border border-gray-100 rounded-xl p-3 text-center">
             No manual adjustments found for this payroll month.
           </div>
         </div>
       </div>
     </div>
 
-    <HrModal
-      :show="showStatusModal"
-      :title="statusModalTitle"
-      :loading="loading"
-      @close="showStatusModal = false"
-      @save="executeStatusUpdate"
-    >
+    <HrModal :show="showStatusModal" :title="statusModalTitle" :loading="loading" @close="showStatusModal = false"
+      @save="executeStatusUpdate">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">{{ statusModalMessage }}</p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-          <textarea
-            v-model="statusUpdateForm.notes"
-            rows="3"
+          <textarea v-model="statusUpdateForm.notes" rows="3"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
-            placeholder="Add any comments here..."
-          />
+            placeholder="Add any comments here..." />
         </div>
       </div>
     </HrModal>
@@ -425,6 +388,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

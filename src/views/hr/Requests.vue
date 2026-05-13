@@ -6,92 +6,58 @@
         <p class="text-gray-500 mt-1">Manage leave, overtime, and shift changes</p>
       </div>
       <div class="flex gap-2">
-        <button
-          type="button"
+        <button type="button"
           class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
-          :disabled="refreshingList || store.loading"
-          title="Refresh requests"
-          @click="handleManualRefresh"
-        >
+          :disabled="refreshingList || store.loading" title="Refresh requests" @click="handleManualRefresh">
           <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': refreshingList }" />
         </button>
-        <button
-          v-if="canAccessPendingQueue"
-          type="button"
-          @click="togglePendingQueueMode"
+        <button v-if="canAccessPendingQueue" type="button" @click="togglePendingQueueMode"
           :disabled="switchingQueueMode || store.loading"
           class="px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 transition-colors cursor-pointer inline-flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          :class="pendingQueueMode ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'"
-        >
-          <LucideRefreshCw
-            v-if="switchingQueueMode || store.loading"
-            class="w-4 h-4 animate-spin"
-          />
+          :class="pendingQueueMode ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : 'bg-white text-gray-600'">
+          <LucideRefreshCw v-if="switchingQueueMode || store.loading" class="w-4 h-4 animate-spin" />
           {{ pendingQueueMode ? 'Show all my requests' : 'Show all pending requests' }}
         </button>
-        <button
-          v-if="showBulkSelectionColumn"
-          type="button"
-          :disabled="
-            selectedRequestIds.length === 0 ||
-            !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
-            store.loading
-          "
-          class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors"
-          :class="
-            selectedRequestIds.length > 0 &&
-            authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
-            !store.loading
+        <button v-if="showBulkSelectionColumn" type="button" :disabled="selectedRequestIds.length === 0 ||
+          !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
+          store.loading
+          " class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" :class="selectedRequestIds.length > 0 &&
+              authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+              !store.loading
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
               : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-          "
-          @click="confirmBulkApprove"
-        >
+            " @click="confirmBulkApprove">
           Bulk approve
         </button>
-        <button
-          v-if="
-            authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST) ||
-            authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)
-          "
-          type="button"
-          @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
+        <button v-if="
+          authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST) ||
+          authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)
+        " type="button" @click="openAddModal"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
           <span class="text-xl">+</span> New Request
         </button>
       </div>
     </div>
 
     <!-- My requests filters (API: GET .../employee-requests/me) -->
-    <div
-      v-if="!pendingQueueMode"
-      class="mb-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
-    >
+    <div v-if="!pendingQueueMode" class="mb-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
       <!-- <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">
         My requests filters
       </p> -->
       <div class="flex flex-col gap-4 xl:gap-2">
-        <div
-          class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3"
-        >
+        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3">
           <div class="w-full min-w-0 xl:flex-1">
             <label class="block text-xs font-medium text-gray-600 mb-1">Payroll month</label>
-            <input
-              v-model="myFilterMonth"
-              type="month"
-              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none"
-            />
+            <input v-model="myFilterMonth" type="month"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none" />
             <p v-if="myPeriodLabel" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
               {{ myPeriodLabel }}
             </p>
           </div>
           <div class="w-full min-w-0 xl:flex-1">
             <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-            <select
-              v-model="myFilterStatus"
-              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none"
-            >
+            <select v-model="myFilterStatus"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-slate-500/20 focus:border-slate-500 outline-none">
               <option value="">All statuses</option>
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
@@ -109,9 +75,7 @@
             </button>
           </div> -->
         </div>
-        <div
-          class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start"
-        >
+        <div class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start">
           <div class="flex-1 min-w-0 text-[11px] text-gray-500 leading-snug break-words">
             <template v-if="myPeriodLabel">{{ myPeriodLabel }}</template>
           </div>
@@ -125,35 +89,26 @@
     </div>
 
     <!-- Pending queue filters (API: GET .../employee-requests/pending) -->
-    <div
-      v-if="canAccessPendingQueue && pendingQueueMode"
-      class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4"
-    >
+    <div v-if="canAccessPendingQueue && pendingQueueMode"
+      class="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
       <p class="text-xs font-semibold text-indigo-900 uppercase tracking-wide mb-3">
         Pending queue filters
       </p>
       <!-- xl: controls stay on one row; helper text on a second row with matching column widths -->
       <div class="flex flex-col gap-4 xl:gap-2">
-        <div
-          class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3"
-        >
+        <div class="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end xl:flex-nowrap xl:items-end xl:gap-3">
           <div class="w-full min-w-0 xl:flex-[1.05]">
             <label class="block text-xs font-medium text-gray-600 mb-1">Payroll month</label>
-            <input
-              v-model="pendingFilterMonth"
-              type="month"
-              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-            />
+            <input v-model="pendingFilterMonth" type="month"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
             <p v-if="pendingPeriodLabel" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
               {{ pendingPeriodLabel }}
             </p>
           </div>
           <div class="w-full min-w-0 xl:flex-[0.85]">
             <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-            <select
-              v-model="pendingFilterStatus"
-              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-            >
+            <select v-model="pendingFilterStatus"
+              class="w-full h-10 border border-gray-200 rounded-lg px-3 text-sm bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none">
               <option value="pending">Pending</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
@@ -163,14 +118,10 @@
           <div class="w-full min-w-0 xl:flex-[1.85]">
             <label class="block text-xs font-medium text-gray-600 mb-1">Employee</label>
             <div ref="pendingEmployeePickerRoot" class="relative">
-              <button
-                type="button"
+              <button type="button"
                 class="w-full h-10 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                :disabled="store.loading"
-                :aria-expanded="pendingEmployeePickerOpen"
-                aria-haspopup="listbox"
-                @click.stop="pendingEmployeePickerOpen = !pendingEmployeePickerOpen"
-              >
+                :disabled="store.loading" :aria-expanded="pendingEmployeePickerOpen" aria-haspopup="listbox"
+                @click.stop="pendingEmployeePickerOpen = !pendingEmployeePickerOpen">
                 <span class="min-w-0 flex-1 flex items-center gap-2">
                   <template v-if="!String(pendingFilterEmployeeId ?? '').trim()">
                     <span class="truncate text-gray-800">All employees</span>
@@ -183,53 +134,34 @@
                           : `Employee #${pendingFilterEmployeeId}`
                       }}
                     </span>
-                    <span
-                      v-if="selectedPendingEmployee && pendingEmployeeCountForBadge(selectedPendingEmployee) > 0"
-                      class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums"
-                    >
+                    <span v-if="selectedPendingEmployee && pendingEmployeeCountForBadge(selectedPendingEmployee) > 0"
+                      class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
                       {{ pendingEmployeeCountForBadge(selectedPendingEmployee) }}
                     </span>
                   </template>
                 </span>
-                <LucideChevronDown
-                  class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
-                  :class="{ 'rotate-180': pendingEmployeePickerOpen }"
-                  aria-hidden="true"
-                />
+                <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
+                  :class="{ 'rotate-180': pendingEmployeePickerOpen }" aria-hidden="true" />
               </button>
-              <div
-                v-show="pendingEmployeePickerOpen"
+              <div v-show="pendingEmployeePickerOpen"
                 class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-                role="listbox"
-              >
-                <button
-                  type="button"
-                  role="option"
+                role="listbox">
+                <button type="button" role="option"
                   class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 cursor-pointer"
                   :class="{
                     'bg-indigo-50 text-indigo-900': !String(pendingFilterEmployeeId ?? '').trim(),
-                  }"
-                  @click="selectPendingFilterEmployee('')"
-                >
+                  }" @click="selectPendingFilterEmployee('')">
                   <span>All employees</span>
                 </button>
-                <button
-                  v-for="emp in employeesSortedForPendingSelect"
-                  :key="emp.id"
-                  type="button"
-                  role="option"
+                <button v-for="emp in employeesSortedForPendingSelect" :key="emp.id" type="button" role="option"
                   class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
                   :class="{
                     'bg-indigo-50 text-indigo-900':
                       String(pendingFilterEmployeeId) === String(emp.id),
-                  }"
-                  @click="selectPendingFilterEmployee(String(emp.id))"
-                >
+                  }" @click="selectPendingFilterEmployee(String(emp.id))">
                   <span class="min-w-0 truncate">{{ pendingEmployeeBaseLabel(emp) }}</span>
-                  <span
-                    v-if="pendingEmployeeCountForBadge(emp) > 0"
-                    class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums"
-                  >
+                  <span v-if="pendingEmployeeCountForBadge(emp) > 0"
+                    class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
                     {{ pendingEmployeeCountForBadge(emp) }}
                   </span>
                 </button>
@@ -240,32 +172,21 @@
             </p>
           </div>
           <div class="w-full shrink-0 sm:w-auto xl:w-[9.75rem] xl:shrink-0 xl:flex xl:justify-stretch">
-            <button
-              type="button"
+            <button type="button"
               class="w-full h-10 px-4 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center"
-              :disabled="store.loading"
-              @click="applyPendingFilters"
-            >
+              :disabled="store.loading" @click="applyPendingFilters">
               Apply filters
             </button>
           </div>
         </div>
-        <div
-          class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start"
-        >
-          <div
-            class=" flex-[1.05] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
-          >
+        <div class="hidden xl:flex xl:flex-row xl:flex-nowrap xl:gap-3 xl:items-start">
+          <div class=" flex-[1.05] min-w-0 text-[11px] text-gray-500 leading-snug break-words">
             <template v-if="pendingPeriodLabel">{{ pendingPeriodLabel }}</template>
           </div>
-          <div
-            class=" flex-[0.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
-          >
+          <div class=" flex-[0.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words">
             <template v-if="pendingFilterStatus">selected status is {{ pendingFilterStatus }}</template>
           </div>
-          <div
-            class=" flex-[1.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words"
-          >
+          <div class=" flex-[1.85] min-w-0 text-[11px] text-gray-500 leading-snug break-words">
             <template v-if="pendingEmployeeCountsHint">{{ pendingEmployeeCountsHint }}</template>
           </div>
           <div class="w-[9.75rem] shrink-0" aria-hidden="true" />
@@ -275,36 +196,29 @@
 
     <div v-if="pendingQueueMode" class="mb-4">
       <div class="relative max-w-md">
-        <LucideSearch
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-          aria-hidden="true"
-        />
-        <input
-          v-model="searchQuery"
-          type="search"
-          autocomplete="off"
+        <LucideSearch class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          aria-hidden="true" />
+        <input v-model="searchQuery" type="search" autocomplete="off"
           placeholder="Search by employee name or fingerprint..."
-          class="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-        />
+          class="w-full border border-gray-200 rounded-lg pl-10 pr-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
       </div>
     </div>
 
     <!-- Profile Missing Error -->
     <div v-if="profileError" class="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl mb-6">
-        <div class="flex items-center gap-3">
-            <LucideAlertTriangle class="w-5 h-5 flex-shrink-0" />
-            <div>
-                <p class="font-bold">Personal Profile Not Found</p>
-                <p class="text-sm opacity-90">To view your requests or create new ones, you must first have an employee record linked to your user account. Please contact your HR administrator.</p>
-            </div>
+      <div class="flex items-center gap-3">
+        <LucideAlertTriangle class="w-5 h-5 flex-shrink-0" />
+        <div>
+          <p class="font-bold">Personal Profile Not Found</p>
+          <p class="text-sm opacity-90">To view your requests or create new ones, you must first have an employee record
+            linked to your user account. Please contact your HR administrator.</p>
         </div>
+      </div>
     </div>
 
     <!-- Pending queue: backend requires employee_id for /pending — prompt before first load -->
-    <div
-      v-if="pendingTableBlockedNoEmployee"
-      class="rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/80 to-white px-8 py-14 text-center"
-    >
+    <div v-if="pendingTableBlockedNoEmployee"
+      class="rounded-2xl border border-indigo-100 bg-gradient-to-b from-indigo-50/80 to-white px-8 py-14 text-center">
       <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-100 text-indigo-600 mb-5">
         <LucideUserRoundSearch class="w-8 h-8" aria-hidden="true" />
       </div>
@@ -320,49 +234,26 @@
       </div>
     </div>
 
-    <div
-      v-if="showBulkSelectionColumn && pendingSelectableIds.length"
-      class="flex flex-wrap items-center gap-2 mb-3"
-    >
-      <label
-        class="inline-flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700"
-        :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) }"
-      >
-        <input
-          ref="selectAllCheckboxRef"
-          type="checkbox"
-          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-          :checked="allPendingSelected"
-          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
-          @change="toggleSelectAllPending"
-        />
+    <div v-if="showBulkSelectionColumn && pendingSelectableIds.length" class="flex flex-wrap items-center gap-2 mb-3">
+      <label class="inline-flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700"
+        :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) }">
+        <input ref="selectAllCheckboxRef" type="checkbox"
+          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" :checked="allPendingSelected"
+          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)" @change="toggleSelectAllPending" />
         <span>Select all</span>
       </label>
       <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} pending)</span>
     </div>
 
     <!-- Table -->
-    <HrDataTable
-      v-if="!pendingTableBlockedNoEmployee"
-      :headers="headers"
-      :items="filteredRequests"
-      :loading="store.loading"
-      :emptyMessage="emptyMessage"
-      :reset-page-on-items-change="false"
-      :hasActions="false"
-      :hasDelete="false"
-      :hasEdit="false"
-      @edit="null"
-    >
+    <HrDataTable v-if="!pendingTableBlockedNoEmployee" :headers="headers" :items="filteredRequests"
+      :loading="store.loading" :emptyMessage="emptyMessage" :reset-page-on-items-change="false" :hasActions="false"
+      :hasDelete="false" :hasEdit="false" @edit="null">
       <template #select="{ item }">
         <div v-if="item.status === 'pending'" class="flex justify-center">
-          <input
-            type="checkbox"
-            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-            :checked="isBulkSelected(item.id)"
-            :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
-            @change="toggleBulkSelect(item.id)"
-          />
+          <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            :checked="isBulkSelected(item.id)" :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+            @change="toggleBulkSelect(item.id)" />
         </div>
       </template>
       <template #employee="{ item }">
@@ -378,23 +269,18 @@
         <span class="text-gray-700">{{ formatDuration(item) }}</span>
       </template>
       <template #overtime_minutes="{ item }">
-        <span
-          v-if="
-            ['overtime', 'overtime_before', 'overtime_after'].includes(item.request_type) &&
-            item.overtime_minutes != null &&
-            item.overtime_minutes !== ''
-          "
-          class="text-gray-800 font-medium tabular-nums"
-        >
+        <span v-if="
+          ['overtime', 'overtime_before', 'overtime_after'].includes(item.request_type) &&
+          item.overtime_minutes != null &&
+          item.overtime_minutes !== ''
+        " class="text-gray-800 font-medium tabular-nums">
           {{ Number(item.overtime_minutes) }}
         </span>
         <span v-else class="text-gray-400">—</span>
       </template>
       <template #is_paid="{ item }">
-        <span
-          class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
-          :class="isPaidYes(item) ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'"
-        >
+        <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold"
+          :class="isPaidYes(item) ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-600'">
           {{ isPaidYes(item) ? 'Paid' : 'Unpaid' }}
         </span>
       </template>
@@ -405,45 +291,30 @@
         <span class="text-gray-700">{{ actionByDisplay(item) }}</span>
       </template>
       <template #status="{ item }">
-        <span
-          class="px-2 py-0.5 rounded-full text-xs font-semibold"
-          :class="{
-            'bg-yellow-100 text-yellow-800': item.status === 'pending',
-            'bg-green-100 text-green-800': item.status === 'approved',
-            'bg-red-100 text-red-800': item.status === 'rejected'
-          }"
-        >
+        <span class="px-2 py-0.5 rounded-full text-xs font-semibold" :class="{
+          'bg-yellow-100 text-yellow-800': item.status === 'pending',
+          'bg-green-100 text-green-800': item.status === 'approved',
+          'bg-red-100 text-red-800': item.status === 'rejected'
+        }">
           {{ statusLabel(item.status) }}
         </span>
       </template>
       <template #actions="{ item }">
         <div class="flex flex-wrap gap-2 justify-center items-center">
-          <button
-            v-if="canShowRequestEditPencil(item)"
-            type="button"
-            title="Edit"
+          <button v-if="canShowRequestEditPencil(item)" type="button" title="Edit"
             class="text-blue-600 hover:text-blue-800 p-1 cursor-pointer transition-transform hover:scale-125"
-            @click="openEditModal(item)"
-          >
+            @click="openEditModal(item)">
             <LucidePencil class="w-6 h-6" />
           </button>
           <template v-if="item.status === 'pending'">
-            <button
-              v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
-              type="button"
-              title="Approve"
+            <button v-if="authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)" type="button" title="Approve"
               class="text-green-600 hover:text-green-800 p-1 cursor-pointer transition-transform hover:scale-125"
-              @click="confirmApprove(item.id)"
-            >
+              @click="confirmApprove(item.id)">
               <LucideCheckCircle class="w-6 h-6" />
             </button>
-            <button
-              v-if="authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
-              type="button"
-              title="Reject"
+            <button v-if="authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)" type="button" title="Reject"
               class="text-red-600 hover:text-red-800 p-1 cursor-pointer transition-transform hover:scale-125"
-              @click="confirmReject(item.id)"
-            >
+              @click="confirmReject(item.id)">
               <LucideXCircle class="w-6 h-6" />
             </button>
           </template>
@@ -452,80 +323,45 @@
     </HrDataTable>
 
     <!-- Create / Edit Request Modal -->
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Request' : 'Create New Request'"
-      :loading="store.loading"
-      :save-disabled="latenessSaveBlocked"
-      @close="closeRequestModal"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Request' : 'Create New Request'" :loading="store.loading"
+      :save-disabled="latenessSaveBlocked" @close="closeRequestModal" @save="handleSubmit">
       <div class="space-y-4">
         <template v-if="!isEditing">
-          <div
-            v-if="showCreateTargetTabs"
-            class="flex p-1 bg-gray-100 rounded-xl gap-1"
-          >
-            <button
-              type="button"
-              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer"
-              :class="
-                createRequestTarget === 'self'
+          <div v-if="showCreateTargetTabs" class="flex p-1 bg-gray-100 rounded-xl gap-1">
+            <button type="button"
+              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer" :class="createRequestTarget === 'self'
                   ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                   : 'text-gray-500 hover:bg-gray-200/50'
-              "
-              @click="setCreateTargetSelf"
-            >
+                " @click="setCreateTargetSelf">
               For myself
             </button>
-            <button
-              type="button"
-              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer"
-              :class="
-                createRequestTarget === 'other'
+            <button type="button"
+              class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer" :class="createRequestTarget === 'other'
                   ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
                   : 'text-gray-500 hover:bg-gray-200/50'
-              "
-              @click="setCreateTargetOther"
-            >
+                " @click="setCreateTargetOther">
               For another employee
             </button>
           </div>
-          <p
-            v-else-if="canCreateRequestForOthers && !canCreateEmployeeRequest"
-            class="text-sm text-gray-600"
-          >
+          <p v-else-if="canCreateRequestForOthers && !canCreateEmployeeRequest" class="text-sm text-gray-600">
             Creating a request on behalf of another employee.
           </p>
         </template>
 
         <div v-if="!isEditing && createRequestTarget === 'other'">
           <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-          <select
-            v-model="forOtherEmployeeId"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2"
-          >
+          <select v-model="forOtherEmployeeId" class="w-full border border-gray-300 rounded-lg px-4 py-2">
             <option value="">Select employee…</option>
-            <option
-              v-for="emp in employeesListForPicker"
-              :key="emp.id"
-              :value="String(emp.id)"
-            >
+            <option v-for="emp in employeesListForPicker" :key="emp.id" :value="String(emp.id)">
               {{ employeePickerLabel(emp) }}
             </option>
           </select>
         </div>
 
-        <div
-          v-if="isEditing && authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
-          class="space-y-1"
-        >
+        <div v-if="isEditing && authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)" class="space-y-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Request status</label>
-          <select
-            v-model="form.status"
-            :disabled="store.loading"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white"
-          >
+          <select v-model="form.status" :disabled="store.loading"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
             <option value="pending">Pending</option>
             <option value="approved">Approved</option>
             <option value="rejected">Rejected</option>
@@ -537,11 +373,8 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Request Type</label>
-          <select
-            v-model="form.request_type"
-            :disabled="editingIsApproverOnly || store.loading"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2"
-          >
+          <select v-model="form.request_type" :disabled="editingIsApproverOnly || store.loading"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2">
             <option value="lateness">Lateness</option>
             <option value="leave">Leave</option>
             <option value="overtime">Overtime (total)</option>
@@ -552,12 +385,10 @@
             <option value="work_from_home">Work From Home</option>
             <option value="shift_move">Shift Move</option>
             <option value="absence">Absence</option>
+            <option value="double_paid">Double Paid</option>
           </select>
-          <p
-            v-if="latenessSaveBlocked"
-            class="mt-2 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"
-            role="status"
-          >
+          <p v-if="latenessSaveBlocked"
+            class="mt-2 text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2" role="status">
             Lateness of {{ LATENESS_GRACE_MINUTES }} minutes or less is covered by the grace period. You cannot submit a
             lateness request for this amount.
           </p>
@@ -565,55 +396,36 @@
         <div class="grid grid-cols-2 gap-4">
           <div class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input
-              v-model="form.day"
-              type="date"
-              :disabled="editingIsApproverOnly || store.loading"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-            <p
-              v-if="isServerCalculatedOvertime(form.request_type)"
-              class="mt-1 text-xs text-gray-500"
-            >
-              Overtime (total or before/after shift): only the date is sent — minutes are calculated on the server from shift and punches.
+            <input v-model="form.day" type="date" :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2" />
+            <p v-if="isServerCalculatedOvertime(form.request_type)" class="mt-1 text-xs text-gray-500">
+              Overtime (total or before/after shift): only the date is sent — minutes are calculated on the server from
+              shift and punches.
             </p>
           </div>
 
-          <!-- Conditional: Duration minutes (Lateness/Leave) — API receives duration_hours via ceiling of minutes/60 -->
+          <!-- Lateness/Leave: duration_hours = ceil(min/60) for new contracts; exact minutes for `old` -->
           <div v-if="['lateness', 'leave'].includes(form.request_type)" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
-            <input
-              v-model.number="form.duration_minutes"
-              type="number"
-              min="1"
-              step="1"
+            <input v-model.number="form.duration_minutes" type="number" min="1" step="1"
               :disabled="editingIsApproverOnly || store.loading"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-              placeholder="e.g. 24"
-            />
+              class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 24" />
           </div>
 
           <!-- Conditional: Day Replacement (Day Off Swap) -->
           <div v-if="form.request_type === 'day_off_swap'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Replacement Date</label>
-            <input
-              v-model="form.day_replacement"
-              type="date"
-              :disabled="editingIsApproverOnly || store.loading"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
+            <input v-model="form.day_replacement" type="date" :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2" />
           </div>
 
           <!-- Conditional: Duration Type (Vacation) -->
           <div v-if="form.request_type === 'vacation'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
-            <select
-              v-model="form.duration_type"
-              :disabled="editingIsApproverOnly || store.loading"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2"
-            >
-                <option value="full">Full Day</option>
-                <option value="half">Half Day</option>
+            <select v-model="form.duration_type" :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2">
+              <option value="full">Full Day</option>
+              <option value="half">Half Day</option>
             </select>
           </div>
 
@@ -621,23 +433,13 @@
           <template v-if="showFromToFields">
             <div class="col-span-2 md:col-span-1">
               <label class="block text-sm font-medium text-gray-700 mb-1">From Time</label>
-              <input
-                v-model="form.from_time"
-                type="time"
-                step="1"
-                :disabled="editingIsApproverOnly || store.loading"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2"
-              />
+              <input v-model="form.from_time" type="time" step="1" :disabled="editingIsApproverOnly || store.loading"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2" />
             </div>
             <div class="col-span-2 md:col-span-1">
               <label class="block text-sm font-medium text-gray-700 mb-1">To Time</label>
-              <input
-                v-model="form.to_time"
-                type="time"
-                step="1"
-                :disabled="editingIsApproverOnly || store.loading"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2"
-              />
+              <input v-model="form.to_time" type="time" step="1" :disabled="editingIsApproverOnly || store.loading"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2" />
             </div>
           </template>
         </div>
@@ -645,48 +447,25 @@
     </HrModal>
 
     <!-- Confirmation Modals -->
-    <SweetAlert2Modal
-      v-if="showConfirmApprove"
-      title="Approve Request?"
-      text="Are you sure you want to approve this request?"
-      icon="question"
-      confirmButtonText="Yes, Approve"
-      confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
-      @confirm="handleApprove"
-      @cancel="showConfirmApprove = false"
-    />
-    <SweetAlert2Modal
-      v-if="showConfirmBulkApprove"
-      title="Bulk approve requests?"
-      :text="bulkApproveConfirmText"
-      icon="question"
-      confirmButtonText="Yes, approve all"
-      confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
-      @confirm="handleBulkApprove"
-      @cancel="showConfirmBulkApprove = false"
-    />
+    <SweetAlert2Modal v-if="showConfirmApprove" title="Approve Request?"
+      text="Are you sure you want to approve this request?" icon="question" confirmButtonText="Yes, Approve"
+      confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" @confirm="handleApprove"
+      @cancel="showConfirmApprove = false" />
+    <SweetAlert2Modal v-if="showConfirmBulkApprove" title="Bulk approve requests?" :text="bulkApproveConfirmText"
+      icon="question" confirmButtonText="Yes, approve all" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
+      @confirm="handleBulkApprove" @cancel="showConfirmBulkApprove = false" />
     <!-- Rejection Modal -->
-    <HrModal
-      v-if="showConfirmReject"
-      :show="showConfirmReject"
-      title="Reject Request"
-      :loading="store.loading"
-      saveLabel="Reject"
-      @close="showConfirmReject = false"
-      @save="handleReject"
-    >
+    <HrModal v-if="showConfirmReject" :show="showConfirmReject" title="Reject Request" :loading="store.loading"
+      saveLabel="Reject" @close="showConfirmReject = false" @save="handleReject">
       <div class="space-y-4">
         <div class="mb-4 text-gray-600">
-           Are you sure you want to reject this request?
+          Are you sure you want to reject this request?
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-2">Rejection Reason</label>
-          <textarea 
-            v-model="rejectionNote" 
-            rows="4" 
+          <textarea v-model="rejectionNote" rows="4"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-            placeholder="Please explain why this request is being rejected..."
-          ></textarea>
+            placeholder="Please explain why this request is being rejected..."></textarea>
         </div>
       </div>
     </HrModal>
@@ -698,6 +477,7 @@ import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useHrRequestsStore } from '@/stores/hr/requests';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
+import { useHrContractsStore } from '@/stores/hr/contracts';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
@@ -721,7 +501,14 @@ import {
   normalizeRequestTypeSlug,
 } from '@/utils/employeeRequestApi';
 import { LATENESS_GRACE_MINUTES } from '@/constants/hrLateness';
-import { apiDurationHoursFromMinutes } from '@/utils/hrEmployeeRequestDuration';
+import {
+  activeContractTypeForEmployee,
+  contractExemptsNewLatenessAttendanceRules,
+  contractTypeSlugFromEmployeeRequestRow,
+  contractTypeSlugFromLoggedInPayrollAuthUser,
+  latenessLeaveDurationApiFieldsFromMinutes,
+  parsedDurationMinutesFromRequestRow,
+} from '@/utils/hrEmployeeRequestDuration';
 import { defaultPayrollMonthRange, getPayrollDates } from '@/utils/payrollPeriod';
 
 const REQUEST_TYPE_LABELS = {
@@ -735,6 +522,7 @@ const REQUEST_TYPE_LABELS = {
   work_from_home: 'Work from home',
   shift_move: 'Shift move',
   absence: 'Absence',
+  double_paid: 'Double paid',
 };
 
 const APPROVER_JOB_TITLES_NORMALIZED = new Set(['hr', 'hr manager', 'general manager']);
@@ -792,6 +580,7 @@ const CELL_CENTER_WIDE = `${CELL_CENTER} min-w-[140px]`;
 const authStore = useAuthStore();
 const store = useHrRequestsStore();
 const empStore = useHrEmployeesStore();
+const contractStore = useHrContractsStore();
 const requests = computed(() => store.requests);
 
 const searchQuery = ref('');
@@ -1103,7 +892,7 @@ function requestModalUsesFromToTime(rawType) {
   const t = normalizeRequestTypeSlug(rawType);
   if (!t || t === 'absence') return false;
   if (isServerCalculatedOvertime(t)) return false;
-  if (['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home'].includes(t)) return false;
+  if (['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home', 'double_paid'].includes(t)) return false;
   return true;
 }
 
@@ -1121,6 +910,76 @@ function canShowRequestEditPencil(item) {
   return false;
 }
 
+/** Employee the lateness/leave row belongs to (self, other, or edited row). */
+function resolveEmployeeIdForLatenessLeavePayload() {
+  if (isEditing.value && editingId.value != null) {
+    const idNum = normalizeRequestId(editingId.value);
+    const row = requests.value.find((r) => normalizeRequestId(r.id) === idNum);
+    const eid = row?.employee_id ?? row?.employee?.id;
+    const n = Number(eid);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+  if (createRequestTarget.value === 'other') {
+    return normalizeRequestId(forOtherEmployeeId.value);
+  }
+  const p = authStore.payrollEmployeeId;
+  if (p != null && String(p).trim() !== '') {
+    const n = Number(String(p).trim());
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  const u = authStore.user;
+  if (u && typeof u === 'object') {
+    const empId = Number(
+      String(u.employee?.id ?? u.Employee?.id ?? '').trim(),
+    );
+    if (Number.isFinite(empId) && empId > 0) return empId;
+  }
+  return null;
+}
+
+function requestRowEmployeeIdForDisplay(item) {
+  const raw = item?.employee?.id ?? item?.employee_id;
+  const id = Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
+/**
+ * Pending queue: infer from row + contracts API when permitted.
+ * `/me`: fall back to `GET /api/user` embedded contracts (no `view-contract`).
+ */
+function resolveContractTypeSlugForRequestItem(item) {
+  const fromRow = contractTypeSlugFromEmployeeRequestRow(item);
+  if (fromRow) return fromRow;
+  if (!pendingQueueMode.value) {
+    const linked = contractTypeSlugFromLoggedInPayrollAuthUser(authStore.user);
+    if (linked) return linked;
+  }
+  if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
+    const eid = requestRowEmployeeIdForDisplay(item);
+    if (eid != null) return activeContractTypeForEmployee(contractStore.contracts, eid);
+  }
+  return '';
+}
+
+const resolveContractTypeSlugForModalSubject = computed(() => {
+  if (isEditing.value && editingId.value != null) {
+    const idNum = normalizeRequestId(editingId.value);
+    const row = requests.value.find((r) => normalizeRequestId(r.id) === idNum);
+    if (row) return resolveContractTypeSlugForRequestItem(row);
+  }
+  if (createRequestTarget.value === 'other') {
+    const oeid = normalizeRequestId(forOtherEmployeeId.value);
+    if (
+      oeid != null &&
+      authStore.can(HR_PERMISSION.VIEW_CONTRACT)
+    ) {
+      return activeContractTypeForEmployee(contractStore.contracts, oeid);
+    }
+    return '';
+  }
+  return contractTypeSlugFromLoggedInPayrollAuthUser(authStore.user);
+});
+
 /** Edit modal opened by approver without update permission — only status should change. */
 const editingIsApproverOnly = computed(
   () =>
@@ -1129,8 +988,15 @@ const editingIsApproverOnly = computed(
     !authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_REQUEST),
 );
 
-/** Grace for ≤15m still applies for self and when editing; create-for-others can file lateness for another employee inside grace. */
+/** Grace for ≤15m still applies for self and when editing; create-for-others can file lateness for another employee inside grace. Not for `old` payroll contracts. */
 const shouldEnforceLatenessGraceInModal = computed(() => {
+  if (
+    contractExemptsNewLatenessAttendanceRules(
+      resolveContractTypeSlugForModalSubject.value,
+    )
+  ) {
+    return false;
+  }
   if (isEditing.value) return true;
   if (
     createRequestTarget.value === 'other' &&
@@ -1163,12 +1029,28 @@ function formatDuration(item) {
   if (t === 'overtime') {
     return '—';
   }
+  if (t === 'double_paid') {
+    return '—';
+  }
   if ((t === 'vacation' || t === 'work_from_home') && item.duration_type) {
     return item.duration_type === 'full' ? 'Full day' : 'Half day';
   }
-  if (['lateness', 'leave'].includes(t) && item.duration_hours != null && item.duration_hours !== '') {
-    const h = Number(item.duration_hours);
-    if (!Number.isNaN(h)) return `${h}h`;
+  if (['lateness', 'leave'].includes(t)) {
+    const contractType = resolveContractTypeSlugForRequestItem(item);
+    if (contractType === 'old') {
+      const mins = parsedDurationMinutesFromRequestRow(item);
+      if (mins != null) return `${mins} min`;
+      if (item.duration_hours != null && item.duration_hours !== '') {
+        const stored = Number(item.duration_hours);
+        if (!Number.isNaN(stored) && stored > 0) return `${stored} min`;
+      }
+      return '—';
+    }
+    if (item.duration_hours != null && item.duration_hours !== '') {
+      const h = Number(item.duration_hours);
+      if (!Number.isNaN(h)) return `${h}h`;
+    }
+    return '—';
   }
   if (t === 'day_off_swap' && item.day_replacement) {
     return `Swap → ${formatDate(item.day_replacement)}`;
@@ -1373,7 +1255,11 @@ const handleManualRefresh = async () => {
 };
 
 onMounted(() => {
-  void fetchData();
+  const extras = [];
+  if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
+    extras.push(contractStore.getContracts().catch(() => { }));
+  }
+  void Promise.all([fetchData(), ...extras]);
   document.addEventListener('click', closePendingEmployeePickerOnDocClick);
 });
 
@@ -1434,7 +1320,7 @@ watch(
       form.value.to_time = '';
     }
     if (
-      ['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home'].includes(t)
+      ['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home', 'double_paid'].includes(t)
     ) {
       form.value.from_time = '';
       form.value.to_time = '';
@@ -1501,6 +1387,15 @@ const openEditModal = (item) => {
     item.duration_hours != null && item.duration_hours !== ''
       ? Number(item.duration_hours)
       : null;
+  const apiMins = parsedDurationMinutesFromRequestRow(item);
+  const rowContract = resolveContractTypeSlugForRequestItem(item);
+  let durationMinutesForForm = null;
+  if (apiMins != null) {
+    durationMinutesForForm = apiMins;
+  } else if (dh != null && Number.isFinite(dh) && dh > 0) {
+    durationMinutesForForm =
+      rowContract === 'old' ? Math.round(dh) : Math.round(dh * 60);
+  }
   const rawStatus = String(item.status ?? 'pending').toLowerCase();
   const statusNorm =
     rawStatus === 'approved' || rawStatus === 'rejected' || rawStatus === 'pending'
@@ -1509,8 +1404,7 @@ const openEditModal = (item) => {
   form.value = {
     request_type: item.request_type || 'leave',
     day: toDateInputValue(item.day),
-    duration_minutes:
-      dh != null && Number.isFinite(dh) && dh > 0 ? Math.round(dh * 60) : null,
+    duration_minutes: durationMinutesForForm,
     from_time: item.from_time ? normalizeApiTime(item.from_time) || '' : '',
     to_time: item.to_time ? normalizeApiTime(item.to_time) || '' : '',
     day_replacement: toDateInputValue(item.day_replacement),
@@ -1601,12 +1495,13 @@ function buildRequestPayloadFromForm() {
         return null;
       }
     }
-    const h = apiDurationHoursFromMinutes(mins);
-    if (h == null) {
+    const contractType = resolveContractTypeSlugForModalSubject.value;
+    const durFields = latenessLeaveDurationApiFieldsFromMinutes(mins, contractType);
+    if (!durFields) {
       notyf.error('Duration (minutes) is required for this request type');
       return null;
     }
-    payload.duration_hours = h;
+    Object.assign(payload, durFields);
   }
 
   if (form.value.request_type === 'day_off_swap') {

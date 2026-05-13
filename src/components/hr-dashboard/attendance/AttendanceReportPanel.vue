@@ -66,10 +66,19 @@
           <p class="text-sm text-gray-500">
             {{ reportData.period?.from }} - {{ reportData.period?.to }}
           </p>
+          <p
+            v-if="reportSubjectContractTypeDisplay"
+            class="text-xs font-semibold text-indigo-700 mt-1.5"
+          >
+            Contract: {{ reportSubjectContractTypeDisplay }}
+          </p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 report-summary-grid">
+      <div
+        class="grid grid-cols-1 gap-3 report-summary-grid"
+        :class="showMonthlyHoursSummaryCard ? 'md:grid-cols-4' : 'md:grid-cols-3'"
+      >
         <div class="p-3 rounded-xl border summary-card emerald-card flex items-center gap-3">
           <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600">
             <CheckCircle class="w-4 h-4" />
@@ -100,8 +109,10 @@
             </p>
           </div>
         </div>
-        <div v-if="reportData.monthly_hours"
-          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3">
+        <div
+          v-if="showMonthlyHoursSummaryCard"
+          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3"
+        >
           <div class="p-2 bg-sky-100 rounded-lg text-sky-600">
             <CalendarClock class="w-4 h-4" />
           </div>
@@ -170,7 +181,7 @@
               <td class="p-3 text-center text-xs align-top">
                 <div class="flex flex-col items-center gap-1">
                   <span class="font-bold">{{ formatDate(day.date) }}</span>
-                  <template v-if="isReportDayHoliday(day)">
+                  <template v-if="isReportDayHolidayForUi(day)">
                     <div
                       class="rounded-md border border-violet-200 bg-violet-100/80 px-2 py-1 max-w-[13rem] text-center"
                     >
@@ -187,7 +198,7 @@
                       </span>
                     </div>
                   </template>
-                  <template v-else-if="isReportDayWarningHour(day)">
+                  <template v-else-if="reportDayHasWarningHour(day)">
                     <div
                       class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 max-w-[13rem] text-center"
                       title="This day was calculated with adjusted hour rules. Do not submit a lateness request for this date."
@@ -229,7 +240,7 @@
                       <div class="flex flex-col items-center">
                         <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
                         <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
-                            ? (getLatenessValue(day) <= latenessGraceMinutes
+                            ? (latenessInGracePeriodForDisplay(day)
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                               : 'bg-red-50 text-red-700 border-red-200')
                             : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
@@ -266,12 +277,12 @@
                   v-if="getLatenessValue(day) > 0"
                   class="inline-block px-2 py-1 rounded font-bold text-[10px] border"
                   :class="
-                    getLatenessValue(day) <= latenessGraceMinutes
+                    latenessInGracePeriodForDisplay(day)
                       ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                       : 'bg-red-100 text-red-700 border-red-200'
                   "
                   :title="
-                    getLatenessValue(day) <= latenessGraceMinutes
+                    latenessInGracePeriodForDisplay(day)
                       ? 'Within grace period — no lateness request needed'
                       : ''
                   "
@@ -335,18 +346,7 @@
               <td v-if="showDayRequestAction" class="p-3 text-center no-print">
                 <button
                   type="button"
-                  @click="
-                    $emit('request-for-day', {
-                      date: day.date,
-                      early_leave_minutes: getEarlyLeaveValue(day),
-                      lateness_minutes: getLatenessValue(day),
-                      overtime_minutes: getOvertimeValue(day),
-                      overtime_before_minutes: getOvertimeBefore(day),
-                      overtime_after_minutes: getOvertimeAfter(day),
-                      is_warning_hour: isReportDayWarningHour(day),
-                      employee_id: reportSubjectEmployeeId,
-                    })
-                  "
+                  @click="emitRequestForDay(day)"
                   class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
                 >
                   Request
@@ -414,6 +414,13 @@ import {
 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
 import { LATENESS_GRACE_MINUTES as latenessGraceMinutes } from "@/constants/hrLateness";
+import { HR_PERMISSION } from "@/constants/hrPermissions";
+import { useAuthStore } from "@/stores/auth";
+import { useHrContractsStore } from "@/stores/hr/contracts";
+import {
+  activeContractTypeForEmployee,
+  contractExemptsNewLatenessAttendanceRules,
+} from "@/utils/hrEmployeeRequestDuration";
 
 /** Aligns with HR Requests labels; API may send `type` or `request_type`. */
 const DAY_REQUEST_TYPE_LABELS = {
@@ -427,6 +434,7 @@ const DAY_REQUEST_TYPE_LABELS = {
   work_from_home: "Work from home",
   shift_move: "Shift move",
   absence: "Absence",
+  double_paid: "Double paid",
 };
 
 const props = defineProps({
@@ -439,10 +447,12 @@ const props = defineProps({
   showDayRequestAction: { type: Boolean, default: true },
 });
 
-defineEmits(["request-for-day"]);
+const emit = defineEmits(["request-for-day"]);
 
 const store = useHrAttendanceStore();
 const employeeStore = useHrEmployeesStore();
+const contractStore = useHrContractsStore();
+const authStore = useAuthStore();
 
 const reportForm = ref({
   employee_id: null,
@@ -486,6 +496,9 @@ watch(
 );
 
 onMounted(async () => {
+  if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
+    void contractStore.getContracts().catch(() => {});
+  }
   if (props.showEmployeeSelect) {
     try {
       await employeeStore.getEmployees();
@@ -512,6 +525,81 @@ const reportSubjectEmployeeId = computed(() => {
   return Number.isFinite(n) && n > 0 ? n : null;
 });
 
+/** Prefer form lock / selection; fall back to report payload employee after generate. */
+const contractLookupEmployeeId = computed(() => {
+  const sid = reportSubjectEmployeeId.value;
+  if (sid != null && Number.isFinite(sid) && sid > 0) return sid;
+  const e = reportData.value?.employee?.id;
+  const n = Number(e);
+  return Number.isFinite(n) && n > 0 ? n : null;
+});
+
+const CONTRACT_TYPE_HEADER_LABELS = {
+  old: "Old contract",
+  new: "New contract",
+  hourly: "Hourly",
+  online: "Online",
+};
+
+/** Monthly report `employee.contract_type` first; else active payroll contract if user may `getContracts`. */
+const resolvedReportContractTypeSlug = computed(() => {
+  const emp = reportData.value?.employee;
+  const apiRaw = emp?.contract_type ?? emp?.contractType;
+  const fromApi = String(apiRaw ?? "").trim().toLowerCase();
+  if (fromApi) return fromApi;
+  if (!authStore.can(HR_PERMISSION.VIEW_CONTRACT)) return "";
+  return String(
+    activeContractTypeForEmployee(
+      contractStore.contracts,
+      contractLookupEmployeeId.value,
+    ) || "",
+  ).trim().toLowerCase();
+});
+
+const reportSubjectContractTypeDisplay = computed(() => {
+  const t = resolvedReportContractTypeSlug.value;
+  if (!t) return "";
+  return CONTRACT_TYPE_HEADER_LABELS[t] ?? `${t.charAt(0).toUpperCase()}${t.slice(1)} contract`;
+});
+
+/** `old` contracts: do not apply new-contract lateness grace / warning-hour / adjusted-hours UI. */
+const exemptNewContractLatenessRules = computed(() =>
+  contractExemptsNewLatenessAttendanceRules(resolvedReportContractTypeSlug.value),
+);
+
+/** Hour-bucket quota card applies to new-contract style reports only. */
+const showMonthlyHoursSummaryCard = computed(
+  () =>
+    !!reportData.value?.monthly_hours && !exemptNewContractLatenessRules.value,
+);
+
+function emitRequestForDay(day) {
+  emit("request-for-day", {
+    date: day.date,
+    early_leave_minutes: getEarlyLeaveValue(day),
+    lateness_minutes: getLatenessValue(day),
+    overtime_minutes: getOvertimeValue(day),
+    overtime_before_minutes: getOvertimeBefore(day),
+    overtime_after_minutes: getOvertimeAfter(day),
+    is_warning_hour: exemptNewContractLatenessRules.value
+      ? false
+      : isReportDayWarningHour(day),
+    employee_id: reportSubjectEmployeeId.value,
+    contract_type: resolvedReportContractTypeSlug.value || undefined,
+  });
+}
+
+function reportDayHasWarningHour(day) {
+  if (exemptNewContractLatenessRules.value) return false;
+  return isReportDayWarningHour(day);
+}
+
+function latenessInGracePeriodForDisplay(day) {
+  if (exemptNewContractLatenessRules.value) return false;
+  const m = getLatenessValue(day);
+  return m > 0 && m <= latenessGraceMinutes;
+}
+
 const handleReport = async ({ preservePage = false } = {}) => {
   const eid = effectiveEmployeeId.value;
   if (!eid || !reportForm.value.from_date || !reportForm.value.to_date) {
@@ -527,6 +615,15 @@ const handleReport = async ({ preservePage = false } = {}) => {
     };
     const data = await store.generateMonthlyReport(payload);
     reportData.value = data.data;
+    const emp = data.data?.employee;
+    const ctRaw = emp?.contract_type ?? emp?.contractType;
+    const ct = String(ctRaw ?? "").trim();
+    if (
+      !ct &&
+      authStore.can(HR_PERMISSION.VIEW_CONTRACT)
+    ) {
+      void contractStore.getContracts().catch(() => {});
+    }
     if (!preservePage) {
       currentPage.value = 1;
     } else {
@@ -646,9 +743,18 @@ function isReportDayHoliday(day) {
   return hasReportHolidayPayload(day);
 }
 
+/**
+ * Official holiday badge, violet row, double-pay holiday chip — new-contract style only.
+ * `old` contracts: treat as a normal day in the UI (same gate as lateness/warning-hour rules).
+ */
+function isReportDayHolidayForUi(day) {
+  if (exemptNewContractLatenessRules.value) return false;
+  return isReportDayHoliday(day);
+}
+
 /** Prefer official name from `holiday_details`, then `label` (e.g. "Worked on Holiday"). */
 function holidayDisplayLabel(day) {
-  if (!isReportDayHoliday(day)) return "";
+  if (!isReportDayHolidayForUi(day)) return "";
   const fromDetails = day.holiday_details?.name ?? "";
   const name = String(fromDetails).trim();
   if (name) return name;
@@ -657,6 +763,7 @@ function holidayDisplayLabel(day) {
 
 /** `holiday_details` + fingerprint + `is_double_paid` from the same report API. */
 function holidayWorkedDoublePay(day) {
+  if (exemptNewContractLatenessRules.value) return false;
   if (!day.attendance?.check_in) return false;
   const d = day.holiday_details;
   if (!d || typeof d !== "object") return false;
@@ -675,10 +782,10 @@ function isReportDayWarningHour(day) {
 }
 
 function rowAttendanceClass(day) {
-  if (isReportDayHoliday(day)) return "bg-violet-50/90 hover:bg-violet-100/60";
+  if (isReportDayHolidayForUi(day)) return "bg-violet-50/90 hover:bg-violet-100/60";
   if (isReportDayAbsent(day)) return "bg-[#FEF2F2] hover:bg-[#fde8e8]";
   if (day.status === "day_off") return "bg-amber-50/80 hover:bg-amber-50/90";
-  if (isReportDayWarningHour(day)) {
+  if (reportDayHasWarningHour(day)) {
     return "bg-amber-50/35 hover:bg-amber-50/55 border-l-4 border-l-amber-500";
   }
   return "hover:bg-gray-50/30";

@@ -48,6 +48,15 @@
             <Edit v-else class="w-5 h-5" />
           </button>
           <button
+            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE) && !isTerminatedEmployeeRow(item)"
+            type="button"
+            :disabled="editLoadingId != null"
+            class="cursor-pointer text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title="Terminate"
+            @click="openTerminateModal(item)">
+            <UserMinus class="w-5 h-5" />
+          </button>
+          <button
             v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)"
             type="button"
             :disabled="editLoadingId != null"
@@ -216,20 +225,27 @@
 
         <!-- Status Tab -->
         <div v-if="activeTab === 'status'" class="space-y-4">
-          <div class="grid grid-cols-2 gap-4">
+          <div v-if="isEditing && editingEmployeeWasTerminated" class="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+            <div>
+              <span class="block text-xs font-semibold uppercase text-gray-500 mb-1">Status</span>
+              <span class="text-sm font-medium text-gray-900 capitalize">{{ form.status || '—' }}</span>
+            </div>
+            <div v-if="form.left_at">
+              <span class="block text-xs font-semibold uppercase text-gray-500 mb-1">Left at</span>
+              <span class="text-sm text-gray-800">{{ form.left_at }}</span>
+            </div>
+          </div>
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
               <select v-model="form.status"
                 class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
                 <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="terminated">Terminated</option>
+                <!-- <option value="inactive">Inactive</option> -->
               </select>
-            </div>
-            <div v-if="form.status === 'terminated' || form.left_at">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Left At</label>
-              <input v-model="form.left_at" type="date"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none" />
+              <p v-if="isEditing" class="text-xs text-gray-500 mt-2">
+                To end employment for an active employee, use <strong>Terminate</strong> in the directory table row.
+              </p>
             </div>
           </div>
         </div>
@@ -298,6 +314,52 @@
       </div>
     </HrModal>
 
+    <HrModal
+      v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)"
+      :show="showTerminateModal"
+      title="Terminate employee"
+      :loading="terminateSubmitting"
+      save-label="Terminate"
+      max-width-class="max-w-lg"
+      @close="closeTerminateModal"
+      @save="submitTerminateEmployee">
+      <div v-if="terminateTarget" class="space-y-4">
+        <p class="text-sm text-gray-700">
+          You are terminating <strong class="font-semibold text-gray-900">{{ terminateTargetDisplayName }}</strong>.
+        </p>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Termination date <span class="text-red-500">*</span></label>
+          <input
+            v-model="terminateForm.termination_date"
+            type="date"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Reason <span class="text-red-500">*</span></label>
+          <textarea
+            v-model="terminateForm.reason"
+            rows="3"
+            placeholder="e.g. Resigned — new opportunity"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-y min-h-[5rem]"
+          ></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Reassign subordinates to</label>
+          <select
+            v-model="terminateForm.reassign_subordinates_to"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
+            <option value="">— None —</option>
+            <option v-for="row in employeesForTerminateReassign" :key="row.id" :value="String(row.id)">
+              {{ row.name }}
+            </option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1.5">
+            Optional — required only when this employee manages others (per payroll rules). Sends the chosen employee&apos;s ID.
+          </p>
+        </div>
+      </div>
+    </HrModal>
+
     <!-- Delete Confirmation -->
     <SweetAlert2Modal
       v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE) && showDeleteConfirm"
@@ -317,7 +379,7 @@ import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
 import notyf from "@/components/global/notyf";
 import MultiSelect from '@/components/global/MultiSelect.vue';
-import { Edit, Trash2, Loader2 } from 'lucide-vue-next';
+import { Edit, Trash2, Loader2, UserMinus } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
 import { HR_PERMISSION } from '@/constants/hrPermissions';
 
@@ -431,6 +493,121 @@ const modalSaving = ref(false);
 // Delete Confirmation
 const showDeleteConfirm = ref(false);
 const deleteId = ref(null);
+
+// Terminate (payroll terminate API + modal)
+const showTerminateModal = ref(false);
+const terminateTarget = ref(null);
+const terminateSubmitting = ref(false);
+const terminateForm = ref({
+  termination_date: '',
+  reason: '',
+  /** Empty string means send null */
+  reassign_subordinates_to: '',
+});
+
+function isTerminatedEmployeeRow(emp) {
+  return (
+    String(emp?.personal_info?.status ?? '')
+      .trim()
+      .toLowerCase() === 'terminated'
+  );
+}
+
+/** While editing someone already terminated — status tab read-only. */
+const editingEmployeeWasTerminated = computed(
+  () =>
+    isEditing.value &&
+    String(originalForm.value?.status ?? '').trim().toLowerCase() === 'terminated',
+);
+
+const terminateTargetDisplayName = computed(() => {
+  const e = terminateTarget.value;
+  if (!e) return '';
+  const pi = e.personal_info || {};
+  return (
+    [pi.first_name, pi.last_name].filter(Boolean).join(' ').trim() ||
+    (e.name ? String(e.name).trim() : '') ||
+    `Employee #${e.id}`
+  );
+});
+
+const employeesForTerminateReassign = computed(() => {
+  const target = terminateTarget.value;
+  const tid = target?.id != null ? Number(target.id) : null;
+  const list = [];
+  for (const e of employees.value || []) {
+    if (!e || tid == null || Number.isNaN(tid)) continue;
+    if (Number(e.id) === tid) continue;
+    const pi = e.personal_info || {};
+    const name =
+      [pi.first_name, pi.last_name].filter(Boolean).join(' ').trim() ||
+      (e.name ? String(e.name).trim() : '') ||
+      `Employee #${e.id}`;
+    list.push({ id: e.id, name });
+  }
+  return list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+});
+
+const resetTerminateForm = () => {
+  terminateForm.value = {
+    termination_date: new Date().toISOString().slice(0, 10),
+    reason: '',
+    reassign_subordinates_to: '',
+  };
+};
+
+async function openTerminateModal(emp) {
+  if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)) return;
+  if (!emp?.id || isTerminatedEmployeeRow(emp)) return;
+  terminateTarget.value = emp;
+  resetTerminateForm();
+  showTerminateModal.value = true;
+  try {
+    await store.getEmployees();
+  } catch (e) {
+    console.error('Error refreshing employee list before terminate:', e);
+  }
+}
+
+function closeTerminateModal() {
+  showTerminateModal.value = false;
+  terminateTarget.value = null;
+  terminateSubmitting.value = false;
+}
+
+async function submitTerminateEmployee() {
+  if (!authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)) return;
+  const empId = terminateTarget.value?.id;
+  if (!empId) return;
+  const d = String(terminateForm.value.termination_date ?? '').trim();
+  const reason = String(terminateForm.value.reason ?? '').trim();
+  if (!d) {
+    notyf.error('Termination date is required');
+    return;
+  }
+  if (!reason) {
+    notyf.error('Reason is required');
+    return;
+  }
+  terminateSubmitting.value = true;
+  try {
+    const rawRe = terminateForm.value.reassign_subordinates_to;
+    const payload = {
+      termination_date: d,
+      reason,
+      reassign_subordinates_to:
+        rawRe !== null && rawRe !== undefined && String(rawRe).trim() !== ''
+          ? String(rawRe).trim()
+          : null,
+    };
+    await store.terminateEmployee(empId, payload);
+    closeTerminateModal();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    terminateSubmitting.value = false;
+  }
+}
 
 const form = ref({
   first_name: '',
@@ -787,6 +964,10 @@ const handleSubmit = async () => {
       const employeeFields = ['first_name', 'last_name', 'email', 'fingerPrint', 'manager_id', 'hiring_date', 'left_at', 'status'];
 
       for (const key of employeeFields) {
+        if (key === 'status' &&
+          String(form.value[key]).trim().toLowerCase() === 'terminated') {
+          continue;
+        }
         if (JSON.stringify(form.value[key]) !== JSON.stringify(originalForm.value[key])) {
           if (key === 'fingerPrint' && form.value[key] === '') continue;
           changes[key] = form.value[key];

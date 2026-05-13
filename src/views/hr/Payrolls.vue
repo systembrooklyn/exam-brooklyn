@@ -3,12 +3,23 @@
     <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Payroll Management</h1>
-        <p class="text-gray-500 mt-1">Manage employee payrolls, approvals, and payments</p>
+        <!-- <p class="text-gray-500 mt-1">Manage employee payrolls, approvals, and payments</p> -->
       </div>
 
       <div class="flex flex-wrap items-center gap-4">
         <!-- Filters -->
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-2 rounded-xl border border-indigo-200">
+          <div class="flex flex-col px-2 min-w-[200px] flex-1 sm:flex-none sm:min-w-[220px] max-w-md">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input
+              v-model="payrollSearchQuery"
+              type="search"
+              autocomplete="off"
+              placeholder="Employee name or fingerprint..."
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            />
+          </div>
+          <div class="w-px h-8 bg-gray-200 hidden sm:block"></div>
           <div class="flex flex-col px-2 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
             <div class="relative">
@@ -42,7 +53,7 @@
           <div class="w-px h-8 bg-gray-200"></div>
           <div class="flex items-center gap-2 px-2">
             <input v-model="filterForm.include_missing" type="checkbox" id="include_missing" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" @change="fetchPayrolls" />
-            <label for="include_missing" class="text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">Include Missing Payrolls</label>
+            <label for="include_missing" class="text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">Missing Payrolls</label>
           </div>
           <button
             @click="fetchPayrolls"
@@ -65,7 +76,7 @@
 
     <!-- Payrolls Table -->
     <PayrollsTable 
-      :items="store.actionablePayrolls" 
+      :items="filteredActionablePayrolls" 
       :loading="store.loading" 
       :fetchingId="fetchingId"
       :manual-adjustment-net-by-employee="manualAdjustmentNetByEmployee"
@@ -375,6 +386,45 @@ const getEmployeeName = (p) => {
   }
   return '-'
 }
+
+/** Lowercase haystack for client-side payroll list search (name + fingerprint + id). */
+function payrollRowSearchText(p) {
+  if (!p || typeof p !== 'object') return ''
+  const emp = p.employee || {}
+  const pi = emp.personal_info || {}
+  const u = emp.user || {}
+  const fp =
+    emp.fingerprint ??
+    emp.fingerPrint ??
+    u.fingerPrint ??
+    u.finger_print ??
+    pi.fingerPrint ??
+    pi.finger_print
+  const parts = [
+    getEmployeeName(p),
+    emp.name,
+    `${pi.first_name || ''} ${pi.last_name || ''}`.trim(),
+    emp.email,
+    pi.email,
+    u.email,
+    emp.id,
+    p.employee_id,
+    fp,
+  ]
+  return parts
+    .map((v) => String(v ?? '').trim().toLowerCase())
+    .filter(Boolean)
+    .join(' ')
+}
+
+const payrollSearchQuery = ref('')
+
+const filteredActionablePayrolls = computed(() => {
+  const list = Array.isArray(store.actionablePayrolls) ? store.actionablePayrolls : []
+  const q = payrollSearchQuery.value.trim().toLowerCase()
+  if (!q) return list
+  return list.filter((item) => payrollRowSearchText(item).includes(q))
+})
 
 // ─── Calculate Payroll Modal ──────────────────────────────
 const showCalcModal = ref(false)

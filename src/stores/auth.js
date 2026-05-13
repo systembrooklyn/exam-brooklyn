@@ -110,8 +110,29 @@ function extractUserAndPermissionsFromResponseBody(body) {
   if (!body || typeof body !== "object") {
     return { user: null, permissions: [] };
   }
-  const userRecord =
+  /**
+   * Some backends nest payroll `employee` (contracts, ids) beside `User` at the JSON root —
+   * e.g. `{ message, User: { id, name, ... }, employee: { id, contracts: [...] } }`.
+   * Store one merged object so `authStore.user.employee.contracts[].type` works for HR UI.
+   */
+  let userRecord =
     body.User ?? body.user ?? body.data?.User ?? body.data?.user ?? null;
+
+  const siblingEmployee =
+    body.data?.employee ?? body.employee ?? null;
+
+  if (userRecord && typeof userRecord === "object") {
+    if (siblingEmployee != null && typeof siblingEmployee === "object") {
+      const existingEmp = userRecord.employee ?? userRecord.Employee;
+      userRecord = {
+        ...userRecord,
+        employee:
+          existingEmp != null && typeof existingEmp === "object"
+            ? { ...siblingEmployee, ...existingEmp }
+            : siblingEmployee,
+      };
+    }
+  }
 
   const merged = new Set([
     ...collectPermissionSlugsFromArray(body.permissions),
@@ -339,6 +360,8 @@ export const useAuthStore = defineStore("authStore", () => {
       u.payroll_employee?.id,
       u.employee?.id,
       u.employee?.employee_id,
+      u.Employee?.id,
+      u.Employee?.employee_id,
       u.linked_employee_id,
       u.staff_id,
       u.payroll?.employee_id,

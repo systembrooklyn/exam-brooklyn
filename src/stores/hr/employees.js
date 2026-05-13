@@ -7,6 +7,7 @@ import {
   PAYROLL_EMPLOYEES,
   PAYROLL_MANAGERS,
   PAYROLL_ASSIGN_MANAGER,
+  PAYROLL_TERMINATE_EMPLOYEE,
 } from "@/api/Api";
 
 export const useHrEmployeesStore = defineStore("hr-employees", () => {
@@ -119,6 +120,37 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     }
   };
 
+  const terminateEmployee = async (employeeId, payload) => {
+    loading.value = true;
+    try {
+      const rid = payload?.reassign_subordinates_to;
+      let reassign = null;
+      if (rid != null && rid !== "") {
+        const n = Number(rid);
+        if (Number.isInteger(n) && n > 0) reassign = n;
+      }
+      const body = {
+        termination_date: String(payload?.termination_date ?? "").trim(),
+        reason: String(payload?.reason ?? "").trim(),
+        reassign_subordinates_to: reassign,
+      };
+      const response = await apiClient.post(
+        PAYROLL_TERMINATE_EMPLOYEE(employeeId),
+        body,
+      );
+      notyf.success(
+        response.data?.message || "Employee terminated successfully",
+      );
+      await getEmployees();
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     employees,
     managers,
@@ -130,5 +162,6 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     createEmployee,
     updateEmployee,
     deleteEmployee,
+    terminateEmployee,
   };
 });

@@ -1,22 +1,34 @@
 <template>
   <div
-    class="w-full overflow-x-auto bg-white shadow-md dark:bg-gray-800"
+    class="w-full overflow-x-auto dark:bg-gray-800"
     :class="
-      roundedTop
-        ? 'rounded-t-xl rounded-b-lg border border-[#624ff6]/20 dark:border-[#624ff6]/35 overflow-hidden'
-        : 'rounded-lg'
+      embedded
+        ? 'rounded-none border-0 bg-transparent shadow-none'
+        : roundedTop
+          ? 'rounded-t-xl rounded-b-lg border border-[#624ff6]/20 bg-white shadow-md dark:border-[#624ff6]/35 overflow-hidden'
+          : 'rounded-lg bg-white shadow-md'
     "
   >
     <div>
       <div class="flex flex-col pt-1 m-h-screen">
         <div
           v-if="showSearch"
-          class="bg-white items-center justify-between w-full flex rounded-full shadow-lg sticky"
-          :class="compact ? 'p-1.5 mb-3' : 'p-2 mb-5'"
-          style="top: 5px"
+          class="flex w-full items-center bg-white dark:bg-gray-800"
+          :class="
+            embedded
+              ? [
+                  'gap-2 border-b border-slate-200/90 px-3 py-3 sm:px-4',
+                  compact ? '' : '',
+                ]
+              : [
+                  'sticky items-center justify-between rounded-full shadow-lg',
+                  compact ? 'mb-3 p-1.5' : 'mb-5 p-2',
+                ]
+          "
+          :style="embedded ? undefined : 'top: 5px'"
         >
-          <div>
-            <div class="p-2 mr-1 rounded-full hover:bg-gray-100 cursor-pointer">
+          <div v-if="!embedded">
+            <div class="cursor-pointer rounded-full p-2 mr-1 hover:bg-gray-100">
               <svg
                 class="h-6 w-6 text-gray-500"
                 xmlns="http://www.w3.org/2000/svg"
@@ -31,12 +43,37 @@
               </svg>
             </div>
           </div>
+          <div
+            v-else
+            class="flex shrink-0 items-center justify-center rounded-lg border border-slate-200/80 bg-slate-50 p-2 text-slate-500 dark:border-gray-600 dark:bg-gray-700/80"
+            aria-hidden="true"
+          >
+            <svg
+              class="h-5 w-5"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
 
           <!-- Search Input with Blur Effect -->
           <input
-            class="font-bold uppercase rounded-full w-full pl-4 text-gray-700 bg-gray-100 leading-tight focus:outline-none focus:shadow-outline text-xs"
+            class="w-full leading-tight focus:outline-none focus:ring-2 focus:ring-primary/20"
             :class="[
-              compact ? 'py-2 lg:text-xs' : 'py-4 lg:text-sm',
+              embedded
+                ? [
+                    'min-w-0 rounded-lg border border-slate-200 bg-white py-2.5 pl-3 pr-3 text-sm font-medium text-slate-800 placeholder:text-slate-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100',
+                  ]
+                : [
+                    'rounded-full bg-gray-100 pl-4 font-bold uppercase text-gray-700 focus:shadow-outline text-xs',
+                    compact ? 'py-2 lg:text-xs' : 'py-4 lg:text-sm',
+                  ],
               {
                 'blur-effect':
                   filteredItems?.length === 0 && search.length > 0,
@@ -44,7 +81,7 @@
             ]"
             type="text"
             v-model="search"
-            placeholder="Search by name..."
+            :placeholder="embedded ? 'Search by name...' : 'Search...'"
           />
         </div>
       </div>
@@ -52,7 +89,7 @@
 
     <!-- Loading Spinner -->
     <div
-      v-if="!filteredItems.length && loading"
+      v-if="!sortedFilteredItems.length && loading"
       :class="compact ? 'flex justify-center items-center py-10' : 'flex justify-center items-center py-20'"
     >
       <div
@@ -63,22 +100,60 @@
     <div v-else>
       <!-- Table -->
       <table
-        class="min-w-[600px] w-full divide-y text-center divide-gray-200"
+        class="w-full min-w-[960px] table-auto divide-y divide-gray-200 text-center dark:divide-gray-700 md:min-w-[1024px]"
         :class="compact ? 'text-sm' : ''"
       >
-        <thead class="bg-gradient-to-r bg-primary text-white">
+        <thead
+          class="bg-primary text-white antialiased"
+          :class="[
+            embedded ? 'sticky top-0 z-[2] shadow-md' : 'bg-gradient-to-r',
+            cellsCentered &&
+              'border-b border-white/15 shadow-[inset_0_-1px_0_0_rgba(255,255,255,0.12)]',
+          ]"
+        >
           <tr>
             <th
               v-for="header in headers"
               :key="header.key"
-              class="text-center font-semibold tracking-wide"
+              class="font-semibold tracking-wide text-center align-middle"
               :class="
                 compact
                   ? 'px-3.5 py-3 text-sm sm:text-[0.9375rem]'
                   : 'px-6 py-4 text-base'
               "
             >
-              {{ header.label }}
+              <button
+                v-if="header.sortable"
+                type="button"
+                class="mx-auto flex w-full max-w-[11rem] items-center justify-center gap-1.5 rounded-lg px-1 py-1 text-center font-semibold tracking-wide text-white transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+                @click="toggleSortByColumn(header)"
+                :aria-sort="
+                  sortColumnKey === header.key
+                    ? sortDirection === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none'
+                "
+                :aria-label="`Sort by ${header.label}`"
+              >
+                <span class="leading-snug">{{ header.label }}</span>
+                <ArrowUpWideNarrow
+                  v-if="sortHeaderState(header) === 'asc'"
+                  class="size-4 shrink-0 opacity-95"
+                  aria-hidden="true"
+                />
+                <ArrowDownWideNarrow
+                  v-else-if="sortHeaderState(header) === 'desc'"
+                  class="size-4 shrink-0 opacity-95"
+                  aria-hidden="true"
+                />
+                <ArrowUpDown
+                  v-else
+                  class="size-4 shrink-0 opacity-55"
+                  aria-hidden="true"
+                />
+              </button>
+              <template v-else>{{ header.label }}</template>
             </th>
             <th
               v-if="showEmployeeReply"
@@ -105,32 +180,25 @@
           </tr>
         </thead>
 
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="divide-y divide-gray-200 bg-white dark:divide-gray-700">
           <!-- Render data rows -->
           <tr
             v-for="item in paginatedItems"
             :key="item.id"
-            class="hover:bg-gray-50 transition-colors"
+            class="transition-colors duration-150 ease-out"
+            :class="
+              cellsCentered
+                ? 'even:bg-slate-50/60 odd:bg-white hover:bg-slate-100/70 dark:even:bg-slate-900/35 dark:hover:bg-slate-800/40'
+                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+            "
           >
             <td
               v-for="header in headers"
               :key="header.key"
-              class="break-words align-middle"
-              :class="[
-                compact ? 'px-3 py-2' : 'px-6 py-4',
-                collapsibleTextKeys.includes(header.key)
-                  ? 'whitespace-normal text-start max-w-[12rem] sm:max-w-[14rem]'
-                  : header.key === 'field'
-                    ? 'whitespace-normal max-w-[11rem] sm:max-w-[13rem]'
-                    : header.key === 'student_st_num_and_id'
-                      ? 'whitespace-normal text-start align-middle'
-                    : attributedReplyKeys.includes(header.key)
-                      ? 'whitespace-normal text-start align-top max-w-[min(92vw,26rem)] sm:max-w-lg lg:max-w-2xl'
-                  : 'whitespace-nowrap',
-              ]"
+              :class="bodyTdClass(header)"
             >
               <!-- Special handling for Courses column -->
-              <div v-if="header.key === 'courses'">
+              <div v-if="header.key === 'courses'" :class="cellsCentered ? 'text-center' : ''">
                 <span>
                   {{
                     item.courses
@@ -156,7 +224,10 @@
 
               <div
                 v-else-if="header.key === 'student_st_num_and_id'"
-                class="text-start font-medium text-gray-900 dark:text-gray-100 tabular-nums"
+                :class="[
+                  cellsCentered ? 'text-center' : 'text-start',
+                  'font-medium text-gray-900 dark:text-gray-100 tabular-nums',
+                ]"
               >
                 <span class="text-xs sm:text-sm">{{
                   formatStudentNumAndId(item)
@@ -170,14 +241,17 @@
                 {{ badgeDisplayText(item, header.key) }}
               </span>
 
-              <div v-else-if="collapsibleTextKeys.includes(header.key)">
-                <span class="whitespace-pre-wrap break-words leading-snug">{{
-                  displayCollapsibleText(item, header.key)
-                }}</span>
+              <div v-else-if="collapsibleTextKeys.includes(header.key)" :class="cellsCentered ? 'flex flex-col items-center gap-0.5' : ''">
+                <span class="whitespace-pre-wrap break-words leading-snug">{{ displayCollapsibleText(item, header.key) }}</span>
                 <button
                   v-if="collapsibleNeedsToggle(item, header.key)"
                   type="button"
-                  class="mt-0.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs font-medium underline-offset-2 hover:underline block w-full text-start"
+                  class="mt-0.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs font-medium underline-offset-2 hover:underline"
+                  :class="
+                    cellsCentered
+                      ? 'mx-auto inline-block w-auto text-center'
+                      : 'block w-full text-start'
+                  "
                   @click="toggleTextMore(item.id, header.key)"
                 >
                   {{
@@ -190,7 +264,8 @@
 
               <div
                 v-else-if="attributedReplyKeys.includes(header.key)"
-                class="min-w-0 w-full text-start"
+                class="min-w-0 w-full"
+                :class="cellsCentered ? 'flex flex-col items-center text-center' : 'text-start'"
               >
                 <template
                   v-if="!String(rawCellValue(item, header.key) ?? '').trim()"
@@ -283,6 +358,21 @@
                 </template>
               </div>
 
+              <!-- Booking: date on first line, full time (incl. AM/PM) on second -->
+              <div
+                v-else-if="header.key === 'booking_datetime'"
+                class="flex flex-col gap-0.5 leading-tight tabular-nums"
+                :class="cellsCentered ? 'items-center text-center' : 'items-center'"
+              >
+                <template v-for="bd in [bookingDatetimeLines(item)]" :key="`${item?.id}-${bd?.dateLine ?? ''}-${bd?.timeLine ?? ''}`">
+                  <template v-if="bd">
+                    <span class="text-gray-900 dark:text-gray-100">{{ bd.dateLine }}</span>
+                    <span class="text-slate-600 dark:text-slate-400">{{ bd.timeLine }}</span>
+                  </template>
+                  <span v-else class="text-gray-400 dark:text-gray-500">—</span>
+                </template>
+              </div>
+
               <!-- Default rendering for other columns -->
               <span
                 v-else-if="
@@ -290,19 +380,24 @@
                   (header.key === 'name' || header.key === 'student.name')
                 "
                 @click="showDetails(item)"
-                class="cursor-pointer font-semibold text-indigo-600 hover:text-indigo-800"
+                :class="
+                  cellsCentered
+                    ? 'inline-flex cursor-pointer font-semibold text-indigo-600 hover:text-indigo-800'
+                    : 'cursor-pointer font-semibold text-indigo-600 hover:text-indigo-800'
+                "
               >
                 {{ getValueByPath(item, header.key) }}
               </span>
-              <span v-else>
-                {{ getValueByPath(item, header.key) }}
-              </span>
+              <span v-else :class="cellsCentered && 'inline-block max-w-full'">{{ getValueByPath(item, header.key) }}</span>
             </td>
 
             <td
               v-if="showEmployeeReply"
               class="whitespace-nowrap align-middle"
-              :class="compact ? 'px-3 py-2' : 'px-6 py-4'"
+              :class="[
+                compact ? 'px-3 py-2' : 'px-6 py-4',
+                cellsCentered && 'text-center',
+              ]"
             >
               <button
                 v-if="canShowEmployeeReplyButton(item)"
@@ -319,8 +414,11 @@
 
             <td
               v-if="!hideActions"
-              class="whitespace-nowrap space-x-6"
-              :class="compact ? 'px-3 py-2' : 'px-6 py-4'"
+              class="space-x-6 whitespace-nowrap"
+              :class="[
+                compact ? 'px-3 py-2' : 'px-6 py-4',
+                cellsCentered ? 'text-center' : '',
+              ]"
             >
               <button
                 v-if="canEdit"
@@ -347,16 +445,19 @@
           </tr>
 
           <!-- No results found for the search -->
-          <tr v-if="filteredItems.length === 0 && search.length > 0">
+          <tr v-if="sortedFilteredItems.length === 0 && search.length > 0">
             <td
               :colspan="headers.length + tailColumnCount"
-              class="text-start font-bold text-gray-700"
-              :class="compact ? 'px-3 py-2 text-sm' : 'px-6 py-4'"
+              class="font-bold text-gray-700 dark:text-gray-300"
+              :class="[
+                compact ? 'px-3 py-2 text-sm' : 'px-6 py-4',
+                cellsCentered ? 'text-center' : 'text-start',
+              ]"
             >
               No results found for "{{ search }}".
             </td>
           </tr>
-          <tr v-if="filteredItems.length === 0 && !loading">
+          <tr v-if="sortedFilteredItems.length === 0 && !loading">
             <td
               :colspan="headers.length + tailColumnCount"
               class="text-center font-bold text-gray-600"
@@ -370,25 +471,26 @@
 
       <!-- Pagination -->
       <div
-        class="flex justify-center gap-3 mt-4 p-4"
-        v-if="filteredItems.length > 0"
+        class="mt-4 flex justify-center gap-3 border-t border-slate-100 p-4"
+        :class="embedded ? 'bg-slate-50/60' : ''"
+        v-if="sortedFilteredItems.length > 0"
       >
         <button
           @click="goToPreviousPage"
           :disabled="currentPage === 1"
-          class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:opacity-50"
+          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45"
         >
           Previous
         </button>
         <div class="flex items-center">
-          <span class="text-sm text-gray-500">
+          <span class="text-sm text-slate-600">
             Page {{ currentPage }} of {{ totalPages }}
           </span>
         </div>
         <button
           @click="goToNextPage"
           :disabled="currentPage === totalPages"
-          class="px-4 py-2 bg-indigo-500 text-white rounded-md hover:bg-indigo-600 disabled:opacity-50"
+          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45"
         >
           Next
         </button>
@@ -410,7 +512,7 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { Edit, MessageCircleReply, Trash2 } from "lucide-vue-next";
+import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-vue-next";
 import DetailsPopup from "../global/DetailsPopup.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -467,6 +569,21 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  /** Body cells horizontally centered (padding unchanged). */
+  cellsCentered: {
+    type: Boolean,
+    default: false,
+  },
+  /** Column keys that use tabular-nums while staying centered when applicable. */
+  tabularColumnKeys: {
+    type: Array,
+    default: () => [],
+  },
+  /** Sits inside a parent card: no outer shadow/radius/border so layout stays one surface. */
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
   /** Rounded top corners + light accent border (e.g. below filter strip). */
   roundedTop: {
     type: Boolean,
@@ -503,6 +620,40 @@ const tailColumnCount = computed(() => {
   if (props.showEmployeeReply) n += 1;
   return n;
 });
+
+/** Density + horizontal alignment per column key (padding unchanged). */
+function bodyTdClass(header) {
+  const pad = props.compact ? "px-3 py-2" : "px-6 py-4";
+  const tab = props.tabularColumnKeys?.includes(header.key) ? "tabular-nums" : "";
+  const c = props.cellsCentered ? "text-center" : "";
+
+  if (props.collapsibleTextKeys.includes(header.key)) {
+    const ha = props.cellsCentered ? "text-center" : "text-start";
+    return ["break-words", "align-middle", pad, "whitespace-normal", ha, "max-w-[12rem] sm:max-w-[14rem]", tab].filter(Boolean).join(" ");
+  }
+  if (header.key === "field") {
+    const parts = ["break-words", "align-middle", pad, "whitespace-normal", "max-w-[11rem] sm:max-w-[13rem]"];
+    if (props.cellsCentered) parts.push("text-center");
+    if (tab) parts.push(tab);
+    return parts.join(" ");
+  }
+  if (header.key === "student_st_num_and_id") {
+    const ha = props.cellsCentered ? "text-center" : "text-start";
+    return ["break-words", "align-middle", pad, "whitespace-normal", ha, "tabular-nums"].join(" ");
+  }
+  if (props.attributedReplyKeys.includes(header.key)) {
+    const ha = props.cellsCentered ? "text-center" : "text-start";
+    return ["break-words", pad, "whitespace-normal", ha, "align-top", "max-w-[min(92vw,26rem)] sm:max-w-lg lg:max-w-2xl", tab].filter(Boolean).join(" ");
+  }
+  if (header.key === "booking_datetime") {
+    return ["break-words", "align-middle", pad, "whitespace-normal", c, "tabular-nums"].filter(Boolean).join(" ");
+  }
+
+  const parts = ["break-words", "align-middle", pad, "whitespace-nowrap"];
+  if (c) parts.push(c);
+  if (tab) parts.push(tab);
+  return parts.join(" ");
+}
 
 function canShowEmployeeReplyButton(item) {
   const v = item?.employee_response;
@@ -571,6 +722,27 @@ const search = ref("");
 const currentPage = ref(1);
 const itemsPerPage = 10;
 const selectedExam = ref(null);
+
+const sortColumnKey = ref(null);
+const sortDirection = ref("desc");
+
+function sortHeaderState(header) {
+  if (!header?.sortable) return "idle";
+  if (sortColumnKey.value !== header.key) return "idle";
+  return sortDirection.value;
+}
+
+function toggleSortByColumn(header) {
+  if (!header?.sortable) return;
+  const k = header.key;
+  if (sortColumnKey.value !== k) {
+    sortColumnKey.value = k;
+    sortDirection.value = "desc";
+  } else {
+    sortDirection.value = sortDirection.value === "desc" ? "asc" : "desc";
+  }
+  currentPage.value = 1;
+}
 
 // Function to check if the user has the required permission
 
@@ -716,6 +888,63 @@ const formatDateShort = (date) => {
   });
 };
 
+/** Two-line booking display: date row, then time row (keeps AM/PM with the time). */
+function formatBookingDatetimeParts(raw) {
+  if (raw == null || raw === "") return null;
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const dateLine = d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const timeLine = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  return { dateLine, timeLine };
+}
+
+function bookingDatetimeLines(item) {
+  return formatBookingDatetimeParts(item?.booking_datetime);
+}
+
+function formatBookingDatetimeForSearch(raw) {
+  const p = formatBookingDatetimeParts(raw);
+  if (!p) return typeof raw === "string" ? raw : "";
+  return `${p.dateLine} ${p.timeLine}`;
+}
+
+function comparableSortValue(item, path) {
+  if (!item || !path) return "";
+  if (path === "booking_datetime") {
+    const t = new Date(item.booking_datetime ?? 0).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  }
+  const v = path.split(".").reduce((o, k) => (o != null ? o[k] : undefined), item);
+  if (v == null || v === "") return "";
+  if (typeof v === "number") return v;
+  if (typeof v === "boolean") return v ? 1 : 0;
+  if (Array.isArray(v)) return v.join(",").toLowerCase();
+  return String(v).toLowerCase();
+}
+
+function compareSortItems(a, b, path, direction) {
+  const va = comparableSortValue(a, path);
+  const vb = comparableSortValue(b, path);
+  const dir = direction === "asc" ? 1 : -1;
+  if (va === vb) return 0;
+  if (typeof va === "number" && typeof vb === "number") {
+    return (va - vb) * dir;
+  }
+  return (
+    String(va).localeCompare(String(vb), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }) * dir
+  );
+}
+
 const filteredItems = computed(() => {
   if (!search.value) return props.items;
   const lowerSearch = search.value.toLowerCase();
@@ -729,23 +958,32 @@ const filteredItems = computed(() => {
   );
 });
 
+const sortedFilteredItems = computed(() => {
+  const list = [...filteredItems.value];
+  const key = sortColumnKey.value;
+  if (!key) return list;
+  const direction = sortDirection.value;
+  list.sort((a, b) => compareSortItems(a, b, key, direction));
+  return list;
+});
+
 const totalPages = computed(() => {
-  return Math.ceil(filteredItems.value.length / itemsPerPage);
+  return Math.ceil(sortedFilteredItems.value.length / itemsPerPage);
 });
 
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
-  return filteredItems.value.slice(start, end);
+  return sortedFilteredItems.value.slice(start, end);
 });
 
 function getValueByPath(obj, path) {
-  if (
-    path === "created_at" ||
-    path === "updated_at" ||
-    path === "Updated_at" ||
-    path === "booking_datetime"
-  ) {
+  if (path === "booking_datetime") {
+    const raw = obj[path];
+    return formatBookingDatetimeForSearch(raw);
+  }
+
+  if (path === "created_at" || path === "updated_at" || path === "Updated_at") {
     const raw = obj[path];
     return props.compact ? formatDateShort(raw) : formatDate(raw);
   }
