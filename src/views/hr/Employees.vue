@@ -343,7 +343,7 @@
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-y min-h-[5rem]"
           ></textarea>
         </div>
-        <div>
+        <div v-if="terminateTargetIsManager">
           <label class="block text-sm font-medium text-gray-700 mb-1">Reassign subordinates to</label>
           <select
             v-model="terminateForm.reassign_subordinates_to"
@@ -354,7 +354,7 @@
             </option>
           </select>
           <p class="text-xs text-gray-500 mt-1.5">
-            Optional — required only when this employee manages others (per payroll rules). Sends the chosen employee&apos;s ID.
+            Choose who receives this manager&apos;s direct reports after termination (payroll expects an employee ID when applicable).
           </p>
         </div>
       </div>
@@ -505,6 +505,15 @@ const terminateForm = ref({
   reassign_subordinates_to: '',
 });
 
+/** Payroll employee list row: manages others (`GET .../employees` → `is_manager`). */
+function employeeRowIsManager(emp) {
+  if (!emp || typeof emp !== 'object') return false;
+  const v = emp.is_manager ?? emp.IsManager;
+  if (v === true || v === 1) return true;
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return s === '1' || s === 'true' || s === 'yes';
+}
+
 function isTerminatedEmployeeRow(emp) {
   return (
     String(emp?.personal_info?.status ?? '')
@@ -518,6 +527,10 @@ const editingEmployeeWasTerminated = computed(
   () =>
     isEditing.value &&
     String(originalForm.value?.status ?? '').trim().toLowerCase() === 'terminated',
+);
+
+const terminateTargetIsManager = computed(() =>
+  employeeRowIsManager(terminateTarget.value),
 );
 
 const terminateTargetDisplayName = computed(() => {
@@ -564,6 +577,10 @@ async function openTerminateModal(emp) {
   showTerminateModal.value = true;
   try {
     await store.getEmployees();
+    const fresh = (store.employees || []).find(
+      (e) => Number(e?.id) === Number(emp.id),
+    );
+    if (fresh) terminateTarget.value = fresh;
   } catch (e) {
     console.error('Error refreshing employee list before terminate:', e);
   }
@@ -591,7 +608,10 @@ async function submitTerminateEmployee() {
   }
   terminateSubmitting.value = true;
   try {
-    const rawRe = terminateForm.value.reassign_subordinates_to;
+    const rawRe =
+      terminateTargetIsManager.value ?
+        terminateForm.value.reassign_subordinates_to :
+        '';
     const payload = {
       termination_date: d,
       reason,
