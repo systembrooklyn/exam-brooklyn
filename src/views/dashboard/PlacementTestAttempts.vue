@@ -26,7 +26,7 @@
       </div>
 
       <div
-        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[40%] "
+        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[40%] mx-auto"
       >
         <p
           class="flex items-center gap-1 text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
@@ -156,6 +156,16 @@
               </div>
             </div>
             <div class="flex items-center gap-3 shrink-0">
+              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 1)"
+                class="inline-flex cursor-pointer items-center justify-center gap-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 text-green-800 dark:text-green-200 font-medium text-xs px-2 py-1 rounded-md transition">
+                Force Pass
+                <CheckCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              </button>
+              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 0)"
+                class="inline-flex cursor-pointer items-center justify-center gap-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-800 dark:text-red-200 font-medium text-xs px-2 py-1 rounded-md transition">
+                Force Fail
+                <XCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              </button>
               <span :class="statusClass(group.overallStatus)" class="text-[10px] sm:text-xs">
                 {{ formatStatus(group.overallStatus) }}
               </span>
@@ -264,8 +274,38 @@
           <p class="text-gray-600 dark:text-gray-400 text-sm sm:text-base mt-2 max-w-md mx-auto leading-relaxed">
             {{ emptyStateSubtitle }}
           </p>
-       
         </template>
+      </div>
+
+      <!-- Final Acceptance Modal -->
+      <div v-if="showFinalAcceptanceModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity" @click="showFinalAcceptanceModal = false">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden p-5 animate-in zoom-in-95 duration-200" @click.stop>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <span v-if="finalAcceptanceType === 1" class="text-green-600"><CheckCircle class="w-5 h-5"/></span>
+            <span v-else class="text-red-600"><XCircle class="w-5 h-5"/></span>
+            {{ finalAcceptanceType === 1 ? 'Force Pass' : 'Force Fail' }}
+          </h3>
+          <textarea
+            v-model="finalAcceptanceNotes"
+            rows="3"
+            class="w-full p-4 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-600 focus:border-gray-300 dark:focus:border-gray-600 outline-none resize-none"
+            placeholder="Type your notes here..."
+          ></textarea>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+              @click="showFinalAcceptanceModal = false" :disabled="loadingFinalAcceptance">
+              Cancel
+            </button>
+            <button type="button"
+              class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none"
+              :class="finalAcceptanceType === 1 ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+              @click="submitFinalAcceptance" :disabled="loadingFinalAcceptance">
+              <Loader2 v-if="loadingFinalAcceptance" class="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              Confirm
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -273,9 +313,9 @@
 
 <script setup>
 import { computed, onMounted, ref, watch } from "vue";
-import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal, ChevronDown, User, Mail, Copy, Phone, Activity } from "lucide-vue-next";
+import { Calendar, IdCard, Loader2, RefreshCw, SlidersHorizontal, ChevronDown, User, Mail, Copy, Phone, Activity, CheckCircle, XCircle } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
-import { PT_ATTEMPTS } from "@/api/Api";
+import { PT_ATTEMPTS, FINAL_ACCEPTANCE } from "@/api/Api";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
 import notyf from "@/components/global/notyf";
 
@@ -429,6 +469,42 @@ const contactPhones = computed(() => {
 });
 
 const expandedStudents = ref([]);
+
+const showFinalAcceptanceModal = ref(false);
+const finalAcceptanceStudentId = ref(null);
+const finalAcceptanceType = ref(0);
+const finalAcceptanceNotes = ref("");
+const loadingFinalAcceptance = ref(false);
+
+function openFinalAcceptanceModal(studentId, type) {
+  finalAcceptanceStudentId.value = studentId;
+  finalAcceptanceType.value = type;
+  finalAcceptanceNotes.value = "";
+  showFinalAcceptanceModal.value = true;
+}
+
+async function submitFinalAcceptance() {
+  if (!finalAcceptanceStudentId.value) {
+    notyf.error("Student ID is missing.");
+    return;
+  }
+  loadingFinalAcceptance.value = true;
+  try {
+    const payload = {
+      student_id: finalAcceptanceStudentId.value,
+      is_accepted: finalAcceptanceType.value,
+      notes: finalAcceptanceNotes.value
+    };
+    await apiClient.post(FINAL_ACCEPTANCE, payload);
+    notyf.success(finalAcceptanceType.value === 1 ? "Force passed successfully" : "Force failed successfully");
+    showFinalAcceptanceModal.value = false;
+  } catch (e) {
+    const msg = e?.response?.data?.message || e?.response?.data?.error || e?.message || "Action failed";
+    notyf.error(msg);
+  } finally {
+    loadingFinalAcceptance.value = false;
+  }
+}
 
 function toggleStudent(id) {
   const idx = expandedStudents.value.indexOf(id);
