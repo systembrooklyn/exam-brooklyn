@@ -279,6 +279,18 @@
                     <div class="border-2 border-gray-300 border-t-green-600 rounded-full w-3.5 h-3.5 animate-spin" />
                   </div>
                 </div>
+                <button type="button"
+                  class="inline-flex items-center justify-center gap-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 text-green-800 dark:text-green-200 font-medium text-xs px-2 py-1 rounded-md transition"
+                  @click="openFinalAcceptanceModal(row, 1)">
+                  Force Pass
+                  <CheckCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                </button>
+                <button type="button"
+                  class="inline-flex items-center justify-center gap-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-800 dark:text-red-200 font-medium text-xs px-2 py-1 rounded-md transition"
+                  @click="openFinalAcceptanceModal(row, 0)">
+                  Force Fail
+                  <XCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                </button>
                 <button v-if="!hasEmployeeReply(row) && canEmpReply" type="button"
                   class="inline-flex items-center justify-center gap-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-medium text-xs px-2 py-1 rounded-md transition"
                   @click="openReplyModal(row, 'emp_res')">
@@ -399,6 +411,37 @@
 
       <ReplyRequestModal v-if="showReplyModal" v-model="showReplyModal" :field-key="replyKey"
         :loading-reply="loadingReply" @send-reply="handleReply" />
+
+      <!-- Final Acceptance Modal -->
+      <div v-if="showFinalAcceptanceModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 transition-opacity">
+        <div class="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-xl overflow-hidden p-5 animate-in zoom-in-95 duration-200">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+            <span v-if="finalAcceptanceType === 1" class="text-green-600"><CheckCircle class="w-5 h-5"/></span>
+            <span v-else class="text-red-600"><XCircle class="w-5 h-5"/></span>
+            {{ finalAcceptanceType === 1 ? 'Force Pass' : 'Force Fail' }}
+          </h3>
+          <textarea
+            v-model="finalAcceptanceNotes"
+            rows="3"
+            class="w-full p-5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-1 focus:ring-gray-300 focus:border-gray-300 outline-none resize-none"
+            placeholder="Type your notes here..."
+          ></textarea>
+          <div class="mt-4 flex justify-end gap-2">
+            <button type="button"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none"
+              @click="showFinalAcceptanceModal = false" :disabled="loadingFinalAcceptance">
+              Cancel
+            </button>
+            <button type="button"
+              class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white rounded-lg transition-colors focus:outline-none"
+              :class="finalAcceptanceType === 1 ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'"
+              @click="submitFinalAcceptance" :disabled="loadingFinalAcceptance">
+              <Loader2 v-if="loadingFinalAcceptance" class="w-3.5 h-3.5 mr-1.5 animate-spin" />
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -425,9 +468,11 @@ import {
   UserPen,
   UserRound,
   UsersRound,
+  CheckCircle,
+  XCircle,
 } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
-import { GET_STUDENT_REQUEST_EMP } from "@/api/Api";
+import { GET_STUDENT_REQUEST_EMP, FINAL_ACCEPTANCE } from "@/api/Api";
 import formatDate from "@/components/global/FormDate";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
 import ReplyRequestModal from "@/components/srmDashboard/ReplyRequestModal.vue";
@@ -459,6 +504,41 @@ const showReplyModal = ref(false);
 const selectedRequestId = ref(null);
 const replyKey = ref("emp_res");
 const loadingReply = ref(false);
+
+const showFinalAcceptanceModal = ref(false);
+const finalAcceptanceStudentId = ref(null);
+const finalAcceptanceType = ref(0);
+const finalAcceptanceNotes = ref("");
+const loadingFinalAcceptance = ref(false);
+
+function openFinalAcceptanceModal(row, type) {
+  finalAcceptanceStudentId.value = row.student?.id ?? row.student_id;
+  finalAcceptanceType.value = type;
+  finalAcceptanceNotes.value = "";
+  showFinalAcceptanceModal.value = true;
+}
+
+async function submitFinalAcceptance() {
+  if (!finalAcceptanceStudentId.value) {
+    notyf.error("Student ID is missing.");
+    return;
+  }
+  loadingFinalAcceptance.value = true;
+  try {
+    const payload = {
+      student_id: finalAcceptanceStudentId.value,
+      is_accepted: finalAcceptanceType.value,
+      notes: finalAcceptanceNotes.value
+    };
+    await apiClient.post(FINAL_ACCEPTANCE, payload);
+    notyf.success(finalAcceptanceType.value === 1 ? "Force passed successfully" : "Force failed successfully");
+    showFinalAcceptanceModal.value = false;
+  } catch (error) {
+    handleError(error);
+  } finally {
+    loadingFinalAcceptance.value = false;
+  }
+}
 
 const sortOrder = ref("desc");
 const currentPage = ref(1);
