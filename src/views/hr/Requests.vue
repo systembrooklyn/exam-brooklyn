@@ -22,10 +22,10 @@
           !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
           store.loading
           " class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" :class="selectedRequestIds.length > 0 &&
-              authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
-              !store.loading
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
-              : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+            authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+            !store.loading
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
+            : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
             " @click="confirmBulkApprove">
           Bulk approve
         </button>
@@ -330,15 +330,15 @@
           <div v-if="showCreateTargetTabs" class="flex p-1 bg-gray-100 rounded-xl gap-1">
             <button type="button"
               class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer" :class="createRequestTarget === 'self'
-                  ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
-                  : 'text-gray-500 hover:bg-gray-200/50'
+                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                : 'text-gray-500 hover:bg-gray-200/50'
                 " @click="setCreateTargetSelf">
               For myself
             </button>
             <button type="button"
               class="flex-1 py-2.5 px-3 text-sm font-semibold rounded-lg transition-all cursor-pointer" :class="createRequestTarget === 'other'
-                  ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
-                  : 'text-gray-500 hover:bg-gray-200/50'
+                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                : 'text-gray-500 hover:bg-gray-200/50'
                 " @click="setCreateTargetOther">
               For another employee
             </button>
@@ -1427,6 +1427,27 @@ function attachEmployeeIdIfCreatingForOther(payload) {
   return { ...payload, employee_id: eid };
 }
 
+/** On PUT edit, include request status when approver changes it in the modal. */
+function attachEditStatusToPayload(payload) {
+  if (!payload) return null;
+  if (
+    isEditing.value &&
+    authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)
+  ) {
+    const s = String(form.value.status ?? '').trim().toLowerCase();
+    if (s === 'pending' || s === 'approved' || s === 'rejected') {
+      return { ...payload, status: s };
+    }
+  }
+  return payload;
+}
+
+function finalizeRequestPayload(payload) {
+  const withEmployee = attachEmployeeIdIfCreatingForOther(payload);
+  if (!withEmployee) return null;
+  return attachEditStatusToPayload(withEmployee);
+}
+
 /**
  * Same shape as POST create — used for both create and PUT update.
  * @returns {object|null}
@@ -1439,19 +1460,17 @@ function buildRequestPayloadFromForm() {
 
   const otRt = normalizeRequestTypeSlug(form.value.request_type);
   if (isServerCalculatedOvertime(otRt)) {
-    const base = {
+    return finalizeRequestPayload({
       request_type: otRt,
       day: form.value.day,
-    };
-    return attachEmployeeIdIfCreatingForOther(base);
+    });
   }
 
   if (form.value.request_type === 'absence') {
-    const base = {
+    return finalizeRequestPayload({
       request_type: 'absence',
       day: form.value.day,
-    };
-    return attachEmployeeIdIfCreatingForOther(base);
+    });
   }
 
   const usesFromTo = requestModalUsesFromToTime(form.value.request_type);
@@ -1516,20 +1535,7 @@ function buildRequestPayloadFromForm() {
     payload.duration_type = form.value.duration_type;
   }
 
-  const out = attachEmployeeIdIfCreatingForOther(payload);
-  if (!out) return null;
-
-  if (
-    isEditing.value &&
-    authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)
-  ) {
-    const s = String(form.value.status ?? '').trim().toLowerCase();
-    if (s === 'pending' || s === 'approved' || s === 'rejected') {
-      out.status = s;
-    }
-  }
-
-  return out;
+  return finalizeRequestPayload(payload);
 }
 
 const handleSubmit = async () => {

@@ -88,6 +88,9 @@ export function buildEmployeeRequestApiPayload(payload) {
       const n = Number(eid);
       if (Number.isFinite(n)) body.employee_id = n;
     }
+    if (payload.status != null && String(payload.status).trim() !== "") {
+      body.status = String(payload.status).trim().toLowerCase();
+    }
     return body;
   }
   if (rt === "absence" || rt === "work_from_home" || rt === "double_paid") {
