@@ -135,7 +135,7 @@ const systems = [
     name: "Placement Test Scores",
     route: "/placement-test-attempts",
     image: Placement2,
-    // requiresPermission: "view-placementTest",
+    requiresPermission: "view-placementTestScoreCard",
   },
 ];
 

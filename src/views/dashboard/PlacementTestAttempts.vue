@@ -156,12 +156,12 @@
               </div>
             </div>
             <div class="flex items-center gap-3 shrink-0">
-              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 1)"
+              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 1)" v-if="authStore.can('action-final-acceptance')"
                 class="inline-flex cursor-pointer items-center justify-center gap-1 bg-green-100 hover:bg-green-200 dark:bg-green-900/40 dark:hover:bg-green-900/60 text-green-800 dark:text-green-200 font-medium text-xs px-2 py-1 rounded-md transition">
                 Force Pass
                 <CheckCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               </button>
-              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 0)"
+              <button type="button" @click.stop="openFinalAcceptanceModal(group.student.id, 0)" v-if="authStore.can('action-final-acceptance')"
                 class="inline-flex cursor-pointer items-center justify-center gap-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-800 dark:text-red-200 font-medium text-xs px-2 py-1 rounded-md transition">
                 Force Fail
                 <XCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
@@ -318,6 +318,9 @@ import apiClient from "@/api/axiosInstance";
 import { PT_ATTEMPTS, FINAL_ACCEPTANCE } from "@/api/Api";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
 import notyf from "@/components/global/notyf";
+import { useAuthStore } from "@/stores/auth";
+
+const authStore = useAuthStore();
 
 const filterLabelClass =
   "block text-[8px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-0.5";
