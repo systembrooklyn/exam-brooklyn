@@ -47,6 +47,11 @@ const routes = [
     component: () => import("@/views/dashboard/StudentRequestsEmp.vue"),
   },
   {
+    path: "/papers",
+    name: "papers-all",
+    component: () => import("@/views/dashboard/PapersAll.vue"),
+  },
+  {
     path: "/placement-test-attempts",
     name: "placement-test-attempts",
     meta: { requiresPermission: "view-placementTest" },

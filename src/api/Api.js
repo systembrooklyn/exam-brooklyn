@@ -51,6 +51,8 @@ export const SEND_STUDEND_MAIL = "sendStudentMail";
 export const SEND_STUDEND_SMS = "studentSrmSmsMessage";
 
 export const BOOKINGS = "bookings";
+export const PAPERS_ALL = "papers/all";
+export const PAPER_STATUS = (id) => `papers/${id}/status`;
 
 // Payroll System APIs
 export const PAYROLL_EMPLOYEES = "payroll-system/employees";

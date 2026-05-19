@@ -54,6 +54,7 @@ import hrIcon from "@/assets/hr.png";
 import bookingExamIcon from "@/assets/booking-exam.png";
 import requestsIcon from "@/assets/requests.jpg";
 import Placement2 from "@/assets/plasment2.jpeg";
+import papersIcon from "@/assets/papers.png";
 
 
 const systems = [
@@ -136,6 +137,11 @@ const systems = [
     route: "/placement-test-attempts",
     image: Placement2,
     requiresPermission: "view-placementTestScoreCard",
+  },
+  {
+    name: "Student Papers",
+    route: "/papers",
+    image: papersIcon,
   },
 ];
 
