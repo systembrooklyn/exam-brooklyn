@@ -238,26 +238,31 @@
                     </span>
                   </p>
                 </div>
-                <div class="flex flex-wrap items-center justify-end gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                  :disabled="!canReview(paper) || updatingId === paper.id"
-                  @click="openStatusModal(paper, 'approve')"
+                <div
+                  v-if="canShowPaperActionButtons(paper)"
+                  class="flex flex-wrap items-center justify-end gap-1.5 shrink-0"
                 >
-                  <Check class="w-3.5 h-3.5" />
-                  Approve
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-                  :disabled="!canReview(paper) || updatingId === paper.id"
-                  @click="openStatusModal(paper, 'reject')"
-                >
-                  <X class="w-3.5 h-3.5" />
-                  Reject
-                </button>
-              </div>
+                  <button
+                    v-if="canShowApproveButton(paper)"
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    :disabled="updatingId === paper.id"
+                    @click="openStatusModal(paper, 'approve')"
+                  >
+                    <Check class="w-3.5 h-3.5" />
+                    {{ approveButtonLabel }}
+                  </button>
+                  <button
+                    v-if="canShowRejectButton(paper)"
+                    type="button"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    :disabled="updatingId === paper.id"
+                    @click="openStatusModal(paper, 'reject')"
+                  >
+                    <X class="w-3.5 h-3.5" />
+                    Reject
+                  </button>
+                </div>
               </div>
 
             </section>
@@ -301,7 +306,7 @@
           :class="statusModalAction === 'approve' ? 'bg-emerald-600' : 'bg-red-600'"
         >
           <h2 :id="statusModalTitleId" class="text-base sm:text-lg font-semibold">
-            {{ statusModalAction === "approve" ? "Approve paper" : "Reject paper" }}
+            {{ statusModalTitle }}
           </h2>
           <button
             type="button"
@@ -358,7 +363,7 @@
             @click="confirmStatusUpdate"
           >
             <Loader2 v-if="updatingId" class="w-4 h-4 animate-spin" />
-            <span>{{ statusModalAction === "approve" ? "Confirm approve" : "Confirm reject" }}</span>
+            <span>{{ statusModalConfirmLabel }}</span>
           </button>
         </div>
       </div>
@@ -386,6 +391,14 @@ import formatDate from "@/components/global/FormDate";
 import notyf from "@/components/global/notyf";
 import Pagination from "@/components/srmDashboard/Pagination.vue";
 import { handleError } from "@/stores/handleError";
+import { useAuthStore } from "@/stores/auth";
+
+const PAPERS_PERMISSION = {
+  ACTION: "students_papers_action",
+  FINAL_ACTION: "students_papers_final_action",
+};
+
+const authStore = useAuthStore();
 
 const filterLabelClass =
   "block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5";
@@ -587,6 +600,51 @@ function canReview(paper) {
   return paperStatusKey(paper) === "pending";
 }
 
+/** Reject & approve: user must have both permission slugs. */
+function hasPaperReviewPermissions() {
+  return (
+    authStore.hasPermission(PAPERS_PERMISSION.ACTION) &&
+    authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
+  );
+}
+
+function canShowPaperActionButtons(paper) {
+  return canReview(paper) && hasPaperReviewPermissions();
+}
+
+function canShowApproveButton(paper) {
+  return canShowPaperActionButtons(paper);
+}
+
+function canShowRejectButton(paper) {
+  return canShowPaperActionButtons(paper);
+}
+
+const approveButtonLabel = computed(() =>
+  authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
+    ? "Final approve"
+    : "Approve",
+);
+
+const statusModalTitle = computed(() => {
+  if (statusModalAction.value === "reject") return "Reject paper";
+  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
+    ? "Final approve paper"
+    : "Approve paper";
+});
+
+const statusModalConfirmLabel = computed(() => {
+  if (statusModalAction.value === "reject") return "Confirm reject";
+  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
+    ? "Confirm final approve"
+    : "Confirm approve";
+});
+
+function canPerformPaperStatusAction(action) {
+  if (!hasPaperReviewPermissions()) return false;
+  return action === "approve" || action === "reject";
+}
+
 function isStudentExpanded(id) {
   return expandedStudents.value.has(id);
 }
@@ -633,7 +691,7 @@ async function fetchPapers(source = "initial") {
 }
 
 function openStatusModal(paper, action) {
-  if (!canReview(paper)) return;
+  if (!canReview(paper) || !canPerformPaperStatusAction(action)) return;
   statusModalPaper.value = paper;
   statusModalAction.value = action;
   modalNotes.value = "";
