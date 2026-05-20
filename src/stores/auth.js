@@ -137,7 +137,9 @@ function extractUserAndPermissionsFromResponseBody(body) {
   const merged = new Set([
     ...collectPermissionSlugsFromArray(body.permissions),
     ...collectPermissionSlugsFromArray(body.data?.permissions),
+    ...collectPermissionSlugsFromArray(userRecord?.permissions),
     ...collectPermissionSlugsFromRoles(userRecord?.roles),
+    ...collectPermissionSlugsFromArray(userRecord?.role?.permissions),
   ]);
 
   return { user: userRecord, permissions: [...merged] };

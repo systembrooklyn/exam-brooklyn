@@ -9,7 +9,7 @@
           <p v-if="apiMessage" class="text-gray-600 dark:text-gray-300 text-xs sm:text-sm mt-0.5">
             {{ apiMessage }}
             <span v-if="papers.length" class="text-gray-500">
-              — {{ papers.length }} paper(s) · {{ studentGroups.length }} student(s)
+              — {{ papers.length }} paper(s) · {{ filteredStudentGroups.length }} student(s)
             </span>
           </p>
           <p v-else class="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mt-0.5">
@@ -44,8 +44,23 @@
           </span>
         </p>
         <div
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 items-end"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 items-end"
         >
+          <div class="min-w-0 sm:col-span-2 lg:col-span-1">
+            <label :class="filterLabelClass">Search by name</label>
+            <div :class="filterShellClass">
+              <span :class="filterIconSlotClass">
+                <User class="h-3.5 w-3.5" aria-hidden="true" />
+              </span>
+              <input
+                v-model="nameSearch"
+                type="search"
+                autocomplete="off"
+                placeholder="Student name…"
+                :class="filterInputInnerClass"
+              />
+            </div>
+          </div>
           <div class="min-w-0">
             <label :class="filterLabelClass">From date</label>
             <div :class="filterShellClass">
@@ -71,10 +86,13 @@
                 <ListFilter class="h-3.5 w-3.5" aria-hidden="true" />
               </span>
               <select v-model="filters.status" :class="filterSelectInnerClass">
-                <option value="">All statuses</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-                <option value="final_approve">Final approve</option>
+                <option
+                  v-for="opt in statusFilterOptions"
+                  :key="opt.value || 'pending'"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </option>
               </select>
             </div>
           </div>
@@ -155,34 +173,42 @@
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                   {{ group.papers.length }} paper(s)
-                  <span v-if="group.pendingCount" class="text-amber-600 dark:text-amber-400 font-medium">
+                  <!-- <span v-if="group.pendingCount" class="text-amber-600 dark:text-amber-400 font-medium">
                     · {{ group.pendingCount }} pending
-                  </span>
+                  </span> -->
                 </span>
               </div>
               <div
                 v-if="group.student?.email || formatStudentPhones(group.student).length"
-                class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500 dark:text-gray-400"
+                class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-500 dark:text-gray-400"
               >
-                <span v-if="group.student?.email" class="break-all">
-                  {{ group.student.email }}
-                </span>
-                <template v-if="formatStudentPhones(group.student).length">
-                  <span
-                    v-if="group.student?.email"
-                    class="hidden sm:inline text-gray-300 dark:text-gray-600"
+                <div
+                  v-if="group.student?.email"
+                  class="flex items-center gap-1.5 group/copy cursor-pointer hover:text-[#624ff6] transition-colors min-w-0"
+                  title="Click to copy email"
+                  @click.stop="copyToClipboard(group.student.email, 'Email')"
+                >
+                  <Mail class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span class="break-all">{{ group.student.email }}</span>
+                  <Copy
+                    class="h-3 w-3 shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity"
                     aria-hidden="true"
-                  >
-                    ·
-                  </span>
-                  <span
-                    v-for="(ph, pi) in formatStudentPhones(group.student)"
-                    :key="pi"
-                    class="tabular-nums text-gray-600 dark:text-gray-300"
-                  >
-                    <span v-if="pi > 0" class="text-gray-300 dark:text-gray-600 mx-1">·</span>{{ ph }}
-                  </span>
-                </template>
+                  />
+                </div>
+                <div
+                  v-for="(ph, pi) in formatStudentPhones(group.student)"
+                  :key="`${group.studentId}-phone-${pi}`"
+                  class="flex items-center gap-1.5 group/copy cursor-pointer hover:text-[#624ff6] transition-colors tabular-nums"
+                  title="Click to copy phone"
+                  @click.stop="copyToClipboard(ph, 'Phone')"
+                >
+                  <Phone class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span>{{ ph }}</span>
+                  <Copy
+                    class="h-3 w-3 shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
             </div>
           </button>
@@ -194,77 +220,89 @@
             <section
               v-for="paper in group.papers"
               :key="paper.id"
-              class="px-3 sm:px-4 py-3"
+              class="px-3 sm:px-4 py-3 sm:py-3.5 transition-colors hover:bg-gray-50/80 dark:hover:bg-gray-900/25"
             >
-              <div class="flex items-start gap-2">
-                <div class="min-w-0 flex-1 space-y-1">
+              <div
+                class="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-4"
+              >
+                <div class="min-w-0 space-y-2">
                   <div class="flex flex-wrap items-center gap-2">
-                    <span class="text-xs font-semibold text-gray-900 dark:text-white">
+                    <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
                       {{ formatPaperType(paper.type) }}
-                    </span>
+                    </h3>
                     <span
-                      class="text-xs px-2 py-0.5 rounded-full font-medium capitalize"
+                      class="text-xs px-2 py-0.5 rounded-full font-medium capitalize shrink-0"
                       :class="statusBadgeClass(paper)"
                     >
                       {{ statusLabel(paper) }}
                     </span>
-                    <span class="text-[11px] text-gray-500 dark:text-gray-400 tabular-nums">
-                      {{ formatDate(paper.created_at) }}
+                  </div>
+
+                  <div
+                    class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 dark:text-gray-400"
+                  >
+                    <span class="inline-flex items-center gap-1 tabular-nums">
+                      <Calendar class="h-3.5 w-3.5 shrink-0 text-gray-400" aria-hidden="true" />
+                      Submitted {{ formatDate(paper.created_at) }}
                     </span>
                     <a
                       v-if="paper.link"
                       :href="paper.link"
                       target="_blank"
                       rel="noopener noreferrer"
-                      class="inline-flex items-center gap-0.5 text-xs text-[#624ff6] hover:underline cursor-pointer"
+                      class="inline-flex items-center gap-1 font-medium text-[#624ff6] hover:underline cursor-pointer"
                     >
-                      <ExternalLink class="w-3 h-3" />
+                      <ExternalLink class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                       View file
                     </a>
                   </div>
+
                   <p
                     v-if="paper.current_status"
-                    class="text-[11px] text-gray-500 dark:text-gray-400 leading-snug"
+                    class="text-[11px] leading-snug text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/40 px-2.5 py-1.5 max-w-2xl"
                   >
-                    <span class="font-medium capitalize text-gray-600 dark:text-gray-300">
+                    <span class="font-medium capitalize text-gray-700 dark:text-gray-300">
                       {{ paper.current_status.action }}
                     </span>
                     <span v-if="paper.current_status.notes"> — {{ paper.current_status.notes }}</span>
-                    <span v-if="paper.current_status.action_by?.name">
+                    <span v-if="paper.current_status.action_by?.name" class="text-gray-500 dark:text-gray-500">
                       · {{ paper.current_status.action_by.name }}
                     </span>
-                    <span v-if="paper.current_status.created_at">
+                    <span
+                      v-if="paper.current_status.created_at"
+                      class="text-gray-500 dark:text-gray-500"
+                    >
                       · {{ formatDate(paper.current_status.created_at) }}
                     </span>
                   </p>
                 </div>
+
                 <div
                   v-if="canShowPaperActionButtons(paper)"
-                  class="flex flex-wrap items-center justify-end gap-1.5 shrink-0"
+                  class="flex flex-wrap items-center gap-2 sm:justify-end sm:pl-3 sm:border-l sm:border-gray-100 dark:sm:border-gray-700"
                 >
                   <button
                     v-if="canShowApproveButton(paper)"
                     type="button"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    :class="paperApproveBtnClass"
                     :disabled="updatingId === paper.id"
                     @click="openStatusModal(paper, 'approve')"
                   >
-                    <Check class="w-3.5 h-3.5" />
-                    {{ approveButtonLabel }}
+                    <Check class="w-3.5 h-3.5 shrink-0" />
+                    {{ approveLabelForPaper(paper) }}
                   </button>
                   <button
                     v-if="canShowRejectButton(paper)"
                     type="button"
-                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    :class="paperRejectBtnClass"
                     :disabled="updatingId === paper.id"
                     @click="openStatusModal(paper, 'reject')"
                   >
-                    <X class="w-3.5 h-3.5" />
+                    <X class="w-3.5 h-3.5 shrink-0" />
                     Reject
                   </button>
                 </div>
               </div>
-
             </section>
           </div>
         </article>
@@ -284,7 +322,7 @@
       >
         <h2 class="text-lg font-bold text-gray-900 dark:text-white">No papers found</h2>
         <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">
-          Adjust filters or refresh when students upload documents.
+          {{ emptyStateMessage }}
         </p>
       </div>
     </div>
@@ -302,16 +340,18 @@
         :aria-labelledby="statusModalTitleId"
       >
         <div
-          class="flex items-center justify-between px-5 py-4 text-white"
-          :class="statusModalAction === 'approve' ? 'bg-emerald-600' : 'bg-red-600'"
+          class="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
         >
-          <h2 :id="statusModalTitleId" class="text-base sm:text-lg font-semibold">
+          <h2
+            :id="statusModalTitleId"
+            class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white"
+          >
             {{ statusModalTitle }}
           </h2>
           <button
             type="button"
             aria-label="Close"
-            class="h-8 w-8 grid place-items-center rounded-full hover:bg-white/15 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            class="h-8 w-8 grid place-items-center rounded-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             :disabled="!!updatingId"
             @click="closeStatusModal"
           >
@@ -357,8 +397,11 @@
           </button>
           <button
             type="button"
-            class="px-5 py-2 rounded-lg text-white text-sm font-medium shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center gap-2 transition"
-            :class="statusModalAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'"
+            :class="
+              isApproveLikeAction(statusModalAction)
+                ? `${paperModalConfirmBtnBase} bg-emerald-100 text-emerald-800 border-emerald-200/60 hover:bg-emerald-200/80 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800/50 dark:hover:bg-emerald-900/60`
+                : `${paperModalConfirmBtnBase} bg-rose-100 text-rose-800 border-rose-200/60 hover:bg-rose-200/80 dark:bg-rose-900/40 dark:text-rose-200 dark:border-rose-800/50 dark:hover:bg-rose-900/60`
+            "
             :disabled="!!updatingId || !statusModalPaper"
             @click="confirmStatusUpdate"
           >
@@ -378,11 +421,15 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Copy,
   ExternalLink,
   ListFilter,
   Loader2,
+  Mail,
+  Phone,
   RefreshCw,
   SlidersHorizontal,
+  User,
   X,
 } from "lucide-vue-next";
 import apiClient from "@/api/axiosInstance";
@@ -400,6 +447,23 @@ const PAPERS_PERMISSION = {
 
 const authStore = useAuthStore();
 
+function defaultPapersStatusFilter() {
+  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION) ? "approved" : "";
+}
+
+const statusFilterOptions = computed(() => {
+  const options = [
+    { value: "", label: "Pending" },
+    { value: "approved", label: "Approved" },
+    { value: "rejected", label: "Rejected" },
+    { value: "final_approve", label: "Final approve" },
+  ];
+  if (authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)) {
+    return options.filter((o) => o.value !== "");
+  }
+  return options;
+});
+
 const filterLabelClass =
   "block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-0.5";
 const filterShellClass =
@@ -410,6 +474,13 @@ const filterInputInnerClass =
   "min-w-0 flex-1 border-0 bg-transparent py-1.5 pr-2 text-sm text-gray-900 dark:text-gray-100 outline-none";
 const filterSelectInnerClass =
   "min-w-0 flex-1 border-0 bg-transparent py-1.5 pr-2 text-sm text-gray-900 dark:text-gray-100 outline-none cursor-pointer";
+
+const paperActionBtnBase =
+  "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
+const paperApproveBtnClass = `${paperActionBtnBase} bg-emerald-100 text-emerald-800 border-emerald-200/60 hover:bg-emerald-200/80 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800/50 dark:hover:bg-emerald-900/60`;
+const paperRejectBtnClass = `${paperActionBtnBase} bg-rose-100 text-rose-800 border-rose-200/60 hover:bg-rose-200/80 dark:bg-rose-900/40 dark:text-rose-200 dark:border-rose-800/50 dark:hover:bg-rose-900/60`;
+const paperModalConfirmBtnBase =
+  "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer";
 
 const PAPER_TYPE_LABELS = {
   experience_letter: "Experience letter",
@@ -429,15 +500,23 @@ const fetchSource = ref(null);
 const error = ref(null);
 const apiMessage = ref("");
 const papers = ref([]);
-const filters = ref({ from: "", to: "", status: "" });
+const filters = ref({
+  from: "",
+  to: "",
+  status: defaultPapersStatusFilter(),
+});
 const filtersApplied = ref([]);
 const filterType = ref("");
+/** Client-side filter on loaded student groups (before pagination). */
+const nameSearch = ref("");
 const currentPage = ref(1);
 const pageSize = 10;
 const expandedStudents = ref(new Set());
 const showStatusModal = ref(false);
 const statusModalPaper = ref(null);
 const statusModalAction = ref("approve");
+/** UI only: final-approve flow still PATCHes action "approve". */
+const statusModalIsFinalApprove = ref(false);
 const modalNotes = ref("");
 const statusNotesInputRef = ref(null);
 const updatingId = ref(null);
@@ -474,7 +553,7 @@ const studentGroups = computed(() => {
     }
     const g = map.get(studentId);
     g.papers.push(paper);
-    if (canReview(paper)) g.pendingCount += 1;
+    if (paperNeedsUserAction(paper)) g.pendingCount += 1;
   }
   for (const g of map.values()) {
     g.papers.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
@@ -501,16 +580,30 @@ const filteredStudentGroups = computed(() => {
     }
     const g = map.get(studentId);
     g.papers.push(paper);
-    if (canReview(paper)) g.pendingCount += 1;
+    if (paperNeedsUserAction(paper)) g.pendingCount += 1;
   }
   for (const g of map.values()) {
     g.papers.sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
   }
-  return Array.from(map.values()).sort((a, b) => {
+  let groups = Array.from(map.values()).sort((a, b) => {
     const ta = a.papers[0]?.created_at || "";
     const tb = b.papers[0]?.created_at || "";
     return String(tb).localeCompare(String(ta));
   });
+  const q = String(nameSearch.value ?? "").trim().toLowerCase();
+  if (q) {
+    groups = groups.filter((g) =>
+      String(g.student?.name ?? "").toLowerCase().includes(q),
+    );
+  }
+  return groups;
+});
+
+const emptyStateMessage = computed(() => {
+  if (String(nameSearch.value ?? "").trim()) {
+    return "No students match this name on the current loaded results. Clear the search or adjust filters.";
+  }
+  return "Adjust filters or refresh when students upload documents.";
 });
 
 const totalPages = computed(() =>
@@ -540,7 +633,7 @@ const pageNumbers = computed(() => {
   return pages;
 });
 
-watch([filteredStudentGroups, filterType], () => {
+watch([filteredStudentGroups, filterType, nameSearch], () => {
   currentPage.value = 1;
 });
 
@@ -549,13 +642,18 @@ function buildPapersQueryParams() {
   const f = filters.value;
   if (f.from?.trim()) params.from = f.from.trim();
   if (f.to?.trim()) params.to = f.to.trim();
-  if (f.status?.trim()) params.status = f.status.trim();
+  if (f.status?.trim()) params.final_status = f.status.trim();
   return params;
 }
 
 function clearFilters() {
-  filters.value = { from: "", to: "", status: "" };
+  filters.value = {
+    from: "",
+    to: "",
+    status: defaultPapersStatusFilter(),
+  };
   filterType.value = "";
+  nameSearch.value = "";
   fetchPapers("apply");
 }
 
@@ -568,6 +666,18 @@ function formatStudentPhones(student) {
   const raw = student?.phones;
   if (!Array.isArray(raw)) return [];
   return raw.map((p) => String(p ?? "").trim()).filter(Boolean);
+}
+
+function copyToClipboard(text, label) {
+  if (!text) return;
+  navigator.clipboard
+    .writeText(text)
+    .then(() => {
+      notyf.success(`${label} copied to clipboard`);
+    })
+    .catch(() => {
+      notyf.error(`Failed to copy ${label}`);
+    });
 }
 
 function paperStatusKey(paper) {
@@ -596,53 +706,68 @@ function statusBadgeClass(paper) {
   return "bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200";
 }
 
-function canReview(paper) {
-  return paperStatusKey(paper) === "pending";
+function hasPaperActionPermission() {
+  return authStore.hasPermission(PAPERS_PERMISSION.ACTION);
 }
 
-/** Reject & approve: user must have both permission slugs. */
-function hasPaperReviewPermissions() {
-  return (
-    authStore.hasPermission(PAPERS_PERMISSION.ACTION) &&
-    authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
-  );
+function hasPaperFinalActionPermission() {
+  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION);
 }
 
-function canShowPaperActionButtons(paper) {
-  return canReview(paper) && hasPaperReviewPermissions();
+function isApproveLikeAction(action) {
+  return action === "approve";
+}
+
+/** First review: pending papers + students_papers_action. */
+function canShowFirstApproveButton(paper) {
+  return paperStatusKey(paper) === "pending" && hasPaperActionPermission();
+}
+
+/** Final review: already approved + students_papers_final_action. */
+function canShowFinalApproveButton(paper) {
+  return paperStatusKey(paper) === "approved" && hasPaperFinalActionPermission();
 }
 
 function canShowApproveButton(paper) {
-  return canShowPaperActionButtons(paper);
+  return canShowFirstApproveButton(paper) || canShowFinalApproveButton(paper);
 }
 
+/** Reject: pending + action, or approved awaiting final + final_action. */
 function canShowRejectButton(paper) {
+  const key = paperStatusKey(paper);
+  if (key === "pending" && hasPaperActionPermission()) return true;
+  if (key === "approved" && hasPaperFinalActionPermission()) return true;
+  return false;
+}
+
+function canShowPaperActionButtons(paper) {
+  return canShowApproveButton(paper) || canShowRejectButton(paper);
+}
+
+function paperNeedsUserAction(paper) {
   return canShowPaperActionButtons(paper);
 }
 
-const approveButtonLabel = computed(() =>
-  authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
-    ? "Final approve"
-    : "Approve",
-);
+function approveLabelForPaper(paper) {
+  return canShowFinalApproveButton(paper) ? "Final approve" : "Approve";
+}
 
 const statusModalTitle = computed(() => {
   if (statusModalAction.value === "reject") return "Reject paper";
-  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
-    ? "Final approve paper"
-    : "Approve paper";
+  if (statusModalIsFinalApprove.value) return "Final approve paper";
+  return "Approve paper";
 });
 
 const statusModalConfirmLabel = computed(() => {
   if (statusModalAction.value === "reject") return "Confirm reject";
-  return authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)
-    ? "Confirm final approve"
-    : "Confirm approve";
+  if (statusModalIsFinalApprove.value) return "Confirm final approve";
+  return "Confirm approve";
 });
 
-function canPerformPaperStatusAction(action) {
-  if (!hasPaperReviewPermissions()) return false;
-  return action === "approve" || action === "reject";
+function canPerformPaperStatusAction(paper, action) {
+  if (action === "reject") return canShowRejectButton(paper);
+  if (action === "approve") return canShowApproveButton(paper);
+  return false;
 }
 
 function isStudentExpanded(id) {
@@ -691,9 +816,12 @@ async function fetchPapers(source = "initial") {
 }
 
 function openStatusModal(paper, action) {
-  if (!canReview(paper) || !canPerformPaperStatusAction(action)) return;
+  if (action !== "approve" && action !== "reject") return;
+  if (!canPerformPaperStatusAction(paper, action)) return;
   statusModalPaper.value = paper;
   statusModalAction.value = action;
+  statusModalIsFinalApprove.value =
+    action === "approve" && canShowFinalApproveButton(paper);
   modalNotes.value = "";
   showStatusModal.value = true;
   nextTick(() => statusNotesInputRef.value?.focus());
@@ -702,6 +830,7 @@ function openStatusModal(paper, action) {
 function closeStatusModal() {
   showStatusModal.value = false;
   statusModalPaper.value = null;
+  statusModalIsFinalApprove.value = false;
   modalNotes.value = "";
 }
 
@@ -721,7 +850,13 @@ async function updateStatus(paper, action, notesInput = "") {
   updatingAction.value = action;
   try {
     const { data } = await apiClient.patch(PAPER_STATUS(id), { action, notes });
-    notyf.success(data?.message || `Paper ${action === "approve" ? "approved" : "rejected"}.`);
+    const fallback =
+      action === "approve"
+        ? statusModalIsFinalApprove.value
+          ? "Paper final approved."
+          : "Paper approved."
+        : "Paper rejected.";
+    notyf.success(data?.message || fallback);
     closeStatusModal();
     await fetchPapers("silent");
   } catch (e) {
@@ -733,6 +868,9 @@ async function updateStatus(paper, action, notesInput = "") {
 }
 
 onMounted(() => {
+  if (authStore.hasPermission(PAPERS_PERMISSION.FINAL_ACTION)) {
+    filters.value.status = "approved";
+  }
   fetchPapers("initial");
 });
 </script>

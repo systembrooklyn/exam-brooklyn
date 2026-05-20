@@ -26,7 +26,7 @@
       </div>
 
       <div
-        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[40%] mx-auto"
+        class="mb-1.5 rounded-lg border border-[#624ff6]/20 dark:border-[#624ff6]/30 bg-white dark:bg-gray-800 px-2 py-2 space-y-2 shadow-sm max-w-[90%] mx-auto"
       >
         <p
           class="flex items-center gap-1 text-[9px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
@@ -38,8 +38,23 @@
           class="min-w-0 overflow-x-auto pb-0.5 [scrollbar-width:thin] xl:overflow-x-visible [-webkit-overflow-scrolling:touch]"
         >
           <div
-            class="grid w-full min-w-0 grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-x-3 sm:gap-y-2 xl:grid-cols-3 xl:gap-x-3 xl:gap-y-1.5 2xl:gap-x-4 items-end"
+            class="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4 sm:gap-x-3 sm:gap-y-2 2xl:gap-x-4 items-end"
           >
+            <div class="min-w-0 sm:col-span-2 lg:col-span-1">
+              <label :class="filterLabelClass">Search by name</label>
+              <div :class="filterShellClass">
+                <span :class="filterIconSlotClass">
+                  <User class="h-3.5 w-3.5" aria-hidden="true" />
+                </span>
+                <input
+                  v-model="nameSearch"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Student name…"
+                  class="filterInputInnerClass placement-filter-name-input"
+                />
+              </div>
+            </div>
             <div class="min-w-0">
               <label :class="filterLabelClass">From date</label>
               <div :class="filterShellClass">
@@ -166,6 +181,19 @@
                 Force Fail
                 <XCircle class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               </button>
+              <span
+                v-if="group.overallStatus === 'completed' && group.aggregateResult"
+                class="inline-flex flex-wrap items-center gap-1.5 text-xs sm:text-sm"
+                title="Combined score across all placement tests (pass at 50% or above)"
+              >
+                <span class="font-bold tabular-nums text-gray-900 dark:text-white">
+                  <!-- {{ group.aggregateResult.totalScore }} / {{ group.aggregateResult.totalQuestions }} -->
+                  <span class="font-semibold text-gray-500 dark:text-gray-400">({{ group.aggregateResult.percent }}%)</span>
+                </span>
+                <span :class="passFailClass(group.aggregateResult.passFail)">
+                  {{ group.aggregateResult.passFail }}
+                </span>
+              </span>
               <span :class="statusClass(group.overallStatus)" class="text-[10px] sm:text-xs">
                 {{ formatStatus(group.overallStatus) }}
               </span>
@@ -325,11 +353,11 @@ const authStore = useAuthStore();
 const filterLabelClass =
   "block text-[8px] uppercase font-bold text-gray-400 dark:text-gray-500 mb-0.5";
 const filterShellClass =
-  "flex min-h-[2.25rem] rounded-md border border-[#624ff6]/25 dark:border-[#624ff6]/35 bg-white dark:bg-gray-900 overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-[#624ff6]/25 focus-within:border-[#624ff6]/45";
+  "flex w-full min-h-[2.25rem] rounded-md border border-[#624ff6]/25 dark:border-[#624ff6]/35 bg-white dark:bg-gray-900 overflow-hidden shadow-sm focus-within:ring-1 focus-within:ring-[#624ff6]/25 focus-within:border-[#624ff6]/45";
 const filterIconSlotClass =
   "flex w-8 shrink-0 items-center justify-center self-stretch border-r border-[#624ff6]/15 dark:border-[#624ff6]/25 bg-[#624ff6]/[0.07] dark:bg-[#624ff6]/12 text-[#624ff6]";
 const filterInputInnerClass =
-  "min-h-[2.25rem] min-w-0 flex-1 border-0 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none";
+  "min-h-[2.25rem] min-w-0 w-full flex-1 basis-0 grow border-0 bg-transparent px-2 py-1.5 text-xs sm:text-sm text-gray-900 dark:text-gray-100 focus:ring-0 focus:outline-none appearance-none";
 
 /** YYYY-MM-DD in local calendar */
 function todayIsoLocal() {
@@ -400,6 +428,31 @@ function passFailClass(status) {
   return `${base} bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400 border border-rose-200/50 dark:border-rose-800/50`;
 }
 
+/** Sum all completed subject scores; overall pass when total ≥ 50% of total questions. */
+function computeAggregatePlacement(attempts) {
+  if (!attempts?.length) return null;
+  const allCompleted = attempts.every((a) => a.status === "completed");
+  if (!allCompleted) return null;
+
+  let totalScore = 0;
+  let totalQuestions = 0;
+  for (const a of attempts) {
+    const q = Number(a.questionsCount) || 0;
+    if (q <= 0) continue;
+    const s =
+      a.scoreRaw === null || a.scoreRaw === undefined ? 0 : Number(a.scoreRaw);
+    if (!Number.isFinite(s)) continue;
+    totalScore += s;
+    totalQuestions += q;
+  }
+  if (totalQuestions <= 0) return null;
+
+  const percent = Math.round((totalScore / totalQuestions) * 1000) / 10;
+  const passFail = totalScore >= totalQuestions / 2 ? "Pass" : "Fail";
+
+  return { totalScore, totalQuestions, percent, passFail };
+}
+
 function displayDateTime(v) {
   if (v == null || v === "") return "—";
   return String(v).replace("T", " ");
@@ -415,6 +468,8 @@ const fromIso = ref(defaultFromIso());
 const toIso = ref(defaultToIso());
 const stId = ref("");
 const stStatus = ref("");
+/** Client-side filter on loaded groups (all pages, before pagination). */
+const nameSearch = ref("");
 
 function copyToClipboard(text, label) {
   if (!text) return;
@@ -442,6 +497,7 @@ function clearFilters() {
   toIso.value = "";
   stId.value = "";
   stStatus.value = "";
+  nameSearch.value = "";
   errorText.value = "";
   rawPayload.value = null;
 }
@@ -455,11 +511,15 @@ const emptyStateTitle = computed(() =>
   rawPayload.value == null ? "No data yet" : "No attempts found",
 );
 
-const emptyStateSubtitle = computed(() =>
-  rawPayload.value == null
-    ? "From defaults to the first day of this month through today; results load automatically. Student ID is optional."
-    : "No placement attempts for these filters. Try different dates or add a student ID.",
-);
+const emptyStateSubtitle = computed(() => {
+  if (rawPayload.value == null) {
+    return "From defaults to the first day of this month through today; results load automatically. Student ID is optional.";
+  }
+  if (String(nameSearch.value ?? "").trim()) {
+    return "No students match this name on the current loaded results. Clear the search or adjust date filters.";
+  }
+  return "No placement attempts for these filters. Try different dates or add a student ID.";
+});
 
 /** Phones once, outside the table (same student for all rows). */
 const contactPhones = computed(() => {
@@ -515,7 +575,7 @@ function toggleStudent(id) {
   else expandedStudents.value.push(id);
 }
 
-const studentGroups = computed(() => {
+const groupedStudents = computed(() => {
   const p = rawPayload.value;
   let rows = [];
   if (Array.isArray(p)) rows = p;
@@ -578,7 +638,9 @@ const studentGroups = computed(() => {
     if (anyInProgress) g.overallStatus = 'in_progress';
     else if (allCompleted && g.attempts.length > 0) g.overallStatus = 'completed';
     else g.overallStatus = 'other';
-    
+
+    g.aggregateResult = computeAggregatePlacement(g.attempts);
+
     return g;
   });
 
@@ -589,9 +651,21 @@ const studentGroups = computed(() => {
     return latestB - latestA;
   });
 
-  // Frontend Filter by Status
-  if (!stStatus.value) return result;
-  return result.filter(g => g.overallStatus === stStatus.value);
+  return result;
+});
+
+const studentGroups = computed(() => {
+  let list = groupedStudents.value;
+  if (stStatus.value) {
+    list = list.filter((g) => g.overallStatus === stStatus.value);
+  }
+  const q = String(nameSearch.value ?? "").trim().toLowerCase();
+  if (q) {
+    list = list.filter((g) =>
+      String(g.student?.name ?? "").toLowerCase().includes(q),
+    );
+  }
+  return list;
 });
 
 const currentPage = ref(1);
@@ -631,6 +705,10 @@ watch(
     currentPage.value = 1;
   },
 );
+
+watch([nameSearch, stStatus], () => {
+  currentPage.value = 1;
+});
 
 /**
  * @param {"apply" | "refresh" | "initial"} source — `initial`: page load (no button spinners).
@@ -682,6 +760,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Search inputs default to a short intrinsic width in WebKit — fill the filter shell */
+.placement-filter-name-input {
+  width: 100%;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+}
+
+.placement-filter-name-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+}
+
 .animate-fade-in {
   animation: fadeIn 0.35s ease-out forwards;
 }
