@@ -270,12 +270,13 @@
         </div>
       </template>
       <template #employee="{ item }">
-        <span class="text-gray-800 font-medium">{{ employeeDisplayName(item) }}</span>
-        <br>
-        <div v-show="item.original_shift" class="flex flex-row">
-          <span class="text-gray-800 font-medium">{{ item.original_shift?.start_time }}</span>
-          <span class="text-gray-800 font-medium"> &rarr; </span>
-          <span class="text-gray-800 font-medium">{{ item.original_shift?.end_time }}</span>
+        <div class="flex flex-col items-center justify-center text-center w-full">
+          <span class="text-gray-800 font-medium">{{ employeeDisplayName(item) }}</span>
+          <div v-show="item.original_shift" class="flex flex-row justify-center items-center mt-1">
+            <span class="text-gray-800 font-medium">{{ item.original_shift?.start_time }}</span>
+            <span class="text-gray-800 font-medium mx-1"> &rarr; </span>
+            <span class="text-gray-800 font-medium">{{ item.original_shift?.end_time }}</span>
+          </div>
         </div>
       </template>
       <template #request_type="{ item }">
