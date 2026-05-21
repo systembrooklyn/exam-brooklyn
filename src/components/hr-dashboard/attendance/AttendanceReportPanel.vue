@@ -5,16 +5,42 @@
         :class="showEmployeeSelect ? 'md:grid-cols-3' : 'md:grid-cols-2'">
         <div v-if="showEmployeeSelect">
           <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-          <select v-model="reportForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white">
-            <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-              {{
-                emp.name ||
-                (emp.personal_info
-                  ? emp.personal_info.first_name + " " + emp.personal_info.last_name
-                  : "Emp #" + emp.id)
-              }}
-            </option>
-          </select>
+          <div ref="employeeDropdownRootRef" class="relative">
+            <button type="button"
+              class="w-full min-h-[42px] flex items-center justify-between gap-2 border border-gray-300 rounded-lg px-4 py-2 bg-white text-left text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer"
+              :aria-expanded="employeeDropdownOpen" aria-haspopup="listbox" @click="toggleEmployeeDropdown">
+              <span class="truncate text-gray-800">{{ selectedEmployeeTriggerLabel }}</span>
+              <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
+                :class="{ 'rotate-180': employeeDropdownOpen }" aria-hidden="true" />
+            </button>
+            <div v-show="employeeDropdownOpen"
+              class="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+              role="listbox" @mousedown.prevent>
+              <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
+                <input ref="employeeSelectSearchInputRef" v-model="employeeSelectSearchQuery" type="search"
+                  autocomplete="off" placeholder="Search name or fingerprint..."
+                  class="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                  @keydown.escape.prevent="closeEmployeeDropdown" />
+              </div>
+              <ul class="max-h-56 overflow-y-auto text-sm">
+                <li v-for="emp in filteredEmployeesForSelect" :key="emp.id">
+                  <button type="button" role="option"
+                    class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
+                      'bg-indigo-50 font-medium text-indigo-800':
+                        String(reportForm.employee_id) === String(emp.id),
+                    }" @click="selectReportEmployee(emp.id)">
+                    <span>{{ employeeRowLabel(emp) }}</span>
+                    <span v-if="pickEmployeeFingerprint(emp)" class="text-xs text-gray-500">
+                      ({{ pickEmployeeFingerprint(emp) }})
+                    </span>
+                  </button>
+                </li>
+                <li v-if="filteredEmployeesForSelect.length === 0" class="px-3 py-2 text-gray-400 text-xs">
+                  No employees match.
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
@@ -400,7 +426,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useHrAttendanceStore } from "@/stores/hr/attendance";
 import { useHrEmployeesStore } from "@/stores/hr/employees";
 import {
@@ -411,6 +437,7 @@ import {
   Clock,
   LogOut,
   Zap,
+  ChevronDown as LucideChevronDown,
 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
 import { LATENESS_GRACE_MINUTES as latenessGraceMinutes } from "@/constants/hrLateness";
@@ -460,6 +487,81 @@ const reportForm = ref({
   to_date: "",
 });
 
+const employeeDropdownOpen = ref(false);
+const employeeSelectSearchQuery = ref("");
+const employeeSelectSearchInputRef = ref(null);
+const employeeDropdownRootRef = ref(null);
+
+function employeeRowLabel(emp) {
+  if (!emp) return "";
+  return (
+    emp.name ||
+    (emp.personal_info
+      ? `${emp.personal_info.first_name || ""} ${emp.personal_info.last_name || ""}`.trim()
+      : "") ||
+    `Emp #${emp.id}`
+  );
+}
+
+function pickEmployeeFingerprint(emp) {
+  if (!emp) return "";
+  const raw = emp.fingerprint ?? emp.personal_info?.fingerprint;
+  if (raw == null || raw === "") return "";
+  return String(raw).trim();
+}
+
+const filteredEmployeesForSelect = computed(() => {
+  const list = employeeStore.employees || [];
+  const q = String(employeeSelectSearchQuery.value ?? "")
+    .toLowerCase()
+    .trim();
+  if (!q) return list;
+  return list.filter((emp) => {
+    const label = String(employeeRowLabel(emp)).toLowerCase();
+    const fp = pickEmployeeFingerprint(emp).toLowerCase();
+    const id = String(emp.id ?? "");
+    return label.includes(q) || fp.includes(q) || id.includes(q);
+  });
+});
+
+const selectedEmployeeTriggerLabel = computed(() => {
+  const id = reportForm.value.employee_id;
+  if (id === "" || id == null) return "Select employee";
+  const list = employeeStore.employees || [];
+  const emp = list.find((e) => String(e.id) === String(id));
+  return emp ? employeeRowLabel(emp) : "Select employee";
+});
+
+function closeEmployeeDropdown() {
+  employeeDropdownOpen.value = false;
+}
+
+function toggleEmployeeDropdown() {
+  employeeDropdownOpen.value = !employeeDropdownOpen.value;
+  if (employeeDropdownOpen.value) {
+    employeeSelectSearchQuery.value = "";
+    nextTick(() => {
+      employeeSelectSearchInputRef.value?.focus();
+    });
+  }
+}
+
+function selectReportEmployee(rawId) {
+  const n = Number(rawId);
+  reportForm.value.employee_id =
+    Number.isFinite(n) && n > 0 ? n : rawId;
+  employeeSelectSearchQuery.value = "";
+  closeEmployeeDropdown();
+}
+
+function onDocumentMousedownEmployeeDropdown(e) {
+  if (!employeeDropdownOpen.value) return;
+  const root = employeeDropdownRootRef.value;
+  if (root && !root.contains(e.target)) {
+    closeEmployeeDropdown();
+  }
+}
+
 const reportData = ref(null);
 const currentPage = ref(1);
 const itemsPerPage = ref(15);
@@ -496,6 +598,7 @@ watch(
 );
 
 onMounted(async () => {
+  document.addEventListener("mousedown", onDocumentMousedownEmployeeDropdown);
   if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
     void contractStore.getContracts().catch(() => {});
   }
@@ -507,6 +610,10 @@ onMounted(async () => {
     }
   }
   syncFormFromProps();
+});
+
+onUnmounted(() => {
+  document.removeEventListener("mousedown", onDocumentMousedownEmployeeDropdown);
 });
 
 const effectiveEmployeeId = computed(() => {
@@ -874,6 +981,8 @@ defineExpose({
     reportData.value = null;
     currentPage.value = 1;
     reportRequested.value = false;
+    employeeSelectSearchQuery.value = "";
+    closeEmployeeDropdown();
     syncFormFromProps();
   },
 });

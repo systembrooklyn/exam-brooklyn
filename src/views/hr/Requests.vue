@@ -121,7 +121,7 @@
               <button type="button"
                 class="w-full h-10 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 :disabled="store.loading" :aria-expanded="pendingEmployeePickerOpen" aria-haspopup="listbox"
-                @click.stop="pendingEmployeePickerOpen = !pendingEmployeePickerOpen">
+                @click.stop="togglePendingEmployeePicker">
                 <span class="min-w-0 flex-1 flex items-center gap-2">
                   <template v-if="!String(pendingFilterEmployeeId ?? '').trim()">
                     <span class="truncate text-gray-800">All employees</span>
@@ -144,27 +144,40 @@
                   :class="{ 'rotate-180': pendingEmployeePickerOpen }" aria-hidden="true" />
               </button>
               <div v-show="pendingEmployeePickerOpen"
-                class="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-                role="listbox">
-                <button type="button" role="option"
-                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 cursor-pointer"
-                  :class="{
-                    'bg-indigo-50 text-indigo-900': !String(pendingFilterEmployeeId ?? '').trim(),
-                  }" @click="selectPendingFilterEmployee('')">
-                  <span>All employees</span>
-                </button>
-                <button v-for="emp in employeesSortedForPendingSelect" :key="emp.id" type="button" role="option"
-                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
-                  :class="{
-                    'bg-indigo-50 text-indigo-900':
-                      String(pendingFilterEmployeeId) === String(emp.id),
-                  }" @click="selectPendingFilterEmployee(String(emp.id))">
-                  <span class="min-w-0 truncate">{{ pendingEmployeeBaseLabel(emp) }}</span>
-                  <span v-if="pendingEmployeeCountForBadge(emp) > 0"
-                    class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
-                    {{ pendingEmployeeCountForBadge(emp) }}
-                  </span>
-                </button>
+                class="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                role="listbox" @mousedown.prevent>
+                <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
+                  <input ref="pendingEmployeeSelectSearchInputRef" v-model="pendingEmployeeSelectSearchQuery"
+                    type="search" autocomplete="off" placeholder="Search name or fingerprint..."
+                    class="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                    @keydown.escape.prevent="pendingEmployeePickerOpen = false" />
+                </div>
+                <div class="max-h-56 overflow-y-auto">
+                  <button type="button" role="option"
+                    class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 cursor-pointer"
+                    :class="{
+                      'bg-indigo-50 text-indigo-900': !String(pendingFilterEmployeeId ?? '').trim(),
+                    }" @click="selectPendingFilterEmployee('')">
+                    <span>All employees</span>
+                  </button>
+                  <button v-for="emp in filteredEmployeesSortedForPendingSelect" :key="emp.id" type="button"
+                    role="option"
+                    class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
+                    :class="{
+                      'bg-indigo-50 text-indigo-900':
+                        String(pendingFilterEmployeeId) === String(emp.id),
+                    }" @click="selectPendingFilterEmployee(String(emp.id))">
+                    <span class="min-w-0 truncate">{{ pendingEmployeeBaseLabel(emp) }}</span>
+                    <span v-if="pendingEmployeeCountForBadge(emp) > 0"
+                      class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
+                      {{ pendingEmployeeCountForBadge(emp) }}
+                    </span>
+                  </button>
+                  <p v-if="filteredEmployeesSortedForPendingSelect.length === 0"
+                    class="px-3 py-2 text-xs text-gray-400">
+                    No employees match.
+                  </p>
+                </div>
               </div>
             </div>
             <p v-if="pendingEmployeeCountsHint" class="text-[11px] text-gray-500 mt-1 leading-snug xl:hidden">
@@ -258,6 +271,12 @@
       </template>
       <template #employee="{ item }">
         <span class="text-gray-800 font-medium">{{ employeeDisplayName(item) }}</span>
+        <br>
+        <div v-show="item.original_shift" class="flex flex-row">
+          <span class="text-gray-800 font-medium">{{ item.original_shift?.start_time }}</span>
+          <span class="text-gray-800 font-medium"> &rarr; </span>
+          <span class="text-gray-800 font-medium">{{ item.original_shift?.end_time }}</span>
+        </div>
       </template>
       <template #request_type="{ item }">
         <span class="text-gray-800 ">{{ formatRequestTypeLabel(item.request_type) }}</span>
@@ -700,6 +719,8 @@ const pendingFilterStatus = ref('pending');
 const pendingFilterEmployeeId = ref('');
 const pendingEmployeePickerOpen = ref(false);
 const pendingEmployeePickerRoot = ref(null);
+const pendingEmployeeSelectSearchQuery = ref('');
+const pendingEmployeeSelectSearchInputRef = ref(null);
 
 /** `/pending` API requires `employee_id` — show guidance instead of the table until one is chosen. */
 const pendingTableBlockedNoEmployee = computed(
@@ -802,6 +823,33 @@ const employeesSortedForPendingSelect = computed(() => {
   return [...ordered, ...rest];
 });
 
+function pickEmployeeFingerprint(emp) {
+  if (!emp) return '';
+  const raw = emp.fingerprint ?? emp.personal_info?.fingerprint;
+  if (raw == null || raw === '') return '';
+  return String(raw).trim();
+}
+
+const filteredEmployeesSortedForPendingSelect = computed(() => {
+  const list = employeesSortedForPendingSelect.value;
+  const q = String(pendingEmployeeSelectSearchQuery.value ?? '')
+    .toLowerCase()
+    .trim();
+  if (!q) return list;
+  return list.filter((emp) => {
+    const label = pendingEmployeeBaseLabel(emp).toLowerCase();
+    const name = employeePickerLabel(emp).toLowerCase();
+    const fp = pickEmployeeFingerprint(emp).toLowerCase();
+    const id = String(emp.id ?? '');
+    return (
+      label.includes(q) ||
+      name.includes(q) ||
+      fp.includes(q) ||
+      id.includes(q)
+    );
+  });
+});
+
 const selectedPendingEmployee = computed(() => {
   const id = String(pendingFilterEmployeeId.value ?? '').trim();
   if (!id) return null;
@@ -824,8 +872,19 @@ function pendingEmployeeCountForBadge(emp) {
   );
 }
 
+function togglePendingEmployeePicker() {
+  pendingEmployeePickerOpen.value = !pendingEmployeePickerOpen.value;
+  if (pendingEmployeePickerOpen.value) {
+    pendingEmployeeSelectSearchQuery.value = '';
+    nextTick(() => {
+      pendingEmployeeSelectSearchInputRef.value?.focus();
+    });
+  }
+}
+
 function selectPendingFilterEmployee(id) {
   pendingFilterEmployeeId.value = id;
+  pendingEmployeeSelectSearchQuery.value = '';
   pendingEmployeePickerOpen.value = false;
 }
 
