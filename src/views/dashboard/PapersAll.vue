@@ -165,11 +165,15 @@
                 <h2 class="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                   {{ group.student?.name || "Unknown student" }}
                 </h2>
-                <span
+                <!-- <span
                   v-if="group.student?.st_num"
                   class="text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded-full tabular-nums"
                 >
                   St #{{ group.student.st_num }}
+                </span> -->
+                <span v-if="group.student?.grade"
+                  class="text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200 px-2 py-0.5 rounded-full tabular-nums">
+                  {{ group.student.grade }}
                 </span>
                 <span class="text-xs text-gray-500 dark:text-gray-400">
                   {{ group.papers.length }} paper(s)
@@ -194,6 +198,14 @@
                     class="h-3 w-3 shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity"
                     aria-hidden="true"
                   />
+                </div>
+                <div v-if="group.student.st_num"
+                  class="flex items-center gap-1.5 group/copy cursor-pointer hover:text-[#624ff6] transition-colors min-w-0"
+                  title="Click to copy email" @click.stop="copyToClipboard(group.student.st_num, 'Student number')">
+                  <IdCard class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span class="break-all">{{ group.student.st_num }}</span>
+                  <Copy class="h-3 w-3 shrink-0 opacity-0 group-hover/copy:opacity-100 transition-opacity"
+                    aria-hidden="true" />
                 </div>
                 <div
                   v-for="(ph, pi) in formatStudentPhones(group.student)"
@@ -437,6 +449,7 @@ import {
   ChevronRight,
   Copy,
   ExternalLink,
+  IdCard,
   ListFilter,
   Loader2,
   Mail,
