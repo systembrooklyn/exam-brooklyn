@@ -154,6 +154,8 @@
           <PayrollStatusBadge :status="selectedPayroll.current_status || selectedPayroll.status" />
         </div>
 
+        <PayrollContractAnnex :contract="selectedPayroll.contract" />
+
         <!-- Salary Summary -->
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-gray-100 rounded-lg p-4 border-2 border-gray-200 text-center">
@@ -315,6 +317,7 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue'
 import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
 import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
 import PayrollSalaryDetails from '@/components/hr-dashboard/PayrollSalaryDetails.vue'
+import PayrollContractAnnex from '@/components/hr-dashboard/PayrollContractAnnex.vue'
 import { LucideCalculator, LucideRefreshCw, LucideCalendar } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
 import { useAuthStore } from '@/stores/auth'

@@ -257,24 +257,27 @@
                     </a>
                   </div>
 
-                  <p
-                    v-if="paper.current_status"
-                    class="text-[11px] leading-snug text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/40 px-2.5 py-1.5 max-w-2xl"
+                  <div
+                    v-if="paperStatusEntries(paper).length"
+                    class="space-y-1 max-w-2xl"
                   >
-                    <span class="font-medium capitalize text-gray-700 dark:text-gray-300">
-                      {{ paper.current_status.action }}
-                    </span>
-                    <span v-if="paper.current_status.notes"> — {{ paper.current_status.notes }}</span>
-                    <span v-if="paper.current_status.action_by?.name" class="text-gray-500 dark:text-gray-500">
-                      · {{ paper.current_status.action_by.name }}
-                    </span>
-                    <span
-                      v-if="paper.current_status.created_at"
-                      class="text-gray-500 dark:text-gray-500"
+                    <p
+                      v-for="(entry, si) in paperStatusEntries(paper)"
+                      :key="`${paper.id}-status-${si}`"
+                      class="text-[11px] leading-snug text-gray-600 dark:text-gray-400 rounded-md border border-gray-100 dark:border-gray-700 bg-gray-50/90 dark:bg-gray-900/40 px-2.5 py-1.5"
                     >
-                      · {{ formatDate(paper.current_status.created_at) }}
-                    </span>
-                  </p>
+                      <span class="font-medium capitalize text-gray-700 dark:text-gray-300">
+                        {{ entry.action }}
+                      </span>
+                      <span v-if="entry.notes"> — {{ entry.notes }}</span>
+                      <span v-if="entry.action_by?.name" class="text-gray-500 dark:text-gray-500">
+                        · {{ entry.action_by.name }}
+                      </span>
+                      <span v-if="entry.created_at" class="text-gray-500 dark:text-gray-500">
+                        · {{ formatDate(entry.created_at) }}
+                      </span>
+                    </p>
+                  </div>
                 </div>
 
                 <div
@@ -371,14 +374,25 @@
               for="paper-status-notes"
               class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
             >
-              Notes <span class="text-gray-400 font-normal">(optional)</span>
+              Notes
+              <span
+                v-if="statusModalAction === 'reject'"
+                class="text-rose-600 dark:text-rose-400 font-normal"
+              >
+                (required)
+              </span>
+              <span v-else class="text-gray-400 font-normal">(optional)</span>
             </label>
             <textarea
               id="paper-status-notes"
               ref="statusNotesInputRef"
               v-model="modalNotes"
               rows="4"
-              placeholder="Add a note for this review…"
+              :placeholder="
+                statusModalAction === 'reject'
+                  ? 'Add a reason for rejecting this paper…'
+                  : 'Add a note for this review…'
+              "
               class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#624ff6] focus:border-transparent resize-y min-h-[100px]"
               :disabled="!!updatingId"
               @keydown.enter.ctrl.prevent="confirmStatusUpdate"
@@ -402,7 +416,7 @@
                 ? `${paperModalConfirmBtnBase} bg-emerald-100 text-emerald-800 border-emerald-200/60 hover:bg-emerald-200/80 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-800/50 dark:hover:bg-emerald-900/60`
                 : `${paperModalConfirmBtnBase} bg-rose-100 text-rose-800 border-rose-200/60 hover:bg-rose-200/80 dark:bg-rose-900/40 dark:text-rose-200 dark:border-rose-800/50 dark:hover:bg-rose-900/60`
             "
-            :disabled="!!updatingId || !statusModalPaper"
+            :disabled="!!updatingId || !statusModalPaper || !canConfirmStatusUpdate"
             @click="confirmStatusUpdate"
           >
             <Loader2 v-if="updatingId" class="w-4 h-4 animate-spin" />
@@ -633,8 +647,12 @@ const pageNumbers = computed(() => {
   return pages;
 });
 
-watch([filteredStudentGroups, filterType, nameSearch], () => {
+watch([filterType, nameSearch], () => {
   currentPage.value = 1;
+});
+
+watch(totalPages, (total) => {
+  if (currentPage.value > total) currentPage.value = total;
 });
 
 function buildPapersQueryParams() {
@@ -680,8 +698,17 @@ function copyToClipboard(text, label) {
     });
 }
 
+function paperStatusEntries(paper) {
+  const list = paper?.all_statuses;
+  if (Array.isArray(list) && list.length) return list;
+  if (paper?.current_status) return [paper.current_status];
+  return [];
+}
+
 function paperStatusKey(paper) {
-  const action = paper?.current_status?.action;
+  const entries = paperStatusEntries(paper);
+  const action =
+    paper?.current_status?.action ?? entries[entries.length - 1]?.action;
   if (!action) return "pending";
   if (action === "rejected") return "rejected";
   if (action === "final_approve") return "final_approve";
@@ -764,6 +791,11 @@ const statusModalConfirmLabel = computed(() => {
   return "Confirm approve";
 });
 
+const canConfirmStatusUpdate = computed(() => {
+  if (statusModalAction.value !== "reject") return true;
+  return String(modalNotes.value ?? "").trim().length > 0;
+});
+
 function canPerformPaperStatusAction(paper, action) {
   if (action === "reject") return canShowRejectButton(paper);
   if (action === "approve") return canShowApproveButton(paper);
@@ -783,6 +815,8 @@ function toggleStudent(id) {
 
 async function fetchPapers(source = "initial") {
   const silent = source === "silent";
+  const savedPage = currentPage.value;
+  const savedExpanded = silent ? new Set(expandedStudents.value) : null;
   if (!silent) {
     fetchSource.value = source;
     loading.value = true;
@@ -800,6 +834,13 @@ async function fetchPapers(source = "initial") {
     if (!silent) {
       expandedStudents.value = new Set();
       currentPage.value = 1;
+    } else {
+      expandedStudents.value = savedExpanded;
+      currentPage.value = savedPage;
+      await nextTick();
+      if (currentPage.value > totalPages.value) {
+        currentPage.value = totalPages.value;
+      }
     }
   } catch (e) {
     const msg =
@@ -838,12 +879,21 @@ async function confirmStatusUpdate() {
   const paper = statusModalPaper.value;
   const action = statusModalAction.value;
   if (!paper) return;
-  await updateStatus(paper, action, modalNotes.value);
+  const notesRaw = String(modalNotes.value ?? "").trim();
+  if (action === "reject" && !notesRaw) {
+    notyf.error("A note is required when rejecting a paper.");
+    return;
+  }
+  await updateStatus(paper, action, notesRaw);
 }
 
 async function updateStatus(paper, action, notesInput = "") {
   const id = paper.id;
   const notesRaw = String(notesInput ?? "").trim();
+  if (action === "reject" && !notesRaw) {
+    notyf.error("A note is required when rejecting a paper.");
+    return;
+  }
   const notes = notesRaw || null;
 
   updatingId.value = id;

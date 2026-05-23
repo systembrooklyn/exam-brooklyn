@@ -82,6 +82,8 @@
           </div>
         </div>
 
+        <PayrollContractAnnex :contract="payrollData.contract" />
+
         <div class="grid grid-cols-2 gap-3">
           <div class="bg-gray-100 rounded-lg p-4 border-2 border-gray-200 text-center">
             <p class="text-xs font-bold text-gray-600 uppercase mb-1">Fixed Salary Paid</p>
@@ -135,7 +137,9 @@
                   <td class="p-3 text-gray-700">{{ normalizeMonth(adj.month) || "-" }}</td>
                   <td class="p-3 text-green-700 font-semibold">{{ formatMoney(adj.bonus) }}</td>
                   <td class="p-3 text-red-700 font-semibold">{{ formatMoney(adj.deductions) }}</td>
-                  <td class="p-3 text-gray-700">{{ adj.notes || "-" }}</td>
+                  <td class="p-3 text-gray-700 align-top leading-6">
+                    <NotesWithLinks :text="adj.notes" />
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -152,10 +156,23 @@
       <div class="space-y-4">
         <p class="text-sm text-gray-600">{{ statusModalMessage }}</p>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-          <textarea v-model="statusUpdateForm.notes" rows="3"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
-            placeholder="Add any comments here..." />
+          <label class="block text-sm font-medium text-gray-700 mb-1">Notes<span v-if="statusUpdateForm.action === 'reject'" class="text-red-600"> *</span></label>
+          <textarea
+            v-model="statusUpdateForm.notes"
+            rows="3"
+            :required="statusUpdateForm.action === 'reject'"
+            :class="[
+              'w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none',
+              statusUpdateForm.action === 'reject' && !statusUpdateForm.notes ? 'border-red-300' : 'border-gray-300'
+            ]"
+            placeholder="Add any comments here..."
+          />
+          <p
+            v-if="statusUpdateForm.action === 'reject' && !statusUpdateForm.notes"
+            class="text-red-600 text-xs mt-1"
+          >
+            Notes are required to reject payroll.
+          </p>
         </div>
       </div>
     </HrModal>
@@ -175,6 +192,8 @@ import { useHrEmployeeAdjustmentsStore } from "@/stores/hr/employeeAdjustments";
 import { defaultPayrollMonthRange, getPayrollDates } from "@/utils/payrollPeriod";
 import PayrollStatusBadge from "@/components/hr-dashboard/PayrollStatusBadge.vue";
 import PayrollSalaryDetails from "@/components/hr-dashboard/PayrollSalaryDetails.vue";
+import PayrollContractAnnex from "@/components/hr-dashboard/PayrollContractAnnex.vue";
+import NotesWithLinks from "@/components/hr-dashboard/NotesWithLinks.vue";
 import HrModal from "@/components/hr-dashboard/HrModal.vue";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
