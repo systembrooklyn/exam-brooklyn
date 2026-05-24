@@ -1,5 +1,35 @@
 <template>
   <div>
+    <!-- Bulk Selection Toolbar -->
+    <transition name="slide-down">
+      <div
+        v-if="selectedIds.size > 0 && authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
+        class="flex items-center justify-between gap-4 mb-3 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl"
+      >
+        <div class="flex items-center gap-3">
+          <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+          <span class="text-sm font-semibold text-indigo-700">
+            {{ selectedIds.size }} payroll{{ selectedIds.size > 1 ? 's' : '' }} selected
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            @click="clearSelection"
+            class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer font-medium"
+          >
+            Clear
+          </button>
+          <button
+            @click="emitBulkApprove"
+            class="px-4 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors cursor-pointer font-semibold flex items-center gap-2 shadow-sm"
+          >
+            <LucideCheckCircle class="w-4 h-4" />
+            Bulk Approve ({{ selectedIds.size }})
+          </button>
+        </div>
+      </div>
+    </transition>
+
     <HrDataTable
       :headers="headers"
       :items="items"
@@ -7,6 +37,16 @@
       :has-actions="hasRowActions"
       emptyMessage="No payrolls found."
     >
+
+      <!-- Row Checkbox -->
+      <template #select="{ item }">
+        <input
+          type="checkbox"
+          :checked="selectedIds.has(itemKey(item))"
+          @change="toggleItem(item)"
+          class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+        />
+      </template>
 
       <!-- Employee -->
       <template #employee="{ item }">
@@ -108,7 +148,7 @@
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue'
 import PayrollStatusBadge from './PayrollStatusBadge.vue'
 import { LucideEye, LucideCheckCircle, LucidePauseCircle, LucideXCircle } from 'lucide-vue-next'
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'
 
@@ -130,15 +170,61 @@ const props = defineProps({
   filterPeriodTo: { type: String, default: '' }
 })
 
-defineEmits(['view', 'update-status'])
+const emit = defineEmits(['view', 'update-status', 'bulk-approve'])
 
 const headers = [
+  { label: '', key: 'select', class: 'w-10' },
   { label: 'Employee', key: 'employee' },
   { label: 'Month', key: 'period' },
   { label: 'Fixed Salary', key: 'fixed_salary' },
   { label: 'Net Salary', key: 'net_salary' },
   { label: 'Status', key: 'status' },
 ]
+
+// ─── Bulk Selection ───────────────────────────────────────
+const selectedIds = ref(new Set())
+
+const itemKey = (item) => item.payroll_id || item.id || (item.employee_id + '-' + (item.period?.payroll_month || ''))
+
+const allVisibleSelected = computed(() => {
+  if (!props.items.length) return false
+  return props.items.every((i) => selectedIds.value.has(itemKey(i)))
+})
+
+const someSelected = computed(() => {
+  return props.items.some((i) => selectedIds.value.has(itemKey(i))) && !allVisibleSelected.value
+})
+
+const toggleSelectAll = () => {
+  const next = new Set(selectedIds.value)
+  if (allVisibleSelected.value) {
+    props.items.forEach((i) => next.delete(itemKey(i)))
+  } else {
+    props.items.forEach((i) => next.add(itemKey(i)))
+  }
+  selectedIds.value = next
+}
+
+const toggleItem = (item) => {
+  const next = new Set(selectedIds.value)
+  const key = itemKey(item)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  selectedIds.value = next
+}
+
+const clearSelection = () => {
+  selectedIds.value = new Set()
+}
+
+const emitBulkApprove = () => {
+  const selected = props.items.filter((i) => selectedIds.value.has(itemKey(i)))
+  emit('bulk-approve', selected)
+  clearSelection()
+}
+
+// Clear selection when the items list changes (e.g. after a fetch refresh)
+watch(() => props.items, () => { selectedIds.value = new Set() })
 
 /** Same rule as Payrolls.vue getPayrollDates: YYYY-MM payroll month → prev month 21 → selected month 20 */
 function boundsFromPayrollMonthYm(ym) {
@@ -209,3 +295,15 @@ function finalNetSalary(item) {
   return base + manual
 }
 </script>
+
+<style scoped>
+.slide-down-enter-active,
+.slide-down-leave-active {
+  transition: all 0.2s ease;
+}
+.slide-down-enter-from,
+.slide-down-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+</style>

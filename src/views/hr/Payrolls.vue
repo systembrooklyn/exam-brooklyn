@@ -84,6 +84,7 @@
       :filter-period-to="filterForm.period_to"
       @view="showDetails"
       @update-status="handleUpdateStatus"
+      @bulk-approve="handleBulkApprove"
     />
 
     <!-- Calculate Payroll Modal -->
@@ -305,11 +306,89 @@
         </div>
       </div>
     </HrModal>
+
+    <!-- ─── Bulk Approve Overlay ──────────────────────────────── -->
+    <transition name="fade-overlay">
+      <div
+        v-if="bulkApprove.active"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      >
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+          <!-- Header -->
+          <div class="px-6 pt-6 pb-4 border-b border-gray-100">
+            <div class="flex items-center gap-3 mb-1">
+              <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
+                <span
+                  v-if="bulkApprove.done < bulkApprove.total"
+                  class="block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"
+                />
+                <svg v-else class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+              </span>
+              <h2 class="text-lg font-bold text-gray-800">
+                {{ bulkApprove.done < bulkApprove.total ? 'Processing Bulk Approve…' : 'Bulk Approve Complete' }}
+              </h2>
+            </div>
+            <p class="text-sm text-gray-500 mt-1 pl-11">
+              {{ bulkApprove.done < bulkApprove.total
+                ? `Please wait while each payroll is approved. Do not close or navigate away.`
+                : `All done! ${bulkApprove.success} approved, ${bulkApprove.failed} failed.`
+              }}
+            </p>
+          </div>
+
+          <!-- Progress -->
+          <div class="px-6 py-4">
+            <!-- Progress Bar -->
+            <div class="flex items-center justify-between text-xs font-medium text-gray-500 mb-1.5">
+              <span>Progress</span>
+              <span>{{ bulkApprove.done }} / {{ bulkApprove.total }}</span>
+            </div>
+            <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
+                :style="{ width: bulkApprove.total ? (bulkApprove.done / bulkApprove.total * 100) + '%' : '0%' }"
+              />
+            </div>
+
+            <!-- Current Item Message -->
+            <div class="mt-4 max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
+              <div
+                v-for="(msg, i) in bulkApprove.log"
+                :key="i"
+                class="flex items-start gap-2 text-sm py-1.5 px-3 rounded-lg"
+                :class="msg.type === 'success' ? 'bg-emerald-50 text-emerald-700' : msg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-indigo-50 text-indigo-700'"
+              >
+                <span class="mt-0.5 flex-shrink-0">
+                  <span v-if="msg.type === 'processing'" class="block w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <svg v-else-if="msg.type === 'success'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </span>
+                <span>{{ msg.text }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <button
+              v-if="bulkApprove.done >= bulkApprove.total"
+              @click="closeBulkApproveOverlay"
+              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
+            >
+              Done
+            </button>
+            <span v-else class="text-xs text-gray-400 italic">Please wait…</span>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useHrPayrollStore } from '@/stores/hr/payroll'
 import { useHrEmployeesStore } from '@/stores/hr/employees'
 import { useHrEmployeeAdjustmentsStore } from '@/stores/hr/employeeAdjustments'
@@ -322,6 +401,8 @@ import { LucideCalculator, LucideRefreshCw, LucideCalendar } from 'lucide-vue-ne
 import notyf from '@/components/global/notyf'
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'
+import apiClient from '@/api/axiosInstance'
+import { PAYROLL_STATUS_UPDATE } from '@/api/Api'
 
 // ─── Stores ──────────────────────────────────────────────
 const store = useHrPayrollStore()
@@ -620,6 +701,94 @@ const executeStatusUpdate = async () => {
   }
 }
 
+// ─── Bulk Approve ─────────────────────────────────────────
+const bulkApprove = ref({
+  active: false,
+  total: 0,
+  done: 0,
+  success: 0,
+  failed: 0,
+  log: []
+})
+
+// ── beforeunload guard: warn the user if they try to refresh/close during processing
+const _beforeUnloadHandler = (e) => {
+  if (bulkApprove.value.active && bulkApprove.value.done < bulkApprove.value.total) {
+    e.preventDefault()
+    // Chrome requires returnValue to be set
+    e.returnValue = 'Bulk approval is still in progress. If you leave now, some payrolls may not be approved. Are you sure?'
+    return e.returnValue
+  }
+}
+window.addEventListener('beforeunload', _beforeUnloadHandler)
+onBeforeUnmount(() => window.removeEventListener('beforeunload', _beforeUnloadHandler))
+
+const closeBulkApproveOverlay = () => {
+  bulkApprove.value.active = false
+  fetchPayrolls()
+}
+
+const handleBulkApprove = async (selectedItems) => {
+  if (!authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)) return
+  if (!selectedItems.length) return
+
+  // Reset state and show overlay
+  bulkApprove.value = {
+    active: true,
+    total: selectedItems.length,
+    done: 0,
+    success: 0,
+    failed: 0,
+    log: []
+  }
+
+  for (const item of selectedItems) {
+    const name = item.employee?.name || `Employee #${item.employee_id || item.employee?.id}`
+    const { period_from, period_to } = resolvePayrollRowPeriodForStatus(item)
+
+    // Add a "processing" log entry
+    bulkApprove.value.log.push({ type: 'processing', text: `Approving ${name}…` })
+    const logIdx = bulkApprove.value.log.length - 1
+
+    try {
+      // ⚡ Call the API directly (silent) — bypasses store's per-item notyf.success
+      // and handleError toasts, which would be very spammy in bulk mode.
+      // We manage all user feedback ourselves through the overlay log.
+      await apiClient.post(PAYROLL_STATUS_UPDATE, {
+        employee_id: item.employee_id || item.employee?.id,
+        period_from,
+        period_to,
+        action: 'approve',
+        notes: ''
+      })
+      bulkApprove.value.log[logIdx] = { type: 'success', text: `✓ ${name} approved` }
+      bulkApprove.value.success++
+    } catch (err) {
+      // Extract the clearest message available from the error response
+      const errMsg =
+        err?.response?.data?.message ||
+        (Array.isArray(err?.response?.data?.errors)
+          ? err.response.data.errors[0]?.message
+          : null) ||
+        err?.message ||
+        'Network error'
+      bulkApprove.value.log[logIdx] = { type: 'error', text: `✗ ${name} — ${errMsg}` }
+      bulkApprove.value.failed++
+    } finally {
+      bulkApprove.value.done++
+    }
+  }
+
+  // One single summary notyf when everything is done
+  if (bulkApprove.value.failed === 0) {
+    notyf.success(`All ${bulkApprove.value.success} payrolls approved successfully!`)
+  } else if (bulkApprove.value.success === 0) {
+    notyf.error(`Bulk approve failed — all ${bulkApprove.value.failed} requests failed.`)
+  } else {
+    notyf.error(`${bulkApprove.value.success} approved, ${bulkApprove.value.failed} failed — see the log above.`)
+  }
+}
+
 // ─── Fetch Payrolls ───────────────────────────────────────
 const fetchPayrolls = async () => {
   try {
@@ -657,3 +826,14 @@ onMounted(async () => {
   await Promise.all([fetchPayrolls(), employeeStore.getEmployees()])
 })
 </script>
+
+<style scoped>
+.fade-overlay-enter-active,
+.fade-overlay-leave-active {
+  transition: opacity 0.25s ease;
+}
+.fade-overlay-enter-from,
+.fade-overlay-leave-to {
+  opacity: 0;
+}
+</style>
