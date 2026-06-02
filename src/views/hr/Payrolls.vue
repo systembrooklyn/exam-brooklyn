@@ -64,13 +64,35 @@
           </button>
         </div>
 
-        <button
-          v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)"
-          @click="openCalcModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
-          <LucideCalculator class="w-4 h-4" /> Calculate Payroll
-        </button>
+        <div class="flex flex-col items-stretch gap-2 min-w-[180px]">
+          <button
+            type="button"
+            @click="handleExportExcel"
+            :disabled="store.loading || !filteredActionablePayrolls.length"
+            class="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full"
+            title="Export filtered table data to Excel"
+          >
+            <LucideDownload class="w-4 h-4" /> Export Excel
+          </button>
+
+          <button
+            v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)"
+            @click="openCalcModal"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full"
+          >
+            <LucideCalculator class="w-4 h-4" /> Calculate Payroll
+          </button>
+        </div>
+
+        <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center min-w-[180px] shrink-0">
+          <p class="text-[10px] uppercase font-bold text-indigo-600 tracking-wide">Total Net Salary</p>
+          <p class="text-2xl font-bold text-indigo-900 tabular-nums leading-tight">
+            {{ formatMoney(filteredNetSalaryTotal) }}
+          </p>
+          <p class="text-[11px] text-indigo-500 mt-0.5">
+            {{ filteredActionablePayrolls.length }} row{{ filteredActionablePayrolls.length === 1 ? '' : 's' }} shown
+          </p>
+        </div>
       </div>
     </div>
 
@@ -397,8 +419,9 @@ import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
 import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
 import PayrollSalaryDetails from '@/components/hr-dashboard/PayrollSalaryDetails.vue'
 import PayrollContractAnnex from '@/components/hr-dashboard/PayrollContractAnnex.vue'
-import { LucideCalculator, LucideRefreshCw, LucideCalendar } from 'lucide-vue-next'
+import { LucideCalculator, LucideRefreshCw, LucideCalendar, LucideDownload } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
+import { exportPayrollsExcel, computePayrollRowNetSalary } from '@/utils/payrollExcelExport'
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'
 import apiClient from '@/api/axiosInstance'
@@ -550,6 +573,65 @@ const selectedAdjustments = ref([])
 const adjustmentsLoading = ref(false)
 const manualAdjustmentNetByEmployee = ref({})
 
+function buildPayrollExportFileName() {
+  const parts = ['payrolls']
+  if (filterPayrollMonth.value) parts.push(filterPayrollMonth.value)
+  if (filterForm.value.status) parts.push(filterForm.value.status)
+  if (filterForm.value.include_missing) parts.push('with-missing')
+  if (payrollSearchQuery.value.trim()) parts.push('filtered')
+  parts.push(new Date().toISOString().slice(0, 10))
+  return `${parts.join('-')}.xlsx`
+}
+
+const PAYROLL_STATUS_EXPORT_LABELS = {
+  pending: 'Pending',
+  'hr-approved': 'HR Approved',
+  'hr-manager-approved': 'HR Manager Approved',
+  'gm-approved': 'GM Approved',
+  suspended: 'Suspended',
+  paid: 'Paid',
+  received: 'Received',
+  rejected: 'Rejected',
+}
+
+function buildPayrollExportSubtitle(rowCount, totalNet) {
+  const parts = []
+  if (filterForm.value.period_from && filterForm.value.period_to) {
+    parts.push(`Period: ${filterForm.value.period_from} → ${filterForm.value.period_to}`)
+  }
+  if (filterForm.value.status) {
+    const label = PAYROLL_STATUS_EXPORT_LABELS[filterForm.value.status] || filterForm.value.status
+    parts.push(`Status: ${label}`)
+  }
+  if (filterForm.value.include_missing) parts.push('Including missing payrolls')
+  const q = payrollSearchQuery.value.trim()
+  if (q) parts.push(`Search: "${q}"`)
+  parts.push(`${rowCount} row${rowCount === 1 ? '' : 's'}`)
+  parts.push(`Total Net: ${toNumber(totalNet).toFixed(2)}`)
+  parts.push(`Generated ${new Date().toLocaleString()}`)
+  return parts.join('  •  ')
+}
+
+const handleExportExcel = () => {
+  const items = filteredActionablePayrolls.value
+  if (!items.length) {
+    notyf.error('No payroll data to export')
+    return
+  }
+  const ok = exportPayrollsExcel(items, {
+    manualAdjustmentNetByEmployee: manualAdjustmentNetByEmployee.value,
+    filterPeriodFrom: filterForm.value.period_from,
+    filterPeriodTo: filterForm.value.period_to,
+    fileName: buildPayrollExportFileName(),
+    reportTitle: 'Payroll Management Report',
+    reportSubtitle: buildPayrollExportSubtitle(items.length, filteredNetSalaryTotal.value),
+    totalNetSalary: filteredNetSalaryTotal.value,
+  })
+  if (ok) {
+    notyf.success(`Exported ${items.length} payroll row${items.length === 1 ? '' : 's'} to Excel`)
+  }
+}
+
 const toNumber = (v) => {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
@@ -558,6 +640,14 @@ const toNumber = (v) => {
 const normalizeMonth = (raw) => String(raw || '').slice(0, 7)
 
 const formatMoney = (v) => toNumber(v).toFixed(2)
+
+const filteredNetSalaryTotal = computed(() =>
+  filteredActionablePayrolls.value.reduce(
+    (sum, item) =>
+      sum + computePayrollRowNetSalary(item, manualAdjustmentNetByEmployee.value),
+    0,
+  ),
+)
 
 function noteParts(raw) {
   const text = String(raw ?? '')
