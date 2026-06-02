@@ -116,3 +116,7 @@ export const PAYROLL_EMPLOYEE_ADJUSTMENTS =
   "payroll-system/employee-adjustments";
 export const PAYROLL_EMPLOYEE_ADJUSTMENT_BY_ID = (id) =>
   `payroll-system/employee-adjustments/${id}`;
+
+// Price Settings
+export const PRICE_SETTINGS = "price-settings";
+export const PRICE_SETTINGS_BY_ID = (id) => `price-settings/${id}`;

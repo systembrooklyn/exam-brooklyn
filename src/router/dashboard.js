@@ -89,6 +89,12 @@ export default {
       meta: { requiresPermission: "create-placementTest" },
       component: () => import("@/views/dashboard/CreatePlacement.vue"),
     },
+    {
+      path: "price-settings",
+      name: "price-settings",
+      meta: { requiresPermission: "view-price-settings" },
+      component: () => import("@/views/dashboard/PriceSettingsList.vue"),
+    },
 
   ],
 };

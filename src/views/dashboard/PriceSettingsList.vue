@@ -1,0 +1,641 @@
+<template>
+  <div class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-gray-50/50 dark:bg-gray-900/50 animate-fade-in">
+
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div>
+        <div class="flex items-center gap-2.5">
+          <span class="p-2 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl text-indigo-600 dark:text-indigo-400">
+            <Tag class="w-6 h-6" />
+          </span>
+          <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Price Settings</h1>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-300">
+            {{ store.priceSettings.length }} categories
+          </span>
+        </div>
+        <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base leading-relaxed">
+          Configure payment methods, exam papers, and grade adjustments modifiers.
+        </p>
+      </div>
+
+      <div @click="openAddModal" class="buttons self-start sm:self-auto">
+        <button class="btn"><span></span>
+          <p data-start="good luck!" data-text="ADD!" data-title="new Setting"></p>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div v-if="store.loading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-6 space-y-4 animate-pulse">
+      <div class="h-8 bg-gray-100 dark:bg-gray-700 rounded-lg w-1/4 mb-6"></div>
+      <div class="space-y-4">
+        <div v-for="i in 5" :key="i" class="grid grid-cols-8 gap-4 py-3.5 border-b border-gray-100 dark:border-gray-700/50">
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded col-span-2"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Card -->
+    <div v-else class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[800px] border-collapse text-center">
+          <thead class="bg-slate-50/75 dark:bg-slate-900/40 border-b border-gray-150 dark:border-gray-700/60">
+            <tr>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Name</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Type</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Modifier</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount Type</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">DL Count</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Scholarships</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Active</th>
+              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
+            <template v-if="store.priceSettings.length === 0">
+              <tr>
+                <td colspan="9" class="px-6 py-16 text-center">
+                  <div class="flex flex-col items-center justify-center max-w-md mx-auto space-y-4">
+                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-400 dark:text-gray-600 ring-8 ring-gray-100/50 dark:ring-gray-800/50">
+                      <Tag class="w-8 h-8" />
+                    </div>
+                    <div>
+                      <h3 class="text-base font-semibold text-gray-900 dark:text-white">No Price Settings Yet</h3>
+                      <p class="text-xs text-gray-550 dark:text-gray-400 mt-1.5 leading-relaxed">
+                        Create your first payment method, paper fee, or grade modifier to start configuring pricing rules.
+                      </p>
+                    </div>
+                    <button
+                      @click="openAddModal"
+                      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
+                    >
+                      <Plus class="w-4 h-4" />
+                      Create Setting
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </template>
+
+            <template v-for="item in store.priceSettings" :key="item.id">
+              <!-- Parent row -->
+              <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 group">
+                <td class="px-6 py-4.5 font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                  <button
+                    v-if="item.children && item.children.length"
+                    @click="toggleChildren(item.id)"
+                    class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-indigo-600 transition-all duration-205 cursor-pointer"
+                    :title="expandedRows.has(item.id) ? 'Collapse' : 'Expand'"
+                  >
+                    <ChevronRight
+                      class="w-4 h-4 transition-transform duration-200"
+                      :class="{ 'rotate-90 text-indigo-600 dark:text-indigo-400': expandedRows.has(item.id) }"
+                    />
+                  </button>
+                  <span v-else class="w-6 h-6 inline-block"></span>
+                  <span class="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {{ item.name }}
+                  </span>
+                </td>
+                <td class="px-6 py-4.5">
+                  <span :class="typeBadgeClass(item.type)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
+                    {{ item.type }}
+                  </span>
+                </td>
+                <td class="px-6 py-4.5">
+                  <span :class="modifierBadgeClass(item.modifier)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
+                    {{ item.modifier }}
+                  </span>
+                </td>
+                <td class="px-6 py-4.5 text-gray-600 dark:text-gray-300 capitalize font-medium">{{ item.amount_type }}</td>
+                <td class="px-6 py-4.5 text-gray-900 dark:text-gray-100 font-bold font-mono">
+                  {{ formatAmount(item.amount, item.amount_type) }}
+                </td>
+                <td class="px-6 py-4.5 text-gray-500 dark:text-gray-400 font-medium font-mono">{{ item.dl_count ?? '—' }}</td>
+                <td class="px-6 py-4.5">
+                  <div v-if="item.scholarships && item.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
+                    <span v-for="sch in item.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
+                      {{ sch.name }}
+                    </span>
+                  </div>
+                  <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
+                </td>
+                <td class="px-6 py-4.5">
+                  <span
+                    :class="item.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                    class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide"
+                  >
+                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="px-6 py-4.5">
+                  <div class="flex items-center gap-2">
+                    <button
+                      @click="editPriceSetting(item)"
+                      class="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer shadow-sm"
+                      title="Edit"
+                    >
+                      <Pencil class="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Child rows (indented) -->
+              <template v-if="item.children && item.children.length && expandedRows.has(item.id)">
+                <tr
+                  v-for="child in item.children"
+                  :key="child.id"
+                  class="bg-indigo-50/15 dark:bg-indigo-950/10 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150"
+                >
+                  <td class="px-6 py-3.5 pl-12 text-gray-700 dark:text-gray-200 text-sm flex items-center gap-2 font-medium border-l-5 border-indigo-400 dark:border-indigo-500">
+                    <CornerDownRight class="w-4 h-4 text-indigo-400 dark:text-indigo-500 flex-shrink-0" />
+                    <span>{{ child.name }}</span>
+                  </td>
+                  <td class="px-6 py-3.5">
+                    <span :class="typeBadgeClass(child.type)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                      {{ child.type }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-3.5">
+                    <span :class="modifierBadgeClass(child.modifier)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                      {{ child.modifier }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-xs font-medium">{{ child.amount_type }}</td>
+                  <td class="px-6 py-3.5 text-gray-800 dark:text-gray-200 font-bold font-mono text-sm">
+                    {{ formatAmount(child.amount, child.amount_type) }}
+                  </td>
+                  <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ child.dl_count ?? '—' }}</td>
+                  <td class="px-6 py-3.5">
+                    <div v-if="child.scholarships && child.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
+                      <span v-for="sch in child.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
+                        {{ sch.name }}
+                      </span>
+                    </div>
+                    <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
+                  </td>
+                  <td class="px-6 py-3.5">
+                    <span
+                      :class="child.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                      class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
+                    >
+                      {{ child.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-3.5">
+                    <div class="flex items-center gap-2 justify-center">
+                      <button
+                        @click="editPriceSetting(child)"
+                        class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer"
+                        title="Edit"
+                      >
+                        <Pencil class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </template>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ─── Add / Edit Modal ─────────────────────────────────── -->
+    <Teleport to="body">
+      <transition name="modal-fade">
+      <div
+        v-if="showModal"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4"
+        @mousedown.self="closeModal"
+      >
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-gray-100 dark:border-gray-700 transition-all transform scale-100 animate-slide-up">
+          <!-- Modal Header -->
+          <div class="px-6 py-5 border-b border-gray-100 dark:border-gray-700/60 flex items-center justify-between bg-gradient-to-r from-indigo-50/30 to-white dark:from-indigo-950/15 dark:to-gray-800">
+            <div class="flex items-center gap-3">
+              <span class="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                <Tag class="w-5 h-5" />
+              </span>
+              <div>
+                <h2 class="text-lg font-bold text-gray-900 dark:text-white leading-none">
+                  {{ isEditing ? 'Edit Price Setting' : 'New Price Setting' }}
+                </h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                  {{ isEditing ? 'Update pricing rules and properties' : 'Configure a new pricing rule in the system' }}
+                </p>
+              </div>
+            </div>
+            <button @click="closeModal" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-gray-605 dark:hover:text-gray-300 transition-colors cursor-pointer">
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Modal Body -->
+          <div class="px-6 py-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
+
+            <!-- Name -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Name <span class="text-red-500">*</span></label>
+              <input
+                v-model="form.name"
+                type="text"
+                placeholder="e.g. VIP Addition Tier"
+                class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+              />
+            </div>
+
+            <!-- Grid: Type & Modifier -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Type <span class="text-red-500">*</span></label>
+                <select
+                  v-model="form.type"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                >
+                  <option value="">Select type</option>
+                  <option value="Payment Method">Payment Method</option>
+                  <option value="Grade">Grade</option>
+                  <option value="Paper">Paper</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Modifier <span class="text-red-500">*</span></label>
+                <select
+                  v-model="form.modifier"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                >
+                  <option value="">Select modifier</option>
+                  <option value="addition">Addition</option>
+                  <option value="discount">Discount</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Description</label>
+              <textarea
+                v-model="form.description"
+                rows="2"
+                placeholder="Describe the usage of this pricing rule..."
+                class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none transition-all"
+              ></textarea>
+            </div>
+
+            <!-- Grid: Amount Type & Amount -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Amount Type <span class="text-red-500">*</span></label>
+                <select
+                  v-model="form.amount_type"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                >
+                  <option value="">Select type</option>
+                  <option value="fixed">Fixed</option>
+                  <option value="percentage">Percentage</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Amount <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <input
+                    v-model="form.amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                    class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-4 pr-12 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                  />
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase pointer-events-none">
+                    {{ form.amount_type === 'percentage' ? '%' : 'EGP' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Grid: DL Count & Parent ID -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                  DL Count <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
+                </label>
+                <input
+                  v-model="form.dl_count"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 1"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                  Parent <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
+                </label>
+                <select
+                  v-model="form.parent_id"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                >
+                  <option :value="null">None (top-level)</option>
+                  <option
+                    v-for="ps in parentOptions"
+                    :key="ps.id"
+                    :value="ps.id"
+                  >
+                    {{ ps.name }}
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Scholarships MultiSelect -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                Scholarships
+              </label>
+              <MultiSelect
+                v-model="form.scholarship_ids"
+                :options="scholarshipStore.scholarships"
+                placeholder="Select scholarships..."
+                label-key="name"
+                value-key="id"
+              />
+            </div>
+
+            <!-- Is Active toggle -->
+            <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+              <button
+                type="button"
+                @click="form.is_active = !form.is_active"
+                :class="form.is_active ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-700'"
+                class="relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none cursor-pointer"
+              >
+                <span
+                  :class="form.is_active ? 'translate-x-6' : 'translate-x-1'"
+                  class="absolute top-1 left-0 inline-block w-4 h-4 bg-white rounded-full shadow transition-transform duration-200"
+                ></span>
+              </button>
+              <div>
+                <span class="text-sm font-semibold text-gray-950 dark:text-white block leading-none">
+                  {{ form.is_active ? 'Active' : 'Inactive' }}
+                </span>
+                <span class="text-xs text-gray-400 mt-1.5 block">
+                  Toggle to enable or disable this pricing rule.
+                </span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="px-6 py-4 bg-gray-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700/60 flex justify-end gap-3">
+            <button
+              @click="closeModal"
+              class="px-4 py-2 text-sm font-semibold text-gray-650 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white rounded-xl hover:bg-gray-105 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              @click="savePriceSetting"
+              :disabled="saving"
+              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer flex items-center gap-2 shadow-md shadow-indigo-600/10"
+            >
+              <span v-if="saving" class="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              {{ isEditing ? 'Update Rule' : 'Create Rule' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      </transition>
+    </Teleport>
+
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { usePriceSettingsStore } from '@/stores/priceSettingsStore'
+import { useScholarshipStore } from '@/stores/scholarships'
+import { ChevronRight, CornerDownRight, Pencil, X, Tag, Plus } from 'lucide-vue-next'
+import notyf from '@/components/global/notyf'
+import MultiSelect from '@/components/global/MultiSelect.vue'
+
+const store = usePriceSettingsStore()
+const scholarshipStore = useScholarshipStore()
+
+// ─── Table: expandable children rows ─────────────────────
+const expandedRows = ref(new Set())
+
+const toggleChildren = (id) => {
+  if (expandedRows.value.has(id)) {
+    expandedRows.value.delete(id)
+  } else {
+    expandedRows.value.add(id)
+  }
+  // Trigger reactivity on the Set
+  expandedRows.value = new Set(expandedRows.value)
+}
+
+// ─── Badge & Formatting helpers ──────────────────────────
+const typeBadgeClass = (type) => {
+  switch (type) {
+    case 'Payment Method':
+      return 'bg-blue-50 text-blue-700 ring-1 ring-blue-700/10 dark:bg-blue-950/40 dark:text-blue-300 dark:ring-blue-500/20'
+    case 'Grade':
+      return 'bg-purple-50 text-purple-700 ring-1 ring-purple-700/10 dark:bg-purple-950/40 dark:text-purple-300 dark:ring-purple-500/20'
+    case 'Paper':
+      return 'bg-amber-50 text-amber-700 ring-1 ring-amber-700/10 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-500/20'
+    default:
+      return 'bg-gray-50 text-gray-600 ring-1 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700/25'
+  }
+}
+
+const modifierBadgeClass = (modifier) => {
+  return modifier === 'addition'
+    ? 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/15 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/20'
+    : 'bg-rose-50 text-rose-700 ring-1 ring-rose-600/15 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-500/20'
+}
+
+const formatAmount = (amount, amountType) => {
+  const num = Number(amount)
+  if (isNaN(num)) return amount
+  const formatted = num.toFixed(2)
+  return amountType === 'percentage' ? `${formatted}%` : `${formatted} EGP`
+}
+
+// ─── Parent options (only top-level items can be parents, excluding current item if editing) ─
+const parentOptions = computed(() =>
+  store.priceSettings.filter((ps) => ps.parent_id === null && (!form.value.id || ps.id !== form.value.id))
+)
+
+// ─── Form ─────────────────────────────────────────────────
+const showModal  = ref(false)
+const isEditing  = ref(false)
+const saving     = ref(false)
+function emptyForm() {
+  return {
+    name:            '',
+    type:            '',
+    description:     '',
+    modifier:        '',
+    amount_type:     '',
+    amount:          '',
+    dl_count:        null,
+    parent_id:       null,
+    is_active:       true,
+    scholarship_ids: [],
+  }
+}
+
+const form = ref(emptyForm())
+
+// ─── Modal controls ───────────────────────────────────────
+const openAddModal = () => {
+  isEditing.value = false
+  form.value = emptyForm()
+  showModal.value = true
+}
+
+const editPriceSetting = (item) => {
+  isEditing.value = true
+  form.value = {
+    id:              item.id,
+    name:            item.name              ?? '',
+    type:            item.type              ?? '',
+    description:     item.description       ?? '',
+    modifier:        item.modifier          ?? '',
+    amount_type:     item.amount_type       ?? '',
+    amount:          item.amount            ?? '',
+    dl_count:        item.dl_count          ?? null,
+    parent_id:       item.parent_id         ?? null,
+    is_active:       item.is_active         ?? true,
+    scholarship_ids: Array.isArray(item.scholarships)
+      ? item.scholarships.map(s => s.id)
+      : Array.isArray(item.scholarship_ids)
+        ? [...item.scholarship_ids]
+        : []
+  }
+  showModal.value = true
+}
+
+const closeModal = () => {
+  showModal.value = false
+  isEditing.value = false
+  saving.value    = false
+}
+
+// ─── Save (create / update) ───────────────────────────────
+const savePriceSetting = async () => {
+  if (!form.value.name.trim()) {
+    notyf.error('Please enter a name.')
+    return
+  }
+  if (!form.value.type) {
+    notyf.error('Please select a type.')
+    return
+  }
+  if (!form.value.modifier) {
+    notyf.error('Please select a modifier.')
+    return
+  }
+  if (!form.value.amount_type) {
+    notyf.error('Please select an amount type.')
+    return
+  }
+
+  const payload = {
+    name:            form.value.name.trim(),
+    type:            form.value.type,
+    description:     form.value.description || null,
+    modifier:        form.value.modifier,
+    amount_type:     form.value.amount_type,
+    amount:          form.value.amount,
+    dl_count:        form.value.dl_count !== '' ? form.value.dl_count : null,
+    parent_id:       (form.value.parent_id === null || form.value.parent_id === 'null' || form.value.parent_id === '') ? null : form.value.parent_id,
+    is_active:       form.value.is_active,
+    scholarship_ids: form.value.scholarship_ids.length ? form.value.scholarship_ids : null,
+  }
+
+  saving.value = true
+  try {
+    if (isEditing.value) {
+      await store.updatePriceSetting(form.value.id, payload)
+    } else {
+      await store.createPriceSetting(payload)
+    }
+    closeModal()
+    await store.fetchPriceSettings()
+  } catch (err) {
+    console.error(err)
+  } finally {
+    saving.value = false
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────
+onMounted(() => {
+  store.fetchPriceSettings()
+  scholarshipStore.fetchScholarships()
+})
+</script>
+
+<style scoped>
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Modal transition animations */
+.modal-fade-enter-active,
+.modal-fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.modal-fade-enter-from,
+.modal-fade-leave-to {
+  opacity: 0;
+}
+
+.modal-fade-enter-active .animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+.modal-fade-leave-active .animate-slide-up {
+  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(0) scale(1); opacity: 1; }
+  to { transform: translateY(15px) scale(0.95); opacity: 0; }
+}
+
+/* Custom scrollbar for modal content */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.3);
+  border-radius: 20px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.5);
+}
+</style>
