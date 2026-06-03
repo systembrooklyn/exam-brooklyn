@@ -65,7 +65,7 @@
         </div>
 
         <div class="flex flex-col items-stretch gap-2 min-w-[180px]">
-          <button
+          <!-- <button
             type="button"
             @click="handleExportExcel"
             :disabled="store.loading || !filteredActionablePayrolls.length"
@@ -73,7 +73,7 @@
             title="Export filtered table data to Excel"
           >
             <LucideDownload class="w-4 h-4" /> Export Excel
-          </button>
+          </button> -->
 
           <button
             v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)"
@@ -84,7 +84,7 @@
           </button>
         </div>
 
-        <div class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center min-w-[180px] shrink-0">
+        <!-- <div v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL) " class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center min-w-[180px] shrink-0">
           <p class="text-[10px] uppercase font-bold text-indigo-600 tracking-wide">Total Net Salary</p>
           <p class="text-2xl font-bold text-indigo-900 tabular-nums leading-tight">
             {{ formatMoney(filteredNetSalaryTotal) }}
@@ -92,7 +92,7 @@
           <p class="text-[11px] text-indigo-500 mt-0.5">
             {{ filteredActionablePayrolls.length }} row{{ filteredActionablePayrolls.length === 1 ? '' : 's' }} shown
           </p>
-        </div>
+        </div> -->
       </div>
     </div>
 
