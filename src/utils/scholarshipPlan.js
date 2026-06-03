@@ -108,6 +108,9 @@ export function mapPlanDetailToForm(detail) {
     id: detail.id,
     name: detail.name ?? "",
     study_type: normalizeStudyType(detail.study_type),
+    abbrev: detail.abbrev ?? "",
+    desc: detail.desc ?? "",
+    price: detail.price ?? "",
     course_groups,
   };
 }
@@ -117,6 +120,9 @@ export function buildScholarshipPlanPayload(form) {
   return {
     name: (form.name ?? "").trim(),
     study_type: studyTypeForApi(form.study_type),
+    abbrev: (form.abbrev ?? "").trim() || null,
+    desc: (form.desc ?? "").trim() || null,
+    price: form.price !== "" && form.price !== null && form.price !== undefined ? Number(form.price) : null,
     course_groups: (form.course_groups ?? []).map((c) => {
       const visibleGroups = (c.groups ?? []).filter((g) => !g?._deleted);
       const deletedGroupIds = (c.groups ?? [])

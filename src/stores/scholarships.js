@@ -161,6 +161,24 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     }
   };
 
+  const bulkUpdatePrices = async (ids, price) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      await apiClient.put(`${SCHOLARSHIPS_PLANS}/bulk-update-price`, {
+        ids,
+        price: Number(price)
+      });
+      notyf.success("Prices updated successfully in bulk");
+      await fetchScholarshipPlans();
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   return {
     scholarships,
     scholarshipPlans,
@@ -175,5 +193,6 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     fetchScholarshipPlans,
     createScholarshipPlan,
     updateScholarshipPlan,
+    bulkUpdatePrices,
   };
 });

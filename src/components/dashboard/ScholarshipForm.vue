@@ -3,10 +3,9 @@
     <!-- Plan basics -->
     <section class="rounded-xl border border-gray-200 bg-slate-50/50 p-3.5 sm:p-4">
       <h3 class="text-sm font-semibold text-indigo-900 mb-3">Plan details</h3>
-      <div
-        class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4"
-      >
-        <div class="min-w-0 flex-1">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-1">
+        <!-- Name -->
+        <div>
           <label class="block text-sm font-medium text-gray-700 mb-1" for="sp-name"
             >Scholarship name</label
           >
@@ -23,15 +22,46 @@
             />
           </div>
         </div>
-        <div class="shrink-0 w-full sm:w-auto">
+
+        <!-- Abbreviation -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="sp-abbrev"
+            >Abbreviation</label
+          >
+          <input
+            id="sp-abbrev"
+            v-model="form.abbrev"
+            type="text"
+            placeholder="e.g. BBS"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
+          />
+        </div>
+
+        <!-- Price -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="sp-price"
+            >Price (EGP)</label
+          >
+          <input
+            id="sp-price"
+            v-model.number="form.price"
+            type="number"
+            min="0"
+            placeholder="e.g. 300000"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none"
+          />
+        </div>
+
+        <!-- Study Format -->
+        <div>
           <span class="block text-sm font-medium text-gray-700 mb-1">Study format</span>
           <div
-            class="inline-flex w-full sm:w-auto justify-stretch rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
+            class="inline-flex w-full justify-stretch rounded-xl border border-gray-200 bg-white p-1 shadow-sm"
             role="radiogroup"
             aria-label="Study format"
           >
             <label
-              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
               :class="
                 form.study_type === 'online'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -47,7 +77,7 @@
               Online
             </label>
             <label
-              class="flex flex-1 sm:flex-initial cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
+              class="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-colors"
               :class="
                 form.study_type === 'class'
                   ? 'bg-indigo-600 text-white shadow-sm'
@@ -58,6 +88,20 @@
               Class
             </label>
           </div>
+        </div>
+
+        <!-- Description -->
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium text-gray-700 mb-1" for="sp-desc"
+            >Description</label
+          >
+          <textarea
+            id="sp-desc"
+            v-model="form.desc"
+            rows="2"
+            placeholder="This is a test scholarship"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none resize-none"
+          />
         </div>
       </div>
     </section>

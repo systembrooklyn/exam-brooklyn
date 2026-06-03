@@ -1,8 +1,8 @@
 <template>
-  <div class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-8 bg-gray-50/50 dark:bg-gray-900/50 animate-fade-in">
+  <div class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-4 bg-gray-50/50 dark:bg-gray-900/50 animate-fade-in">
 
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-3">
       <div>
         <div class="flex items-center gap-2.5">
           <span class="p-2 bg-indigo-50 dark:bg-indigo-950/50 rounded-xl text-indigo-600 dark:text-indigo-400">
@@ -87,22 +87,27 @@
             <template v-for="item in store.priceSettings" :key="item.id">
               <!-- Parent row -->
               <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 group">
-                <td class="px-6 py-4.5 font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-                  <button
-                    v-if="item.children && item.children.length"
-                    @click="toggleChildren(item.id)"
-                    class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-indigo-600 transition-all duration-205 cursor-pointer"
-                    :title="expandedRows.has(item.id) ? 'Collapse' : 'Expand'"
-                  >
-                    <ChevronRight
-                      class="w-4 h-4 transition-transform duration-200"
-                      :class="{ 'rotate-90 text-indigo-600 dark:text-indigo-400': expandedRows.has(item.id) }"
-                    />
-                  </button>
-                  <span v-else class="w-6 h-6 inline-block"></span>
-                  <span class="group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    {{ item.name }}
-                  </span>
+                <td class="px-6 py-4.5 font-semibold text-gray-900 dark:text-gray-100">
+                  <div class="flex items-center gap-3">
+                    <button
+                      v-if="item.children && item.children.length"
+                      @click="toggleChildren(item.id)"
+                      class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-indigo-600 transition-all duration-205 cursor-pointer"
+                      :title="expandedRows.has(item.id) ? 'Collapse' : 'Expand'"
+                    >
+                      <ChevronRight
+                        class="w-4 h-4 transition-transform duration-200"
+                        :class="{ 'rotate-90 text-indigo-600 dark:text-indigo-400': expandedRows.has(item.id) }"
+                      />
+                    </button>
+                    <span v-else class="w-6 h-6 inline-block"></span>
+                    <span
+                      :class="item.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
+                      @click="item.description && toggleDescription(item.id)"
+                    >
+                      {{ item.name }}
+                    </span>
+                  </div>
                 </td>
                 <td class="px-6 py-4.5">
                   <span :class="typeBadgeClass(item.type)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
@@ -122,7 +127,7 @@
                 <td class="px-6 py-4.5">
                   <div v-if="item.scholarships && item.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
                     <span v-for="sch in item.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
-                      {{ sch.name }}
+                      {{ formatScholarshipName(sch) }}
                     </span>
                   </div>
                   <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
@@ -148,60 +153,85 @@
                 </td>
               </tr>
 
+              <!-- Parent description row -->
+              <tr v-if="expandedDescriptions.has(item.id) && item.description" class="bg-indigo-50/5 dark:bg-indigo-950/5">
+                <td colspan="9" class="px-8 py-3.5 text-left border-b border-gray-100 dark:border-gray-700/50">
+                  <div class="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium pl-14 leading-relaxed animate-fade-in">
+                    <span class="text-indigo-600 dark:text-indigo-400 font-semibold shrink-0">Description:</span>
+                    <span class="whitespace-pre-wrap font-normal text-gray-700 dark:text-gray-300">{{ item.description }}</span>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Child rows (indented) -->
               <!-- Child rows (indented) -->
               <template v-if="item.children && item.children.length && expandedRows.has(item.id)">
-                <tr
-                  v-for="child in item.children"
-                  :key="child.id"
-                  class="bg-indigo-50/15 dark:bg-indigo-950/10 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150"
-                >
-                  <td class="px-6 py-3.5 pl-12 text-gray-700 dark:text-gray-200 text-sm flex items-center gap-2 font-medium border-l-5 border-indigo-400 dark:border-indigo-500">
-                    <CornerDownRight class="w-4 h-4 text-indigo-400 dark:text-indigo-500 flex-shrink-0" />
-                    <span>{{ child.name }}</span>
-                  </td>
-                  <td class="px-6 py-3.5">
-                    <span :class="typeBadgeClass(child.type)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
-                      {{ child.type }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-3.5">
-                    <span :class="modifierBadgeClass(child.modifier)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
-                      {{ child.modifier }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-xs font-medium">{{ child.amount_type }}</td>
-                  <td class="px-6 py-3.5 text-gray-800 dark:text-gray-200 font-bold font-mono text-sm">
-                    {{ formatAmount(child.amount, child.amount_type) }}
-                  </td>
-                  <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ child.dl_count ?? '—' }}</td>
-                  <td class="px-6 py-3.5">
-                    <div v-if="child.scholarships && child.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
-                      <span v-for="sch in child.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
-                        {{ sch.name }}
+                <template v-for="child in item.children" :key="child.id">
+                  <tr class="bg-indigo-50/15 dark:bg-indigo-950/10 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150">
+                    <td class="px-6 py-3.5 pl-12 text-gray-700 dark:text-gray-200 text-sm font-medium border-l-5 border-indigo-400 dark:border-indigo-500">
+                      <div class="flex items-center gap-2">
+                        <CornerDownRight class="w-4 h-4 text-indigo-400 dark:text-indigo-500 flex-shrink-0" />
+                        <span
+                          :class="child.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
+                          @click="child.description && toggleDescription(child.id)"
+                        >
+                          {{ child.name }}
+                        </span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-3.5">
+                      <span :class="typeBadgeClass(child.type)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                        {{ child.type }}
                       </span>
-                    </div>
-                    <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
-                  </td>
-                  <td class="px-6 py-3.5">
-                    <span
-                      :class="child.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
-                      class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
-                    >
-                      {{ child.is_active ? 'Active' : 'Inactive' }}
-                    </span>
-                  </td>
-                  <td class="px-6 py-3.5">
-                    <div class="flex items-center gap-2 justify-center">
-                      <button
-                        @click="editPriceSetting(child)"
-                        class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer"
-                        title="Edit"
+                    </td>
+                    <td class="px-6 py-3.5">
+                      <span :class="modifierBadgeClass(child.modifier)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                        {{ child.modifier }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-xs font-medium">{{ child.amount_type }}</td>
+                    <td class="px-6 py-3.5 text-gray-800 dark:text-gray-200 font-bold font-mono text-sm">
+                      {{ formatAmount(child.amount, child.amount_type) }}
+                    </td>
+                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ child.dl_count ?? '—' }}</td>
+                    <td class="px-6 py-3.5">
+                      <div v-if="child.scholarships && child.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
+                        <span v-for="sch in child.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
+                          {{ formatScholarshipName(sch) }}
+                        </span>
+                      </div>
+                      <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
+                    </td>
+                    <td class="px-6 py-3.5">
+                      <span
+                        :class="child.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                        class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
                       >
-                        <Pencil class="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                        {{ child.is_active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="px-6 py-3.5">
+                      <div class="flex items-center gap-2 justify-center">
+                        <button
+                          @click="editPriceSetting(child)"
+                          class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer"
+                          title="Edit"
+                        >
+                          <Pencil class="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Child description row -->
+                  <tr v-if="expandedDescriptions.has(child.id) && child.description" class="bg-indigo-50/5 dark:bg-indigo-950/5">
+                    <td colspan="9" class="px-8 py-2.5 text-left border-b border-gray-100 dark:border-gray-700/50 pl-20">
+                      <div class="flex items-start gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed animate-fade-in">
+                        <span class="text-indigo-500 font-semibold shrink-0">Description:</span>
+                        <span class="whitespace-pre-wrap font-normal text-gray-650 dark:text-gray-350">{{ child.description }}</span>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
               </template>
             </template>
           </tbody>
@@ -444,6 +474,17 @@ const toggleChildren = (id) => {
   expandedRows.value = new Set(expandedRows.value)
 }
 
+const expandedDescriptions = ref(new Set())
+
+const toggleDescription = (id) => {
+  if (expandedDescriptions.value.has(id)) {
+    expandedDescriptions.value.delete(id)
+  } else {
+    expandedDescriptions.value.add(id)
+  }
+  expandedDescriptions.value = new Set(expandedDescriptions.value)
+}
+
 // ─── Badge & Formatting helpers ──────────────────────────
 const typeBadgeClass = (type) => {
   switch (type) {
@@ -469,6 +510,16 @@ const formatAmount = (amount, amountType) => {
   if (isNaN(num)) return amount
   const formatted = num.toFixed(2)
   return amountType === 'percentage' ? `${formatted}%` : `${formatted} EGP`
+}
+
+const formatScholarshipName = (sch) => {
+  if (!sch) return ''
+  const type = sch.study_type || sch.type
+  if (type) {
+    const capitalized = String(type).charAt(0).toUpperCase() + String(type).slice(1).toLowerCase()
+    return `${sch.name} (${capitalized})`
+  }
+  return sch.name
 }
 
 // ─── Parent options (only top-level items can be parents, excluding current item if editing) ─

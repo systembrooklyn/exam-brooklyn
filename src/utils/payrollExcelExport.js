@@ -324,6 +324,9 @@ export function exportPayrollsExcel(items, options = {}) {
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Payrolls");
+
+  // Use native XLSX.writeFile to download the file with correct name and type
   XLSX.writeFile(wb, options.fileName || "payrolls.xlsx");
+
   return true;
 }

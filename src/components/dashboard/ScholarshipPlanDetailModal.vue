@@ -33,6 +33,7 @@
                   class="text-2xl sm:text-3xl font-bold text-gray-900 truncate"
                 >
                   {{ detail.name || "—" }}
+                  <span v-if="detail.abbrev" class="text-xl font-semibold text-indigo-500/80 ml-2">({{ detail.abbrev }})</span>
                 </h2>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                   <span
@@ -40,11 +41,11 @@
                   >
                     {{ detail.study_type || "—" }}
                   </span>
-                  <span
+                  <!-- <span
                     class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                   >
                     ID {{ detail.id }}
-                  </span>
+                  </span> -->
                 </div>
               </div>
               <button
@@ -58,7 +59,7 @@
             </div>
 
             <dl
-              class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"
+              class="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-sm"
             >
               <div class="flex gap-2 rounded-lg bg-white/80 px-3 py-2 border border-gray-100">
                 <Calendar class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
@@ -74,7 +75,32 @@
                   <dd class="font-medium text-gray-800">{{ formatDateTime(detail.updated_at) }}</dd>
                 </div>
               </div>
+              <div class="flex gap-2 rounded-lg bg-white/80 px-3 py-2 border border-gray-100">
+                <DollarSign class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                <div>
+                  <dt class="text-xs text-gray-500">Price</dt>
+                  <dd class="font-medium text-gray-800">
+                    {{ detail.price != null && detail.price !== '' ? Number(detail.price).toLocaleString() + ' EGP' : '—' }}
+                  </dd>
+                </div>
+              </div>
+              <div class="flex gap-2 rounded-lg bg-white/80 px-3 py-2 border border-gray-100">
+                <FileText class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                <div>
+                  <dt class="text-xs text-gray-500">Abbreviation</dt>
+                  <dd class="font-medium text-gray-800">{{ detail.abbrev || '—' }}</dd>
+                </div>
+              </div>
             </dl>
+
+            <!-- Description -->
+            <div v-if="detail.desc" class="mt-3 flex gap-2 rounded-lg bg-white/80 px-3 py-2.5 border border-gray-100 text-sm">
+              <FileText class="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+              <div>
+                <dt class="text-xs text-gray-500 font-semibold uppercase tracking-wider">Description</dt>
+                <dd class="font-normal text-gray-700 whitespace-pre-wrap mt-1 leading-relaxed">{{ detail.desc }}</dd>
+              </div>
+            </div>
           </div>
 
           <!-- Body: courses -->
@@ -219,6 +245,8 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  DollarSign,
+  FileText,
 } from "lucide-vue-next";
 import GroupTypeTabsTable from "@/components/dashboard/GroupTypeTabsTable.vue";
 import formatDate from "../global/FormDate";

@@ -20,12 +20,12 @@
             class="bg-indigo-50 text-indigo-700 text-sm py-0.5 px-2 rounded inline-flex items-center gap-1 border border-indigo-100 max-w-full min-w-0"
             @click.stop
           >
-            <span class="min-w-0 flex-1 truncate">{{ item[labelKey] }}</span>
+            <span class="min-w-0 flex-1 truncate">{{ getOptionLabel(item) }}</span>
             <button 
               type="button"
               @click.stop="removeItem(item)"
               class="hover:text-indigo-900 focus:outline-none shrink-0"
-              :aria-label="`Remove ${item[labelKey]}`"
+              :aria-label="`Remove ${getOptionLabel(item)}`"
             >
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -40,7 +40,8 @@
 
     <div 
       v-if="isOpen" 
-      class="absolute z-[999] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto animate-fade-in-down"
+      class="absolute z-[999] w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+      :class="openUpDynamic ? 'bottom-full mb-1.5 animate-fade-in-up' : 'top-full mt-1 animate-fade-in-down'"
     >
       <div class="p-2 sticky top-0 bg-white border-b border-gray-100 z-[1]">
         <input 
@@ -97,7 +98,7 @@
           >
             <svg v-if="isSelected(option)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
-          <span class="text-sm text-gray-700" :class="{'font-medium text-indigo-700': isSelected(option)}">{{ option[labelKey] }}</span>
+          <span class="text-sm text-gray-700" :class="{'font-medium text-indigo-700': isSelected(option)}">{{ getOptionLabel(option) }}</span>
         </div>
         <div v-if="filteredOptions.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
           No results found
@@ -211,9 +212,27 @@ function toggleSelectAllFiltered() {
   emit("update:modelValue", merged);
 }
 
+const openUpDynamic = ref(false);
+
+const getOptionLabel = (option) => {
+  if (!option) return '';
+  const label = option[props.labelKey] || '';
+  const type = option.study_type || option.type;
+  if (type) {
+    const capitalized = String(type).charAt(0).toUpperCase() + String(type).slice(1).toLowerCase();
+    return `${label} (${capitalized})`;
+  }
+  return label;
+};
+
 const toggleDropdown = () => {
   isOpen.value = !isOpen.value;
   if (isOpen.value) {
+    if (container.value) {
+      const rect = container.value.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      openUpDynamic.value = spaceBelow < 250;
+    }
     setTimeout(() => {
         if(searchInput.value) searchInput.value.focus();
     }, 50);
@@ -267,8 +286,17 @@ onUnmounted(() => {
   animation: fadeInDown 0.2s ease-out;
 }
 
+.animate-fade-in-up {
+  animation: fadeInUp 0.2s ease-out;
+}
+
 @keyframes fadeInDown {
   from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 </style>
