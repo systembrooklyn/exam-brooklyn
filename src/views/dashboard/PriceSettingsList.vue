@@ -87,7 +87,7 @@
             <template v-for="item in store.priceSettings" :key="item.id">
               <!-- Parent row -->
               <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 group">
-                <td class="px-6 py-4.5 font-semibold text-gray-900 dark:text-gray-100">
+                <td class="px-6 py-4.5 text-left">
                   <div class="flex items-center gap-3">
                     <button
                       v-if="item.children && item.children.length"
@@ -101,12 +101,28 @@
                       />
                     </button>
                     <span v-else class="w-6 h-6 inline-block"></span>
-                    <span
-                      :class="item.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
-                      @click="item.description && toggleDescription(item.id)"
-                    >
-                      {{ item.name }}
-                    </span>
+                    <div class="flex flex-col items-start">
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          :class="item.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
+                          @click="item.description && toggleDescription(item.id)"
+                          class="font-bold text-gray-950 dark:text-white text-sm"
+                        >
+                          {{ item.name }}
+                        </span>
+                        <span v-if="item.children && item.children.length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-50 text-purple-655 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30 uppercase tracking-wider scale-95 origin-left">
+                          Parent Rule
+                        </span>
+                      </div>
+                      <div v-if="item.parents && item.parents.length" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                        <span class="text-[9px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-wider">child to:</span>
+                        <div class="flex flex-wrap gap-1">
+                          <span v-for="p in item.parents" :key="p.id" class="px-1.5 py-0.5 rounded-md bg-indigo-50/60 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 text-[10px] font-semibold border border-indigo-100/60 dark:border-indigo-900/30">
+                            {{ p.name }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </td>
                 <td class="px-6 py-4.5">
@@ -134,7 +150,7 @@
                 </td>
                 <td class="px-6 py-4.5">
                   <span
-                    :class="item.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                    :class="item.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-550 dark:bg-gray-800 dark:text-gray-450'"
                     class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide"
                   >
                     {{ item.is_active ? 'Active' : 'Inactive' }}
@@ -167,34 +183,50 @@
               <!-- Child rows (indented) -->
               <template v-if="item.children && item.children.length && expandedRows.has(item.id)">
                 <template v-for="child in item.children" :key="child.id">
-                  <tr class="bg-indigo-50/15 dark:bg-indigo-950/10 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150">
-                    <td class="px-6 py-3.5 pl-12 text-gray-700 dark:text-gray-200 text-sm font-medium border-l-5 border-indigo-400 dark:border-indigo-500">
+                  <tr class="bg-slate-50/50 dark:bg-slate-900/30 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-150">
+                    <td class="px-6 py-3.5 pl-12 text-gray-650 dark:text-gray-300 text-sm font-medium border-l-4 border-indigo-500/70 text-left">
                       <div class="flex items-center gap-2">
-                        <CornerDownRight class="w-4 h-4 text-indigo-400 dark:text-indigo-500 flex-shrink-0" />
-                        <span
-                          :class="child.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
-                          @click="child.description && toggleDescription(child.id)"
-                        >
-                          {{ child.name }}
-                        </span>
+                        <CornerDownRight class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
+                        <div class="flex flex-col items-start">
+                          <div class="flex items-center gap-1.5">
+                            <span
+                              :class="child.description ? 'cursor-pointer hover:text-indigo-650 dark:hover:text-indigo-455 transition-colors' : ''"
+                              @click="child.description && toggleDescription(child.id)"
+                              class="text-[13px] font-medium text-gray-700 dark:text-gray-200"
+                            >
+                              {{ child.name }}
+                            </span>
+                            <span class="inline-flex items-center px-1.5 py-0.25 rounded text-[8.5px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60 uppercase tracking-wide scale-95 origin-left">
+                              Sub-rule
+                            </span>
+                          </div>
+                          <div v-if="child.parents && child.parents.length" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span class="text-[9px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-wider">Parents:</span>
+                            <div class="flex flex-wrap gap-1">
+                              <span v-for="p in child.parents" :key="p.id" class="px-1.5 py-0.5 rounded-md bg-indigo-50/60 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 text-[10px] font-semibold border border-indigo-100/60 dark:border-indigo-900/30">
+                                {{ p.name }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td class="px-6 py-3.5">
-                      <span :class="typeBadgeClass(child.type)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                      <span :class="typeBadgeClass(child.type)" class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90">
                         {{ child.type }}
                       </span>
                     </td>
                     <td class="px-6 py-3.5">
-                      <span :class="modifierBadgeClass(child.modifier)" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide">
+                      <span :class="modifierBadgeClass(child.modifier)" class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90">
                         {{ child.modifier }}
                       </span>
                     </td>
-                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-xs font-medium">{{ child.amount_type }}</td>
-                    <td class="px-6 py-3.5 text-gray-800 dark:text-gray-200 font-bold font-mono text-sm">
+                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-[11px] font-medium">{{ child.amount_type }}</td>
+                    <td class="px-6 py-3.5 text-gray-800 dark:text-gray-250 font-bold font-mono text-xs">
                       {{ formatAmount(child.amount, child.amount_type) }}
                     </td>
-                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 font-mono text-xs">{{ child.dl_count ?? '—' }}</td>
-                    <td class="px-6 py-3.5">
+                    <td class="px-6 py-3.5 text-gray-550 dark:text-gray-450 font-mono text-[11px]">{{ child.dl_count ?? '—' }}</td>
+                    <td class="px-6 py-3.5 scale-95 origin-center">
                       <div v-if="child.scholarships && child.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
                         <span v-for="sch in child.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
                           {{ formatScholarshipName(sch) }}
@@ -204,8 +236,8 @@
                     </td>
                     <td class="px-6 py-3.5">
                       <span
-                        :class="child.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
-                        class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide"
+                        :class="child.is_active ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300' : 'bg-gray-100 text-gray-550 dark:bg-gray-800 dark:text-gray-455'"
+                        class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90"
                       >
                         {{ child.is_active ? 'Active' : 'Inactive' }}
                       </span>
@@ -217,7 +249,7 @@
                           class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer"
                           title="Edit"
                         >
-                          <Pencil class="w-3.5 h-3.5" />
+                          <Pencil class="w-3 h-3" />
                         </button>
                       </div>
                     </td>
@@ -352,38 +384,46 @@
               </div>
             </div>
 
-            <!-- Grid: DL Count & Parent ID -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                  DL Count <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
-                </label>
-                <input
-                  v-model="form.dl_count"
-                  type="number"
-                  min="0"
-                  placeholder="e.g. 1"
-                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                />
-              </div>
-              <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-                  Parent <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
-                </label>
-                <select
-                  v-model="form.parent_id"
-                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                >
-                  <option :value="null">None (top-level)</option>
-                  <option
-                    v-for="ps in parentOptions"
-                    :key="ps.id"
-                    :value="ps.id"
-                  >
-                    {{ ps.name }}
-                  </option>
-                </select>
-              </div>
+            <!-- DL Count -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                DL Count <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
+              </label>
+              <input
+                v-model="form.dl_count"
+                type="number"
+                min="0"
+                placeholder="e.g. 1"
+                class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+              />
+            </div>
+
+            <!-- Parents MultiSelect -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                Parents <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
+              </label>
+              <MultiSelect
+                v-model="form.parent_ids"
+                :options="parentOptions"
+                placeholder="Select parent settings..."
+                label-key="name"
+                value-key="id"
+              />
+            </div>
+
+            <!-- Children MultiSelect -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+                Children <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
+              </label>
+              <MultiSelect
+                v-model="form.children_ids"
+                :options="childrenOptions"
+                placeholder="Select children settings..."
+                label-key="name"
+                value-key="id"
+              />
             </div>
 
             <!-- Scholarships MultiSelect -->
@@ -522,9 +562,13 @@ const formatScholarshipName = (sch) => {
   return sch.name
 }
 
-// ─── Parent options (only top-level items can be parents, excluding current item if editing) ─
+// ─── Options (excluding current item if editing) ───────────────
 const parentOptions = computed(() =>
-  store.priceSettings.filter((ps) => ps.parent_id === null && (!form.value.id || ps.id !== form.value.id))
+  store.priceSettings.filter((ps) => !form.value.id || ps.id !== form.value.id)
+)
+
+const childrenOptions = computed(() =>
+  store.priceSettings.filter((ps) => !form.value.id || ps.id !== form.value.id)
 )
 
 // ─── Form ─────────────────────────────────────────────────
@@ -540,7 +584,8 @@ function emptyForm() {
     amount_type:     '',
     amount:          '',
     dl_count:        null,
-    parent_id:       null,
+    parent_ids:      [],
+    children_ids:    [],
     is_active:       true,
     scholarship_ids: [],
   }
@@ -566,8 +611,17 @@ const editPriceSetting = (item) => {
     amount_type:     item.amount_type       ?? '',
     amount:          item.amount            ?? '',
     dl_count:        item.dl_count          ?? null,
-    parent_id:       item.parent_id         ?? null,
     is_active:       item.is_active         ?? true,
+    parent_ids:      Array.isArray(item.parents)
+      ? item.parents.map(p => p.id)
+      : Array.isArray(item.parent_ids)
+        ? [...item.parent_ids]
+        : [],
+    children_ids:    Array.isArray(item.children)
+      ? item.children.map(c => c.id)
+      : Array.isArray(item.children_ids)
+        ? [...item.children_ids]
+        : [],
     scholarship_ids: Array.isArray(item.scholarships)
       ? item.scholarships.map(s => s.id)
       : Array.isArray(item.scholarship_ids)
@@ -608,11 +662,12 @@ const savePriceSetting = async () => {
     description:     form.value.description || null,
     modifier:        form.value.modifier,
     amount_type:     form.value.amount_type,
-    amount:          form.value.amount,
-    dl_count:        form.value.dl_count !== '' ? form.value.dl_count : null,
-    parent_id:       (form.value.parent_id === null || form.value.parent_id === 'null' || form.value.parent_id === '') ? null : form.value.parent_id,
+    amount:          Number(form.value.amount),
+    dl_count:        (form.value.dl_count !== '' && form.value.dl_count !== null && form.value.dl_count !== undefined) ? Number(form.value.dl_count) : null,
+    parent_ids:      form.value.parent_ids && form.value.parent_ids.length ? form.value.parent_ids : [],
+    children_ids:    form.value.children_ids && form.value.children_ids.length ? form.value.children_ids : [],
     is_active:       form.value.is_active,
-    scholarship_ids: form.value.scholarship_ids.length ? form.value.scholarship_ids : null,
+    scholarship_ids: form.value.scholarship_ids && form.value.scholarship_ids.length ? form.value.scholarship_ids : [],
   }
 
   saving.value = true
