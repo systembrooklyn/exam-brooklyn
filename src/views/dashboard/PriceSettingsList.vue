@@ -18,10 +18,32 @@
         </p>
       </div>
 
-      <div @click="openAddModal" class="buttons self-start sm:self-auto">
-        <button class="btn"><span></span>
-          <p data-start="good luck!" data-text="ADD!" data-title="new Setting"></p>
-        </button>
+      <div class="flex items-center gap-3.5 self-start sm:self-auto">
+        <!-- View mode switcher -->
+        <div class="flex items-center bg-gray-100 dark:bg-gray-850 p-1 rounded-xl shadow-inner border border-gray-200/40 dark:border-gray-700/40">
+          <button 
+            @click="viewMode = 'table'"
+            :class="viewMode === 'table' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-650 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <List class="w-3.5 h-3.5" />
+            Table
+          </button>
+          <button 
+            @click="viewMode = 'chart'"
+            :class="viewMode === 'chart' ? 'bg-white dark:bg-gray-700 shadow-sm text-indigo-650 dark:text-white' : 'text-gray-500 hover:text-gray-900 dark:hover:text-gray-300'"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <GitBranch class="w-3.5 h-3.5" />
+            Mind Map
+          </button>
+        </div>
+
+        <div @click="openAddModal" class="buttons">
+          <button class="btn"><span></span>
+            <p data-start="good luck!" data-text="ADD!" data-title="new Setting"></p>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -41,8 +63,9 @@
       </div>
     </div>
 
-    <!-- Table Card -->
-    <div v-else class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
+    <template v-else>
+      <!-- Table Card -->
+      <div v-if="viewMode === 'table'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[800px] border-collapse text-center">
           <thead class="bg-slate-50/75 dark:bg-slate-900/40 border-b border-gray-150 dark:border-gray-700/60">
@@ -180,7 +203,6 @@
               </tr>
 
               <!-- Child rows (indented) -->
-              <!-- Child rows (indented) -->
               <template v-if="item.children && item.children.length && expandedRows.has(item.id)">
                 <template v-for="child in item.children" :key="child.id">
                   <tr class="bg-slate-50/50 dark:bg-slate-900/30 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-150">
@@ -271,6 +293,19 @@
       </div>
     </div>
 
+    <!-- Mind Map Tree View -->
+    <MindMapTree
+      v-else-if="viewMode === 'chart'"
+      :tree-data="mindmapTree"
+      :format-amount="formatAmount"
+      :format-scholarship-name="formatScholarshipName"
+      :type-badge-class="typeBadgeClass"
+      :modifier-badge-class="modifierBadgeClass"
+      :rule-node-class="ruleNodeClass"
+      @edit-node="editPriceSetting"
+    />
+    </template>
+
     <!-- ─── Add / Edit Modal ─────────────────────────────────── -->
     <Teleport to="body">
       <transition name="modal-fade">
@@ -302,7 +337,6 @@
 
           <!-- Modal Body -->
           <div class="px-6 py-6 space-y-5 max-h-[70vh] overflow-y-auto custom-scrollbar">
-
             <!-- Name -->
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Name <span class="text-red-500">*</span></label>
@@ -377,7 +411,7 @@
                     placeholder="0.00"
                     class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-4 pr-12 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   />
-                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase pointer-events-none">
+                  <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-gray-550 uppercase pointer-events-none">
                     {{ form.amount_type === 'percentage' ? '%' : 'EGP' }}
                   </span>
                 </div>
@@ -454,7 +488,7 @@
                 ></span>
               </button>
               <div>
-                <span class="text-sm font-semibold text-gray-950 dark:text-white block leading-none">
+                <span class="text-sm font-semibold text-gray-955 dark:text-white block leading-none">
                   {{ form.is_active ? 'Active' : 'Inactive' }}
                 </span>
                 <span class="text-xs text-gray-400 mt-1.5 block">
@@ -462,7 +496,6 @@
                 </span>
               </div>
             </div>
-
           </div>
 
           <!-- Modal Footer -->
@@ -494,12 +527,92 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePriceSettingsStore } from '@/stores/priceSettingsStore'
 import { useScholarshipStore } from '@/stores/scholarships'
-import { ChevronRight, CornerDownRight, Pencil, X, Tag, Plus } from 'lucide-vue-next'
+import { ChevronRight, CornerDownRight, Pencil, X, Tag, Plus, List, GitBranch } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
 import MultiSelect from '@/components/global/MultiSelect.vue'
+import MindMapTree from '@/components/dashboard/MindMapTree.vue'
 
 const store = usePriceSettingsStore()
 const scholarshipStore = useScholarshipStore()
+
+const viewMode = ref('table')
+
+const mindmapTree = computed(() => {
+  const root = {
+    id: 'root',
+    name: 'Price Settings',
+    type: 'Root',
+    children: []
+  }
+
+  // Root rules are price settings with no parents
+  const parents = store.priceSettings.filter(item => !item.parents || item.parents.length === 0)
+
+  root.children = parents.map(p => {
+    const pNode = {
+      id: `rule-${p.id}`,
+      name: p.name,
+      type: p.type,
+      modifier: p.modifier,
+      amount: p.amount,
+      amount_type: p.amount_type,
+      is_active: p.is_active,
+      rawItem: p,
+      children: []
+    }
+
+    // Add direct scholarships
+    if (p.scholarships && p.scholarships.length) {
+      p.scholarships.forEach(s => {
+        pNode.children.push({
+          id: `sch-${p.id}-${s.id}`,
+          name: s.name,
+          type: 'Scholarship',
+          study_type: s.study_type,
+          price: s.price,
+          children: []
+        })
+      })
+    }
+
+    // Add child rules with unique parent-child concatenated IDs
+    if (p.children && p.children.length) {
+      p.children.forEach(c => {
+        const cNode = {
+          id: `rule-${p.id}-${c.id}`, // UNIQUE
+          name: c.name,
+          type: c.type,
+          modifier: c.modifier,
+          amount: c.amount,
+          amount_type: c.amount_type,
+          is_active: c.is_active,
+          rawItem: c,
+          children: []
+        }
+
+        // Add child scholarships with unique parent-child-scholarship concatenated IDs
+        if (c.scholarships && c.scholarships.length) {
+          c.scholarships.forEach(cs => {
+            cNode.children.push({
+              id: `sch-${p.id}-${c.id}-${cs.id}`, // UNIQUE
+              name: cs.name,
+              type: 'Scholarship',
+              study_type: cs.study_type,
+              price: cs.price,
+              children: []
+            })
+          })
+        }
+
+        pNode.children.push(cNode)
+      })
+    }
+
+    return pNode
+  })
+
+  return root
+})
 
 // ─── Table: expandable children rows ─────────────────────
 const expandedRows = ref(new Set())
@@ -743,5 +856,15 @@ onMounted(() => {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
+}
+
+/* Mindmap canvas dark background with dot grid pattern */
+.mindmap-canvas {
+  background-color: #0b0f19;
+  background-image: 
+    radial-gradient(#1e293b 1.2px, transparent 1.2px), 
+    radial-gradient(#1e293b 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+  background-position: 0 0, 12px 12px;
 }
 </style>
