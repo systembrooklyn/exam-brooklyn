@@ -114,25 +114,72 @@
       :show="showCalcModal"
       title="Calculate Payroll"
       :loading="store.loading"
+      bodyOverflowVisible
       @close="showCalcModal = false"
       @save="handleCalculate"
     >
       <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-          <select v-model="calcForm.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none">
-            <option value="">Select Employee</option>
-            <option v-for="emp in employeeStore.employees" :key="emp.id" :value="emp.id">
-              {{
-                emp.name ||
-                (emp.personal_info
-                  ? emp.personal_info.first_name +
-                    " " +
-                    emp.personal_info.last_name
-                  : "Emp #" + emp.id)
-              }}
-            </option>
-          </select>
+          <div ref="employeePickerRoot" class="relative">
+            <button
+              type="button"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer flex justify-between items-center h-10"
+              @click.stop="toggleEmployeePicker"
+            >
+              <span class="truncate text-gray-800">
+                {{ selectedEmployeeLabel }}
+              </span>
+              <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform" :class="{ 'rotate-180': employeePickerOpen }" />
+            </button>
+            
+            <div
+              v-show="employeePickerOpen"
+              class="absolute left-0 right-0 bottom-full z-50 mb-1 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+              role="listbox"
+              @mousedown.prevent
+            >
+              <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
+                <input
+                  ref="employeeSearchInputRef"
+                  v-model="employeeSearchQuery"
+                  type="search"
+                  autocomplete="off"
+                  placeholder="Search name..."
+                  class="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  @keydown.escape.prevent="employeePickerOpen = false"
+                />
+              </div>
+              <div class="max-h-56 overflow-y-auto">
+                <button
+                  type="button"
+                  role="option"
+                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
+                  :class="{ 'bg-indigo-50 text-indigo-900': !calcForm.employee_id }"
+                  @click="selectEmployee('')"
+                >
+                  <span>Select Employee</span>
+                </button>
+                <button
+                  v-for="emp in filteredEmployeesForPicker"
+                  :key="emp.id"
+                  type="button"
+                  role="option"
+                  class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
+                  :class="{ 'bg-indigo-50 text-indigo-900': calcForm.employee_id === emp.id }"
+                  @click="selectEmployee(emp.id)"
+                >
+                  <span class="truncate text-gray-800 font-medium">{{ emp.name }}</span>
+                  <span v-if="emp.contractType" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
+                    {{ emp.contractType }}
+                  </span>
+                </button>
+                <p v-if="filteredEmployeesForPicker.length === 0" class="px-3 py-2 text-xs text-gray-400">
+                  No employees match.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
@@ -140,6 +187,16 @@
           <p v-if="calcForm.payroll_month" class="text-xs text-gray-400 mt-1">
             Period: {{ getPayrollDates(calcForm.payroll_month).from_date }} → {{ getPayrollDates(calcForm.payroll_month).to_date }}
           </p>
+        </div>
+        <div v-if="isSelectedEmployeeHourly">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Worked Hours <span class="text-red-500">*</span></label>
+          <input
+            v-model.number="calcForm.worked_hours"
+            type="number"
+            min="0"
+            placeholder="e.g. 80"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+          />
         </div>
       </div>
     </HrModal>
@@ -410,16 +467,18 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useHrPayrollStore } from '@/stores/hr/payroll'
 import { useHrEmployeesStore } from '@/stores/hr/employees'
 import { useHrEmployeeAdjustmentsStore } from '@/stores/hr/employeeAdjustments'
+import { useHrContractsStore } from '@/stores/hr/contracts'
+import { activeContractTypeForEmployee } from '@/utils/hrEmployeeRequestDuration'
 import HrModal from '@/components/hr-dashboard/HrModal.vue'
 import PayrollsTable from '@/components/hr-dashboard/PayrollsTable.vue'
 import PayrollStatusBadge from '@/components/hr-dashboard/PayrollStatusBadge.vue'
 import PayrollSalaryDetails from '@/components/hr-dashboard/PayrollSalaryDetails.vue'
 import PayrollContractAnnex from '@/components/hr-dashboard/PayrollContractAnnex.vue'
-import { LucideCalculator, LucideRefreshCw, LucideCalendar, LucideDownload } from 'lucide-vue-next'
+import { LucideCalculator, LucideRefreshCw, LucideCalendar, LucideDownload, LucideChevronDown } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
 import { exportPayrollsExcel, computePayrollRowNetSalary } from '@/utils/payrollExcelExport'
 import { useAuthStore } from '@/stores/auth'
@@ -431,6 +490,7 @@ import { PAYROLL_STATUS_UPDATE } from '@/api/Api'
 const store = useHrPayrollStore()
 const employeeStore = useHrEmployeesStore()
 const adjustmentsStore = useHrEmployeeAdjustmentsStore()
+const contractStore = useHrContractsStore()
 const authStore = useAuthStore()
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -535,27 +595,96 @@ const filteredActionablePayrolls = computed(() => {
 
 // ─── Calculate Payroll Modal ──────────────────────────────
 const showCalcModal = ref(false)
-const calcForm = ref({ employee_id: '', payroll_month: '' })
+const calcForm = ref({ employee_id: '', payroll_month: '', worked_hours: '' })
+
+const employeePickerOpen = ref(false)
+const employeeSearchQuery = ref('')
+const employeePickerRoot = ref(null)
+const employeeSearchInputRef = ref(null)
+
+const toggleEmployeePicker = () => {
+  employeePickerOpen.value = !employeePickerOpen.value
+  if (employeePickerOpen.value) {
+    nextTick(() => {
+      if (employeeSearchInputRef.value) {
+        employeeSearchInputRef.value.focus()
+      }
+    })
+  }
+}
+
+const selectEmployee = (id) => {
+  calcForm.value.employee_id = id
+  employeePickerOpen.value = false
+  employeeSearchQuery.value = ''
+}
+
+const employeesForPicker = computed(() => {
+  return (employeeStore.employees || []).map(emp => {
+    const first = emp.personal_info?.first_name || ''
+    const last = emp.personal_info?.last_name || ''
+    const name = emp.name || (first + ' ' + last).trim() || `Emp #${emp.id}`
+    const contractType = activeContractTypeForEmployee(contractStore.contracts, emp.id)
+    return {
+      id: emp.id,
+      name,
+      contractType
+    }
+  })
+})
+
+const filteredEmployeesForPicker = computed(() => {
+  const q = String(employeeSearchQuery.value || '').toLowerCase().trim()
+  const list = employeesForPicker.value
+  if (!q) return list
+  return list.filter(emp => emp.name.toLowerCase().includes(q))
+})
+
+const selectedEmployeeLabel = computed(() => {
+  const empId = calcForm.value.employee_id
+  if (!empId) return 'Select Employee'
+  const found = employeesForPicker.value.find(e => e.id === empId)
+  if (found) {
+    return found.contractType ? `${found.name} (${found.contractType})` : found.name
+  }
+  return `Emp #${empId}`
+})
 
 const openCalcModal = () => {
-  calcForm.value = { employee_id: '', payroll_month: '' }
+  calcForm.value = { employee_id: '', payroll_month: '', worked_hours: '' }
+  employeeSearchQuery.value = ''
+  employeePickerOpen.value = false
   showCalcModal.value = true
 }
+
+const isSelectedEmployeeHourly = computed(() => {
+  const empId = calcForm.value.employee_id
+  if (!empId) return false
+  const type = activeContractTypeForEmployee(contractStore.contracts, empId)
+  return type === 'hourly'
+})
 
 const handleCalculate = async () => {
   if (!calcForm.value.employee_id || !calcForm.value.payroll_month) {
     notyf.error('Please fill in all fields')
     return
   }
+  if (isSelectedEmployeeHourly.value && (calcForm.value.worked_hours === '' || calcForm.value.worked_hours === null)) {
+    notyf.error('Please enter worked hours')
+    return
+  }
   const { from_date, to_date } = getPayrollDates(calcForm.value.payroll_month)
   try {
-    console.log(from_date, to_date)
-    console.log(calcForm.value.employee_id)
-    const response = await store.calculatePayroll({
+    const payload = {
       employee_id: calcForm.value.employee_id,
       from_date,
       to_date
-    })
+    }
+    if (isSelectedEmployeeHourly.value) {
+      payload.worked_hours = Number(calcForm.value.worked_hours)
+    }
+    console.log("Calculate Payroll Payload:", payload)
+    const response = await store.calculatePayroll(payload)
     selectedPayroll.value = response.data?.data ?? response.data
     showCalcModal.value = false
     showDetailsModal.value = true
@@ -912,8 +1041,23 @@ const applyFilterMonth = () => {
   fetchPayrolls()
 }
 
+const handleClickOutsidePicker = (e) => {
+  if (employeePickerRoot.value && !employeePickerRoot.value.contains(e.target)) {
+    employeePickerOpen.value = false
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([fetchPayrolls(), employeeStore.getEmployees()])
+  window.addEventListener('click', handleClickOutsidePicker)
+  await Promise.all([
+    fetchPayrolls(),
+    employeeStore.getEmployees(),
+    contractStore.getContracts().catch(() => {})
+  ])
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('click', handleClickOutsidePicker)
 })
 </script>
 
