@@ -29,6 +29,17 @@
             " @click="confirmBulkApprove">
           Bulk approve
         </button>
+        <button v-if="showBulkSelectionColumn" type="button" :disabled="selectedRequestIds.length === 0 ||
+          !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) ||
+          store.loading
+          " class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" :class="selectedRequestIds.length > 0 &&
+            authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) &&
+            !store.loading
+            ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
+            : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
+            " @click="confirmBulkReject">
+          Bulk reject
+        </button>
         <button v-if="
           authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_REQUEST) ||
           authStore.can(HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS)
@@ -249,10 +260,10 @@
 
     <div v-if="showBulkSelectionColumn && pendingSelectableIds.length" class="flex flex-wrap items-center gap-2 mb-3">
       <label class="inline-flex items-center gap-2 cursor-pointer select-none text-sm font-medium text-gray-700"
-        :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) }">
+        :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) }">
         <input ref="selectAllCheckboxRef" type="checkbox"
           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" :checked="allPendingSelected"
-          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)" @change="toggleSelectAllPending" />
+          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)" @change="toggleSelectAllPending" />
         <span>Select all</span>
       </label>
       <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} pending)</span>
@@ -265,7 +276,7 @@
       <template #select="{ item }">
         <div v-if="item.status === 'pending'" class="flex justify-center">
           <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-            :checked="isBulkSelected(item.id)" :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)"
+            :checked="isBulkSelected(item.id)" :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
             @change="toggleBulkSelect(item.id)" />
         </div>
       </template>
@@ -474,6 +485,9 @@
     <SweetAlert2Modal v-if="showConfirmBulkApprove" title="Bulk approve requests?" :text="bulkApproveConfirmText"
       icon="question" confirmButtonText="Yes, approve all" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
       @confirm="handleBulkApprove" @cancel="showConfirmBulkApprove = false" />
+    <SweetAlert2Modal v-if="showConfirmBulkReject" title="Bulk reject requests?" :text="bulkRejectConfirmText"
+      icon="warning" confirmButtonText="Yes, reject all" confirmButtonClass="bg-rose-600 hover:bg-rose-700"
+      @confirm="handleBulkReject" @cancel="showConfirmBulkReject = false" />
     <!-- Rejection Modal -->
     <HrModal v-if="showConfirmReject" :show="showConfirmReject" title="Reject Request" :loading="store.loading"
       saveLabel="Reject" @close="showConfirmReject = false" @save="handleReject">
@@ -915,6 +929,7 @@ const profileError = ref(false);
 
 const showConfirmApprove = ref(false);
 const showConfirmBulkApprove = ref(false);
+const showConfirmBulkReject = ref(false);
 const showConfirmReject = ref(false);
 const targetId = ref(null);
 const rejectionNote = ref('');
@@ -1193,6 +1208,12 @@ const bulkApproveConfirmText = computed(() => {
   return `Approve ${n} selected request${n === 1 ? '' : 's'}?`;
 });
 
+const bulkRejectConfirmText = computed(() => {
+  const n = selectedRequestIds.value.length;
+  if (n === 0) return 'No requests selected.';
+  return `Reject ${n} selected request${n === 1 ? '' : 's'}?`;
+});
+
 function clearBulkSelection() {
   selectedRequestIds.value = [];
 }
@@ -1209,7 +1230,10 @@ function isBulkSelected(rawId) {
 }
 
 function toggleBulkSelect(rawId) {
-  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  if (
+    !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+    !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)
+  ) return;
   const id = normalizeRequestId(rawId);
   if (id == null) return;
   const idx = selectedRequestIds.value.indexOf(id);
@@ -1242,7 +1266,10 @@ const somePendingSelected = computed(() => {
 });
 
 function toggleSelectAllPending() {
-  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  if (
+    !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
+    !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)
+  ) return;
   const ids = pendingSelectableIds.value;
   if (!ids.length) return;
   if (allPendingSelected.value) {
@@ -1677,6 +1704,31 @@ const handleBulkApprove = async () => {
     console.error("Bulk approval failed:", e);
   } finally {
     showConfirmBulkApprove.value = false;
+  }
+};
+
+const confirmBulkReject = () => {
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) return;
+  if (selectedRequestIds.value.length === 0) return;
+  showConfirmBulkReject.value = true;
+};
+
+const handleBulkReject = async () => {
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) {
+    showConfirmBulkReject.value = false;
+    return;
+  }
+  if (selectedRequestIds.value.length === 0) {
+    showConfirmBulkReject.value = false;
+    return;
+  }
+  try {
+    await store.bulkRejectRequests([...selectedRequestIds.value]);
+    clearBulkSelection();
+  } catch (e) {
+    console.error("Bulk rejection failed:", e);
+  } finally {
+    showConfirmBulkReject.value = false;
   }
 };
 

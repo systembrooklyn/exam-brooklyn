@@ -105,6 +105,8 @@ export const PAYROLL_REJECT_REQUEST = (id) =>
   `payroll-system/employee-requests/${id}/reject`;
 export const PAYROLL_BULK_APPROVE_REQUESTS =
   "payroll-system/employee-requests/bulk-approve";
+export const PAYROLL_BULK_REJECT_REQUESTS =
+  "payroll-system/employee-requests/bulk-reject";
 export const PAYROLL_APPROVED_VACATIONS =
   "payroll-system/employee-requests/approved-vacations";
 

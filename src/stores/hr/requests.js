@@ -12,6 +12,7 @@ import {
   PAYROLL_APPROVE_REQUEST,
   PAYROLL_REJECT_REQUEST,
   PAYROLL_BULK_APPROVE_REQUESTS,
+  PAYROLL_BULK_REJECT_REQUESTS,
   PAYROLL_APPROVED_VACATIONS,
 } from "@/api/Api";
 import { applyEmployeeRequestTimeFields } from "@/utils/normalizeApiTime";
@@ -280,6 +281,27 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
+  const bulkRejectRequests = async (requestIds) => {
+    const ids = Array.isArray(requestIds)
+      ? requestIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+      : [];
+    if (!ids.length) return;
+    loading.value = true;
+    try {
+      const response = await apiClient.post(PAYROLL_BULK_REJECT_REQUESTS, {
+        request_ids: ids,
+      });
+      notyf.success(response.data.message || "Requests rejected");
+      await refreshCurrentList();
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const getApprovedVacations = async (employeeId) => {
     loading.value = true;
     try {
@@ -309,6 +331,7 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     approveRequest,
     rejectRequest,
     bulkApproveRequests,
+    bulkRejectRequests,
     getApprovedVacations,
   };
 });
