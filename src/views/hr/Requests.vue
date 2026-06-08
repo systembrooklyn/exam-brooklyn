@@ -450,8 +450,8 @@
               class="w-full border border-gray-300 rounded-lg px-4 py-2" />
           </div>
 
-          <!-- Conditional: Duration Type (Vacation) -->
-          <div v-if="form.request_type === 'vacation'" class="col-span-2 md:col-span-1">
+          <!-- Conditional: Duration Type (Vacation / Absence) -->
+          <div v-if="form.request_type === 'vacation' || form.request_type === 'absence'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
             <select v-model="form.duration_type" :disabled="editingIsApproverOnly || store.loading"
               class="w-full border border-gray-300 rounded-lg px-4 py-2">
@@ -1114,7 +1114,7 @@ function formatDuration(item) {
   if (t === 'double_paid') {
     return '—';
   }
-  if ((t === 'vacation' || t === 'work_from_home') && item.duration_type) {
+  if ((t === 'vacation' || t === 'work_from_home' || t === 'absence') && item.duration_type) {
     return item.duration_type === 'full' ? 'Full day' : 'Half day';
   }
   if (['lateness', 'leave'].includes(t)) {
@@ -1570,6 +1570,7 @@ function buildRequestPayloadFromForm() {
     const payload = {
       request_type: 'absence',
       day: form.value.day,
+      duration_type: form.value.duration_type,
     };
     const finalPayload = finalizeRequestPayload(payload);
     if (!finalPayload) return null;
@@ -1649,7 +1650,7 @@ function buildRequestPayloadFromForm() {
     payload.day_replacement = form.value.day_replacement;
   }
 
-  if (form.value.request_type === 'vacation') {
+  if (form.value.request_type === 'vacation' || form.value.request_type === 'absence') {
     payload.duration_type = form.value.duration_type;
   }
 

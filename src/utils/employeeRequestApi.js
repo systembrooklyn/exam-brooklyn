@@ -107,6 +107,9 @@ export function buildEmployeeRequestApiPayload(payload) {
     if (payload.day !== undefined) {
       body.day = payload.day;
     }
+    if (rt === "absence" && payload.duration_type !== undefined) {
+      body.duration_type = payload.duration_type;
+    }
     const eid = payload.employee_id;
     if (eid != null && eid !== "") {
       const n = Number(eid);

@@ -306,6 +306,7 @@ const handleRequestSubmit = async (payload) => {
         withEmployeeIdForHrPayrollApi({
           request_type: "absence",
           day: payload.day,
+          duration_type: payload.duration_type,
         }),
       );
       showRequestModal.value = false;

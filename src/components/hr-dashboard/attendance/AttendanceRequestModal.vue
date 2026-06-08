@@ -95,8 +95,8 @@
           <input v-model="localForm.day_replacement" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
         </div>
 
-        <!-- Conditional: Duration Type (Vacation) -->
-        <div v-if="localForm.request_type === 'vacation'" class="col-span-2 md:col-span-1">
+        <!-- Conditional: Duration Type (Vacation / Absence) -->
+        <div v-if="localForm.request_type === 'vacation' || localForm.request_type === 'absence'" class="col-span-2 md:col-span-1">
           <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
           <select v-model="localForm.duration_type" class="w-full border border-gray-300 rounded-lg px-4 py-2">
               <option value="full">Full Day</option>
