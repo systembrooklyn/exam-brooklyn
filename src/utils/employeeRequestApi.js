@@ -82,7 +82,10 @@ export function buildEmployeeRequestApiPayload(payload) {
   if (!payload || typeof payload !== "object") return payload;
   const rt = normalizeRequestTypeSlug(payload.request_type);
   if (isDayOnlyOvertimeRequestTypeSlug(rt)) {
-    const body = { request_type: rt, day: payload.day };
+    const body = { request_type: rt };
+    if (payload.day !== undefined) {
+      body.day = payload.day;
+    }
     const eid = payload.employee_id;
     if (eid != null && eid !== "") {
       const n = Number(eid);
@@ -94,7 +97,10 @@ export function buildEmployeeRequestApiPayload(payload) {
     return body;
   }
   if (rt === "absence" || rt === "work_from_home" || rt === "double_paid") {
-    const body = { request_type: rt, day: payload.day };
+    const body = { request_type: rt };
+    if (payload.day !== undefined) {
+      body.day = payload.day;
+    }
     const eid = payload.employee_id;
     if (eid != null && eid !== "") {
       const n = Number(eid);

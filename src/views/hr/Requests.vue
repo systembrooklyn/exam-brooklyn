@@ -961,6 +961,7 @@ const form = ref({
   duration_type: 'full',
   status: 'pending',
 });
+const initialFormValues = ref(null);
 
 /** Matches AttendanceRequestModal: From/To only for types that need a time range (e.g. shift_move). */
 function requestModalUsesFromToTime(rawType) {
@@ -1452,6 +1453,7 @@ const openAddModal = () => {
     duration_type: 'full',
     status: 'pending',
   };
+  initialFormValues.value = null;
   showModal.value = true;
 };
 
@@ -1498,6 +1500,7 @@ const openEditModal = (item) => {
     duration_type: item.duration_type === 'half' ? 'half' : 'full',
     status: statusNorm,
   };
+  initialFormValues.value = { ...form.value };
   showModal.value = true;
 };
 
@@ -1547,17 +1550,53 @@ function buildRequestPayloadFromForm() {
 
   const otRt = normalizeRequestTypeSlug(form.value.request_type);
   if (isServerCalculatedOvertime(otRt)) {
-    return finalizeRequestPayload({
+    const payload = {
       request_type: otRt,
       day: form.value.day,
-    });
+    };
+    const finalPayload = finalizeRequestPayload(payload);
+    if (!finalPayload) return null;
+
+    if (isEditing.value && initialFormValues.value) {
+      const dirty = {};
+      const init = initialFormValues.value;
+      if (form.value.request_type !== init.request_type) {
+        dirty.request_type = form.value.request_type;
+      }
+      if (form.value.day !== init.day) {
+        dirty.day = form.value.day;
+      }
+      if (finalPayload.status !== undefined && finalPayload.status !== init.status) {
+        dirty.status = finalPayload.status;
+      }
+      return dirty;
+    }
+    return finalPayload;
   }
 
   if (form.value.request_type === 'absence') {
-    return finalizeRequestPayload({
+    const payload = {
       request_type: 'absence',
       day: form.value.day,
-    });
+    };
+    const finalPayload = finalizeRequestPayload(payload);
+    if (!finalPayload) return null;
+
+    if (isEditing.value && initialFormValues.value) {
+      const dirty = {};
+      const init = initialFormValues.value;
+      if (form.value.request_type !== init.request_type) {
+        dirty.request_type = form.value.request_type;
+      }
+      if (form.value.day !== init.day) {
+        dirty.day = form.value.day;
+      }
+      if (finalPayload.status !== undefined && finalPayload.status !== init.status) {
+        dirty.status = finalPayload.status;
+      }
+      return dirty;
+    }
+    return finalPayload;
   }
 
   const usesFromTo = requestModalUsesFromToTime(form.value.request_type);
@@ -1622,7 +1661,47 @@ function buildRequestPayloadFromForm() {
     payload.duration_type = form.value.duration_type;
   }
 
-  return finalizeRequestPayload(payload);
+  const finalPayload = finalizeRequestPayload(payload);
+  if (!finalPayload) return null;
+
+  if (isEditing.value && initialFormValues.value) {
+    const dirty = {};
+    const init = initialFormValues.value;
+
+    if (form.value.request_type !== init.request_type) {
+      dirty.request_type = form.value.request_type;
+    }
+    if (form.value.day !== init.day) {
+      dirty.day = form.value.day;
+    }
+    if (form.value.from_time !== init.from_time) {
+      dirty.from_time = finalPayload.from_time;
+    }
+    if (form.value.to_time !== init.to_time) {
+      dirty.to_time = finalPayload.to_time;
+    }
+    if (form.value.duration_minutes !== init.duration_minutes) {
+      if (finalPayload.duration_hours !== undefined) {
+        dirty.duration_hours = finalPayload.duration_hours;
+      }
+      if (finalPayload.duration_minutes !== undefined) {
+        dirty.duration_minutes = finalPayload.duration_minutes;
+      }
+    }
+    if (form.value.day_replacement !== init.day_replacement) {
+      dirty.day_replacement = finalPayload.day_replacement;
+    }
+    if (form.value.duration_type !== init.duration_type) {
+      dirty.duration_type = finalPayload.duration_type;
+    }
+    if (finalPayload.status !== undefined && finalPayload.status !== init.status) {
+      dirty.status = finalPayload.status;
+    }
+
+    return dirty;
+  }
+
+  return finalPayload;
 }
 
 const handleSubmit = async () => {
