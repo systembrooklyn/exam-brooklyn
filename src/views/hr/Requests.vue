@@ -1584,6 +1584,9 @@ function buildRequestPayloadFromForm() {
       if (form.value.day !== init.day) {
         dirty.day = form.value.day;
       }
+      if (form.value.duration_type !== init.duration_type) {
+        dirty.duration_type = finalPayload.duration_type;
+      }
       if (finalPayload.status !== undefined && finalPayload.status !== init.status) {
         dirty.status = finalPayload.status;
       }
