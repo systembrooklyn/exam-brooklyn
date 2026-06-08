@@ -86,6 +86,12 @@ export function buildEmployeeRequestApiPayload(payload) {
     if (payload.day !== undefined) {
       body.day = payload.day;
     }
+    if (payload.from_time !== undefined) {
+      body.from_time = payload.from_time;
+    }
+    if (payload.to_time !== undefined) {
+      body.to_time = payload.to_time;
+    }
     const eid = payload.employee_id;
     if (eid != null && eid !== "") {
       const n = Number(eid);

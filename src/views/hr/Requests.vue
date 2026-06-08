@@ -967,7 +967,7 @@ const initialFormValues = ref(null);
 function requestModalUsesFromToTime(rawType) {
   const t = normalizeRequestTypeSlug(rawType);
   if (!t || t === 'absence') return false;
-  if (isServerCalculatedOvertime(t)) return false;
+  if (isServerCalculatedOvertime(t)) return true;
   if (['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home', 'double_paid'].includes(t)) return false;
   return true;
 }
@@ -1099,6 +1099,12 @@ function formatRequestTypeLabel(type) {
 
 function formatDuration(item) {
   const t = item.request_type;
+  if (item.from_time || item.to_time) {
+    if (item.from_time && item.to_time) {
+      return `${item.from_time} – ${item.to_time}`;
+    }
+    return String(item.from_time || item.to_time);
+  }
   if (t === 'overtime_before' || t === 'overtime_after') {
     return '—';
   }
@@ -1130,12 +1136,6 @@ function formatDuration(item) {
   }
   if (t === 'day_off_swap' && item.day_replacement) {
     return `Swap → ${formatDate(item.day_replacement)}`;
-  }
-  if (item.from_time && item.to_time) {
-    return `${item.from_time} – ${item.to_time}`;
-  }
-  if (item.from_time || item.to_time) {
-    return String(item.from_time || item.to_time);
   }
   return '—';
 }
@@ -1399,16 +1399,8 @@ watch(requests, (list) => {
 watch(
   () => form.value.request_type,
   (t) => {
-    if (t === 'absence') {
-      form.value.from_time = '';
-      form.value.to_time = '';
-    }
-    if (isServerCalculatedOvertime(t)) {
-      form.value.from_time = '';
-      form.value.to_time = '';
-    }
     if (
-      ['lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home', 'double_paid'].includes(t)
+      ['absence', 'lateness', 'leave', 'vacation', 'day_off_swap', 'work_from_home', 'double_paid'].includes(t)
     ) {
       form.value.from_time = '';
       form.value.to_time = '';
