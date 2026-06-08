@@ -127,7 +127,16 @@ router.beforeEach((to, from, next) => {
     return next({ name: "SystemsPage" });
   }
 
-  const publicPages = ["login", "password-reset", "error"];
+  const publicPages = [
+    "login",
+    "password-reset",
+    "error",
+    "placement-test",
+    "placement-essay",
+    "exam-start",
+    "placement-exam",
+    "exam-success",
+  ];
   const authRequired = !publicPages.includes(to.name);
 
   if (authRequired && !isAuthenticated) {

@@ -4,7 +4,7 @@ import {
   usePlacementTestsExamStore,
   PLACEMENT_AUTOSAVE_INTERVAL_MS,
 } from "@/stores/placementTestsExamStore";
-import { useRouter } from "vue-router";
+import { useRouter, onBeforeRouteLeave } from "vue-router";
 import notyf from "@/components/global/notyf";
 
 const studentStore = usePlacementTestsExamStore();
@@ -69,6 +69,31 @@ function clearPlacementAutosaveInterval() {
   }
 }
 
+function flushSaveProgress() {
+  if (!quizStarted.value) return;
+  saveAnswer();
+  const answers = collectAnsweredFromUi();
+  sessionStorage.setItem("answers", JSON.stringify(answers));
+  if (answers.length > 0 && isOnline.value) {
+    studentStore.autoSaveAnswers(answers);
+  }
+}
+
+const leaveExam = async () => {
+  if (!quizStarted.value) {
+    router.replace({ name: "exam-start" });
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Leave this exam? Your progress will be saved and you can continue later from the exam list."
+  );
+  if (!confirmed) return;
+
+  flushSaveProgress();
+  router.replace({ name: "exam-start" });
+};
+
 const alertSound = new Audio(new URL("@/assets/alert.mp3", import.meta.url));
 
 const isOnline = ref(navigator.onLine);
@@ -76,6 +101,9 @@ const isOnline = ref(navigator.onLine);
 const handleOnline = () => {
   isOnline.value = true;
   notyf.success("Internet connection restored.");
+  if (quizStarted.value) {
+    flushSaveProgress();
+  }
 };
 
 const handleOffline = () => {
@@ -113,7 +141,7 @@ const runExamTimeoutSubmit = () => {
   const TIMEOUT_SUBMIT_RETRY_MS = 3000;
   let didNotifyTimeoutSubmitError = false;
 
-  /** Same cleanup as successful manual Submit, then navigate away. */
+  /** Same cleanup as successful manual Submit, then navigate back to exam hub. */
   const finishAfterSuccessfulTimeoutSubmit = () => {
     clearTimeoutSubmitRetries();
     if (interval) clearInterval(interval);
@@ -124,9 +152,7 @@ const runExamTimeoutSubmit = () => {
     currentQuestionIndex.value = null;
     unansweredIndexes.value = [];
     showUnansweredMessage.value = "";
-    sessionStorage.removeItem("answers");
-    sessionStorage.removeItem("attemptId");
-    router.replace({ name: "exam-success" });
+    router.replace({ name: "exam-start" });
   };
 
   const attemptTimeoutSubmit = () => {
@@ -356,10 +382,8 @@ const submitFinalExam = async () => {
     currentQuestionIndex.value = null;
     unansweredIndexes.value = [];
     showUnansweredMessage.value = "";
-    sessionStorage.removeItem("answers");
-    sessionStorage.removeItem("attemptId");
 
-    router.push("/exam-success");
+    router.replace({ name: "exam-start" });
   } catch (err) {
     isSubmitting.value = false;
     notyf.error("Failed to submit exam. Please try again.");
@@ -367,17 +391,52 @@ const submitFinalExam = async () => {
 };
 
 const handleBeforeUnload = (e) => {
-  e.preventDefault();
-  sessionStorage.removeItem("attemptId");
-  sessionStorage.removeItem("answers");
-  router.replace({ name: "placement-test" });
-  return "";
+  if (quizStarted.value && !isSubmitting.value) {
+    flushSaveProgress();
+    e.preventDefault();
+    e.returnValue = "";
+  }
 };
 
+const handleVisibilityChange = () => {
+  if (document.visibilityState === "hidden" && quizStarted.value) {
+    flushSaveProgress();
+  }
+};
+
+onBeforeRouteLeave((to, from, next) => {
+  if (!quizStarted.value || isSubmitting.value) {
+    next();
+    return;
+  }
+
+  if (to.name === "exam-start") {
+    flushSaveProgress();
+    next();
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Leave this exam? Your progress will be saved and you can continue later."
+  );
+  if (confirmed) {
+    flushSaveProgress();
+    next();
+  } else {
+    next(false);
+  }
+});
+
 onMounted(() => {
+  if (!studentStore.exam?.data) {
+    router.replace({ name: "exam-start" });
+    return;
+  }
+
   window.addEventListener("beforeunload", handleBeforeUnload);
   window.addEventListener("online", handleOnline);
   window.addEventListener("offline", handleOffline);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
 });
 onBeforeUnmount(() => {
   clearTimeoutSubmitRetries();
@@ -386,6 +445,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", handleBeforeUnload);
   window.removeEventListener("online", handleOnline);
   window.removeEventListener("offline", handleOffline);
+  document.removeEventListener("visibilitychange", handleVisibilityChange);
 });
 </script>
 
@@ -402,6 +462,16 @@ onBeforeUnmount(() => {
         class="bg-white bg-opacity-90 shadow-xl rounded-2xl p-8 space-y-8 mt-20"
       >
         <div class="text-center mb-4">
+          <div class="flex items-center justify-between mb-2">
+            <button
+              type="button"
+              @click="leaveExam"
+              class="text-sm text-gray-500 hover:text-gray-800 underline"
+            >
+              ← Back to exams
+            </button>
+            <span class="text-sm text-gray-400">Placement Test</span>
+          </div>
           <h2 class="text-3xl font-bold text-blue-900">{{ examInfo.name }}</h2>
           <div class="text-lg mt-2 flex flex-col items-center">
             <div>
@@ -516,7 +586,7 @@ onBeforeUnmount(() => {
             <button
               @click="previousQuestion"
               :disabled="currentQuestionIndex === 0"
-              class="px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50 bg-gray-400 text-white hover:bg-gray-500"
+              class="px-5 py-2 rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer bg-gray-400 text-white hover:bg-gray-500"
             >
               Previous
             </button>
@@ -525,7 +595,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="!isLastQuestion"
                 @click="nextQuestion"
-                class="px-5 py-2 rounded-lg font-semibold transition bg-blue-600 text-white hover:bg-blue-700"
+                class="px-5 py-2 rounded-lg font-semibold transition cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
               >
                 Next
               </button>
@@ -533,7 +603,8 @@ onBeforeUnmount(() => {
               <button
                 v-if="isLastQuestion || allAnswered"
                 @click="submitFinalExam"
-                class="px-5 py-2 rounded-lg font-semibold transition bg-green-600 text-white hover:bg-green-700"
+                class="px-5 py-2 rounded-lg font-semibold transition cursor-pointer bg-green-600 text-white hover:bg-green-700 disabled:cursor-not-allowed"
+                :disabled="isSubmitting"
               >
                 <span v-if="isSubmitting">Submitting...</span>
                 <span v-else>Submit</span>
