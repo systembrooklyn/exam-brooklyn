@@ -79,8 +79,8 @@ const activeItems = computed(() => {
     );
     return filterHrSidebarItems(raw, (slug) => authStore.can(slug));
   }
-    if (route.path.startsWith('/reservation')) {
-    return itemReservation
+  if (route.path.startsWith('/reservation')) {
+    return itemReservation.filter(item => !item.permission || authStore.can(item.permission))
   }
   return filteredDashboardItems.value
 })

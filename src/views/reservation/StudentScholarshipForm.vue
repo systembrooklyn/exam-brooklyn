@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import StudentInfoPanel from "@/components/Reservation/StudentInfoPanel.vue";
 import ModulesTable from "@/components/Reservation/ModulesTable.vue";
 import FinalCasePanel from "@/components/Reservation/FinalCasePanel.vue";
@@ -20,6 +20,26 @@ const form = ref({
   finalCase: "",
   finalAmount: "",
   notes: "",
+});
+
+onMounted(() => {
+  const saved = sessionStorage.getItem("selectedReservation");
+  if (saved) {
+    try {
+      const reservation = JSON.parse(saved);
+      if (reservation && reservation.student) {
+        form.value.name = reservation.student.name || "";
+        form.value.grade = reservation.student.grade || "";
+        form.value.scholarship = reservation.student.scholarship?.price || reservation.student.scholarship?.name || "";
+        form.value.studentType = reservation.student.careerType || "";
+        form.value.studyType = reservation.student.scholarship?.study_type || "";
+        form.value.nationality = reservation.student.nationality || "";
+        form.value.notes = reservation.student.notes || "";
+      }
+    } catch (e) {
+      console.error("Failed to parse selected reservation", e);
+    }
+  }
 });
 
 const modules = ref([

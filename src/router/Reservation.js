@@ -14,17 +14,20 @@ export default {
     {
       path: "form",
       name: "formreservation-form",
+      meta: { requiresPermission: "create-reservation" },
       component: () => import("@/views/reservation/FormReservation.vue"),
     },
     {
       path: "waiting-list",
       name: "waiting-list",
+      meta: { requiresPermission: "view-reservation" },
       component: () =>
         import("@/views/reservation/WaitingListHandlerLayout.vue"),
     },
     {
       path: "waiting-list-table",
       name: "waiting-list-table",
+      meta: { requiresPermission: "view-reservation" },
       component: () =>
         import("@/views/reservation/StudentScholarshipForm.vue"),
     },

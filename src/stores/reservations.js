@@ -1,20 +1,35 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { RESERVATIONS } from "../api/Api";
+import { RESERVATIONS, BRANCHES } from "../api/Api";
 import notyf from "../components/global/notyf";
 import { handleError } from "./handleError";
 
 export const useReservationStore = defineStore("reservationStore", () => {
   const reservations = ref([]);
+  const branches = ref([]);
   const loading = ref(false);
+  const loadingBranches = ref(false);
   const error = ref(null);
 
-  const fetchReservations = async () => {
+  const fetchBranches = async () => {
+    loadingBranches.value = true;
+    try {
+      const response = await apiClient.get(BRANCHES);
+      branches.value = response.data.data;
+    } catch (err) {
+      handleError(err);
+      console.error(err);
+    } finally {
+      loadingBranches.value = false;
+    }
+  };
+
+  const fetchReservations = async (params = {}) => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await apiClient.get(RESERVATIONS);
+      const response = await apiClient.get(RESERVATIONS, { params });
       reservations.value = response.data.data;
     } catch (err) {
       handleError(err);
@@ -85,9 +100,12 @@ export const useReservationStore = defineStore("reservationStore", () => {
 
   return {
     reservations,
+    branches,
     loading,
+    loadingBranches,
     error,
     fetchReservations,
+    fetchBranches,
     addReservation,
     updateReservation,
     deleteReservation,

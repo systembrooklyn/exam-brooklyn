@@ -27,6 +27,7 @@ export const FORGOT_PASSWORD = "forgotPassword";
 export const RESET_PASSWORD = "resetPassword";
 export const IMPORT_EXAMS = "importExams";
 export const RESERVATIONS = "reservations";
+export const BRANCHES = "branches";
 export const STUDENT = "studentData";
 export const GET_ST_BY_EMAIL = "getStByEmail";
 export const PLACEMENT_TESTS = "ptests";
