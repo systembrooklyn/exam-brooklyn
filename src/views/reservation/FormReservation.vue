@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted, ref, reactive, nextTick } from "vue";
-import { User, Mail, Calendar, IdCard, Landmark, Loader2 } from "lucide-vue-next";
+import { onMounted, ref, reactive, nextTick, computed, onBeforeUnmount } from "vue";
+import { User, Mail, Calendar, IdCard, Landmark, Loader2, ChevronDown } from "lucide-vue-next";
 import { useReservationStore } from "@/stores/reservations.js";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 import { useEmployeeStore } from "@/stores/employeesStore.js";
@@ -12,6 +12,108 @@ const employeeStore = useEmployeeStore();
 const router = useRouter();
 
 const isLoading = ref(false);
+
+// Searchable Employee Dropdown Refs
+const calledByPickerOpen = ref(false);
+const calledBySearchQuery = ref("");
+const calledBySearchInputRef = ref(null);
+const calledByPickerRoot = ref(null);
+
+const receptionistPickerOpen = ref(false);
+const receptionistSearchQuery = ref("");
+const receptionistSearchInputRef = ref(null);
+const receptionistPickerRoot = ref(null);
+
+function pickEmployeeFingerprint(emp) {
+  if (!emp) return "";
+  const raw = emp.fingerprint ?? emp.personal_info?.fingerprint ?? emp.personal_info?.fingerPrint ?? emp.fingerPrint;
+  if (raw == null || raw === "") return "";
+  const s = String(raw).trim();
+  return s || "";
+}
+
+function getEmployeeDisplayLabel(emp) {
+  if (!emp) return "";
+  const fp = pickEmployeeFingerprint(emp);
+  return fp ? `${emp.name} (${fp})` : emp.name;
+}
+
+const filteredCalledByEmployees = computed(() => {
+  const list = employeeStore.employees || [];
+  const q = String(calledBySearchQuery.value ?? "").toLowerCase().trim();
+  if (!q) return list;
+  return list.filter((emp) => {
+    const name = String(emp.name ?? "").toLowerCase();
+    const fp = pickEmployeeFingerprint(emp).toLowerCase();
+    return name.includes(q) || fp.includes(q);
+  });
+});
+
+const filteredReceptionistEmployees = computed(() => {
+  const list = employeeStore.employees || [];
+  const q = String(receptionistSearchQuery.value ?? "").toLowerCase().trim();
+  if (!q) return list;
+  return list.filter((emp) => {
+    const name = String(emp.name ?? "").toLowerCase();
+    const fp = pickEmployeeFingerprint(emp).toLowerCase();
+    return name.includes(q) || fp.includes(q);
+  });
+});
+
+const selectedCalledByLabel = computed(() => {
+  const id = form.called_by;
+  if (!id) return "";
+  const emp = (employeeStore.employees || []).find((e) => String(e.id) === String(id));
+  return emp ? getEmployeeDisplayLabel(emp) : "";
+});
+
+const selectedReceptionistLabel = computed(() => {
+  const id = form.receptionist;
+  if (!id) return "";
+  const emp = (employeeStore.employees || []).find((e) => String(e.id) === String(id));
+  return emp ? getEmployeeDisplayLabel(emp) : "";
+});
+
+function toggleCalledByPicker() {
+  calledByPickerOpen.value = !calledByPickerOpen.value;
+  if (calledByPickerOpen.value) {
+    calledBySearchQuery.value = "";
+    receptionistPickerOpen.value = false;
+    nextTick(() => {
+      calledBySearchInputRef.value?.focus();
+    });
+  }
+}
+
+function selectCalledBy(id) {
+  form.called_by = id;
+  calledByPickerOpen.value = false;
+}
+
+function toggleReceptionistPicker() {
+  receptionistPickerOpen.value = !receptionistPickerOpen.value;
+  if (receptionistPickerOpen.value) {
+    receptionistSearchQuery.value = "";
+    calledByPickerOpen.value = false;
+    nextTick(() => {
+      receptionistSearchInputRef.value?.focus();
+    });
+  }
+}
+
+function selectReceptionist(id) {
+  form.receptionist = id;
+  receptionistPickerOpen.value = false;
+}
+
+function handleClickOutsidePickers(e) {
+  if (calledByPickerOpen.value && calledByPickerRoot.value && !calledByPickerRoot.value.contains(e.target)) {
+    calledByPickerOpen.value = false;
+  }
+  if (receptionistPickerOpen.value && receptionistPickerRoot.value && !receptionistPickerRoot.value.contains(e.target)) {
+    receptionistPickerOpen.value = false;
+  }
+}
 
 const restrictToEnglish = (field) => {
   form[field] = form[field].replace(/[^\x00-\x7F]/g, "");
@@ -166,6 +268,11 @@ async function handleSubmit() {
 onMounted(() => {
   scholarshipStore.fetchScholarships();
   employeeStore.fetchEmployees();
+  document.addEventListener("mousedown", handleClickOutsidePickers);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("mousedown", handleClickOutsidePickers);
 });
 </script>
 
@@ -185,34 +292,58 @@ onMounted(() => {
       </p>
 
       <template v-if="step === 1">
+        <!-- Called By Dropdown -->
         <div>
           <label class="flex items-center gap-2 mb-2">
             <span class="font-bold text-[#1e3a8a]">Called By</span>
             <span class="text-sm text-gray-500">(Filled by the employee)</span>
           </label>
-          <div class="relative min-h-[2.75rem]">
+          <div class="relative min-h-[2.75rem]" ref="calledByPickerRoot">
             <User
               class="absolute top-1/2 left-3 z-[1] transform -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none"
             />
-            <select
-              v-model="form.called_by"
-              class="form-input relative z-0"
+            <button
+              type="button"
+              class="form-input relative z-0 text-left flex items-center justify-between pr-10 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               :disabled="employeeStore.loading"
-              :class="{ 'opacity-60 cursor-wait': employeeStore.loading }"
+              @click="toggleCalledByPicker"
             >
-              <option disabled value="">
-                {{
-                  employeeStore.loading ? "Loading employees…" : "Select Employee"
-                }}
-              </option>
-              <option
-                v-for="employee in employeeStore.employees"
-                :key="employee.id"
-                :value="employee.id"
-              >
-                {{ employee.name }}
-              </option>
-            </select>
+              <span class="truncate">
+                {{ selectedCalledByLabel || (employeeStore.loading ? "Loading employees…" : "Select Employee") }}
+              </span>
+              <ChevronDown class="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            </button>
+            <div
+              v-if="calledByPickerOpen"
+              class="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg z-50 p-2 space-y-2 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700"
+            >
+              <input
+                ref="calledBySearchInputRef"
+                v-model="calledBySearchQuery"
+                type="text"
+                placeholder="Search by name or fingerprint..."
+                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                @click.stop
+                @keydown.enter.prevent
+              />
+              <ul class="space-y-1">
+                <li v-if="filteredCalledByEmployees.length === 0" class="text-gray-500 text-sm py-1 px-2">
+                  No employees found.
+                </li>
+                <li
+                  v-for="employee in filteredCalledByEmployees"
+                  :key="employee.id"
+                  @click="selectCalledBy(employee.id)"
+                  class="cursor-pointer px-3 py-2 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center justify-between"
+                  :class="{ 'bg-blue-50 dark:bg-gray-700 font-semibold text-blue-700 dark:text-blue-200': String(form.called_by) === String(employee.id) }"
+                >
+                  <span class="dark:text-white truncate pr-2">{{ employee.name }}</span>
+                  <span v-if="pickEmployeeFingerprint(employee)" class="text-xs text-gray-500 dark:text-gray-400 font-mono shrink-0">
+                    ({{ pickEmployeeFingerprint(employee) }})
+                  </span>
+                </li>
+              </ul>
+            </div>
             <div
               v-if="employeeStore.loading"
               class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/75 dark:bg-gray-800/75 backdrop-blur-[1px]"
@@ -223,34 +354,58 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- Receptionist By Dropdown -->
         <div>
           <label class="flex items-center gap-2 mb-2">
             <span class="font-bold text-[#1e3a8a]">Receptionist By</span>
             <span class="text-sm text-gray-500">(Filled by the employee)</span>
           </label>
-          <div class="relative min-h-[2.75rem]">
+          <div class="relative min-h-[2.75rem]" ref="receptionistPickerRoot">
             <User
               class="absolute top-1/2 left-3 z-[1] transform -translate-y-1/2 w-5 h-5 text-blue-500 pointer-events-none"
             />
-            <select
-              v-model="form.receptionist"
-              class="form-input relative z-0"
+            <button
+              type="button"
+              class="form-input relative z-0 text-left flex items-center justify-between pr-10 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               :disabled="employeeStore.loading"
-              :class="{ 'opacity-60 cursor-wait': employeeStore.loading }"
+              @click="toggleReceptionistPicker"
             >
-              <option disabled value="">
-                {{
-                  employeeStore.loading ? "Loading employees…" : "Select Employee"
-                }}
-              </option>
-              <option
-                v-for="employee in employeeStore.employees"
-                :key="employee.id"
-                :value="employee.id"
-              >
-                {{ employee.name }}
-              </option>
-            </select>
+              <span class="truncate">
+                {{ selectedReceptionistLabel || (employeeStore.loading ? "Loading employees…" : "Select Employee") }}
+              </span>
+              <ChevronDown class="w-5 h-5 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            </button>
+            <div
+              v-if="receptionistPickerOpen"
+              class="absolute left-0 right-0 mt-1 bg-white border border-gray-300 rounded-xl shadow-lg z-50 p-2 space-y-2 max-h-60 overflow-y-auto dark:bg-gray-800 dark:border-gray-700"
+            >
+              <input
+                ref="receptionistSearchInputRef"
+                v-model="receptionistSearchQuery"
+                type="text"
+                placeholder="Search by name or fingerprint..."
+                class="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                @click.stop
+                @keydown.enter.prevent
+              />
+              <ul class="space-y-1">
+                <li v-if="filteredReceptionistEmployees.length === 0" class="text-gray-500 text-sm py-1 px-2">
+                  No employees found.
+                </li>
+                <li
+                  v-for="employee in filteredReceptionistEmployees"
+                  :key="employee.id"
+                  @click="selectReceptionist(employee.id)"
+                  class="cursor-pointer px-3 py-2 text-sm rounded-lg hover:bg-blue-50 dark:hover:bg-gray-700 transition flex items-center justify-between"
+                  :class="{ 'bg-blue-50 dark:bg-gray-700 font-semibold text-blue-700 dark:text-blue-200': String(form.receptionist) === String(employee.id) }"
+                >
+                  <span class="dark:text-white truncate pr-2">{{ employee.name }}</span>
+                  <span v-if="pickEmployeeFingerprint(employee)" class="text-xs text-gray-500 dark:text-gray-400 font-mono shrink-0">
+                    ({{ pickEmployeeFingerprint(employee) }})
+                  </span>
+                </li>
+              </ul>
+            </div>
             <div
               v-if="employeeStore.loading"
               class="absolute inset-0 flex items-center justify-center rounded-xl bg-white/75 dark:bg-gray-800/75 backdrop-blur-[1px]"
@@ -425,30 +580,31 @@ onMounted(() => {
           <option disabled value="">Select Governorate</option>
           <option value="Cairo">Cairo</option>
           <option value="Giza">Giza</option>
-          <option value="Alex">Alex</option>
-          <option value="Behira">Behira</option>
-          <option value="Kafr Elsheekh">Kafr Elsheekh</option>
-          <option value="Demiat">Demiat</option>
-          <option value="Pour Saied">Pour Saied</option>
-          <option value="Ismailia">Ismailia</option>
+          <option value="Alexandria">Alexandria</option>
+          <option value="Dakahlia">Dakahlia</option>
+          <option value="Red Sea">Red Sea</option>
+          <option value="Beheira">Beheira</option>
+          <option value="Fayoum">Fayoum</option>
           <option value="Gharbia">Gharbia</option>
-          <option value="Dakhlia">Dakhlia</option>
-          <option value="Sharkia">Sharkia</option>
-          <option value="Kalubia">Kalubia</option>
-          <option value="Monofia">Monofia</option>
+          <option value="Ismailia">Ismailia</option>
+          <option value="Menoufia">Menoufia</option>
+          <option value="Minya">Minya</option>
+          <option value="Qalyubia">Qalyubia</option>
+          <option value="New Valley">New Valley</option>
           <option value="Suez">Suez</option>
-          <option value="South Sinai">South Sinai</option>
-          <option value="Matrouh">Matrouh</option>
-          <option value="Red sea">Red sea</option>
-          <option value="Faum">Faum</option>
-          <option value="Bani Suif">Bani Suif</option>
-          <option value="Minia">Minia</option>
-          <option value="Assuit">Assuit</option>
-          <option value="Sauhag">Sauhag</option>
-          <option value="Kina">Kina</option>
-          <option value="Elwadi El gaded">Elwadi El gaded</option>
-          <option value="Luxor">Luxor</option>
           <option value="Aswan">Aswan</option>
+          <option value="Assiut">Assiut</option>
+          <option value="Beni Suef">Beni Suef</option>
+          <option value="Port Said">Port Said</option>
+          <option value="Damietta">Damietta</option>
+          <option value="Sharqia">Sharqia</option>
+          <option value="South Sinai">South Sinai</option>
+          <option value="Kafr El Sheikh">Kafr El Sheikh</option>
+          <option value="Matrouh">Matrouh</option>
+          <option value="Luxor">Luxor</option>
+          <option value="Qena">Qena</option>
+          <option value="North Sinai">North Sinai</option>
+          <option value="Sohag">Sohag</option>
         </select>
       </div>
 
