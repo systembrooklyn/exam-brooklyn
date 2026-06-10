@@ -1,5 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { useRouter } from "vue-router";
+import notyf from "@/components/global/notyf";
 import StudentInfoPanel from "@/components/Reservation/StudentInfoPanel.vue";
 import ModulesTable from "@/components/Reservation/ModulesTable.vue";
 import FinalCasePanel from "@/components/Reservation/FinalCasePanel.vue";
@@ -7,6 +9,7 @@ import ActionButtons from "@/components/Reservation/ActionButtons.vue";
 import { useReservationStore } from "@/stores/reservations";
 import { usePriceSettingsStore } from "@/stores/priceSettingsStore";
 
+const router = useRouter();
 const reservationStore = useReservationStore();
 const priceSettingsStore = usePriceSettingsStore();
 
@@ -100,11 +103,130 @@ const activePriceSettings = computed(() => {
   return list;
 });
 
+const apiCalculationResult = ref(null);
+const calculatingDeadlines = ref(false);
+
+const formatDateToDMMMYYYY = (dateStr) => {
+  if (!dateStr) return "TBD";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const day = date.getDate();
+  const month = date.toLocaleDateString("en-US", { month: "short" });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
+
+const mergeInstallmentsIntoModules = (schedule) => {
+  if (!schedule || schedule.length === 0) return;
+  
+  if (modules.value.length === 0) {
+    modules.value = schedule.map((item) => {
+      const dateObj = new Date(item.due_date);
+      const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
+      const dayName = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString("en-US", { weekday: "short" }) : "TBD";
+      
+      return {
+        name: `Installment #${item.installment_number}`,
+        code: "PAY",
+        startDate: formattedDeadline,
+        day: dayName,
+        time: "-",
+        amount: item.amount,
+        deadline: formattedDeadline
+      };
+    });
+    return;
+  }
+  
+  modules.value = modules.value.map((mod, index) => {
+    if (index < schedule.length) {
+      const item = schedule[index];
+      const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
+      
+      return {
+        ...mod,
+        amount: item.amount,
+        deadline: formattedDeadline
+      };
+    } else {
+      return {
+        ...mod,
+        amount: null,
+        deadline: "-"
+      };
+    }
+  });
+};
+
+const updateCalculationAndSchedule = async () => {
+  const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
+  if (!scholarshipId) return;
+
+  const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
+  
+  try {
+    calculatingDeadlines.value = true;
+    const response = await reservationStore.calculateDeadlines(scholarshipId, priceSettingIds);
+    if (response) {
+      apiCalculationResult.value = response;
+      mergeInstallmentsIntoModules(response.schedule);
+      form.value.finalAmount = response.total_price;
+    }
+  } catch (err) {
+    console.error("Error calculating deadlines:", err);
+  } finally {
+    calculatingDeadlines.value = false;
+  }
+};
+
+// Watch active price settings to update calculations dynamically
+watch(activePriceSettings, () => {
+  updateCalculationAndSchedule();
+}, { deep: true });
+
 // Dynamic calculation of modifiers impact
 const calculatedBreakdown = computed(() => {
   const base = basePrice.value;
+
+  if (apiCalculationResult.value) {
+    const cb = apiCalculationResult.value.calculation_breakdown;
+    const apiBase = cb?.base_scholarship_price || base;
+    const list = [];
+    
+    // Map applied modifiers from API
+    if (cb?.applied_modifiers) {
+      cb.applied_modifiers.forEach((item, index) => {
+        const val = parseFloat(item.calculated_value) || 0;
+        const absVal = Math.abs(val);
+        
+        list.push({
+          id: `api-mod-${index}`,
+          name: item.name,
+          type: item.type,
+          description: item.description || "",
+          modifier: item.modifier,
+          amount_type: item.amount_type,
+          amount: parseFloat(item.raw_amount) || 0,
+          impact: absVal,
+          impactSigned: val,
+          displayImpact: (val < 0 ? "-" : "+") + absVal.toLocaleString() + " EGP",
+          displayRate: item.amount_type === "percentage" ? `${parseFloat(item.raw_amount)}%` : `${parseFloat(item.raw_amount).toLocaleString()} EGP`
+        });
+      });
+    }
+
+    const suggestedFinalAmount = apiCalculationResult.value.total_price || (apiBase + list.reduce((sum, item) => sum + item.impactSigned, 0));
+    const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
+
+    return {
+      basePrice: apiBase,
+      modifiers: list,
+      totalAdjustments,
+      suggestedFinalAmount
+    };
+  }
+
   const list = [];
-  
   activePriceSettings.value.forEach(item => {
     const amountVal = parseFloat(item.amount) || 0;
     let impact = 0;
@@ -253,6 +375,7 @@ onMounted(async () => {
           mapStudyPlanToModules(detail.study_plan, basePrice.value);
           
           form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
+          await updateCalculationAndSchedule();
         } else {
           populateFromSummary(summary);
         }
@@ -268,8 +391,56 @@ onMounted(async () => {
   }
 });
 
-const submitForm = () => {
-  console.log("Submitted scholarship form:", form.value);
+const submitForm = async () => {
+  if (!reservationDetails.value?.id) {
+    notyf.error("No active reservation details found.");
+    return;
+  }
+
+  const statusMap = {
+    "RESERVATION": "reserve",
+    "MANUAL": "manual",
+    "MANUAL EXAM": "manual exam",
+    "Extend": "extend",
+    "CANCELLATION": "cancel"
+  };
+  
+  const statusKey = statusMap[form.value.finalCase] || form.value.finalCase?.toLowerCase() || "reserve";
+  const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
+  const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
+
+  const payload = {
+    name: reservationDetails.value?.student?.name,
+    email: reservationDetails.value?.student?.email,
+    phones: reservationDetails.value?.student?.phones,
+    ID_number: reservationDetails.value?.student?.ID_number,
+    grade: form.value.grade,
+    birth_date: reservationDetails.value?.student?.birth_date,
+    company: reservationDetails.value?.student?.company,
+    marketing_code: reservationDetails.value?.student?.marketing_code,
+    scholarship: scholarshipId,
+    status: statusKey,
+    called_by: reservationDetails.value?.called_by?.id || reservationDetails.value?.called_by,
+    called_time: reservationDetails.value?.called_time,
+    careerType: reservationDetails.value?.student?.careerType,
+    faculity: reservationDetails.value?.student?.faculity || reservationDetails.value?.student?.faculty,
+    major: reservationDetails.value?.student?.major || reservationDetails.value?.student?.majorx,
+    final_amount: parseFloat(form.value.finalAmount) || 0,
+    finalAmount: parseFloat(form.value.finalAmount) || 0,
+    notes: form.value.notes,
+    price_setting_ids: priceSettingIds,
+    price_settings: priceSettingIds,
+  };
+
+  try {
+    loadingDetails.value = true;
+    await reservationStore.updateReservation(reservationDetails.value.id, payload);
+    router.push({ name: "waiting-list" });
+  } catch (err) {
+    console.error("Failed to submit waitlist handling:", err);
+  } finally {
+    loadingDetails.value = false;
+  }
 };
 </script>
 
@@ -293,6 +464,7 @@ const submitForm = () => {
         <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
+        <!-- Academic Modules Schedule -->
         <ModulesTable :modules="modules" />
 
         <!-- Applied Pricing & Adjustments Table -->

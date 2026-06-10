@@ -418,8 +418,42 @@
               </div>
             </div>
 
+            <!-- Payment Method Deadlines (Conditional) -->
+            <div v-if="form.type === 'Payment Method'" class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-indigo-50/30 dark:bg-indigo-950/20 p-4 rounded-xl border border-indigo-100/30 dark:border-indigo-900/30">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">First Deadline (Days)</label>
+                <input
+                  v-model="form.first_deadline_days"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 15"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                />
+              </div>
+              
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Interval (Days)</label>
+                <input
+                  v-model="form.interval_days"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 2"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">Forced Start Date</label>
+                <input
+                  v-model="form.forced_start_date"
+                  type="date"
+                  class="w-full border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                />
+              </div>
+            </div>
+
             <!-- DL Count -->
-            <div>
+            <div v-if="form.type === 'Payment Method'">
               <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
                 DL Count <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
               </label>
@@ -701,6 +735,9 @@ function emptyForm() {
     children_ids:    [],
     is_active:       true,
     scholarship_ids: [],
+    first_deadline_days: null,
+    interval_days:       null,
+    forced_start_date:   '',
   }
 }
 
@@ -725,6 +762,9 @@ const editPriceSetting = (item) => {
     amount:          item.amount            ?? '',
     dl_count:        item.dl_count          ?? null,
     is_active:       item.is_active         ?? true,
+    first_deadline_days: item.first_deadline_days ?? null,
+    interval_days:       item.interval_days       ?? null,
+    forced_start_date:   item.forced_start_date ? String(item.forced_start_date).substring(0, 10) : '',
     parent_ids:      Array.isArray(item.parents)
       ? item.parents.map(p => p.id)
       : Array.isArray(item.parent_ids)
@@ -776,11 +816,14 @@ const savePriceSetting = async () => {
     modifier:        form.value.modifier,
     amount_type:     form.value.amount_type,
     amount:          Number(form.value.amount),
-    dl_count:        (form.value.dl_count !== '' && form.value.dl_count !== null && form.value.dl_count !== undefined) ? Number(form.value.dl_count) : null,
+    dl_count:        form.value.type === 'Payment Method' && ((form.value.dl_count !== '' && form.value.dl_count !== null && form.value.dl_count !== undefined) ? Number(form.value.dl_count) : null),
     parent_ids:      form.value.parent_ids && form.value.parent_ids.length ? form.value.parent_ids : [],
     children_ids:    form.value.children_ids && form.value.children_ids.length ? form.value.children_ids : [],
     is_active:       form.value.is_active,
     scholarship_ids: form.value.scholarship_ids && form.value.scholarship_ids.length ? form.value.scholarship_ids : [],
+    first_deadline_days: form.value.type === 'Payment Method' && form.value.first_deadline_days !== '' && form.value.first_deadline_days !== null ? Number(form.value.first_deadline_days) : null,
+    interval_days:       form.value.type === 'Payment Method' && form.value.interval_days !== '' && form.value.interval_days !== null ? Number(form.value.interval_days) : null,
+    forced_start_date:   form.value.type === 'Payment Method' && form.value.forced_start_date ? form.value.forced_start_date : null,
   }
 
   saving.value = true

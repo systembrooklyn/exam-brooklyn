@@ -97,6 +97,20 @@ export const useReservationStore = defineStore("reservationStore", () => {
       console.error(err);
     }
   };
+  
+  const calculateDeadlines = async (scholarshipId, priceSettingIds) => {
+    try {
+      const response = await apiClient.post("reservations/calculateDeadlines", {
+        scholarship_id: scholarshipId,
+        price_setting_ids: priceSettingIds,
+      });
+      return response.data.data;
+    } catch (err) {
+      handleError(err);
+      console.error("Failed to calculate deadlines:", err);
+      throw err;
+    }
+  };
 
   return {
     reservations,
@@ -110,5 +124,6 @@ export const useReservationStore = defineStore("reservationStore", () => {
     updateReservation,
     deleteReservation,
     getReservationById,
+    calculateDeadlines,
   };
 });

@@ -167,7 +167,7 @@ const updatePriceSettingField = (type, value) => {
         <!-- Expandable Student Details Panel -->
         <div v-if="showAllDetails" class="space-y-3 pt-3 border-t border-slate-100 mt-2 transition-all">
           <!-- Contact & Social Details -->
-          <div class="space-y-2">
+          <!-- <div class="space-y-2">
             <h4 class="text-[9px] font-extrabold uppercase tracking-widest text-indigo-600">Contact & Social</h4>
             <div class="grid grid-cols-1 gap-2 text-xs">
               <div v-if="studentInfo.whatsapp">
@@ -185,7 +185,7 @@ const updatePriceSettingField = (type, value) => {
                 </a>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <!-- Academic Details -->
           <div class="space-y-2">

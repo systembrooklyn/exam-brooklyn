@@ -157,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { Tag, Pencil, Maximize, Plus, Minus, Maximize2, Minimize2 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -418,22 +418,44 @@ const zoomOut = () => {
 }
 
 const centerTree = () => {
+  const layout = mindmapLayout.value
   const root = props.treeData
   if (!root) return
   const height = root.height || 600
+  scale.value = isFullscreen.value ? 0.95 : 0.8
   offsetX.value = 60
   const containerHeight = isFullscreen.value ? window.innerHeight : 650
-  offsetY.value = (containerHeight - height) / 2
-  scale.value = isFullscreen.value ? 0.95 : 0.8
+  offsetY.value = containerHeight / 2 - (50 + height / 2) * scale.value
+}
+
+const hasInitializedCollapse = ref(false)
+
+const initializeDefaultCollapse = () => {
+  const root = props.treeData
+  if (!root || !root.children || root.children.length === 0) return
+  if (hasInitializedCollapse.value) return
+  
+  const newCollapsed = new Set()
+  root.children.forEach(c => {
+    newCollapsed.add(c.id)
+  })
+  collapsedNodes.value = newCollapsed
+  hasInitializedCollapse.value = true
 }
 
 // Recenter when treeData changes (e.g. data is loaded or collapse toggles layout)
 watch(() => props.treeData, () => {
-  centerTree()
+  initializeDefaultCollapse()
+  nextTick(() => {
+    centerTree()
+  })
 }, { deep: false })
 
 onMounted(() => {
-  centerTree()
+  initializeDefaultCollapse()
+  nextTick(() => {
+    centerTree()
+  })
 })
 
 const getBezierPath = (c, fromType) => {
