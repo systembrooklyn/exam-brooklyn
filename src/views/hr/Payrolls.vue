@@ -181,7 +181,17 @@
             </div>
           </div>
         </div>
-        <div>
+        <div v-if="isSelectedEmployeeHourly" class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+            <input v-model="calcForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+            <input v-model="calcForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          </div>
+        </div>
+        <div v-else>
           <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
           <input v-model="calcForm.payroll_month" type="month" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           <p v-if="calcForm.payroll_month" class="text-xs text-gray-400 mt-1">
@@ -189,13 +199,20 @@
           </p>
         </div>
         <div v-if="isSelectedEmployeeHourly">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Worked Hours <span class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Worked Hours <span class="text-red-500">*</span>
+            <span v-if="autoCalculatingHours" class="text-xs text-indigo-500 ml-2 animate-pulse">
+              (Calculating from attendance logs...)
+            </span>
+          </label>
           <input
             v-model.number="calcForm.worked_hours"
             type="number"
             min="0"
+            step="0.01"
             placeholder="e.g. 80"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+            :disabled="autoCalculatingHours"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-50"
           />
         </div>
       </div>
@@ -467,7 +484,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useHrPayrollStore } from '@/stores/hr/payroll'
 import { useHrEmployeesStore } from '@/stores/hr/employees'
 import { useHrEmployeeAdjustmentsStore } from '@/stores/hr/employeeAdjustments'
@@ -484,7 +501,7 @@ import { exportPayrollsExcel, computePayrollRowNetSalary } from '@/utils/payroll
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'
 import apiClient from '@/api/axiosInstance'
-import { PAYROLL_STATUS_UPDATE } from '@/api/Api'
+import { PAYROLL_STATUS_UPDATE, PAYROLL_ATTENDANCE } from '@/api/Api'
 
 // ─── Stores ──────────────────────────────────────────────
 const store = useHrPayrollStore()
@@ -595,7 +612,7 @@ const filteredActionablePayrolls = computed(() => {
 
 // ─── Calculate Payroll Modal ──────────────────────────────
 const showCalcModal = ref(false)
-const calcForm = ref({ employee_id: '', payroll_month: '', worked_hours: '' })
+const calcForm = ref({ employee_id: '', payroll_month: '', from_date: '', to_date: '', worked_hours: '' })
 
 const employeePickerOpen = ref(false)
 const employeeSearchQuery = ref('')
@@ -651,7 +668,7 @@ const selectedEmployeeLabel = computed(() => {
 })
 
 const openCalcModal = () => {
-  calcForm.value = { employee_id: '', payroll_month: '', worked_hours: '' }
+  calcForm.value = { employee_id: '', payroll_month: '', from_date: '', to_date: '', worked_hours: '' }
   employeeSearchQuery.value = ''
   employeePickerOpen.value = false
   showCalcModal.value = true
@@ -664,16 +681,108 @@ const isSelectedEmployeeHourly = computed(() => {
   return type === 'hourly'
 })
 
+const autoCalculatingHours = ref(false)
+
+watch(
+  () => [calcForm.value.employee_id, calcForm.value.payroll_month, calcForm.value.from_date, calcForm.value.to_date],
+  async ([empId, month, fromDate, toDate]) => {
+    if (!empId) {
+      calcForm.value.worked_hours = '';
+      return;
+    }
+    
+    if (isSelectedEmployeeHourly.value) {
+      if (!calcForm.value.from_date || !calcForm.value.to_date) {
+        const m = calcForm.value.payroll_month || defaultPayrollMonth;
+        const dates = getPayrollDates(m);
+        calcForm.value.from_date = dates.from_date;
+        calcForm.value.to_date = dates.to_date;
+        return;
+      }
+    } else {
+      calcForm.value.worked_hours = '';
+      return;
+    }
+    
+    autoCalculatingHours.value = true;
+    try {
+      const response = await apiClient.get(PAYROLL_ATTENDANCE, {
+        params: {
+          employee_id: empId,
+          from_date: calcForm.value.from_date,
+          to_date: calcForm.value.to_date,
+        },
+      });
+      const logs = response.data?.data || [];
+      
+      const timeToMinutes = (timeStr) => {
+        if (!timeStr) return 0;
+        const parts = String(timeStr).split(':').map(Number);
+        if (parts.length < 2) return 0;
+        return (parts[0] || 0) * 60 + (parts[1] || 0);
+      };
+      
+      let totalMinutes = 0;
+      for (const log of logs) {
+        if (log.check_in && log.check_out) {
+          const checkInMin = timeToMinutes(log.check_in);
+          const checkOutMin = timeToMinutes(log.check_out);
+          let duration = checkOutMin - checkInMin;
+          
+          if (log.break_in && log.break_out) {
+            const breakInMin = timeToMinutes(log.break_in);
+            const breakOutMin = timeToMinutes(log.break_out);
+            const breakDuration = breakOutMin - breakInMin;
+            if (breakDuration > 0) {
+              duration -= breakDuration;
+            }
+          }
+          if (duration > 0) {
+            totalMinutes += duration;
+          }
+        }
+      }
+      calcForm.value.worked_hours = Number((totalMinutes / 60).toFixed(2));
+    } catch (error) {
+      console.error('Failed to auto-calculate worked hours:', error);
+      calcForm.value.worked_hours = '';
+    } finally {
+      autoCalculatingHours.value = false;
+    }
+  }
+)
+
 const handleCalculate = async () => {
-  if (!calcForm.value.employee_id || !calcForm.value.payroll_month) {
-    notyf.error('Please fill in all fields')
+  if (!calcForm.value.employee_id) {
+    notyf.error('Please select an employee')
     return
   }
+  
+  let from_date = ''
+  let to_date = ''
+  
+  if (isSelectedEmployeeHourly.value) {
+    if (!calcForm.value.from_date || !calcForm.value.to_date) {
+      notyf.error('Please select date range')
+      return
+    }
+    from_date = calcForm.value.from_date
+    to_date = calcForm.value.to_date
+  } else {
+    if (!calcForm.value.payroll_month) {
+      notyf.error('Please select payroll month')
+      return
+    }
+    const dates = getPayrollDates(calcForm.value.payroll_month)
+    from_date = dates.from_date
+    to_date = dates.to_date
+  }
+  
   if (isSelectedEmployeeHourly.value && (calcForm.value.worked_hours === '' || calcForm.value.worked_hours === null)) {
     notyf.error('Please enter worked hours')
     return
   }
-  const { from_date, to_date } = getPayrollDates(calcForm.value.payroll_month)
+  
   try {
     const payload = {
       employee_id: calcForm.value.employee_id,

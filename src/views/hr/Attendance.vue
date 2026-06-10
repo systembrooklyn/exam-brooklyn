@@ -9,7 +9,7 @@
       <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-bold text-gray-800">Attendance Logs</h1>
-          <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p>
+          <!-- <p class="text-gray-500 mt-1">Track employee clock-in/out and breaks</p> -->
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -46,13 +46,18 @@
                     </li>
                     <li v-for="emp in filteredEmployeesForSelect" :key="emp.id">
                       <button type="button" role="option"
-                        class="w-full px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
+                        class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
                           'bg-indigo-50 font-medium text-indigo-800':
                             String(filterForm.employee_id) === String(emp.id),
                         }" @click="selectEmployeeFilter(emp.id)">
-                        <span>{{ employeeRowLabel(emp) }}</span>
-                        <span v-if="pickEmployeeFingerprint(emp)" class="text-xs text-gray-500">
-                          ({{ pickEmployeeFingerprint(emp) }})
+                        <div class="truncate">
+                          <span>{{ employeeRowLabel(emp) }}</span>
+                          <span v-if="pickEmployeeFingerprint(emp)" class="text-xs text-gray-500 ml-1">
+                            ({{ pickEmployeeFingerprint(emp) }})
+                          </span>
+                        </div>
+                        <span v-if="activeContractTypeForEmployee(contractStore.contracts, emp.id)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
+                          {{ activeContractTypeForEmployee(contractStore.contracts, emp.id) }}
                         </span>
                       </button>
                     </li>
@@ -64,20 +69,41 @@
               </div>
               <div class="w-px h-8 bg-gray-200 mx-1"></div>
             </template>
-            <div class="flex flex-col px-2 min-w-[200px]">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
-              <div class="relative">
-                <input v-model="filterPayrollMonth" type="month"
-                  class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  @change="applyFilterMonth" />
-                <LucideCalendar
-                  class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <template v-if="isHourlyEmployeeSelected">
+              <div class="flex flex-col px-2 min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
+                <div class="relative">
+                  <input v-model="filterForm.from_date" type="date"
+                    class="w-full pr-3 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    @change="fetchLogs" />
+                </div>
               </div>
-              <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
-                Period: {{ getPayrollDates(filterPayrollMonth).from_date }} — {{
-                  getPayrollDates(filterPayrollMonth).to_date }}
-              </p>
-            </div>
+              <div class="w-px h-8 bg-gray-200 mx-1"></div>
+              <div class="flex flex-col px-2 min-w-[150px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
+                <div class="relative">
+                  <input v-model="filterForm.to_date" type="date"
+                    class="w-full pr-3 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    @change="fetchLogs" />
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="flex flex-col px-2 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
+                <div class="relative">
+                  <input v-model="filterPayrollMonth" type="month"
+                    class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    @change="applyFilterMonth" />
+                  <LucideCalendar
+                    class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+                <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
+                  Period: {{ getPayrollDates(filterPayrollMonth).from_date }} — {{
+                    getPayrollDates(filterPayrollMonth).to_date }}
+                </p>
+              </div>
+            </template>
             <button @click="fetchLogs" class="p-2 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer"
               :class="store.loading ? 'text-indigo-400' : 'text-indigo-600 bg-indigo-50'" title="Reload Logs">
               <svg class="w-4 h-4" :class="{ 'animate-spin': store.loading }" fill="none" viewBox="0 0 24 24"
@@ -104,6 +130,19 @@
       </div>
 
 
+      <!-- Total Worked Hours Card -->
+      <div v-if="isHourlyEmployeeSelected" class="mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider">Total Worked Hours</p>
+          <p class="text-3xl font-extrabold text-indigo-950 mt-1 tabular-nums">
+            {{ totalWorkedHoursSum }} <span class="text-base font-semibold text-indigo-600">hrs</span>
+          </p>
+        </div>
+        <div class="text-sm text-indigo-600 font-medium bg-white px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
+          Based on {{ attendanceLogs.length }} log{{ attendanceLogs.length === 1 ? '' : 's' }}
+        </div>
+      </div>
+
       <!-- Table -->
       <HrDataTable :headers="tableHeaders" :items="attendanceLogs" :loading="attendanceTableLoading"
         emptyMessage="No attendance logs found." :hasEdit="authStore.can(HR_PERMISSION.UPDATE_ATTENDANCE_LOG)"
@@ -116,6 +155,9 @@
         </template>
         <template #check_out="{ value }">
           {{ value ? value.substring(0, 5) : '-' }}
+        </template>
+        <template #worked_hours="{ item }">
+          {{ calculateWorkedHoursForLog(item) }}
         </template>
       </HrDataTable>
 
@@ -239,6 +281,33 @@ function pickEmployeeFingerprint(emp) {
   return s || '';
 }
 
+function calculateWorkedHoursForLog(item) {
+  if (!item || !item.check_in || !item.check_out) return '-';
+  
+  const timeToMinutes = (timeStr) => {
+    if (!timeStr) return 0;
+    const parts = String(timeStr).split(':').map(Number);
+    if (parts.length < 2) return 0;
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+  };
+  
+  const checkInMin = timeToMinutes(item.check_in);
+  const checkOutMin = timeToMinutes(item.check_out);
+  let duration = checkOutMin - checkInMin;
+  
+  if (item.break_in && item.break_out) {
+    const breakInMin = timeToMinutes(item.break_in);
+    const breakOutMin = timeToMinutes(item.break_out);
+    const breakDuration = breakOutMin - breakInMin;
+    if (breakDuration > 0) {
+      duration -= breakDuration;
+    }
+  }
+  
+  if (duration <= 0) return '0.00';
+  return (duration / 60).toFixed(2);
+}
+
 const filteredEmployeesForSelect = computed(() => {
   const list = employeeStore.employees || [];
   const q = String(employeeSelectSearchQuery.value ?? '')
@@ -257,7 +326,16 @@ const selectedEmployeeTriggerLabel = computed(() => {
   if (id === '' || id == null) return 'All Employees';
   const list = employeeStore.employees || [];
   const emp = list.find((e) => String(e.id) === String(id));
-  return emp ? employeeRowLabel(emp) : 'All Employees';
+  if (!emp) return 'All Employees';
+  const label = employeeRowLabel(emp);
+  const type = activeContractTypeForEmployee(contractStore.contracts, emp.id);
+  return type ? `${label} (${type})` : label;
+});
+
+const isHourlyEmployeeSelected = computed(() => {
+  const id = filterForm.value.employee_id;
+  if (id === '' || id == null) return false;
+  return activeContractTypeForEmployee(contractStore.contracts, id) === 'hourly';
 });
 
 function closeEmployeeDropdown() {
@@ -275,10 +353,15 @@ function toggleEmployeeDropdown() {
 }
 
 function selectEmployeeFilter(rawId) {
+  const previousIsHourly = isHourlyEmployeeSelected.value;
   filterForm.value.employee_id = rawId === '' || rawId == null ? '' : rawId;
   employeeSelectSearchQuery.value = '';
   closeEmployeeDropdown();
-  fetchLogs();
+  if (previousIsHourly && !isHourlyEmployeeSelected.value) {
+    applyFilterMonth();
+  } else {
+    fetchLogs();
+  }
 }
 
 function onDocumentMousedownEmployeeDropdown(e) {
@@ -312,10 +395,27 @@ const tableHeaders = computed(() => {
     { label: 'Check In', key: 'check_in' },
     { label: 'Check Out', key: 'check_out' },
   ];
+  if (isHourlyEmployeeSelected.value) {
+    row.push({ label: 'Worked Hours', key: 'worked_hours' });
+  }
   if (authStore.can(HR_PERMISSION.VIEW_ATTENDANCE_LOG)) {
     return [{ label: 'Employee', key: 'employee' }, ...row];
   }
   return row;
+});
+
+const totalWorkedHoursSum = computed(() => {
+  let sum = 0;
+  for (const log of attendanceLogs.value) {
+    const hrsStr = calculateWorkedHoursForLog(log);
+    if (hrsStr !== '-') {
+      const val = Number(hrsStr);
+      if (Number.isFinite(val)) {
+        sum += val;
+      }
+    }
+  }
+  return sum.toFixed(2);
 });
 
 const fetchLogs = async () => {
