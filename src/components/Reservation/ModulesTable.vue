@@ -81,11 +81,17 @@ defineEmits(["refresh-data"]);
               </span>
             </td>
 
-            <td class="py-3 px-4 text-gray-600 text-sm">{{ m.startDate }}</td>
+            <td class="py-3 px-4 text-gray-600 text-sm">
+              {{ (m.code == '20210' || m.code == '202150') ? '-' : m.startDate }}
+            </td>
 
-            <td class="py-3 px-4 text-gray-600 text-sm">{{ m.day }}</td>
+            <td class="py-3 px-4 text-gray-600 text-sm">
+              {{ (m.code == '20210' || m.code == '202150') ? '-' : m.day }}
+            </td>
 
-            <td class="py-3 px-4 text-gray-600 text-sm">{{ m.time }}</td>
+            <td class="py-3 px-4 text-gray-600 text-sm">
+              {{ (m.code == '20210' || m.code == '202150') ? '-' : m.time }}
+            </td>
 
             <!-- SEPARATED Amount -->
             <td
