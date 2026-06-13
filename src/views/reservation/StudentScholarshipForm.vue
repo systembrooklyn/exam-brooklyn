@@ -68,9 +68,18 @@ const activePriceSettings = computed(() => {
   Object.keys(selectedSettings).forEach(type => {
     const selectedName = selectedSettings[type];
     if (selectedName) {
-      const ps = allPs.find(x => x.type === type && x.name === selectedName);
-      if (ps) {
-        list.push(ps);
+      if (Array.isArray(selectedName)) {
+        selectedName.forEach(name => {
+          const ps = allPs.find(x => x.type === type && x.name === name);
+          if (ps) {
+            list.push(ps);
+          }
+        });
+      } else {
+        const ps = allPs.find(x => x.type === type && x.name === selectedName);
+        if (ps) {
+          list.push(ps);
+        }
       }
     }
   });
@@ -87,7 +96,11 @@ const activePriceSettings = computed(() => {
         const allParentsSatisfied = pids.every(pid => {
           const parentObj = allPs.find(x => x.id === pid);
           if (!parentObj) return false;
-          return selectedSettings[parentObj.type] === parentObj.name;
+          const parentVal = selectedSettings[parentObj.type];
+          if (Array.isArray(parentVal)) {
+            return parentVal.includes(parentObj.name);
+          }
+          return parentVal === parentObj.name;
         });
         
         if (allParentsSatisfied) {
@@ -217,12 +230,18 @@ const calculatedBreakdown = computed(() => {
 
     const suggestedFinalAmount = apiCalculationResult.value.total_price || (apiBase + list.reduce((sum, item) => sum + item.impactSigned, 0));
     const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
+    const remainingBalance = cb?.remaining_balance_to_be_split;
+    const installmentsCount = apiCalculationResult.value.installments_count;
+    const firstInstallment = remainingBalance !== undefined ? (suggestedFinalAmount - remainingBalance) : null;
 
     return {
       basePrice: apiBase,
       modifiers: list,
       totalAdjustments,
-      suggestedFinalAmount
+      suggestedFinalAmount,
+      remainingBalance,
+      installmentsCount,
+      firstInstallment
     };
   }
 
@@ -364,7 +383,14 @@ onMounted(async () => {
           // Initialize dynamic pricing selectors dictionary from initially applied settings
           const selectedSettings = {};
           detail.price_settings?.forEach(ps => {
-            selectedSettings[ps.type] = ps.name;
+            if (ps.type === "Paper") {
+              if (!selectedSettings[ps.type]) {
+                selectedSettings[ps.type] = [];
+              }
+              selectedSettings[ps.type].push(ps.name);
+            } else {
+              selectedSettings[ps.type] = ps.name;
+            }
           });
           form.value.priceSettings = selectedSettings;
           
@@ -390,6 +416,108 @@ onMounted(async () => {
     }
   }
 });
+
+const handleSaveStudent = async (updatedStudentFields) => {
+  if (!reservationDetails.value?.id) {
+    notyf.error("No active reservation details found.");
+    return;
+  }
+
+  const statusMap = {
+    "RESERVATION": "reserve",
+    "MANUAL": "manual",
+    "MANUAL EXAM": "manual exam",
+    "Extend": "extend",
+    "CANCELLATION": "cancel"
+  };
+  
+  const statusKey = statusMap[form.value.finalCase] || form.value.finalCase?.toLowerCase() || reservationDetails.value.status?.key || "reserve";
+  const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
+  const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
+
+  let formattedPhones = updatedStudentFields.phones;
+  if (typeof formattedPhones === "string") {
+    formattedPhones = formattedPhones.split(",").map(p => p.trim()).filter(Boolean);
+  }
+
+  const payload = {
+    name: updatedStudentFields.name,
+    email: updatedStudentFields.email,
+    phones: formattedPhones,
+    ID_number: updatedStudentFields.ID_number || "",
+    grade: updatedStudentFields.grade || "",
+    birth_date: updatedStudentFields.birth_date || "",
+    nationality: updatedStudentFields.nationality || "",
+    governorate: updatedStudentFields.governorate || "",
+    company: updatedStudentFields.company || "",
+    careerType: updatedStudentFields.careerType || "",
+    faculity: updatedStudentFields.faculity || "",
+    major: updatedStudentFields.major || "",
+    
+    // Reservation metadata and settings
+    scholarship: updatedStudentFields.scholarship || scholarshipId,
+    status: statusKey,
+    called_by: reservationDetails.value?.called_by?.id || reservationDetails.value?.called_by,
+    called_time: reservationDetails.value?.called_time,
+    marketing_code: reservationDetails.value?.student?.marketing_code || "",
+    final_amount: parseFloat(form.value.finalAmount) || 0,
+    finalAmount: parseFloat(form.value.finalAmount) || 0,
+    notes: form.value.notes,
+    price_setting_ids: priceSettingIds,
+    price_settings: priceSettingIds
+  };
+
+  try {
+    loadingDetails.value = true;
+    await reservationStore.updateReservation(reservationDetails.value.id, payload);
+    
+    // Fetch updated details to sync the whole page
+    const detail = await reservationStore.getReservationById(reservationDetails.value.id);
+    if (detail) {
+      reservationDetails.value = detail;
+      
+      basePrice.value = detail.student?.scholarship?.price || 0;
+      priceSettings.value = detail.price_settings || [];
+      
+      form.value.name = detail.student?.name || "";
+      form.value.scholarship = detail.student?.scholarship?.name 
+        ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)` 
+        : (detail.student?.scholarship?.price || "");
+      form.value.studentType = detail.student?.careerType || "";
+      form.value.studyType = detail.student?.scholarship?.study_type || "";
+      form.value.nationality = detail.student?.nationality || "";
+      form.value.notes = detail.student?.notes || "";
+      form.value.studyCategory = detail.student?.faculity || "";
+      
+      // Update price settings arrays
+      const selectedSettings = {};
+      detail.price_settings?.forEach(ps => {
+        if (ps.type === "Paper") {
+          if (!selectedSettings[ps.type]) {
+            selectedSettings[ps.type] = [];
+          }
+          selectedSettings[ps.type].push(ps.name);
+        } else {
+          selectedSettings[ps.type] = ps.name;
+        }
+      });
+      form.value.priceSettings = selectedSettings;
+      
+      form.value.paperID = detail.student?.ID_number ? "ID" : "";
+      form.value.paperCertificate = detail.student?.grade ? "Certificate" : "";
+      form.value.paperHR = detail.student?.company ? "HR" : "Not HR";
+      
+      mapStudyPlanToModules(detail.study_plan, basePrice.value);
+      
+      form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
+      await updateCalculationAndSchedule();
+    }
+  } catch (err) {
+    console.error("Failed to update student profile info:", err);
+  } finally {
+    loadingDetails.value = false;
+  }
+};
 
 const submitForm = async () => {
   if (!reservationDetails.value?.id) {
@@ -461,7 +589,11 @@ const submitForm = async () => {
     <!-- Main Content Panel (show when not loading) -->
     <div v-else class="grid grid-cols-12 gap-4">
       <div class="col-span-3">
-        <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" />
+        <StudentInfoPanel 
+          v-model="form" 
+          :student-info="reservationDetails?.student" 
+          @save-student="handleSaveStudent"
+        />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
         <!-- Academic Modules Schedule -->
@@ -559,6 +691,18 @@ const submitForm = async () => {
                     <span class="font-bold" :class="calculatedBreakdown.totalAdjustments < 0 ? 'text-emerald-600' : (calculatedBreakdown.totalAdjustments > 0 ? 'text-rose-600' : 'text-slate-700')">
                       {{ calculatedBreakdown.totalAdjustments < 0 ? '' : '+' }}{{ calculatedBreakdown.totalAdjustments.toLocaleString() }} EGP
                     </span>
+                  </div>
+                  <div v-if="calculatedBreakdown.firstInstallment !== null && calculatedBreakdown.firstInstallment !== undefined" class="flex justify-between text-slate-500 border-t border-indigo-100/40 pt-1.5 mt-1.5">
+                    <span>First Installment:</span>
+                    <span class="font-bold text-slate-700">{{ calculatedBreakdown.firstInstallment.toLocaleString() }} EGP</span>
+                  </div>
+                  <div v-if="calculatedBreakdown.remainingBalance !== null && calculatedBreakdown.remainingBalance !== undefined" class="flex justify-between text-slate-500">
+                    <span>Remaining Balance:</span>
+                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.remainingBalance.toLocaleString() }} EGP</span>
+                  </div>
+                  <div v-if="calculatedBreakdown.installmentsCount !== null && calculatedBreakdown.installmentsCount !== undefined" class="flex justify-between text-slate-500">
+                    <span>Installments Count:</span>
+                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.installmentsCount }}</span>
                   </div>
                 </div>
               </div>
