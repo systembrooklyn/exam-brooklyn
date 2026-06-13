@@ -7,7 +7,7 @@ const props = defineProps({
   modelValue: Object,
   studentInfo: Object
 });
-const emit = defineEmits(["update:modelValue", "save-student"]);
+const emit = defineEmits(["update:modelValue", "save-student", "refresh-data"]);
 
 const isEditing = ref(false);
 const editableStudent = ref({});
@@ -59,14 +59,14 @@ const allSettings = computed(() => priceSettingsStore.priceSettings || []);
 // Extract unique active price settings types
 const priceSettingTypes = computed(() => {
   const activeTypes = allSettings.value
-    .filter(ps => ps.is_active && ps.type !== 'Grade' && ps.type !== 'Sub Payment Method')
+    .filter(ps => ps.is_active !== false && ps.type !== 'Grade' && ps.type !== 'Sub Payment Method')
     .map(ps => ps.type);
   return [...new Set(activeTypes)];
 });
 
 // Dynamic cascade filter for each option type
 const getOptionsForType = (type) => {
-  let settings = allSettings.value.filter(ps => ps.type === type && ps.is_active);
+  let settings = allSettings.value.filter(ps => ps.type === type && ps.is_active !== false);
 
   // Cascade filter: only show settings where parent ID is selected or no parent constraints exist
   settings = settings.filter(ps => {
@@ -103,21 +103,50 @@ const getOptionsForType = (type) => {
   return base;
 };
 
-// Handle toggling multiple paper options
-const togglePaperOption = (opt) => {
-  const currentPapers = Array.isArray(props.modelValue.priceSettings?.["Paper"])
-    ? [...props.modelValue.priceSettings["Paper"]]
-    : (props.modelValue.priceSettings?.["Paper"] ? [props.modelValue.priceSettings["Paper"]] : []);
+// Handle toggling multiple options for list types (e.g. Paper)
+const toggleOption = (opt, type) => {
+  const currentOptions = Array.isArray(props.modelValue.priceSettings?.[type])
+    ? [...props.modelValue.priceSettings[type]]
+    : (props.modelValue.priceSettings?.[type] ? [props.modelValue.priceSettings[type]] : []);
 
-  const index = currentPapers.indexOf(opt);
+  const index = currentOptions.indexOf(opt);
   if (index > -1) {
-    currentPapers.splice(index, 1);
+    currentOptions.splice(index, 1);
   } else {
-    currentPapers.push(opt);
+    currentOptions.push(opt);
   }
 
-  updatePriceSettingField("Paper", currentPapers);
+  updatePriceSettingField(type, currentOptions);
 };
+
+// Automatically pre-select all Fees options so they are applied
+import { watch } from "vue";
+watch(
+  () => priceSettingTypes.value,
+  (types) => {
+    if (types.includes("Fees")) {
+      const feesOptions = getOptionsForType("Fees");
+      let currentVal = props.modelValue.priceSettings?.["Fees"];
+      let currentFees = [];
+      if (currentVal) {
+        currentFees = Array.isArray(currentVal) ? currentVal : [currentVal];
+      }
+      const missing = feesOptions.filter(f => !currentFees.includes(f));
+      if (missing.length > 0) {
+        const updated = Array.from(new Set([...currentFees, ...feesOptions]));
+        // Avoid mutating props directly, emit the update
+        emit("update:modelValue", {
+          ...props.modelValue,
+          priceSettings: {
+            ...props.modelValue.priceSettings,
+            "Fees": updated
+          }
+        });
+      }
+    }
+  },
+  { immediate: true, deep: true }
+);
 
 // Handle changing dynamic selectors and perform automatic dependency clearing
 const updatePriceSettingField = (type, value) => {
@@ -149,16 +178,19 @@ const updatePriceSettingField = (type, value) => {
   <div class="space-y-4">
     <!-- STUDENT PROFILE CARD -->
     <div v-if="studentInfo" class="card p-4.5 bg-white border border-slate-100 shadow-sm relative">
-      <!-- Edit toggle button -->
-      <button type="button" @click="toggleEditMode"
-        class="absolute top-4 right-4 text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1 z-10">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-          stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
-        <span>{{ isEditing ? 'Cancel' : 'Edit Info' }}</span>
-      </button>
+      <!-- Actions container -->
+      <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
+        <!-- Edit toggle button -->
+        <button type="button" @click="toggleEditMode"
+          class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+          <span>{{ isEditing ? 'Cancel' : 'Edit Info' }}</span>
+        </button>
+      </div>
 
       <!-- READ-ONLY MODE -->
       <div v-if="!isEditing">
@@ -499,18 +531,31 @@ const updatePriceSettingField = (type, value) => {
           <div v-for="type in priceSettingTypes" :key="type" class="col-span-12">
             <label class="block text-xs font-semibold text-gray-750 dark:text-gray-300 mb-1">{{ type }}</label>
 
-            <!-- Multi-select checkable list for Paper -->
-            <div v-if="type === 'Paper'"
+            <!-- Multi-select checkable list for Paper and Fees -->
+            <div v-if="type === 'Paper' || type === 'Fees'"
               class="space-y-1 bg-slate-50/50 p-2 rounded-xl border border-slate-100/60 max-h-36 overflow-y-auto">
               <label v-for="opt in getOptionsForType(type)" :key="opt"
-                class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white border border-transparent hover:border-slate-100 transition cursor-pointer select-none">
-                <input type="checkbox" :checked="props.modelValue.priceSettings?.[type]?.includes(opt)"
-                  @change="togglePaperOption(opt)"
-                  class="rounded text-indigo-600 focus:ring-indigo-500 border-slate-300 w-3.5 h-3.5" />
-                <span class="text-xs font-bold text-slate-700 leading-none">{{ opt }}</span>
+                class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent transition cursor-pointer select-none"
+                :class="{
+                  'hover:bg-white hover:border-slate-100': type !== 'Fees',
+                  'opacity-80 cursor-not-allowed': type === 'Fees'
+                }">
+                <input type="checkbox" 
+                  :checked="type === 'Fees' || props.modelValue.priceSettings?.[type]?.includes(opt)"
+                  :disabled="type === 'Fees'"
+                  @change="type !== 'Fees' && toggleOption(opt, type)"
+                  class="rounded focus:ring-indigo-500 w-3.5 h-3.5"
+                  :class="{
+                     'text-indigo-600 border-slate-300': type !== 'Fees',
+                     'text-indigo-400 bg-indigo-50 border-indigo-200': type === 'Fees'
+                  }" />
+                <span class="text-xs font-bold leading-none"
+                      :class="type === 'Fees' ? 'text-indigo-600' : 'text-slate-700'">
+                  {{ opt }}
+                </span>
               </label>
               <div v-if="getOptionsForType(type).length === 0" class="text-xs text-slate-400 italic py-1 text-center">
-                No papers available
+                No options available
               </div>
             </div>
 

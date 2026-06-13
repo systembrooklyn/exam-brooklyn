@@ -353,10 +353,7 @@ const populateFromSummary = (summary) => {
   }
 };
 
-onMounted(async () => {
-  // Fetch global price settings
-  priceSettingsStore.fetchPriceSettings();
-
+const fetchReservationDetails = async () => {
   const saved = sessionStorage.getItem("selectedReservation");
   if (saved) {
     try {
@@ -369,6 +366,10 @@ onMounted(async () => {
           
           basePrice.value = detail.student?.scholarship?.price || 0;
           priceSettings.value = detail.price_settings || [];
+          
+          // Inject the assigned price settings into the store so they render in the UI
+          // without needing to fetch all global settings.
+          priceSettingsStore.priceSettings = detail.price_settings || [];
           
           form.value.name = detail.student?.name || "";
           form.value.scholarship = detail.student?.scholarship?.name 
@@ -383,7 +384,7 @@ onMounted(async () => {
           // Initialize dynamic pricing selectors dictionary from initially applied settings
           const selectedSettings = {};
           detail.price_settings?.forEach(ps => {
-            if (ps.type === "Paper") {
+            if (ps.type === "Paper" || ps.type === "Fees") {
               if (!selectedSettings[ps.type]) {
                 selectedSettings[ps.type] = [];
               }
@@ -415,6 +416,10 @@ onMounted(async () => {
       loadingDetails.value = false;
     }
   }
+};
+
+onMounted(() => {
+  fetchReservationDetails();
 });
 
 const handleSaveStudent = async (updatedStudentFields) => {
@@ -593,11 +598,12 @@ const submitForm = async () => {
           v-model="form" 
           :student-info="reservationDetails?.student" 
           @save-student="handleSaveStudent"
+          @refresh-data="fetchReservationDetails"
         />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
         <!-- Academic Modules Schedule -->
-        <ModulesTable :modules="modules" />
+        <ModulesTable :modules="modules" @refresh-data="fetchReservationDetails" />
 
         <!-- Applied Pricing & Adjustments Table -->
         <div v-if="reservationDetails" class="card p-5 overflow-hidden border-indigo-50 bg-white">
@@ -745,6 +751,7 @@ const submitForm = async () => {
         </div>
       </div>
     </div>
+    </div>
 
     <div
       v-if="showFinalCase"
@@ -786,5 +793,5 @@ const submitForm = async () => {
         </div>
       </div>
     </div>
-  </div>
+  <!-- </div> -->
 </template>

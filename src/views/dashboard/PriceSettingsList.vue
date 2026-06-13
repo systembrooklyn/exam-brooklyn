@@ -360,6 +360,8 @@
                   <option value="Payment Method">Payment Method</option>
                   <option value="Grade">Grade</option>
                   <option value="Paper">Paper</option>
+                  <option value="Fees">Fees</option>
+                  <option value="Sub Payment Method">Sub Payment Method</option>
                 </select>
               </div>
 
@@ -467,7 +469,7 @@
             </div>
 
             <!-- Parents MultiSelect -->
-            <div>
+            <div v-if="form.type !== 'Grade'">
               <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
                 Parents <span class="text-[10px] text-gray-400 lowercase italic">(nullable)</span>
               </label>
@@ -681,6 +683,10 @@ const typeBadgeClass = (type) => {
       return 'bg-purple-50 text-purple-700 ring-1 ring-purple-700/10 dark:bg-purple-950/40 dark:text-purple-300 dark:ring-purple-500/20'
     case 'Paper':
       return 'bg-amber-50 text-amber-700 ring-1 ring-amber-700/10 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-500/20'
+    case 'Fees':
+      return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-700/10 dark:bg-emerald-950/40 dark:text-emerald-300 dark:ring-emerald-500/20'
+    case 'Sub Payment Method':
+      return 'bg-cyan-50 text-cyan-700 ring-1 ring-cyan-700/10 dark:bg-cyan-950/40 dark:text-cyan-300 dark:ring-cyan-500/20'
     default:
       return 'bg-gray-50 text-gray-600 ring-1 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-400 dark:ring-gray-700/25'
   }
@@ -817,7 +823,7 @@ const savePriceSetting = async () => {
     amount_type:     form.value.amount_type,
     amount:          Number(form.value.amount),
     dl_count:        form.value.type === 'Payment Method' && ((form.value.dl_count !== '' && form.value.dl_count !== null && form.value.dl_count !== undefined) ? Number(form.value.dl_count) : null),
-    parent_ids:      form.value.parent_ids && form.value.parent_ids.length ? form.value.parent_ids : [],
+    parent_ids:      form.value.type === 'Grade' ? [] : (form.value.parent_ids && form.value.parent_ids.length ? form.value.parent_ids : []),
     children_ids:    form.value.children_ids && form.value.children_ids.length ? form.value.children_ids : [],
     is_active:       form.value.is_active,
     scholarship_ids: form.value.scholarship_ids && form.value.scholarship_ids.length ? form.value.scholarship_ids : [],

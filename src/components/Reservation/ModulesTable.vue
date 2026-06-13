@@ -2,13 +2,22 @@
 defineProps({
   modules: Array
 });
+defineEmits(["refresh-data"]);
 </script>
 
 <template>
   <div class="card overflow-hidden">
     <!-- Header -->
-    <div class="p-4 border-b border-gray-100 bg-gray-50/50">
-      <h3 class="text-xl font-bold text-indigo-600 border-b pb-2">Modules Schedule</h3>
+    <div class="p-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+      <h3 class="text-xl font-bold text-indigo-600 border-b pb-2 flex-1">Modules Schedule</h3>
+      <button type="button" @click="$emit('refresh-data')"
+        class="text-sm font-bold px-4 py-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition flex items-center gap-2 shadow-sm mb-2"
+        title="Refresh Data">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Refresh Data
+      </button>
     </div>
 
     <!-- Table Container -->
