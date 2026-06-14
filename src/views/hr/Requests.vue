@@ -443,6 +443,14 @@
               class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 24" />
           </div>
 
+          <!-- Overtime: duration minutes when editing overtime request -->
+          <div v-if="isEditing && isServerCalculatedOvertime(form.request_type)" class="col-span-2 md:col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+            <input v-model.number="form.overtime_minutes" type="number" min="0" step="1"
+              :disabled="editingIsApproverOnly || store.loading"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. 60" />
+          </div>
+
           <!-- Conditional: Day Replacement (Day Off Swap) -->
           <div v-if="form.request_type === 'day_off_swap'" class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Replacement Date</label>
@@ -955,6 +963,7 @@ const form = ref({
   request_type: 'leave',
   day: '',
   duration_minutes: null,
+  overtime_minutes: null,
   from_time: '',
   to_time: '',
   day_replacement: '',
@@ -972,7 +981,13 @@ function requestModalUsesFromToTime(rawType) {
   return true;
 }
 
-const showFromToFields = computed(() => requestModalUsesFromToTime(form.value.request_type));
+const showFromToFields = computed(() => {
+  const t = form.value.request_type;
+  if (isEditing.value && isServerCalculatedOvertime(t)) {
+    return false;
+  }
+  return requestModalUsesFromToTime(t);
+});
 
 /** Pencil: pending + `update-employee-request`; approved/rejected + `approve-employee-request`. */
 function canShowRequestEditPencil(item) {
@@ -1405,6 +1420,9 @@ watch(
       form.value.from_time = '';
       form.value.to_time = '';
     }
+    if (!isServerCalculatedOvertime(t)) {
+      form.value.overtime_minutes = null;
+    }
   },
 );
 
@@ -1439,6 +1457,7 @@ const openAddModal = () => {
     request_type: 'leave',
     day: '',
     duration_minutes: null,
+    overtime_minutes: null,
     from_time: '',
     to_time: '',
     day_replacement: '',
@@ -1482,10 +1501,19 @@ const openEditModal = (item) => {
     rawStatus === 'approved' || rawStatus === 'rejected' || rawStatus === 'pending'
       ? rawStatus
       : 'pending';
+  let otMinsForForm = null;
+  if (isServerCalculatedOvertime(item.request_type)) {
+    if (item.overtime_minutes != null && item.overtime_minutes !== '') {
+      otMinsForForm = Number(item.overtime_minutes);
+    } else if (item.duration_hours != null && item.duration_hours !== '') {
+      otMinsForForm = Math.round(Number(item.duration_hours) * 60); 
+    }
+  }
   form.value = {
     request_type: item.request_type || 'leave',
     day: toDateInputValue(item.day),
     duration_minutes: durationMinutesForForm,
+    overtime_minutes: otMinsForForm,
     from_time: item.from_time ? normalizeApiTime(item.from_time) || '' : '',
     to_time: item.to_time ? normalizeApiTime(item.to_time) || '' : '',
     day_replacement: toDateInputValue(item.day_replacement),
@@ -1542,10 +1570,25 @@ function buildRequestPayloadFromForm() {
 
   const otRt = normalizeRequestTypeSlug(form.value.request_type);
   if (isServerCalculatedOvertime(otRt)) {
+    if (isEditing.value) {
+      const mins = form.value.overtime_minutes;
+      if (mins === '' || mins == null) {
+        notyf.error('Duration (minutes) is required');
+        return null;
+      }
+      const nMins = Number(mins);
+      if (!Number.isInteger(nMins) || nMins < 0) {
+        notyf.error('Duration must be a positive integer');
+        return null;
+      }
+    }
     const payload = {
       request_type: otRt,
       day: form.value.day,
     };
+    if (isEditing.value && form.value.overtime_minutes != null) {
+      payload.duration_hours = Number(form.value.overtime_minutes) / 60;
+    }
     const finalPayload = finalizeRequestPayload(payload);
     if (!finalPayload) return null;
 
@@ -1557,6 +1600,9 @@ function buildRequestPayloadFromForm() {
       }
       if (form.value.day !== init.day) {
         dirty.day = form.value.day;
+      }
+      if (form.value.overtime_minutes !== init.overtime_minutes) {
+        dirty.duration_hours = finalPayload.duration_hours;
       }
       if (finalPayload.status !== undefined && finalPayload.status !== init.status) {
         dirty.status = finalPayload.status;
@@ -1670,11 +1716,18 @@ function buildRequestPayloadFromForm() {
     if (form.value.day !== init.day) {
       dirty.day = form.value.day;
     }
-    if (form.value.from_time !== init.from_time) {
-      dirty.from_time = finalPayload.from_time;
-    }
-    if (form.value.to_time !== init.to_time) {
-      dirty.to_time = finalPayload.to_time;
+    if (form.value.request_type === 'shift_move') {
+      if (form.value.from_time !== init.from_time || form.value.to_time !== init.to_time) {
+        dirty.from_time = finalPayload.from_time;
+        dirty.to_time = finalPayload.to_time;
+      }
+    } else {
+      if (form.value.from_time !== init.from_time) {
+        dirty.from_time = finalPayload.from_time;
+      }
+      if (form.value.to_time !== init.to_time) {
+        dirty.to_time = finalPayload.to_time;
+      }
     }
     if (form.value.duration_minutes !== init.duration_minutes) {
       if (finalPayload.duration_hours !== undefined) {

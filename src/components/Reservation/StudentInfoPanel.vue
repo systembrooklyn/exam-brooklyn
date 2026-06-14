@@ -87,15 +87,30 @@ const getOptionsForType = (type) => {
 
   const base = settings.map(ps => ps.name);
   const current = props.modelValue?.priceSettings?.[type];
+  
+  const isValidCurrent = (cName) => {
+    const psObj = allSettings.value.find(x => x.type === type && x.name === cName);
+    if (!psObj) return true; // If we can't find it, keep it (might be a deleted setting that is currently selected)
+    const pids = psObj.parent_ids || psObj.parent_id || (psObj.parents ? psObj.parents.map(p => p.id) : []);
+    if (pids.length === 0) return true;
+    return pids.some(pid => {
+      const parentObj = allSettings.value.find(x => x.id === pid);
+      if (!parentObj) return false;
+      const parentVal = props.modelValue?.priceSettings?.[parentObj.type];
+      if (Array.isArray(parentVal)) return parentVal.includes(parentObj.name);
+      return parentVal === parentObj.name;
+    });
+  };
+
   if (current) {
     if (Array.isArray(current)) {
       current.forEach(c => {
-        if (!base.includes(c)) {
+        if (!base.includes(c) && isValidCurrent(c)) {
           base.unshift(c);
         }
       });
     } else {
-      if (!base.includes(current)) {
+      if (!base.includes(current) && isValidCurrent(current)) {
         base.unshift(current);
       }
     }
@@ -122,24 +137,30 @@ const toggleOption = (opt, type) => {
 // Automatically pre-select all Fees options so they are applied
 import { watch } from "vue";
 watch(
-  () => priceSettingTypes.value,
-  (types) => {
-    if (types.includes("Fees")) {
-      const feesOptions = getOptionsForType("Fees");
+  () => {
+    // If Fees type is active, return its exact dynamic options
+    if (priceSettingTypes.value.includes("Fees")) {
+      return getOptionsForType("Fees");
+    }
+    return null;
+  },
+  (feesOptions) => {
+    if (feesOptions !== null) {
       let currentVal = props.modelValue.priceSettings?.["Fees"];
       let currentFees = [];
       if (currentVal) {
         currentFees = Array.isArray(currentVal) ? currentVal : [currentVal];
       }
       const missing = feesOptions.filter(f => !currentFees.includes(f));
-      if (missing.length > 0) {
-        const updated = Array.from(new Set([...currentFees, ...feesOptions]));
+      const extra = currentFees.filter(f => !feesOptions.includes(f));
+      if (missing.length > 0 || extra.length > 0) {
         // Avoid mutating props directly, emit the update
+        // Sync Fees exactly to the valid feesOptions
         emit("update:modelValue", {
           ...props.modelValue,
           priceSettings: {
             ...props.modelValue.priceSettings,
-            "Fees": updated
+            "Fees": feesOptions
           }
         });
       }

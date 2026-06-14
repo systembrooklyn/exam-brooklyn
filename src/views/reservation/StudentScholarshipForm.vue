@@ -8,6 +8,7 @@ import FinalCasePanel from "@/components/Reservation/FinalCasePanel.vue";
 import ActionButtons from "@/components/Reservation/ActionButtons.vue";
 import { useReservationStore } from "@/stores/reservations";
 import { usePriceSettingsStore } from "@/stores/priceSettingsStore";
+import { Loader2 } from "lucide-vue-next";
 
 const router = useRouter();
 const reservationStore = useReservationStore();
@@ -56,14 +57,14 @@ watch(() => form.value.priceSettings, (newVal) => {
 const activePriceSettings = computed(() => {
   const list = [];
   const allPs = priceSettingsStore.priceSettings || [];
-  
+
   if (!allPs || allPs.length === 0) {
     // Fallback to static pricing settings if the store hasn't finished loading
     return priceSettings.value;
   }
 
   const selectedSettings = form.value.priceSettings || {};
-  
+
   // First, add all explicitly selected settings by type
   Object.keys(selectedSettings).forEach(type => {
     const selectedName = selectedSettings[type];
@@ -87,9 +88,7 @@ const activePriceSettings = computed(() => {
   // Second, auto-apply child settings that depend on the selections but don't have their own selectors
   allPs.forEach(ps => {
     // If it's already explicitly added, skip
-    if (list.some(x => x.id === ps.id)) return;
-    
-    if (ps.is_active) {
+    if (list.some(x => x.id === ps.id)) return;    if (ps.is_active) {
       const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map(p => p.id) : []);
       if (pids.length > 0) {
         // All parent constraints must be satisfied by selected values
@@ -102,7 +101,7 @@ const activePriceSettings = computed(() => {
           }
           return parentVal === parentObj.name;
         });
-        
+
         if (allParentsSatisfied) {
           // If the setting's type is not explicitly selected in the form, auto-apply it
           if (!selectedSettings[ps.type]) {
@@ -131,13 +130,13 @@ const formatDateToDMMMYYYY = (dateStr) => {
 
 const mergeInstallmentsIntoModules = (schedule) => {
   if (!schedule || schedule.length === 0) return;
-  
+
   if (modules.value.length === 0) {
     modules.value = schedule.map((item) => {
       const dateObj = new Date(item.due_date);
       const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
       const dayName = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString("en-US", { weekday: "short" }) : "TBD";
-      
+
       return {
         name: `Installment #${item.installment_number}`,
         code: "PAY",
@@ -150,12 +149,12 @@ const mergeInstallmentsIntoModules = (schedule) => {
     });
     return;
   }
-  
+
   modules.value = modules.value.map((mod, index) => {
     if (index < schedule.length) {
       const item = schedule[index];
       const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
-      
+
       return {
         ...mod,
         amount: item.amount,
@@ -171,25 +170,42 @@ const mergeInstallmentsIntoModules = (schedule) => {
   });
 };
 
-const updateCalculationAndSchedule = async () => {
-  const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
-  if (!scholarshipId) return;
+let calcTimeout = null;
+let calcNonce = 0;
 
-  const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
+const updateCalculationAndSchedule = async () => {
+  if (calcTimeout) clearTimeout(calcTimeout);
   
-  try {
-    calculatingDeadlines.value = true;
-    const response = await reservationStore.calculateDeadlines(scholarshipId, priceSettingIds);
-    if (response) {
-      apiCalculationResult.value = response;
-      mergeInstallmentsIntoModules(response.schedule);
-      form.value.finalAmount = response.total_price;
+  calcTimeout = setTimeout(async () => {
+    const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
+    if (!scholarshipId) return;
+
+    const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
+
+    console.log("SENDING PRICE SETTINGS IDS TO API:", priceSettingIds);
+    console.log("ACTIVE PRICE SETTINGS OBJECTS:", JSON.stringify(activePriceSettings.value.map(p => p.name)));
+
+    calcNonce++;
+    const currentNonce = calcNonce;
+
+    try {
+      calculatingDeadlines.value = true;
+      const response = await reservationStore.calculateDeadlines(scholarshipId, priceSettingIds);
+      
+      // Prevent race conditions: only apply if this is the most recent request
+      if (response && currentNonce === calcNonce) {
+        apiCalculationResult.value = response;
+        mergeInstallmentsIntoModules(response.schedule);
+        form.value.finalAmount = response.total_price;
+      }
+    } catch (err) {
+      console.error("Error calculating deadlines:", err);
+    } finally {
+      if (currentNonce === calcNonce) {
+        calculatingDeadlines.value = false;
+      }
     }
-  } catch (err) {
-    console.error("Error calculating deadlines:", err);
-  } finally {
-    calculatingDeadlines.value = false;
-  }
+  }, 100); // 100ms debounce
 };
 
 // Watch active price settings to update calculations dynamically
@@ -205,13 +221,13 @@ const calculatedBreakdown = computed(() => {
     const cb = apiCalculationResult.value.calculation_breakdown;
     const apiBase = cb?.base_scholarship_price || base;
     const list = [];
-    
+
     // Map applied modifiers from API
     if (cb?.applied_modifiers) {
       cb.applied_modifiers.forEach((item, index) => {
         const val = parseFloat(item.calculated_value) || 0;
         const absVal = Math.abs(val);
-        
+
         list.push({
           id: `api-mod-${index}`,
           name: item.name,
@@ -254,10 +270,10 @@ const calculatedBreakdown = computed(() => {
     } else {
       impact = amountVal;
     }
-    
+
     const isDiscount = item.modifier === "discount";
     const impactSigned = isDiscount ? -impact : impact;
-    
+
     list.push({
       id: item.id,
       name: item.name,
@@ -296,25 +312,25 @@ const mapStudyPlanToModules = (studyPlan, baseScholarshipPrice) => {
     modules.value = [];
     return;
   }
-  
+
   const avgAmount = Math.round(baseScholarshipPrice / studyPlan.length);
-  
+
   modules.value = studyPlan.map((item) => {
     const startsAt = item.starts_at;
     const dateObj = startsAt ? new Date(startsAt) : null;
-    
+
     let formattedDate = "";
     let dayName = "";
     let deadlineStr = "";
-    
+
     if (dateObj && !isNaN(dateObj.getTime())) {
       const dd = String(dateObj.getDate()).padStart(2, "0");
       const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
       const yyyy = dateObj.getFullYear();
       formattedDate = `${dd}/${mm}/${yyyy}`;
-      
+
       dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-      
+
       const deadlineDate = new Date(dateObj);
       deadlineDate.setDate(deadlineDate.getDate() - 1);
       const dlDay = deadlineDate.getDate();
@@ -326,7 +342,7 @@ const mapStudyPlanToModules = (studyPlan, baseScholarshipPrice) => {
       dayName = "TBD";
       deadlineStr = "TBD";
     }
-    
+
     return {
       name: item.course_name,
       code: String(item.course_code),
@@ -343,7 +359,7 @@ const populateFromSummary = (summary) => {
   if (summary && summary.student) {
     form.value.name = summary.student.name || "";
     form.value.grade = summary.student.grade || "";
-    form.value.scholarship = summary.student.scholarship?.price 
+    form.value.scholarship = summary.student.scholarship?.price
       ? `${summary.student.scholarship.name || ''} (${summary.student.scholarship.price.toLocaleString()} EGP)`
       : (summary.student.scholarship?.name || "");
     form.value.studentType = summary.student.careerType || "";
@@ -363,27 +379,40 @@ const fetchReservationDetails = async () => {
         const detail = await reservationStore.getReservationById(summary.id);
         if (detail) {
           reservationDetails.value = detail;
-          
+
           basePrice.value = detail.student?.scholarship?.price || 0;
-          priceSettings.value = detail.price_settings || [];
-          
+
+          // Flatten price_settings to include nested children and link them via parent_ids
+          const flattenedSettings = [];
+          detail.price_settings?.forEach(ps => {
+            flattenedSettings.push(ps);
+            if (ps.children && Array.isArray(ps.children)) {
+              ps.children.forEach(child => {
+                child.parent_ids = [ps.id];
+                flattenedSettings.push(child);
+              });
+            }
+          });
+
+          priceSettings.value = flattenedSettings;
+
           // Inject the assigned price settings into the store so they render in the UI
           // without needing to fetch all global settings.
-          priceSettingsStore.priceSettings = detail.price_settings || [];
-          
+          priceSettingsStore.priceSettings = flattenedSettings;
+
           form.value.name = detail.student?.name || "";
-          form.value.scholarship = detail.student?.scholarship?.name 
-            ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)` 
+          form.value.scholarship = detail.student?.scholarship?.name
+            ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)`
             : (detail.student?.scholarship?.price || "");
           form.value.studentType = detail.student?.careerType || "";
           form.value.studyType = detail.student?.scholarship?.study_type || "";
           form.value.nationality = detail.student?.nationality || "";
           form.value.notes = detail.student?.notes || "";
           form.value.studyCategory = detail.student?.faculity || "";
-          
+
           // Initialize dynamic pricing selectors dictionary from initially applied settings
           const selectedSettings = {};
-          detail.price_settings?.forEach(ps => {
+          flattenedSettings.forEach(ps => {
             if (ps.type === "Paper" || ps.type === "Fees") {
               if (!selectedSettings[ps.type]) {
                 selectedSettings[ps.type] = [];
@@ -394,13 +423,13 @@ const fetchReservationDetails = async () => {
             }
           });
           form.value.priceSettings = selectedSettings;
-          
+
           form.value.paperID = detail.student?.ID_number ? "ID" : "";
           form.value.paperCertificate = detail.student?.grade ? "Certificate" : "";
           form.value.paperHR = detail.student?.company ? "HR" : "Not HR";
-          
+
           mapStudyPlanToModules(detail.study_plan, basePrice.value);
-          
+
           form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
           await updateCalculationAndSchedule();
         } else {
@@ -435,7 +464,7 @@ const handleSaveStudent = async (updatedStudentFields) => {
     "Extend": "extend",
     "CANCELLATION": "cancel"
   };
-  
+
   const statusKey = statusMap[form.value.finalCase] || form.value.finalCase?.toLowerCase() || reservationDetails.value.status?.key || "reserve";
   const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
   const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
@@ -458,7 +487,7 @@ const handleSaveStudent = async (updatedStudentFields) => {
     careerType: updatedStudentFields.careerType || "",
     faculity: updatedStudentFields.faculity || "",
     major: updatedStudentFields.major || "",
-    
+
     // Reservation metadata and settings
     scholarship: updatedStudentFields.scholarship || scholarshipId,
     status: statusKey,
@@ -475,25 +504,25 @@ const handleSaveStudent = async (updatedStudentFields) => {
   try {
     loadingDetails.value = true;
     await reservationStore.updateReservation(reservationDetails.value.id, payload);
-    
+
     // Fetch updated details to sync the whole page
     const detail = await reservationStore.getReservationById(reservationDetails.value.id);
     if (detail) {
       reservationDetails.value = detail;
-      
+
       basePrice.value = detail.student?.scholarship?.price || 0;
       priceSettings.value = detail.price_settings || [];
-      
+
       form.value.name = detail.student?.name || "";
-      form.value.scholarship = detail.student?.scholarship?.name 
-        ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)` 
+      form.value.scholarship = detail.student?.scholarship?.name
+        ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)`
         : (detail.student?.scholarship?.price || "");
       form.value.studentType = detail.student?.careerType || "";
       form.value.studyType = detail.student?.scholarship?.study_type || "";
       form.value.nationality = detail.student?.nationality || "";
       form.value.notes = detail.student?.notes || "";
       form.value.studyCategory = detail.student?.faculity || "";
-      
+
       // Update price settings arrays
       const selectedSettings = {};
       detail.price_settings?.forEach(ps => {
@@ -507,13 +536,13 @@ const handleSaveStudent = async (updatedStudentFields) => {
         }
       });
       form.value.priceSettings = selectedSettings;
-      
+
       form.value.paperID = detail.student?.ID_number ? "ID" : "";
       form.value.paperCertificate = detail.student?.grade ? "Certificate" : "";
       form.value.paperHR = detail.student?.company ? "HR" : "Not HR";
-      
+
       mapStudyPlanToModules(detail.study_plan, basePrice.value);
-      
+
       form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
       await updateCalculationAndSchedule();
     }
@@ -537,7 +566,7 @@ const submitForm = async () => {
     "Extend": "extend",
     "CANCELLATION": "cancel"
   };
-  
+
   const statusKey = statusMap[form.value.finalCase] || form.value.finalCase?.toLowerCase() || "reserve";
   const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
   const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
@@ -580,43 +609,53 @@ const submitForm = async () => {
 <template>
   <div class="p-4 relative">
     <!-- Skeleton Loading State -->
-    <div v-if="loadingDetails" class="w-full p-8 flex flex-col items-center justify-center min-h-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm gap-4">
+    <div v-if="loadingDetails"
+      class="w-full p-8 flex flex-col items-center justify-center min-h-[400px] bg-white rounded-3xl border border-slate-100 shadow-sm gap-4">
       <div class="relative w-16 h-16">
         <div class="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
         <div class="absolute inset-0 border-4 border-t-indigo-600 rounded-full animate-spin"></div>
       </div>
       <div class="text-center space-y-1.5">
         <h3 class="font-extrabold text-slate-800 text-lg">Retrieving Reservation Details</h3>
-        <p class="text-xs text-slate-400">Please wait while we fetch the latest scholarship plan and pricing modifiers...</p>
+        <p class="text-xs text-slate-400">Please wait while we fetch the latest scholarship plan and pricing
+          modifiers...</p>
       </div>
     </div>
 
     <!-- Main Content Panel (show when not loading) -->
     <div v-else class="grid grid-cols-12 gap-4">
       <div class="col-span-3">
-        <StudentInfoPanel 
-          v-model="form" 
-          :student-info="reservationDetails?.student" 
-          @save-student="handleSaveStudent"
-          @refresh-data="fetchReservationDetails"
-        />
+        <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" @save-student="handleSaveStudent"
+          @refresh-data="fetchReservationDetails" />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
         <!-- Academic Modules Schedule -->
-        <ModulesTable :modules="modules" @refresh-data="fetchReservationDetails" />
+        <div class="relative">
+          <ModulesTable :modules="modules" @refresh-data="fetchReservationDetails" />
+          <div v-if="calculatingDeadlines" class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+             <Loader2 class="w-8 h-8 text-indigo-600 animate-spin" />
+          </div>
+        </div>
 
         <!-- Applied Pricing & Adjustments Table -->
-        <div v-if="reservationDetails" class="card p-5 overflow-hidden border-indigo-50 bg-white">
+        <div v-if="reservationDetails" class="card p-5 overflow-hidden border-indigo-50 bg-white relative">
+          <!-- Localized Loader Overlay -->
+          <div v-if="calculatingDeadlines" class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+             <Loader2 class="w-8 h-8 text-indigo-600 animate-spin" />
+          </div>
           <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <h3 class="text-md font-bold text-indigo-950 flex items-center gap-2">
               <span class="p-1 bg-indigo-50 text-indigo-600 rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M12 14h.01M15 11h.01M15 7h.01M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M12 14h.01M15 11h.01M15 7h.01M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
                 </svg>
               </span>
               Applied Pricing & Adjustments
             </h3>
-            <span class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+            <span
+              class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
               Calculated dynamically
             </span>
           </div>
@@ -641,7 +680,8 @@ const submitForm = async () => {
                       Scholarship Program Price (Base)
                     </td>
                     <td class="py-2.5">
-                      <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">Base</span>
+                      <span
+                        class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">Base</span>
                     </td>
                     <td class="py-2.5 text-right font-medium text-slate-400">-</td>
                     <td class="py-2.5 text-right font-bold text-slate-800">
@@ -650,20 +690,24 @@ const submitForm = async () => {
                   </tr>
 
                   <!-- Modifiers rows -->
-                  <tr v-for="item in calculatedBreakdown.modifiers" :key="item.id" class="text-slate-600 hover:bg-slate-50/50 transition">
+                  <tr v-for="item in calculatedBreakdown.modifiers" :key="item.id"
+                    class="text-slate-600 hover:bg-slate-50/50 transition">
                     <td class="py-2.5">
                       <div class="font-bold text-slate-700">{{ item.name }}</div>
-                      <div v-if="item.description" class="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{{ item.description }}</div>
+                      <div v-if="item.description" class="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">
+                        {{ item.description }}</div>
                     </td>
                     <td class="py-2.5">
-                      <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                      <span
+                        class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
                         {{ item.type }}
                       </span>
                     </td>
                     <td class="py-2.5 text-right font-semibold text-slate-600">
                       {{ item.displayRate }}
                     </td>
-                    <td class="py-2.5 text-right font-extrabold" :class="item.modifier === 'discount' ? 'text-emerald-600' : 'text-rose-600'">
+                    <td class="py-2.5 text-right font-extrabold"
+                      :class="item.modifier === 'discount' ? 'text-emerald-600' : 'text-rose-600'">
                       {{ item.displayImpact }}
                     </td>
                   </tr>
@@ -679,34 +723,48 @@ const submitForm = async () => {
             </div>
 
             <!-- Right Column: Final Summary Details -->
-            <div class="bg-gradient-to-br from-indigo-50/20 to-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 flex flex-col justify-between">
+            <div
+              class="bg-gradient-to-br from-indigo-50/20 to-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 flex flex-col justify-between">
               <div>
-                <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-950 mb-2.5 border-b border-indigo-100/60 pb-1.5 flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                <h4
+                  class="text-xs font-bold uppercase tracking-wider text-indigo-950 mb-2.5 border-b border-indigo-100/60 pb-1.5 flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-indigo-600" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
                   Summary Calculations
                 </h4>
                 <div class="space-y-2 text-xs">
                   <div class="flex justify-between text-slate-500">
                     <span>Base Program:</span>
-                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.basePrice.toLocaleString() }} EGP</span>
+                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.basePrice.toLocaleString() }}
+                      EGP</span>
                   </div>
                   <div class="flex justify-between text-slate-500">
                     <span>Total Adjustments:</span>
-                    <span class="font-bold" :class="calculatedBreakdown.totalAdjustments < 0 ? 'text-emerald-600' : (calculatedBreakdown.totalAdjustments > 0 ? 'text-rose-600' : 'text-slate-700')">
-                      {{ calculatedBreakdown.totalAdjustments < 0 ? '' : '+' }}{{ calculatedBreakdown.totalAdjustments.toLocaleString() }} EGP
-                    </span>
+                    <span class="font-bold"
+                      :class="calculatedBreakdown.totalAdjustments < 0 ? 'text-emerald-600' : (calculatedBreakdown.totalAdjustments > 0 ? 'text-rose-600' : 'text-slate-700')">
+                      {{ calculatedBreakdown.totalAdjustments < 0 ? '' : '+' }}{{
+                        calculatedBreakdown.totalAdjustments.toLocaleString() }} EGP </span>
                   </div>
-                  <div v-if="calculatedBreakdown.firstInstallment !== null && calculatedBreakdown.firstInstallment !== undefined" class="flex justify-between text-slate-500 border-t border-indigo-100/40 pt-1.5 mt-1.5">
+                  <div
+                    v-if="calculatedBreakdown.firstInstallment !== null && calculatedBreakdown.firstInstallment !== undefined"
+                    class="flex justify-between text-slate-500 border-t border-indigo-100/40 pt-1.5 mt-1.5">
                     <span>First Installment:</span>
-                    <span class="font-bold text-slate-700">{{ calculatedBreakdown.firstInstallment.toLocaleString() }} EGP</span>
+                    <span class="font-bold text-slate-700">{{ calculatedBreakdown.firstInstallment.toLocaleString() }}
+                      EGP</span>
                   </div>
-                  <div v-if="calculatedBreakdown.remainingBalance !== null && calculatedBreakdown.remainingBalance !== undefined" class="flex justify-between text-slate-500">
+                  <div
+                    v-if="calculatedBreakdown.remainingBalance !== null && calculatedBreakdown.remainingBalance !== undefined"
+                    class="flex justify-between text-slate-500">
                     <span>Remaining Balance:</span>
-                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.remainingBalance.toLocaleString() }} EGP</span>
+                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.remainingBalance.toLocaleString() }}
+                      EGP</span>
                   </div>
-                  <div v-if="calculatedBreakdown.installmentsCount !== null && calculatedBreakdown.installmentsCount !== undefined" class="flex justify-between text-slate-500">
+                  <div
+                    v-if="calculatedBreakdown.installmentsCount !== null && calculatedBreakdown.installmentsCount !== undefined"
+                    class="flex justify-between text-slate-500">
                     <span>Installments Count:</span>
                     <span class="font-medium text-slate-700">{{ calculatedBreakdown.installmentsCount }}</span>
                   </div>
@@ -714,7 +772,8 @@ const submitForm = async () => {
               </div>
 
               <div class="mt-4 pt-3 border-t border-indigo-100/60">
-                <span class="block text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">Suggested Final Amount</span>
+                <span class="block text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">Suggested Final
+                  Amount</span>
                 <div class="flex items-baseline gap-1 mt-1">
                   <span class="text-2xl font-black text-indigo-950 tracking-tight">
                     {{ calculatedBreakdown.suggestedFinalAmount.toLocaleString() }}
@@ -730,68 +789,42 @@ const submitForm = async () => {
         </div>
 
         <div class="mt-2 flex justify-end">
-          <button
-            @click="showFinalCase = true"
-            class="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-lg text-lg flex items-center gap-2"
-          >
+          <button @click="showFinalCase = true"
+            class="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-lg text-lg flex items-center gap-2">
             <span>Next Step</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fill-rule="evenodd"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd"
                 d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                clip-rule="evenodd"
-              />
+                clip-rule="evenodd" />
             </svg>
           </button>
         </div>
       </div>
     </div>
-    </div>
+  </div>
 
-    <div
-      v-if="showFinalCase"
-      class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300"
-      @click.self="showFinalCase = false"
-    >
-      <div
-        class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all scale-100 p-6 relative"
-      >
-        <div class="flex justify-between items-center mb-6 border-b pb-4">
-          <h2 class="text-2xl font-bold text-gray-800">Final Case Details</h2>
-          <button
-            @click="showFinalCase = false"
-            class="p-2 hover:bg-gray-100 rounded-full transition text-gray-500 hover:text-red-500"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+  <div v-if="showFinalCase"
+    class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300"
+    @click.self="showFinalCase = false">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all scale-100 p-6 relative">
+      <div class="flex justify-between items-center mb-6 border-b pb-4">
+        <h2 class="text-2xl font-bold text-gray-800">Final Case Details</h2>
+        <button @click="showFinalCase = false"
+          class="p-2 hover:bg-gray-100 rounded-full transition text-gray-500 hover:text-red-500">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
 
-        <div class="space-y-6">
-          <FinalCasePanel v-model="form" />
+      <div class="space-y-6">
+        <FinalCasePanel v-model="form" />
 
-          <div class="pt-4 border-t">
-            <ActionButtons @submit="submitForm" />
-          </div>
+        <div class="pt-4 border-t">
+          <ActionButtons @submit="submitForm" />
         </div>
       </div>
     </div>
+  </div>
   <!-- </div> -->
 </template>

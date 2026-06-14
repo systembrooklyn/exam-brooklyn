@@ -69,9 +69,9 @@ const routes = [
     meta: { requiresPermission: "" },
   },
   {
-    path: "/password-reset",
-    name: "password-reset",
-    component: () => import("../views/pages/password-reset.vue"),
+    path: "/reset-password",
+    name: "reset-password",
+    component: () => import("../views/pages/reset-password.vue"),
   },
   {
     path: "/placement-essay",
@@ -127,7 +127,7 @@ router.beforeEach((to, from, next) => {
     return next({ name: "SystemsPage" });
   }
 
-  const publicPages = ["login", "password-reset", "error"];
+  const publicPages = ["login", "reset-password", "error"];
 
   const authRequired = !publicPages.includes(to.name);
 

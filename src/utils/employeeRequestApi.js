@@ -92,6 +92,12 @@ export function buildEmployeeRequestApiPayload(payload) {
     if (payload.to_time !== undefined) {
       body.to_time = payload.to_time;
     }
+    if (payload.overtime_minutes !== undefined) {
+      body.overtime_minutes = payload.overtime_minutes;
+    }
+    if (payload.duration_hours !== undefined) {
+      body.duration_hours = payload.duration_hours;
+    }
     const eid = payload.employee_id;
     if (eid != null && eid !== "") {
       const n = Number(eid);
