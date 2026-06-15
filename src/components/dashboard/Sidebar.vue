@@ -1,18 +1,24 @@
 <template>
   <transition name="slide">
-    <aside v-if="isSidebarOpen" class="fixed md:static md:block w-64 min-h-screen bg-white shadow-lg z-50"
-      :style="{ transform: isSidebarOpen ? 'translateX(0)' : 'translateX(-100%)' }">
+    <aside
+      class="fixed md:static min-h-screen bg-white shadow-lg z-[60] transition-all duration-300 ease-in-out flex flex-col overflow-x-hidden flex-shrink-0"
+      :class="isSidebarOpen ? 'w-64' : 'w-0 md:w-20 overflow-hidden'">
       <X @click="isSidebarOpen = false"
-        class="cursor-pointer md:hidden absolute top-4 w-4 h-4 right-4 hover:text-gray-400" />
-      <div class="p-4 font-bold pb-8 pt-8 text-xl flex justify-between items-center">
+        class="cursor-pointer md:hidden absolute top-4 right-4 w-4 h-4 hover:text-gray-400 z-10" />
 
-        <h1 class="font-bold text-primary">Brooklyn</h1>
-        <img src="../../assets/logo.png" class="h-10" alt="" />
-
+      <div
+        class="p-4 font-bold pb-8 pt-8 text-xl flex items-center transition-all duration-300 ease-in-out whitespace-nowrap"
+        :class="isSidebarOpen ? 'justify-between px-4' : 'justify-center px-0'">
+        <h1 class="font-bold text-primary transition-all duration-300 ease-in-out origin-left"
+          :class="isSidebarOpen ? 'opacity-100 scale-100 w-auto' : 'opacity-0 scale-0 w-0 hidden md:block'">
+          Brooklyn
+        </h1>
+        <img src="../../assets/logo.png" class="h-10 transition-all duration-300 ease-in-out flex-shrink-0"
+          alt="Logo" />
       </div>
-      <ul class="space-y-2">
-        <SidebarItem v-for="item in activeItems" :key="item.name" :item="item" />
 
+      <ul class="space-y-2 flex-1 overflow-y-auto overflow-x-hidden w-full mt-2">
+        <SidebarItem v-for="item in activeItems" :key="item.name" :item="item" :is-expanded="isSidebarOpen" />
       </ul>
     </aside>
   </transition>
@@ -37,7 +43,7 @@ const route = useRoute();
 
 
 
-const isSidebarOpen = ref(true)  
+const isSidebarOpen = ref(true)
 const emitter = inject('emitter')
 
 function getRouteMeta(routeName) {
@@ -67,7 +73,7 @@ const filteredDashboardItems = computed(() =>
 const activeItems = computed(() => {
   if (route.path.startsWith('/finnance')) {
     return itemfinnance
-    
+
   }
   if (route.path.startsWith('/hr')) {
     const canManagePayrollAdminPages =

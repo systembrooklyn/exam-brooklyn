@@ -64,7 +64,7 @@ const router = useRouter()
 
 const user = computed(() => authStore.user);
 const emitter = inject('emitter');
-const isSidebarOpen = ref(false);
+const isSidebarOpen = ref(true);
 const isMenuOpen = ref(false);
 
 

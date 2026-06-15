@@ -64,230 +64,282 @@
     </div>
 
     <template v-else>
-      <!-- Table Card -->
+
+      <!-- ── Tab Bar ──────────────────────────────────────────── -->
+      <div v-if="viewMode === 'table'" class="flex items-center gap-1.5 bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-1.5 mb-4 overflow-x-auto no-scrollbar">
+        <button
+          v-for="tab in TABS"
+          :key="tab.key"
+          @click="activeTab = tab.key"
+          :class="[
+            activeTab === tab.key ? tabActiveClass(tab.color) : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50',
+            'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 whitespace-nowrap cursor-pointer'
+          ]"
+        >
+          <component :is="tab.icon" class="w-4 h-4 flex-shrink-0" />
+          {{ tab.label }}
+          <span
+            :class="activeTab === tab.key ? tabBadgeActiveClass(tab.color) : 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400'"
+            class="inline-flex items-center justify-center min-w-[1.35rem] h-5 px-1 rounded-full text-[10px] font-bold transition-all"
+          >
+            {{ tabCount(tab.key) }}
+          </span>
+        </button>
+      </div>
+
+      <!-- ── Table Card ─────────────────────────────────────────── -->
       <div v-if="viewMode === 'table'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
+
+        <!-- Tab Summary Strip -->
+        <div class="px-5 py-3 border-b border-gray-100 dark:border-gray-700/60 flex items-center gap-3">
+          <span :class="tabDotClass(activeTabDef?.color)" class="w-2.5 h-2.5 rounded-full flex-shrink-0"></span>
+          <span class="text-sm font-bold text-gray-900 dark:text-white">{{ activeTab }}</span>
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ tabItems.length }} {{ tabItems.length === 1 ? 'entry' : 'entries' }}</span>
+          <div class="flex-1"></div>
+          <!-- <button @click="openAddModal" class="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors cursor-pointer">
+            <Plus class="w-3.5 h-3.5" />
+            Add {{ activeTab }}
+          </button> -->
+        </div>
+
       <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[800px] border-collapse text-center">
+        <table class="w-full text-sm border-collapse text-center">
           <thead class="bg-slate-50/75 dark:bg-slate-900/40 border-b border-gray-150 dark:border-gray-700/60">
             <tr>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Name</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Type</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Modifier</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount Type</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">DL Count</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Scholarships</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Active</th>
-              <th class="px-2 py-4 text-center font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Actions</th>
+              <th class="px-4 py-3.5 text-left font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Name</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Modifier</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount Type</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Amount</th>
+              <!-- Payment Method specific -->
+              <th v-if="activeTab === 'Payment Method'" class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">DL Count</th>
+              <th v-if="activeTab === 'Payment Method'" class="px-4 py-3.5 font-bold text-blue-500 dark:text-blue-400 tracking-wider whitespace-nowrap text-xs uppercase">1st Deadline</th>
+              <th v-if="activeTab === 'Payment Method'" class="px-4 py-3.5 font-bold text-indigo-500 dark:text-indigo-400 tracking-wider whitespace-nowrap text-xs uppercase">Interval</th>
+              <th v-if="activeTab === 'Payment Method'" class="px-4 py-3.5 font-bold text-amber-500 dark:text-amber-400 tracking-wider whitespace-nowrap text-xs uppercase">Forced Start</th>
+              <!-- Parents (hidden for Grade) -->
+              <th v-if="activeTab !== 'Grade'" class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Parents</th>
+              <!-- Children (Payment Method + Grade) -->
+              <th v-if="activeTab === 'Payment Method' || activeTab === 'Grade'" class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Children</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Description</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Active</th>
+              <th class="px-4 py-3.5 font-bold text-gray-500 dark:text-gray-400 tracking-wider whitespace-nowrap text-xs uppercase">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50">
-            <template v-if="store.priceSettings.length === 0">
-              <tr>
-                <td colspan="9" class="px-6 py-16 text-center">
-                  <div class="flex flex-col items-center justify-center max-w-md mx-auto space-y-4">
-                    <div class="p-4 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-400 dark:text-gray-600 ring-8 ring-gray-100/50 dark:ring-gray-800/50">
-                      <Tag class="w-8 h-8" />
-                    </div>
-                    <div>
-                      <h3 class="text-base font-semibold text-gray-900 dark:text-white">No Price Settings Yet</h3>
-                      <p class="text-xs text-gray-550 dark:text-gray-400 mt-1.5 leading-relaxed">
-                        Create your first payment method, paper fee, or grade modifier to start configuring pricing rules.
-                      </p>
-                    </div>
-                    <button
-                      @click="openAddModal"
-                      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
-                    >
-                      <Plus class="w-4 h-4" />
-                      Create Setting
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </template>
 
-            <template v-for="item in store.priceSettings" :key="item.id">
-              <!-- Parent row -->
-              <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 group">
-                <td class="px-6 py-4.5 text-left">
-                  <div class="flex items-center gap-3">
+            <!-- Empty state per tab -->
+            <tr v-if="tabItems.length === 0">
+              <td :colspan="tableColspan" class="px-6 py-16 text-center">
+                <div class="flex flex-col items-center justify-center max-w-xs mx-auto space-y-4">
+                  <div :class="tabEmptyIconClass(activeTabDef?.color)" class="p-4 rounded-full ring-8">
+                    <component :is="activeTabDef?.icon" class="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">No {{ activeTab }} entries yet</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Create the first {{ activeTab }} pricing rule to get started.</p>
+                  </div>
+                  <button
+                    @click="openAddModal"
+                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
+                  >
+                    <Plus class="w-4 h-4" />
+                    Add {{ activeTab }}
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Data rows -->
+            <template v-for="item in tabItems" :key="item.id">
+            <tr class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150">
+              <!-- Name -->
+              <td class="px-4 py-4 text-left min-w-[180px]">
+                <div class="flex flex-col items-start">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <!-- Clickable name: toggles scholarship expansion row -->
                     <button
-                      v-if="item.children && item.children.length"
-                      @click="toggleChildren(item.id)"
-                      class="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 hover:text-indigo-600 transition-all duration-205 cursor-pointer"
-                      :title="expandedRows.has(item.id) ? 'Collapse' : 'Expand'"
+                      @click="toggleDescription(item.id)"
+                      class="flex items-center gap-1.5 group cursor-pointer"
                     >
+                      <span class="font-bold text-gray-900 dark:text-white text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-left">
+                        {{ item.name }}
+                      </span>
+                      <!-- Scholarship count badge -->
+                      <span
+                        v-if="item.scholarships && item.scholarships.length"
+                        :class="expandedDescriptions.has(item.id) ? 'bg-indigo-600 text-white' : 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300'"
+                        class="inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 rounded-full text-[9px] font-bold transition-all"
+                        :title="item.scholarships.length + ' scholarship(s)'"
+                      >
+                        {{ item.scholarships.length }}
+                      </span>
+                      <!-- chevron -->
                       <ChevronRight
-                        class="w-4 h-4 transition-transform duration-200"
-                        :class="{ 'rotate-90 text-indigo-600 dark:text-indigo-400': expandedRows.has(item.id) }"
+                        class="w-3 h-3 transition-all duration-200"
+                        :class="expandedDescriptions.has(item.id) ? 'rotate-90 text-indigo-500' : 'text-gray-300 dark:text-gray-600 group-hover:text-indigo-400'"
                       />
                     </button>
-                    <span v-else class="w-6 h-6 inline-block"></span>
-                    <div class="flex flex-col items-start">
-                      <div class="flex items-center gap-1.5">
-                        <span
-                          :class="item.description ? 'cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors' : ''"
-                          @click="item.description && toggleDescription(item.id)"
-                          class="font-bold text-gray-950 dark:text-white text-sm"
-                        >
-                          {{ item.name }}
-                        </span>
-                        <span v-if="item.children && item.children.length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-50 text-purple-655 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-100/50 dark:border-purple-900/30 uppercase tracking-wider scale-95 origin-left">
-                          Parent Rule
-                        </span>
-                      </div>
-                      <div v-if="item.parents && item.parents.length" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                        <span class="text-[9px] font-bold text-gray-450 dark:text-gray-500 uppercase tracking-wider">child to:</span>
-                        <div class="flex flex-wrap gap-1">
-                          <span v-for="p in item.parents" :key="p.id" class="px-1.5 py-0.5 rounded-md bg-indigo-50/60 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 text-[10px] font-semibold border border-indigo-100/60 dark:border-indigo-900/30">
-                            {{ p.name }}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-4.5">
-                  <span :class="typeBadgeClass(item.type)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
-                    {{ item.type }}
-                  </span>
-                </td>
-                <td class="px-6 py-4.5">
-                  <span :class="modifierBadgeClass(item.modifier)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
-                    {{ item.modifier }}
-                  </span>
-                </td>
-                <td class="px-6 py-4.5 text-gray-600 dark:text-gray-300 capitalize font-medium">{{ item.amount_type }}</td>
-                <td class="px-6 py-4.5 text-gray-900 dark:text-gray-100 font-bold font-mono">
-                  {{ formatAmount(item.amount, item.amount_type) }}
-                </td>
-                <td class="px-6 py-4.5 text-gray-500 dark:text-gray-400 font-medium font-mono">{{ item.dl_count ?? '—' }}</td>
-                <td class="px-6 py-4.5">
-                  <div v-if="item.scholarships && item.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
-                    <span v-for="sch in item.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
-                      {{ formatScholarshipName(sch) }}
+                    <span v-if="item.children && item.children.length" class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-400 border border-purple-100/50 uppercase tracking-wider">
+                      Parent
                     </span>
                   </div>
-                  <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
-                </td>
-                <td class="px-6 py-4.5">
-                  <span
-                    :class="item.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-550 dark:bg-gray-800 dark:text-gray-450'"
-                    class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide"
-                  >
-                    {{ item.is_active ? 'Active' : 'Inactive' }}
+                </div>
+              </td>
+
+              <!-- Modifier -->
+              <td class="px-4 py-4">
+                <span :class="modifierBadgeClass(item.modifier)" class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide">
+                  {{ item.modifier }}
+                </span>
+              </td>
+
+              <!-- Amount Type -->
+              <td class="px-4 py-4 text-gray-600 dark:text-gray-300 capitalize font-medium text-xs whitespace-nowrap">{{ item.amount_type }}</td>
+
+              <!-- Amount -->
+              <td class="px-4 py-4 text-gray-900 dark:text-gray-100 font-bold font-mono text-sm whitespace-nowrap">
+                {{ formatAmount(item.amount, item.amount_type) }}
+              </td>
+
+              <!-- Payment Method only: DL Count -->
+              <td v-if="activeTab === 'Payment Method'" class="px-4 py-4 text-gray-500 dark:text-gray-400 font-mono text-sm">
+                {{ item.dl_count != null ? item.dl_count : '—' }}
+              </td>
+
+              <!-- Payment Method only: First Deadline -->
+              <td v-if="activeTab === 'Payment Method'" class="px-4 py-4 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                <span v-if="item.first_deadline_days != null" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300 text-[10px] font-semibold">
+                  {{ item.first_deadline_days }}d
+                </span>
+                <span v-else class="text-gray-400">—</span>
+              </td>
+
+              <!-- Payment Method only: Interval -->
+              <td v-if="activeTab === 'Payment Method'" class="px-4 py-4 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                <span v-if="item.interval_days != null" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300 text-[10px] font-semibold">
+                  {{ item.interval_days }}d
+                </span>
+                <span v-else class="text-gray-400">—</span>
+              </td>
+
+              <!-- Payment Method only: Forced Start -->
+              <td v-if="activeTab === 'Payment Method'" class="px-4 py-4 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                <span v-if="item.forced_start_date" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:amber-300 text-[10px] font-semibold">
+                  {{ String(item.forced_start_date).substring(0, 10) }}
+                </span>
+                <span v-else class="text-gray-400">—</span>
+              </td>
+
+              <!-- Parents (hidden for Grade) -->
+              <td v-if="activeTab !== 'Grade'" class="px-4 py-4">
+                <div v-if="item.parents && item.parents.length" class="flex flex-wrap gap-1 justify-center max-w-[160px] mx-auto">
+                  <span v-for="p in item.parents" :key="p.id" class="px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 text-[10px] font-semibold border border-indigo-100/60">
+                    {{ p.name }}
                   </span>
-                </td>
-                <td class="px-6 py-4.5">
-                  <div class="flex items-center gap-2">
-                    <button
-                      @click="editPriceSetting(item)"
-                      class="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer shadow-sm"
-                      title="Edit"
-                    >
-                      <Pencil class="w-4 h-4" />
+                </div>
+                <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
+              </td>
+
+              <!-- Children (Payment Method + Grade only) -->
+              <td v-if="activeTab === 'Payment Method' || activeTab === 'Grade'" class="px-4 py-4">
+                <div v-if="item.children && item.children.length" class="flex flex-wrap gap-1 justify-center max-w-[160px] mx-auto">
+                  <span v-for="c in item.children" :key="c.id" class="px-1.5 py-0.5 rounded-md bg-slate-50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 text-[10px] font-semibold border border-slate-200 dark:border-slate-700">
+                    {{ c.name }}
+                  </span>
+                </div>
+                <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
+              </td>
+
+              <!-- Description -->
+              <td class="px-4 py-4 text-left max-w-[200px]">
+                <span
+                  v-if="item.description"
+                  class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2"
+                  :title="item.description"
+                >
+                  {{ item.description }}
+                </span>
+                <span v-else class="text-gray-300 dark:text-gray-600 text-xs">—</span>
+              </td>
+
+              <!-- Active -->
+              <td class="px-4 py-4">
+                <span
+                  :class="item.is_active ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'"
+                  class="px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide"
+                >
+                  {{ item.is_active ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+
+              <!-- Actions -->
+              <td class="px-4 py-4">
+                <div class="flex items-center justify-center gap-1.5">
+                  <button
+                    @click="editPriceSetting(item)"
+                    class="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 transition-all duration-200 cursor-pointer shadow-sm"
+                    title="Edit"
+                  >
+                    <Pencil class="w-4 h-4" />
+                  </button>
+                  <button
+                    @click="duplicatePriceSetting(item)"
+                    class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 transition-all duration-200 cursor-pointer shadow-sm"
+                    title="Duplicate"
+                  >
+                    <Copy class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Scholarship Expansion Row -->
+            <tr
+              v-if="expandedDescriptions.has(item.id)"
+              class="bg-indigo-50/40 dark:bg-indigo-950/20 border-b border-indigo-100/60 dark:border-indigo-900/30"
+            >
+              <td :colspan="tableColspan" class="px-6 py-4">
+                <div class="flex flex-col gap-3">
+                  <!-- Header -->
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">Scholarships linked to {{ item.name }}</span>
+                      <span class="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-indigo-600 text-white text-[10px] font-bold">
+                        {{ item.scholarships && item.scholarships.length ? item.scholarships.length : 0 }}
+                      </span>
+                    </div>
+                    <button @click="toggleDescription(item.id)" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors cursor-pointer">
+                      <X class="w-3.5 h-3.5" />
                     </button>
                   </div>
-                </td>
-              </tr>
 
-              <!-- Parent description row -->
-              <tr v-if="expandedDescriptions.has(item.id) && item.description" class="bg-indigo-50/5 dark:bg-indigo-950/5">
-                <td colspan="9" class="px-8 py-3.5 text-left border-b border-gray-100 dark:border-gray-700/50">
-                  <div class="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400 font-medium pl-14 leading-relaxed animate-fade-in">
-                    <span class="text-indigo-600 dark:text-indigo-400 font-semibold shrink-0">Description:</span>
-                    <span class="whitespace-pre-wrap font-normal text-gray-700 dark:text-gray-300">{{ item.description }}</span>
+                  <!-- No scholarships -->
+                  <div v-if="!item.scholarships || !item.scholarships.length" class="flex items-center gap-2 py-3 text-xs text-gray-400 dark:text-gray-500 italic">
+                    <Tag class="w-3.5 h-3.5" />
+                    No scholarships linked to this price setting.
                   </div>
-                </td>
-              </tr>
 
-              <!-- Child rows (indented) -->
-              <template v-if="item.children && item.children.length && expandedRows.has(item.id)">
-                <template v-for="child in item.children" :key="child.id">
-                  <tr class="bg-slate-50/50 dark:bg-slate-900/30 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/20 transition-all duration-150">
-                    <td class="px-6 py-3.5 pl-12 text-gray-650 dark:text-gray-300 text-sm font-medium border-l-4 border-indigo-500/70 text-left">
-                      <div class="flex items-center gap-2">
-                        <CornerDownRight class="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 flex-shrink-0" />
-                        <div class="flex flex-col items-start">
-                          <div class="flex items-center gap-1.5">
-                            <span
-                              :class="child.description ? 'cursor-pointer hover:text-indigo-650 dark:hover:text-indigo-455 transition-colors' : ''"
-                              @click="child.description && toggleDescription(child.id)"
-                              class="text-[13px] font-medium text-gray-700 dark:text-gray-200"
-                            >
-                              {{ child.name }}
-                            </span>
-                            <span class="inline-flex items-center px-1.5 py-0.25 rounded text-[8.5px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700/60 uppercase tracking-wide scale-95 origin-left">
-                              Sub-rule
-                            </span>
-                          </div>
-                          <div v-if="child.parents && child.parents.length" class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                            <span class="text-[9px] font-bold text-gray-455 dark:text-gray-500 uppercase tracking-wider">Parents:</span>
-                            <div class="flex flex-wrap gap-1">
-                              <span v-for="p in child.parents" :key="p.id" class="px-1.5 py-0.5 rounded-md bg-indigo-50/60 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 text-[10px] font-semibold border border-indigo-100/60 dark:border-indigo-900/30">
-                                {{ p.name }}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-3.5">
-                      <span :class="typeBadgeClass(child.type)" class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90">
-                        {{ child.type }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-3.5">
-                      <span :class="modifierBadgeClass(child.modifier)" class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90">
-                        {{ child.modifier }}
-                      </span>
-                    </td>
-                    <td class="px-6 py-3.5 text-gray-500 dark:text-gray-400 capitalize text-[11px] font-medium">{{ child.amount_type }}</td>
-                    <td class="px-6 py-3.5 text-gray-800 dark:text-gray-250 font-bold font-mono text-xs">
-                      {{ formatAmount(child.amount, child.amount_type) }}
-                    </td>
-                    <td class="px-6 py-3.5 text-gray-550 dark:text-gray-450 font-mono text-[11px]">{{ child.dl_count ?? '—' }}</td>
-                    <td class="px-6 py-3.5 scale-95 origin-center">
-                      <div v-if="child.scholarships && child.scholarships.length" class="flex flex-wrap gap-1 justify-center max-w-[180px] mx-auto">
-                        <span v-for="sch in child.scholarships" :key="sch.id" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950/45 dark:text-indigo-300 text-[10px] font-semibold border border-indigo-150/40">
-                          {{ formatScholarshipName(sch) }}
-                        </span>
-                      </div>
-                      <span v-else class="text-gray-400 dark:text-gray-500 text-xs">—</span>
-                    </td>
-                    <td class="px-6 py-3.5">
+                  <!-- Scholarship cards grid -->
+                  <div v-else class="flex flex-wrap gap-2">
+                    <div
+                      v-for="sch in item.scholarships"
+                      :key="sch.id"
+                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-gray-800 border border-indigo-100 dark:border-indigo-900/50 shadow-sm hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-150 group"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-indigo-500 flex-shrink-0"></span>
+                      <span class="text-xs font-semibold text-gray-800 dark:text-gray-200">{{ sch.name }}</span>
                       <span
-                        :class="child.is_active ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300' : 'bg-gray-100 text-gray-550 dark:bg-gray-800 dark:text-gray-455'"
-                        class="px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide opacity-90"
+                        v-if="sch.study_type || sch.type"
+                        class="px-1.5 py-0.25 rounded text-[9px] font-bold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-100/60 uppercase tracking-wide"
                       >
-                        {{ child.is_active ? 'Active' : 'Inactive' }}
+                        {{ (sch.study_type || sch.type).charAt(0).toUpperCase() + (sch.study_type || sch.type).slice(1).toLowerCase() }}
                       </span>
-                    </td>
-                    <td class="px-6 py-3.5">
-                      <div class="flex items-center gap-2 justify-center">
-                        <button
-                          @click="editPriceSetting(child)"
-                          class="p-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer"
-                          title="Edit"
-                        >
-                          <Pencil class="w-3 h-3" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                  <!-- Child description row -->
-                  <tr v-if="expandedDescriptions.has(child.id) && child.description" class="bg-indigo-50/5 dark:bg-indigo-950/5">
-                    <td colspan="9" class="px-8 py-2.5 text-left border-b border-gray-100 dark:border-gray-700/50 pl-20">
-                      <div class="flex items-start gap-2 text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed animate-fade-in">
-                        <span class="text-indigo-500 font-semibold shrink-0">Description:</span>
-                        <span class="whitespace-pre-wrap font-normal text-gray-650 dark:text-gray-350">{{ child.description }}</span>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-              </template>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
             </template>
+
           </tbody>
         </table>
       </div>
@@ -563,7 +615,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { usePriceSettingsStore } from '@/stores/priceSettingsStore'
 import { useScholarshipStore } from '@/stores/scholarships'
-import { ChevronRight, CornerDownRight, Pencil, X, Tag, Plus, List, GitBranch } from 'lucide-vue-next'
+import { ChevronRight, CornerDownRight, Pencil, X, Tag, Plus, List, GitBranch, CreditCard, Layers, GraduationCap, FileText, Receipt, Copy } from 'lucide-vue-next'
 import notyf from '@/components/global/notyf'
 import MultiSelect from '@/components/global/MultiSelect.vue'
 import MindMapTree from '@/components/dashboard/MindMapTree.vue'
@@ -572,6 +624,77 @@ const store = usePriceSettingsStore()
 const scholarshipStore = useScholarshipStore()
 
 const viewMode = ref('table')
+
+// ─── Tab definitions ──────────────────────────────────────
+const TABS = [
+  { key: 'Payment Method',     label: 'Payment Method',     icon: CreditCard,    color: 'blue'    },
+  { key: 'Sub Payment Method', label: 'Sub Payment',        icon: Layers,        color: 'cyan'    },
+  { key: 'Grade',              label: 'Grade',              icon: GraduationCap, color: 'purple'  },
+  { key: 'Paper',              label: 'Paper',              icon: FileText,      color: 'amber'   },
+  { key: 'Fees',               label: 'Fees',               icon: Receipt,       color: 'emerald' },
+]
+
+const activeTab = ref('Payment Method')
+
+const activeTabDef = computed(() => TABS.find(t => t.key === activeTab.value))
+
+const tabItems = computed(() =>
+  store.priceSettings.filter(item => item.type === activeTab.value)
+)
+
+const tabCount = (key) => store.priceSettings.filter(item => item.type === key).length
+
+// Dynamic colspan for empty state row
+const tableColspan = computed(() => {
+  if (activeTab.value === 'Payment Method') return 13  // 4 base + 4 PM + parents + children + scholarships + active + actions
+  if (activeTab.value === 'Grade') return 8           // 4 base + children + scholarships + active + actions
+  return 8                                            // 4 base + parents + scholarships + active + actions
+})
+
+// Tab colour helpers
+const tabActiveClass = (color) => {
+  const map = {
+    blue:    'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shadow-sm',
+    cyan:    'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-700 dark:text-cyan-300 shadow-sm',
+    purple:  'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 shadow-sm',
+    amber:   'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 shadow-sm',
+    emerald: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 shadow-sm',
+  }
+  return map[color] ?? 'bg-indigo-50 text-indigo-700 shadow-sm'
+}
+
+const tabBadgeActiveClass = (color) => {
+  const map = {
+    blue:    'bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300',
+    cyan:    'bg-cyan-100 dark:bg-cyan-900/60 text-cyan-700 dark:text-cyan-300',
+    purple:  'bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300',
+    amber:   'bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300',
+    emerald: 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300',
+  }
+  return map[color] ?? 'bg-indigo-100 text-indigo-700'
+}
+
+const tabDotClass = (color) => {
+  const map = {
+    blue:    'bg-blue-500',
+    cyan:    'bg-cyan-500',
+    purple:  'bg-purple-500',
+    amber:   'bg-amber-500',
+    emerald: 'bg-emerald-500',
+  }
+  return map[color] ?? 'bg-indigo-500'
+}
+
+const tabEmptyIconClass = (color) => {
+  const map = {
+    blue:    'bg-blue-50 dark:bg-blue-950/30 text-blue-400 ring-blue-100/60 dark:ring-blue-900/40',
+    cyan:    'bg-cyan-50 dark:bg-cyan-950/30 text-cyan-400 ring-cyan-100/60 dark:ring-cyan-900/40',
+    purple:  'bg-purple-50 dark:bg-purple-950/30 text-purple-400 ring-purple-100/60 dark:ring-purple-900/40',
+    amber:   'bg-amber-50 dark:bg-amber-950/30 text-amber-400 ring-amber-100/60 dark:ring-amber-900/40',
+    emerald: 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-400 ring-emerald-100/60 dark:ring-emerald-900/40',
+  }
+  return map[color] ?? 'bg-gray-50 text-gray-400 ring-gray-100/60'
+}
 
 const mindmapTree = computed(() => {
   const root = {
@@ -761,6 +884,40 @@ const editPriceSetting = (item) => {
   form.value = {
     id:              item.id,
     name:            item.name              ?? '',
+    type:            item.type              ?? '',
+    description:     item.description       ?? '',
+    modifier:        item.modifier          ?? '',
+    amount_type:     item.amount_type       ?? '',
+    amount:          item.amount            ?? '',
+    dl_count:        item.dl_count          ?? null,
+    is_active:       item.is_active         ?? true,
+    first_deadline_days: item.first_deadline_days ?? null,
+    interval_days:       item.interval_days       ?? null,
+    forced_start_date:   item.forced_start_date ? String(item.forced_start_date).substring(0, 10) : '',
+    parent_ids:      Array.isArray(item.parents)
+      ? item.parents.map(p => p.id)
+      : Array.isArray(item.parent_ids)
+        ? [...item.parent_ids]
+        : [],
+    children_ids:    Array.isArray(item.children)
+      ? item.children.map(c => c.id)
+      : Array.isArray(item.children_ids)
+        ? [...item.children_ids]
+        : [],
+    scholarship_ids: Array.isArray(item.scholarships)
+      ? item.scholarships.map(s => s.id)
+      : Array.isArray(item.scholarship_ids)
+        ? [...item.scholarship_ids]
+        : []
+  }
+  showModal.value = true
+}
+
+const duplicatePriceSetting = (item) => {
+  isEditing.value = false // Crucial: We are creating a NEW one, not editing the old one
+  form.value = {
+    // No ID because it's a new item
+    name:            (item.name ?? '') + ' (Copy)',
     type:            item.type              ?? '',
     description:     item.description       ?? '',
     modifier:        item.modifier          ?? '',
