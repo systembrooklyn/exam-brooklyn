@@ -5,7 +5,9 @@ import { useScholarshipStore } from "@/stores/scholarships.js";
 
 const props = defineProps({
   modelValue: Object,
-  studentInfo: Object
+  studentInfo: Object,
+  isSaving: Boolean,
+  isCalculating: Boolean
 });
 const emit = defineEmits(["update:modelValue", "save-student", "refresh-data"]);
 
@@ -199,11 +201,19 @@ const updatePriceSettingField = (type, value) => {
   <div class="space-y-4">
     <!-- STUDENT PROFILE CARD -->
     <div v-if="studentInfo" class="card p-4.5 bg-white border border-slate-100 shadow-sm relative">
+      <!-- Localized Loader Overlay when saving -->
+      <div v-if="props.isSaving" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-2xl gap-2">
+        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span class="text-xs font-bold text-indigo-600">Updating Profile...</span>
+      </div>
       <!-- Actions container -->
       <div class="absolute top-4 right-4 flex items-center gap-2 z-10">
         <!-- Edit toggle button -->
-        <button type="button" @click="toggleEditMode"
-          class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1">
+        <button type="button" @click="toggleEditMode" :disabled="props.isSaving"
+          class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -373,7 +383,7 @@ const updatePriceSettingField = (type, value) => {
       <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 mb-2 border-b pb-1">Edit Student
         Profile</h4>
 
-      <div class="space-y-2.5">
+      <fieldset :disabled="props.isSaving" class="space-y-2.5">
         <div>
           <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Full Name</label>
           <input type="text" v-model="editableStudent.name"
@@ -516,15 +526,19 @@ const updatePriceSettingField = (type, value) => {
             <option value="Sohag">Sohag</option>
           </select>
         </div>
-      </div>
+      </fieldset>
 
       <div class="flex gap-2 pt-3 mt-3 border-t">
-        <button type="button" @click="saveStudentInfo"
-          class="flex-1 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-sm text-center">
-          Save Info
+        <button type="button" @click="saveStudentInfo" :disabled="props.isSaving"
+          class="flex-1 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition shadow-sm text-center flex items-center justify-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed">
+          <svg v-if="props.isSaving" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>{{ props.isSaving ? 'Saving...' : 'Save Info' }}</span>
         </button>
-        <button type="button" @click="toggleEditMode"
-          class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition text-center">
+        <button type="button" @click="toggleEditMode" :disabled="props.isSaving"
+          class="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition text-center disabled:opacity-50 disabled:cursor-not-allowed">
           Cancel
         </button>
       </div>
@@ -532,7 +546,15 @@ const updatePriceSettingField = (type, value) => {
   </div>
 
   <!-- PRICING OPTIONS CARD -->
-  <div class="card p-5 bg-white border border-slate-100 shadow-sm">
+  <div class="card p-5 bg-white border border-slate-100 shadow-sm relative">
+    <!-- Localized Loader Overlay when calculating -->
+    <div v-if="props.isCalculating" class="absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-2xl gap-2">
+      <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <span class="text-xs font-bold text-indigo-600">Calculating Prices...</span>
+    </div>
     <div class="space-y-6">
       <!-- SECTION: PRICING SETTINGS (DYNAMIC BY TYPE) -->
       <div v-if="priceSettingTypes.length > 0" class="space-y-3">

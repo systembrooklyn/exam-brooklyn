@@ -16,6 +16,7 @@ const priceSettingsStore = usePriceSettingsStore();
 
 const showFinalCase = ref(false);
 const loadingDetails = ref(false);
+const savingStudent = ref(false);
 const reservationDetails = ref(null);
 
 const basePrice = ref(0);
@@ -369,13 +370,15 @@ const populateFromSummary = (summary) => {
   }
 };
 
-const fetchReservationDetails = async () => {
+const fetchReservationDetails = async (showFullLoader = false) => {
   const saved = sessionStorage.getItem("selectedReservation");
   if (saved) {
     try {
       const summary = JSON.parse(saved);
       if (summary && summary.id) {
-        loadingDetails.value = true;
+        if (showFullLoader) {
+          loadingDetails.value = true;
+        }
         const detail = await reservationStore.getReservationById(summary.id);
         if (detail) {
           reservationDetails.value = detail;
@@ -448,7 +451,7 @@ const fetchReservationDetails = async () => {
 };
 
 onMounted(() => {
-  fetchReservationDetails();
+  fetchReservationDetails(true);
 });
 
 const handleSaveStudent = async (updatedStudentFields) => {
@@ -502,54 +505,15 @@ const handleSaveStudent = async (updatedStudentFields) => {
   };
 
   try {
-    loadingDetails.value = true;
+    savingStudent.value = true;
     await reservationStore.updateReservation(reservationDetails.value.id, payload);
 
-    // Fetch updated details to sync the whole page
-    const detail = await reservationStore.getReservationById(reservationDetails.value.id);
-    if (detail) {
-      reservationDetails.value = detail;
-
-      basePrice.value = detail.student?.scholarship?.price || 0;
-      priceSettings.value = detail.price_settings || [];
-
-      form.value.name = detail.student?.name || "";
-      form.value.scholarship = detail.student?.scholarship?.name
-        ? `${detail.student.scholarship.name} (${detail.student.scholarship.price?.toLocaleString()} EGP)`
-        : (detail.student?.scholarship?.price || "");
-      form.value.studentType = detail.student?.careerType || "";
-      form.value.studyType = detail.student?.scholarship?.study_type || "";
-      form.value.nationality = detail.student?.nationality || "";
-      form.value.notes = detail.student?.notes || "";
-      form.value.studyCategory = detail.student?.faculity || "";
-
-      // Update price settings arrays
-      const selectedSettings = {};
-      detail.price_settings?.forEach(ps => {
-        if (ps.type === "Paper") {
-          if (!selectedSettings[ps.type]) {
-            selectedSettings[ps.type] = [];
-          }
-          selectedSettings[ps.type].push(ps.name);
-        } else {
-          selectedSettings[ps.type] = ps.name;
-        }
-      });
-      form.value.priceSettings = selectedSettings;
-
-      form.value.paperID = detail.student?.ID_number ? "ID" : "";
-      form.value.paperCertificate = detail.student?.grade ? "Certificate" : "";
-      form.value.paperHR = detail.student?.company ? "HR" : "Not HR";
-
-      mapStudyPlanToModules(detail.study_plan, basePrice.value);
-
-      form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
-      await updateCalculationAndSchedule();
-    }
+    // Call the refresh function directly to sync all components and retrieve updated data
+    await fetchReservationDetails(false);
   } catch (err) {
     console.error("Failed to update student profile info:", err);
   } finally {
-    loadingDetails.value = false;
+    savingStudent.value = false;
   }
 };
 
@@ -625,7 +589,7 @@ const submitForm = async () => {
     <!-- Main Content Panel (show when not loading) -->
     <div v-else class="grid grid-cols-12 gap-4">
       <div class="col-span-3">
-        <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" @save-student="handleSaveStudent"
+        <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" :is-saving="savingStudent" :is-calculating="calculatingDeadlines" @save-student="handleSaveStudent"
           @refresh-data="fetchReservationDetails" />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
