@@ -243,6 +243,49 @@
           </template>
         </div>
 
+        <!-- Reservation & registration fields -->
+        <div class="mb-2 pt-2 border-t border-gray-200">
+          <h3 class="font-bold text-sm text-slate-700 mb-2">Reservation / Registration</h3>
+          <div class="grid grid-cols-1 gap-2 text-sm text-gray-700">
+            <div>
+              <strong>Branch:</strong>
+              <span class="ml-2">{{ reservationDetails.branch?.name || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Registered At:</strong>
+              <span class="ml-2">{{ reservationDetails.registered_at || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Registered By:</strong>
+              <span class="ml-2">{{ reservationDetails.registered_by?.name || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Reserved By:</strong>
+              <span class="ml-2">{{ reservationDetails.reserved_by?.name || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Reserved Time:</strong>
+              <span class="ml-2">{{ reservationDetails.reserved_time || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Called Time:</strong>
+              <span class="ml-2">{{ reservationDetails.called_time || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Called By:</strong>
+              <span class="ml-2">{{ reservationDetails.called_by?.name || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Religion:</strong>
+              <span class="ml-2">{{ student?.religion || studentAllData?.student?.religion || "N/A" }}</span>
+            </div>
+            <div>
+              <strong>Nationality:</strong>
+              <span class="ml-2">{{ student?.nationality || studentAllData?.student?.nationality || "N/A" }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Additional fields in edit mode -->
         <template v-if="isEditMode">
           <div class="mb-2">
@@ -331,6 +374,11 @@ const showEmailModal = ref(false);
 const emailBody = ref("");
 const showSmsModal = ref(false);
 const smsBody = ref("");
+
+const reservationDetails = computed(() => {
+  const reservation = studentAllData.value?.reservation?.[0];
+  return reservation || studentAllData.value || {};
+});
 
 // Edit mode states
 const isEditMode = ref(false);
