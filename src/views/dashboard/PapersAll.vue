@@ -760,12 +760,14 @@ function isApproveLikeAction(action) {
 
 /** First review: pending papers + students_papers_action. */
 function canShowFirstApproveButton(paper) {
-  return paperStatusKey(paper) === "pending" && hasPaperActionPermission();
+  const status = paperStatusKey(paper);
+  return (status === "pending" || status === "rejected") && hasPaperActionPermission();
 }
 
 /** Final review: already approved + students_papers_final_action. */
 function canShowFinalApproveButton(paper) {
-  return paperStatusKey(paper) === "approved" && hasPaperFinalActionPermission();
+  const status = paperStatusKey(paper);
+  return (status === "approved" || status === "rejected") && hasPaperFinalActionPermission();
 }
 
 function canShowApproveButton(paper) {
@@ -776,7 +778,7 @@ function canShowApproveButton(paper) {
 function canShowRejectButton(paper) {
   const key = paperStatusKey(paper);
   if (key === "pending" && hasPaperActionPermission()) return true;
-  if (key === "approved" && hasPaperFinalActionPermission()) return true;
+  if (key === "approved" && (hasPaperActionPermission() || hasPaperFinalActionPermission())) return true;
   return false;
 }
 

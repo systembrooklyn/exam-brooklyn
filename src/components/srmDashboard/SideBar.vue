@@ -1,6 +1,7 @@
 <template>
   <div class="flex min-h-screen bg-slate-50">
-    <aside class="w-110 bg-white border-r border-slate-200/80 shadow-xl shadow-slate-100/50 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
+    <aside
+      class="w-110 bg-white border-r border-slate-200/80 shadow-xl shadow-slate-100/50 flex flex-col overflow-y-auto overflow-x-hidden h-screen">
       <!-- SEARCH BOX -->
       <div class="p-5 bg-slate-50/50 border-b border-slate-100 shrink-0">
         <div class="relative max-w-md mx-auto">
@@ -8,9 +9,10 @@
             <Search class="w-4 h-4" />
           </span>
           <input v-model="studentId" @keyup.enter="handleSearch" type="text" :placeholder="searchByOther
-              ? 'Phone, Email or National ID...'
-              : 'Enter Student ID...'
-            " class="w-full pl-10 pr-12 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder-slate-400" />
+            ? 'Phone, Email or National ID...'
+            : 'Enter Student ID...'
+            "
+            class="w-full pl-10 pr-12 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder-slate-400" />
 
           <button @click="handleSearch" :disabled="isLoading"
             class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition active:scale-95 disabled:opacity-50 cursor-pointer">
@@ -80,12 +82,12 @@
               <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Student No:</span>
               <span class="text-slate-700 font-bold">{{ student?.st_num }}</span>
             </div>
-            
+
             <div class="flex items-center justify-center gap-2">
               <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Scholarship:</span>
               <span class="text-slate-700 font-bold">{{ studentAllData?.student?.scholarship?.name }}</span>
             </div>
-            
+
             <div class="flex items-center justify-center gap-2">
               <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Code:</span>
               <template v-if="!isEditMode">
@@ -107,43 +109,52 @@
         </div>
 
         <!-- Sleek Quick Action Bar -->
-        <div class="flex justify-center items-center gap-2.5 mt-4.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-2xl shadow-inner">
+        <div
+          class="flex justify-center items-center gap-2.5 mt-4.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-2xl shadow-inner">
           <!-- Share -->
           <div class="relative group">
-            <button class="p-2 bg-white text-rose-500 hover:bg-rose-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
+            <button
+              class="p-2 bg-white text-rose-500 hover:bg-rose-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
               <Share2 class="w-4 h-4" />
             </button>
-            <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
+            <div
+              class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
               Share Details
             </div>
           </div>
 
           <!-- Send QR -->
           <div class="relative group">
-            <button @click="showConfirmModal = true" class="p-2 bg-white text-emerald-500 hover:bg-emerald-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
+            <button @click="showConfirmModal = true"
+              class="p-2 bg-white text-emerald-500 hover:bg-emerald-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
               <QrCode class="w-4 h-4" />
             </button>
-            <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
+            <div
+              class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
               Send QR Code
             </div>
           </div>
 
           <!-- App -->
           <div class="relative group">
-            <button class="p-2 bg-white text-indigo-500 hover:bg-indigo-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
+            <button
+              class="p-2 bg-white text-indigo-500 hover:bg-indigo-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
               <AppWindow class="w-4 h-4" />
             </button>
-            <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
+            <div
+              class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
               Open App View
             </div>
           </div>
 
           <!-- Edit Toggle -->
           <div v-if="student?.name && !isEditMode && authStore.hasPermission('edit-student')" class="relative group">
-            <button @click="enterEditMode" class="p-2 bg-white text-amber-500 hover:bg-amber-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
+            <button @click="enterEditMode"
+              class="p-2 bg-white text-amber-500 hover:bg-amber-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
               <Edit class="w-4 h-4" />
             </button>
-            <div class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
+            <div
+              class="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow z-30 opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap">
               Edit Profile
             </div>
           </div>
@@ -170,10 +181,12 @@
           <div v-if="isEditMode" class="flex gap-2">
             <button @click="saveChanges" :disabled="!hasChanges || studentUpdateStore.loading"
               class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg text-xs hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center gap-1.5 cursor-pointer">
-              <span v-if="studentUpdateStore.loading" class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              <span v-if="studentUpdateStore.loading"
+                class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               <span>Save</span>
             </button>
-            <button @click="cancelEdit" class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold rounded-lg text-xs hover:bg-slate-300 transition cursor-pointer">
+            <button @click="cancelEdit"
+              class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold rounded-lg text-xs hover:bg-slate-300 transition cursor-pointer">
               Cancel
             </button>
           </div>
@@ -181,11 +194,13 @@
 
         <!-- CARD 1: CONTACT DETAILS -->
         <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
-          <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 border-b pb-1.5">Contact Details</h4>
-          
+          <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 border-b pb-1.5">Contact
+            Details</h4>
+
           <div class="space-y-3">
             <!-- Phones -->
-            <div class="flex items-start gap-3.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-2 bg-emerald-50 text-emerald-600 rounded-lg shrink-0">
                 <Phone class="w-4 h-4" />
               </div>
@@ -195,16 +210,20 @@
                   <div class="flex items-center justify-between gap-2 mt-0.5">
                     <div class="flex items-center flex-wrap gap-1 text-xs font-bold text-slate-700">
                       <template v-for="(phone, index) in student?.phones" :key="index">
-                        <span class="cursor-pointer hover:text-indigo-600 hover:underline select-all transition-colors duration-150" 
-                              :title="'Click to copy: ' + phone" 
-                              @click="copyText(phone, 'Phone Number')">
+                        <span
+                          class="cursor-pointer hover:text-indigo-600 hover:underline select-all transition-colors duration-150"
+                          :title="'Click to copy: ' + phone" @click="copyText(phone, 'Phone Number')">
                           {{ phone }}
                         </span>
                         <span v-if="index < student.phones.length - 1" class="text-slate-400 mx-1 select-none">/</span>
                       </template>
-                      <span v-if="!student?.phones || student.phones.length === 0" class="text-slate-500 font-semibold">Not Set Yet</span>
+                      <span v-if="!student?.phones || student.phones.length === 0"
+                        class="text-slate-500 font-semibold">Not Set
+                        Yet</span>
                     </div>
-                    <button @click="showSmsModal = true" class="p-1 hover:bg-emerald-100 text-emerald-600 rounded-lg transition cursor-pointer" title="Send SMS">
+                    <button @click="showSmsModal = true"
+                      class="p-1 hover:bg-emerald-100 text-emerald-600 rounded-lg transition cursor-pointer"
+                      title="Send SMS">
                       <MessageSquareText class="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -217,16 +236,23 @@
             </div>
 
             <!-- Email -->
-            <div class="flex items-start gap-3.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
                 <Mail class="w-4 h-4" />
               </div>
               <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Email Address</span>
+                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Email
+                  Address</span>
                 <template v-if="!isEditMode">
                   <div class="flex items-center justify-between gap-2 mt-0.5">
-                    <span class="text-xs font-bold text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:underline select-all transition-colors duration-150" :title="'Click to copy Email: ' + student?.email" @click="copyText(student?.email, 'Email')">{{ student?.email }}</span>
-                    <button @click="showEmailModal = true" class="p-1 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer" title="Send Email">
+                    <span
+                      class="text-xs font-bold text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:underline select-all transition-colors duration-150"
+                      :title="'Click to copy Email: ' + student?.email" @click="copyText(student?.email, 'Email')">{{
+                      student?.email }}</span>
+                    <button @click="showEmailModal = true"
+                      class="p-1 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer"
+                      title="Send Email">
                       <Mail class="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -242,18 +268,27 @@
 
         <!-- CARD 2: ACADEMIC & EMPLOYMENT -->
         <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
-          <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 border-b pb-1.5">Academic & Employment</h4>
-          
-          <div class="grid grid-cols-2 gap-3">
+          <div @click="!isEditMode && (isAcademicExpanded = !isAcademicExpanded)" :class="!isEditMode ? 'cursor-pointer' : ''" class="flex justify-between items-center select-none border-b pb-1.5">
+            <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Academic & Employment</h4>
+            <template v-if="!isEditMode">
+              <ChevronDown v-if="!isAcademicExpanded" class="w-3 h-3 text-slate-400" />
+              <ChevronUp v-else class="w-3 h-3 text-slate-400" />
+            </template>
+          </div>
+
+          <transition name="slide-fade">
+            <div v-show="isAcademicExpanded || isEditMode" class="grid grid-cols-2 gap-3 mt-3">
             <!-- Company -->
-            <div class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
+            <div
+              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
               <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg shrink-0">
                 <Briefcase class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Company</span>
                 <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.company || "No Available" }}</span>
+                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.company || "No Available"
+                    }}</span>
                 </template>
                 <template v-else>
                   <input v-model="editForm.company" type="text"
@@ -263,14 +298,16 @@
             </div>
 
             <!-- Major -->
-            <div class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
                 <BookOpen class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Major</span>
                 <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.major">{{ student?.major || "No Available" }}</span>
+                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.major">{{
+                    student?.major || "No Available" }}</span>
                 </template>
                 <template v-else>
                   <input v-model="editForm.major" type="text"
@@ -280,14 +317,16 @@
             </div>
 
             <!-- Grade -->
-            <div class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1.5 bg-sky-50 text-sky-600 rounded-lg shrink-0">
                 <Award class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Grade</span>
                 <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.grade || "Not Set Yet" }}</span>
+                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.grade || "Not Set Yet"
+                    }}</span>
                 </template>
                 <template v-else>
                   <input v-model="editForm.grade" type="text"
@@ -297,14 +336,16 @@
             </div>
 
             <!-- Faculty -->
-            <div class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
+            <div
+              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
               <div class="p-1.5 bg-rose-50 text-rose-600 rounded-lg shrink-0">
                 <GraduationCap class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Faculty</span>
                 <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.faculity">{{ student?.faculity || "No Available" }}</span>
+                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.faculity">{{
+                    student?.faculity || "No Available" }}</span>
                 </template>
                 <template v-else>
                   <input v-model="editForm.faculity" type="text"
@@ -314,14 +355,16 @@
             </div>
 
             <!-- Career Type (In Edit mode or if available in read-only) -->
-            <div v-if="isEditMode || student?.careerType" class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
+            <div v-if="isEditMode || student?.careerType"
+              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
               <div class="p-1.5 bg-teal-50 text-teal-600 rounded-lg shrink-0">
                 <Activity class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Career Type</span>
                 <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.careerType || "Not Set Yet" }}</span>
+                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.careerType || "Not Set Yet"
+                    }}</span>
                 </template>
                 <template v-else>
                   <input v-model="editForm.careerType" type="text"
@@ -330,158 +373,246 @@
               </div>
             </div>
           </div>
-        </div>
+        </transition>
+      </div>
 
-        <!-- CARD 3: RESERVATION & REGISTRATION -->
+      <!-- CARD 3: RESERVATION & REGISTRATION -->
         <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
-          <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 border-b pb-1.5">Reservation & Registration</h4>
-          
-          <div class="space-y-3">
+          <div @click="!isEditMode && (isReservationExpanded = !isReservationExpanded)" :class="!isEditMode ? 'cursor-pointer' : ''" class="flex justify-between items-center select-none border-b pb-1.5">
+            <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Reservation & Registration</h4>
+            <template v-if="!isEditMode">
+              <ChevronDown v-if="!isReservationExpanded" class="w-3 h-3 text-slate-400" />
+              <ChevronUp v-else class="w-3 h-3 text-slate-400" />
+            </template>
+          </div>
+
+          <transition name="slide-fade">
+            <div v-show="isReservationExpanded || isEditMode" class="space-y-3 mt-3">
             <!-- Branch -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-indigo-500 rounded shrink-0 bg-indigo-50/50 flex items-center justify-center w-6 h-6">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+              <div
+                class="p-1 text-indigo-500 rounded shrink-0 bg-indigo-50/50 flex items-center justify-center w-6 h-6">
                 <MapPin class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Branch</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="reservationDetails.branch?.name || 'Not Set Yet'">
+                <span class="block text-xs font-bold text-slate-700 truncate"
+                  :title="reservationDetails.branch?.name || 'Not Set Yet'">
                   {{ reservationDetails.branch?.name || "Not Set Yet" }}
                 </span>
               </div>
             </div>
 
             <!-- Registered At -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-emerald-500 rounded shrink-0 bg-emerald-50/50 flex items-center justify-center w-6 h-6">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+              <div
+                class="p-1 text-emerald-500 rounded shrink-0 bg-emerald-50/50 flex items-center justify-center w-6 h-6">
                 <Calendar class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered At</span>
-                <span class="block text-xs font-bold text-slate-700" :title="reservationDetails.registered_at || 'Not Set Yet'">
+                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered
+                  At</span>
+                <span class="block text-xs font-bold text-slate-700"
+                  :title="reservationDetails.registered_at || 'Not Set Yet'">
                   {{ formatDateTime(reservationDetails.registered_at) }}
                 </span>
               </div>
             </div>
 
             <!-- Registered By -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-blue-500 rounded shrink-0 bg-blue-50/50 flex items-center justify-center w-6 h-6">
                 <User class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered By</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="reservationDetails.registered_by?.name || 'Not Set Yet'">
-                  {{ reservationDetails.registered_by?.name ? (reservationDetails.registered_by.name.split(" ")[0] + "_" + reservationDetails.registered_by.fingerPrint) : "Not Set Yet" }}
-                </span>
+                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered
+                  By</span>
+                <template v-if="!isEditMode">
+                  <span class="block text-xs font-bold text-slate-700 truncate"
+                    :title="reservationDetails.registered_by?.name || 'Not Set Yet'">
+                    {{ reservationDetails.registered_by?.name ? (reservationDetails.registered_by.name.split(" ")[0] +
+                      "_" + reservationDetails.registered_by.fingerPrint) : "Not Set Yet" }}
+                  </span>
+                </template>
+                <template v-else>
+                  <multiselect
+                    v-model="selectedRegisteredBy"
+                    :options="employeeOptions"
+                    :searchable="true"
+                    :close-on-select="true"
+                    :show-labels="false"
+                    placeholder="Select Employee"
+                    label="displayName"
+                    track-by="id"
+                    class="sidebar-multiselect mt-0.5"
+                  />
+                </template>
               </div>
             </div>
 
             <!-- Reserved By -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-purple-500 rounded shrink-0 bg-purple-50/50 flex items-center justify-center w-6 h-6">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+              <div
+                class="p-1 text-purple-500 rounded shrink-0 bg-purple-50/50 flex items-center justify-center w-6 h-6">
                 <UserCheck class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved By</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="reservationDetails.reserved_by?.name || 'Not Set Yet'">
-                  {{ reservationDetails.reserved_by?.name ? (reservationDetails.reserved_by.name.split(" ")[0] + "_" + reservationDetails.reserved_by.fingerPrint) : "Not Set Yet" }}
-                </span>
+                <template v-if="!isEditMode">
+                  <span class="block text-xs font-bold text-slate-700 truncate"
+                    :title="reservationDetails.reserved_by?.name || 'Not Set Yet'">
+                    {{ reservationDetails.reserved_by?.name ? (reservationDetails.reserved_by.name.split(" ")[0] + "_" +
+                      reservationDetails.reserved_by.fingerPrint) : "Not Set Yet" }}
+                  </span>
+                </template>
+                <template v-else>
+                  <multiselect
+                    v-model="selectedReservedBy"
+                    :options="employeeOptions"
+                    :searchable="true"
+                    :close-on-select="true"
+                    :show-labels="false"
+                    placeholder="Select Employee"
+                    label="displayName"
+                    track-by="id"
+                    class="sidebar-multiselect mt-0.5"
+                  />
+                </template>
               </div>
             </div>
 
             <!-- Reserved Time -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-amber-500 rounded shrink-0 bg-amber-50/50 flex items-center justify-center w-6 h-6">
                 <Clock class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved Time</span>
-                <span class="block text-xs font-bold text-slate-700" :title="reservationDetails.reserved_time || 'Not Set Yet'">
+                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved
+                  Time</span>
+                <span class="block text-xs font-bold text-slate-700"
+                  :title="reservationDetails.reserved_time || 'Not Set Yet'">
                   {{ formatDateTime(reservationDetails.reserved_time) }}
                 </span>
               </div>
             </div>
 
             <!-- Called Time -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-rose-500 rounded shrink-0 bg-rose-50/50 flex items-center justify-center w-6 h-6">
                 <PhoneCall class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Called Time</span>
-                <span class="block text-xs font-bold text-slate-700" :title="reservationDetails.called_time || 'Not Set Yet'">
+                <span class="block text-xs font-bold text-slate-700"
+                  :title="reservationDetails.called_time || 'Not Set Yet'">
                   {{ formatDateTime(reservationDetails.called_time) }}
                 </span>
               </div>
             </div>
 
             <!-- Called By -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-teal-500 rounded shrink-0 bg-teal-50/50 flex items-center justify-center w-6 h-6">
                 <User class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Called By</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="reservationDetails.called_by?.name || 'Not Set Yet'">
-                  {{ reservationDetails.called_by?.name ? (reservationDetails.called_by.name.split(" ")[0] + "_" + reservationDetails.called_by.fingerPrint) : "Not Set Yet" }}
-                </span>
+                <template v-if="!isEditMode">
+                  <span class="block text-xs font-bold text-slate-700 truncate"
+                    :title="reservationDetails.called_by?.name || 'Not Set Yet'">
+                    {{ reservationDetails.called_by?.name ? (reservationDetails.called_by.name.split(" ")[0] + "_" +
+                      reservationDetails.called_by.fingerPrint) : "Not Set Yet" }}
+                  </span>
+                </template>
+                <template v-else>
+                  <multiselect
+                    v-model="selectedCalledBy"
+                    :options="employeeOptions"
+                    :searchable="true"
+                    :close-on-select="true"
+                    :show-labels="false"
+                    placeholder="Select Employee"
+                    label="displayName"
+                    track-by="id"
+                    class="sidebar-multiselect mt-0.5"
+                  />
+                </template>
               </div>
             </div>
 
             <!-- Religion -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-pink-500 rounded shrink-0 bg-pink-50/50 flex items-center justify-center w-6 h-6">
                 <Heart class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Religion</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.religion || studentAllData?.student?.religion || 'Not Set Yet'">
+                <span class="block text-xs font-bold text-slate-700 truncate"
+                  :title="student?.religion || studentAllData?.student?.religion || 'Not Set Yet'">
                   {{ student?.religion || studentAllData?.student?.religion || "Not Set Yet" }}
                 </span>
               </div>
             </div>
 
             <!-- Nationality -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
               <div class="p-1 text-sky-500 rounded shrink-0 bg-sky-50/50 flex items-center justify-center w-6 h-6">
                 <Globe class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Nationality</span>
-                <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.nationality || studentAllData?.student?.nationality || 'Not Set Yet'">
+                <span class="block text-xs font-bold text-slate-700 truncate"
+                  :title="student?.nationality || studentAllData?.student?.nationality || 'Not Set Yet'">
                   {{ student?.nationality || studentAllData?.student?.nationality || "Not Set Yet" }}
                 </span>
               </div>
             </div>
 
             <!-- Birth Date -->
-            <div class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-violet-500 rounded shrink-0 bg-violet-50/50 flex items-center justify-center w-6 h-6">
+            <div
+              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+              <div
+                class="p-1 text-violet-500 rounded shrink-0 bg-violet-50/50 flex items-center justify-center w-6 h-6">
                 <Calendar class="w-3.5 h-3.5" />
               </div>
               <div class="min-w-0 flex-1">
                 <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Birth Date</span>
-                <span class="block text-xs font-bold text-slate-700" :title="student?.birth_date || studentAllData?.student?.birth_date || 'Not Set Yet'">
+                <span class="block text-xs font-bold text-slate-700"
+                  :title="student?.birth_date || studentAllData?.student?.birth_date || 'Not Set Yet'">
                   {{ formatDateTime(student?.birth_date || studentAllData?.student?.birth_date) }}
                 </span>
               </div>
             </div>
           </div>
-        </div>
+        </transition>
       </div>
-    </aside>
+    </div>
+  </aside>
 
     <!-- CONFIRM QR EMAIL MODAL -->
-    <div v-if="showConfirmModal" class="fixed inset-0 bg-black/55 backdrop-blur-[2px] flex items-center justify-center z-50">
-      <div class="bg-white p-6 rounded-2xl shadow-xl border border-slate-150 text-center max-w-sm mx-4 transform transition-all">
-        <div class="w-12 h-12 bg-indigo-50 text-indigo-650 rounded-full flex items-center justify-center mx-auto mb-3.5">
+    <div v-if="showConfirmModal"
+      class="fixed inset-0 bg-black/55 backdrop-blur-[2px] flex items-center justify-center z-50">
+      <div
+        class="bg-white p-6 rounded-2xl shadow-xl border border-slate-150 text-center max-w-sm mx-4 transform transition-all">
+        <div
+          class="w-12 h-12 bg-indigo-50 text-indigo-650 rounded-full flex items-center justify-center mx-auto mb-3.5">
           <QrCode class="w-6 h-6" />
         </div>
         <h3 class="text-base font-bold text-slate-800 mb-1.5">
           Send QR Code?
         </h3>
         <p class="text-xs text-slate-500 mb-4 leading-normal">
-          The QR code will be generated and sent via email to <strong class="text-slate-700">{{ student?.email }}</strong>
+          The QR code will be generated and sent via email to <strong class="text-slate-700">{{ student?.email
+            }}</strong>
         </p>
         <div class="flex justify-center gap-3">
           <button @click="sendQrEmail"
@@ -507,11 +638,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick } from "vue";
+import { ref, computed, watch, nextTick, onMounted } from "vue";
 import StudentPickerModal from "./StudentPickerModal.vue";
+import Multiselect from "vue-multiselect";
+import "vue-multiselect/dist/vue-multiselect.css";
 import { useStudentStore } from "@/stores/SearchStudent";
 import { useStudentUpdateStore } from "@/stores/studentUpdateStore";
 import { useAuthStore } from "@/stores/auth";
+import { useEmployeeStore } from "@/stores/employeesStore";
+import apiClient from "@/api/axiosInstance";
 
 import {
   Mail,
@@ -535,6 +670,8 @@ import {
   PhoneCall,
   Heart,
   Globe,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-vue-next";
 import { useStudentMessageStore } from "../../stores/srmStore/studentMessageStore";
 import notyf from "@/components/global/notyf";
@@ -561,6 +698,8 @@ const reservationDetails = computed(() => {
 
 // Edit mode states
 const isEditMode = ref(false);
+const isAcademicExpanded = ref(false);
+const isReservationExpanded = ref(false);
 const editForm = ref({});
 const originalData = ref({});
 const phoneInput = ref("");
@@ -570,6 +709,52 @@ const studentStore = useStudentStore();
 const studentUpdateStore = useStudentUpdateStore();
 const messageStore = useStudentMessageStore();
 const authStore = useAuthStore();
+const employeeStore = useEmployeeStore();
+
+onMounted(() => {
+  if (employeeStore.employees.length === 0) {
+    employeeStore.fetchEmployees();
+  }
+});
+
+const employeeOptions = computed(() => {
+  return employeeStore.employees.map((emp) => {
+    const fp = emp.fingerprint ?? emp.personal_info?.fingerprint ?? emp.personal_info?.fingerPrint ?? emp.fingerPrint ?? "";
+    return {
+      id: emp.id,
+      name: emp.name,
+      fingerprint: fp,
+      displayName: fp ? `${emp.name} (${fp})` : emp.name,
+    };
+  });
+});
+
+const selectedRegisteredBy = computed({
+  get: () => employeeOptions.value.find(emp => emp.id === editForm.value.registered_by) || null,
+  set: (val) => {
+    editForm.value.registered_by = val ? val.id : "";
+  }
+});
+
+const selectedReservedBy = computed({
+  get: () => employeeOptions.value.find(emp => emp.id === editForm.value.reserved_by) || null,
+  set: (val) => {
+    editForm.value.reserved_by = val ? val.id : "";
+  }
+});
+
+const selectedCalledBy = computed({
+  get: () => employeeOptions.value.find(emp => emp.id === editForm.value.called_by) || null,
+  set: (val) => {
+    editForm.value.called_by = val ? val.id : "";
+  }
+});
+
+watch(isEditMode, (newVal) => {
+  if (newVal && employeeStore.employees.length === 0) {
+    employeeStore.fetchEmployees();
+  }
+});
 
 const emit = defineEmits(["student-selected"]);
 
@@ -591,6 +776,9 @@ const hasChanges = computed(() => {
     "careerType",
     "scholar_status",
     "ppUrl",
+    "registered_by",
+    "reserved_by",
+    "called_by",
   ];
 
   for (const field of fieldsToCompare) {
@@ -620,6 +808,10 @@ const enterEditMode = () => {
     return;
   }
 
+  if (employeeStore.employees.length === 0) {
+    employeeStore.fetchEmployees();
+  }
+
   isEditMode.value = true;
 
   // Initialize edit form with current student data
@@ -637,6 +829,9 @@ const enterEditMode = () => {
     careerType: student.value.careerType || "",
     scholar_status: student.value.scholar_status || "",
     ppUrl: student.value.ppUrl || "",
+    registered_by: reservationDetails.value?.registered_by?.id || "",
+    reserved_by: reservationDetails.value?.reserved_by?.id || "",
+    called_by: reservationDetails.value?.called_by?.id || "",
   };
 
   // Store original data for comparison
@@ -724,13 +919,47 @@ const saveChanges = async () => {
   try {
     const changedFields = getChangedFields();
 
-    if (Object.keys(changedFields).length === 0) {
+    // Check if reservation employee fields changed
+    const originalReg = originalData.value.registered_by || "";
+    const editReg = editForm.value.registered_by || "";
+    const originalRes = originalData.value.reserved_by || "";
+    const editRes = editForm.value.reserved_by || "";
+    const originalCall = originalData.value.called_by || "";
+    const editCall = editForm.value.called_by || "";
+
+    const reservationChanged = (String(originalReg) !== String(editReg)) ||
+      (String(originalRes) !== String(editRes)) ||
+      (String(originalCall) !== String(editCall));
+
+    if (Object.keys(changedFields).length === 0 && !reservationChanged) {
       notyf.info("No changes to save");
       cancelEdit();
       return;
     }
 
-    await studentUpdateStore.updateStudent(student.value.id, changedFields);
+    studentUpdateStore.loading = true;
+
+    // Update student fields if any changed
+    if (Object.keys(changedFields).length > 0) {
+      await studentUpdateStore.updateStudent(student.value.id, changedFields);
+    }
+
+    // Update reservation employee fields if any changed
+    if (reservationChanged) {
+      const resId = reservationDetails.value.id || studentAllData.value?.reservation?.[0]?.id;
+      if (!resId) {
+        notyf.error("No reservation ID found to update employee data");
+        studentUpdateStore.loading = false;
+        return;
+      }
+
+      await apiClient.put(`students/${resId}/reservation`, {
+        reserved_by: editForm.value.reserved_by ? Number(editForm.value.reserved_by) : null,
+        registered_by: editForm.value.registered_by ? Number(editForm.value.registered_by) : null,
+        called_by: editForm.value.called_by ? Number(editForm.value.called_by) : null,
+      });
+      notyf.success("Reservation employees updated successfully");
+    }
 
     // Refresh student data
     await studentStore.fetchStudent(studentId.value);
@@ -740,7 +969,9 @@ const saveChanges = async () => {
 
     cancelEdit();
   } catch (error) {
-    console.error("Error updating student:", error);
+    console.error("Error updating student/reservation details:", error);
+  } finally {
+    studentUpdateStore.loading = false;
   }
 };
 
@@ -854,11 +1085,11 @@ const handleSmsSend = async (message) => {
 
 const formatDateTime = (dateTimeStr) => {
   if (!dateTimeStr || dateTimeStr === "Not Set Yet" || dateTimeStr === "Not Set Yet" || dateTimeStr === "-") return "Not Set Yet";
-  
+
   const str = String(dateTimeStr);
   const cleanedStr = str.trim();
   const date = new Date(cleanedStr.replace(/-/g, "/"));
-  
+
   if (isNaN(date.getTime())) {
     return str;
   }
@@ -868,7 +1099,7 @@ const formatDateTime = (dateTimeStr) => {
   const year = date.getFullYear();
 
   const hasTime = cleanedStr.includes(":") || cleanedStr.includes(" ") || cleanedStr.includes("T");
-  
+
   if (hasTime) {
     let hours = date.getHours();
     const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -877,7 +1108,7 @@ const formatDateTime = (dateTimeStr) => {
     hours = hours ? hours : 12;
     return `${day} ${month} ${year} (${hours}:${minutes} ${ampm})`;
   }
-  
+
   return `${day} ${month} ${year}`;
 };
 
@@ -891,3 +1122,49 @@ const copyText = (text, fieldName) => {
 };
 
 </script>
+
+<style>
+.sidebar-multiselect .multiselect__tags {
+  min-height: 32px !important;
+  padding: 4px 40px 0 8px !important;
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.sidebar-multiselect .multiselect__select {
+  height: 30px !important;
+}
+.sidebar-multiselect .multiselect__single {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #334155 !important;
+  margin-bottom: 4px !important;
+}
+.sidebar-multiselect .multiselect__placeholder {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: #94a3b8 !important;
+  margin-bottom: 4px !important;
+  padding-top: 0px !important;
+}
+.sidebar-multiselect .multiselect__input {
+  font-size: 12px !important;
+  margin-bottom: 4px !important;
+}
+.sidebar-multiselect .multiselect__content-wrapper {
+  font-size: 12px !important;
+}
+
+/* Slide & Fade transition for collapsible sections */
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.25s ease-in-out;
+  max-height: 600px;
+  overflow: hidden;
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

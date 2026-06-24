@@ -543,9 +543,9 @@ function resolvePayrollRowPeriodForStatus(item) {
   return { period_from: from || '', period_to: to || '' };
 }
 
-// Default: 21st previous calendar month → 20th current month (same as old From/To default)
+// Default: based on the current calendar month
 const now = new Date()
-const defaultMonthAnchor = new Date(now.getFullYear(), now.getMonth() - 1, 21)
+const defaultMonthAnchor = new Date(now.getFullYear(), now.getMonth(), 21)
 const defaultPayrollMonth = `${defaultMonthAnchor.getFullYear()}-${String(defaultMonthAnchor.getMonth() + 1).padStart(2, '0')}`
 const defaultPeriod = getPayrollDates(defaultPayrollMonth)
 
@@ -668,7 +668,7 @@ const selectedEmployeeLabel = computed(() => {
 })
 
 const openCalcModal = () => {
-  calcForm.value = { employee_id: '', payroll_month: '', from_date: '', to_date: '', worked_hours: '' }
+  calcForm.value = { employee_id: '', payroll_month: defaultPayrollMonth, from_date: '', to_date: '', worked_hours: '' }
   employeeSearchQuery.value = ''
   employeePickerOpen.value = false
   showCalcModal.value = true
