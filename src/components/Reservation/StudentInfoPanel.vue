@@ -1,11 +1,14 @@
 <script setup>
-import { computed, ref, onMounted } from "vue";
-import { usePriceSettingsStore } from "@/stores/priceSettingsStore";
+import { computed, ref, onMounted, watch } from "vue";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 
 const props = defineProps({
   modelValue: Object,
   studentInfo: Object,
+  priceSettings: {
+    type: Array,
+    default: () => [],
+  },
   isSaving: Boolean,
   isCalculating: Boolean
 });
@@ -54,9 +57,7 @@ onMounted(() => {
   scholarshipStore.fetchScholarships();
 });
 
-const priceSettingsStore = usePriceSettingsStore();
-
-const allSettings = computed(() => priceSettingsStore.priceSettings || []);
+const allSettings = computed(() => props.priceSettings || []);
 
 // Extract unique active price settings types
 const priceSettingTypes = computed(() => {
@@ -137,7 +138,6 @@ const toggleOption = (opt, type) => {
 };
 
 // Automatically pre-select all Fees options so they are applied
-import { watch } from "vue";
 watch(
   () => {
     // If Fees type is active, return its exact dynamic options

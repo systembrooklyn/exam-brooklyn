@@ -8,6 +8,142 @@ export function formatDateToDMMMYYYY(dateStr) {
   return `${day} ${month} ${year}`;
 }
 
+export function normalizeCalculationResponse(data) {
+  if (!data) {
+    return normalizeScholarshipPlanResponse(null);
+  }
+  if (data.payment_plan) {
+    return normalizeScholarshipPlanResponse(data);
+  }
+  return {
+    study_plan: data.study_plan || [],
+    schedule: data.schedule || [],
+    total_price: data.total_price ?? null,
+    calculation_breakdown: data.calculation_breakdown || null,
+    installments_count: data.installments_count ?? null,
+  };
+}
+
+export function buildCalculatedBreakdown(apiResult, basePrice, activePriceSettings = []) {
+  const base = basePrice ?? 0;
+
+  if (apiResult) {
+    const cb = apiResult.calculation_breakdown;
+    const apiBase = cb?.base_scholarship_price || base;
+    const list = [];
+
+    if (cb?.applied_modifiers) {
+      cb.applied_modifiers.forEach((item, index) => {
+        const val = parseFloat(item.calculated_value) || 0;
+        const absVal = Math.abs(val);
+        list.push({
+          id: `api-mod-${index}`,
+          name: item.name,
+          type: item.type,
+          description: item.description || "",
+          modifier: item.modifier,
+          amount_type: item.amount_type,
+          amount: parseFloat(item.raw_amount) || 0,
+          impact: absVal,
+          impactSigned: val,
+          displayImpact: (val < 0 ? "-" : "+") + absVal.toLocaleString() + " EGP",
+          displayRate:
+            item.amount_type === "percentage"
+              ? `${parseFloat(item.raw_amount)}%`
+              : `${parseFloat(item.raw_amount).toLocaleString()} EGP`,
+        });
+      });
+    }
+
+    const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
+    const suggestedFinalAmount = apiResult.total_price ?? apiBase + totalAdjustments;
+    const remainingBalance = cb?.remaining_balance_to_be_split;
+    const installmentsCount = apiResult.installments_count;
+    const firstInstallment =
+      remainingBalance !== undefined && remainingBalance !== null
+        ? suggestedFinalAmount - remainingBalance
+        : null;
+
+    return {
+      basePrice: apiBase,
+      modifiers: list,
+      totalAdjustments,
+      suggestedFinalAmount,
+      remainingBalance,
+      installmentsCount,
+      firstInstallment,
+    };
+  }
+
+  if (activePriceSettings?.length) {
+    const list = activePriceSettings.map((item) => {
+      const amountVal = parseFloat(item.amount) || 0;
+      let impact = 0;
+      if (item.amount_type === "percentage") {
+        impact = (amountVal / 100) * base;
+      } else {
+        impact = amountVal;
+      }
+      const isDiscount = item.modifier === "discount";
+      const impactSigned = isDiscount ? -impact : impact;
+      return {
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        description: item.description,
+        modifier: item.modifier,
+        amount_type: item.amount_type,
+        amount: amountVal,
+        impact,
+        impactSigned,
+        displayImpact: (isDiscount ? "-" : "+") + impact.toLocaleString() + " EGP",
+        displayRate:
+          item.amount_type === "percentage" ? `${amountVal}%` : `${amountVal.toLocaleString()} EGP`,
+      };
+    });
+    const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
+    return {
+      basePrice: base,
+      modifiers: list,
+      totalAdjustments,
+      suggestedFinalAmount: Math.max(0, base + totalAdjustments),
+      remainingBalance: null,
+      installmentsCount: null,
+      firstInstallment: null,
+    };
+  }
+
+  return {
+    basePrice: base,
+    modifiers: [],
+    totalAdjustments: 0,
+    suggestedFinalAmount: base,
+    remainingBalance: null,
+    installmentsCount: null,
+    firstInstallment: null,
+  };
+}
+
+export function initSelectionsFromReservation(flattenedSettings) {
+  const selectedSettings = {};
+  if (!flattenedSettings?.length) return selectedSettings;
+
+  flattenedSettings.forEach((ps) => {
+    if (ps.type === "Paper" || ps.type === "Fees") {
+      if (!selectedSettings[ps.type]) selectedSettings[ps.type] = [];
+      selectedSettings[ps.type].push(ps.name);
+    } else {
+      selectedSettings[ps.type] = ps.name;
+    }
+  });
+
+  return selectedSettings;
+}
+
+export function flattenReservationPriceSettings(priceSettings) {
+  return flattenPriceSettings(priceSettings);
+}
+
 export function normalizeScholarshipPlanResponse(data) {
   if (!data) {
     return {
@@ -36,10 +172,109 @@ export function canGenerateSchedule(activePriceSettings) {
   return paymentMethods.length === 1;
 }
 
+export function normalizeGradeName(name) {
+  return String(name || "").replace(/[\s.>]+/g, "").toLowerCase();
+}
+
+const GRADE_EQUIVALENCE_GROUPS = [
+  ["vgood", "verygood"],
+  ["good"],
+  ["excellent"],
+  ["pass"],
+  ["5yearsex"],
+  ["gt45", "45"],
+];
+
+export function gradeNamesMatch(a, b) {
+  const na = normalizeGradeName(a);
+  const nb = normalizeGradeName(b);
+  if (na === nb) return true;
+  return GRADE_EQUIVALENCE_GROUPS.some((group) => group.includes(na) && group.includes(nb));
+}
+
+export function findGradeSetting(gradeName, settings) {
+  if (!gradeName || !settings?.length) return null;
+  return settings.find((ps) => ps.type === "Grade" && gradeNamesMatch(ps.name, gradeName));
+}
+
+export function getGradeSettingFromResponse(flattened) {
+  if (!flattened?.length) return null;
+  return flattened.find((ps) => ps.type === "Grade") || null;
+}
+
+export function parentConstraintSatisfied(parentSetting, selectedSettings) {
+  if (!parentSetting) return false;
+  const selectedVal = selectedSettings[parentSetting.type];
+  if (Array.isArray(selectedVal)) {
+    return selectedVal.some((v) => v === parentSetting.name || gradeNamesMatch(v, parentSetting.name));
+  }
+  return selectedVal === parentSetting.name || gradeNamesMatch(selectedVal, parentSetting.name);
+}
+
 export function pickDefaultPaymentMethod(paymentOptions, current) {
   if (!paymentOptions?.length) return current || "";
   if (current && paymentOptions.includes(current)) return current;
   return paymentOptions[0];
+}
+
+const USER_SELECTABLE_TYPES = new Set([
+  "Payment Method",
+  "Paper",
+  "Grade",
+]);
+
+function buildActivePriceSettingsFromSelections(allPs, selectedSettings) {
+  const list = [];
+
+  Object.keys(selectedSettings || {}).forEach((type) => {
+    const selectedName = selectedSettings[type];
+    if (!selectedName) return;
+
+    if (Array.isArray(selectedName)) {
+      selectedName.forEach((name) => {
+        const ps = allPs.find(
+          (x) => x.type === type && (x.name === name || gradeNamesMatch(x.name, name))
+        );
+        if (ps) list.push(ps);
+      });
+    } else {
+      const ps = allPs.find(
+        (x) => x.type === type && (x.name === selectedName || gradeNamesMatch(x.name, selectedName))
+      );
+      if (ps) list.push(ps);
+    }
+  });
+
+  allPs.forEach((ps) => {
+    if (list.some((x) => x.id === ps.id)) return;
+    if (ps.is_active === false) return;
+    if (USER_SELECTABLE_TYPES.has(ps.type)) return;
+
+    const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
+    if (pids.length === 0) return;
+
+    const allParentsSatisfied = pids.every((pid) => {
+      const parentObj = allPs.find((x) => x.id === pid);
+      return parentConstraintSatisfied(parentObj, selectedSettings);
+    });
+
+    if (allParentsSatisfied && !selectedSettings[ps.type]) {
+      list.push(ps);
+    }
+  });
+
+  return list;
+}
+
+/** Always include Grade from API response (e.g. id 13 "Very Good") in calculator payload */
+export function buildActivePriceSettings(allPs, selectedSettings, gradeFromApi = null) {
+  const list = buildActivePriceSettingsFromSelections(allPs, selectedSettings);
+
+  if (gradeFromApi && !list.some((x) => x.id === gradeFromApi.id)) {
+    list.push(gradeFromApi);
+  }
+
+  return list;
 }
 
 export function mapStudyPlanToModules(studyPlan, baseScholarshipPrice) {
@@ -149,4 +384,32 @@ export function flattenPriceSettings(data) {
   });
 
   return flattened;
+}
+
+export function ensureGradeInPriceSettings(flattened, gradeName, allGradesFlattened) {
+  if (!gradeName) return flattened;
+  if (findGradeSetting(gradeName, flattened)) return flattened;
+  const gradePs = findGradeSetting(gradeName, allGradesFlattened);
+  if (gradePs) return [...flattened, gradePs];
+  return flattened;
+}
+
+export function getOptionsForPriceSettingType(allPs, type, selectedSettings, skipParentFilter = false) {
+  let settings = allPs.filter((ps) => ps.type === type && ps.is_active !== false);
+
+  if (skipParentFilter) {
+    return settings.map((ps) => ps.name);
+  }
+
+  settings = settings.filter((ps) => {
+    const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
+    if (pids.length === 0) return true;
+
+    return pids.some((pid) => {
+      const parentSetting = allPs.find((x) => x.id === pid);
+      return parentConstraintSatisfied(parentSetting, selectedSettings);
+    });
+  });
+
+  return settings.map((ps) => ps.name);
 }

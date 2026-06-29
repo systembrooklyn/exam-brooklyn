@@ -4,13 +4,16 @@ import { useReservationStore } from "@/stores/reservations";
 import { useScholarshipStore } from "@/stores/scholarships.js";
 import ModulesTable from "@/components/Reservation/ModulesTable.vue";
 import {
-  normalizeScholarshipPlanResponse,
+  normalizeCalculationResponse,
   mapStudyPlanToModules,
   mergeInstallmentsIntoModules,
   canGenerateSchedule,
   pickDefaultPaymentMethod,
   flattenPriceSettings,
+  getGradeSettingFromResponse,
+  gradeNamesMatch,
 } from "@/utils/scholarshipPlanResponse";
+import { useScholarshipPricing } from "@/composables/useScholarshipPricing";
 import { Loader2 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
 
@@ -24,6 +27,7 @@ const calculatingPlan = ref(false);
 const calculationPending = ref(false);
 
 const priceSettings = ref([]);
+const resolvedGradeSetting = ref(null);
 const apiCalculationResult = ref(null);
 const priceSettingsSelections = ref({});
 const modules = ref([]);
@@ -38,11 +42,14 @@ onMounted(async () => {
 });
 
 watch(selectedGrade, (newGrade) => {
-  if (newGrade) {
-    priceSettingsSelections.value["Grade"] = newGrade;
-  } else {
+  if (!newGrade) {
     delete priceSettingsSelections.value["Grade"];
+    return;
   }
+  const apiName = resolvedGradeSetting.value?.name;
+  priceSettingsSelections.value["Grade"] = apiName && gradeNamesMatch(apiName, newGrade)
+    ? apiName
+    : newGrade;
 });
 
 const currentScholarshipObj = computed(() => {
@@ -54,6 +61,7 @@ const basePrice = computed(() => currentScholarshipObj.value?.price || 0);
 const handleScholarshipOrGradeChange = async () => {
   if (!selectedScholarshipId.value) {
     priceSettings.value = [];
+    resolvedGradeSetting.value = null;
     apiCalculationResult.value = null;
     priceSettingsSelections.value = {};
     modules.value = [];
@@ -72,13 +80,17 @@ const handleScholarshipOrGradeChange = async () => {
       currentGrade
     );
 
-    priceSettings.value = flattenPriceSettings(data);
+    const flattened = flattenPriceSettings(data);
+    resolvedGradeSetting.value = getGradeSettingFromResponse(flattened);
+    priceSettings.value = flattened;
 
     const initialSelections = {};
-    if (currentGrade) {
+    if (currentGrade && resolvedGradeSetting.value) {
+      initialSelections["Grade"] = resolvedGradeSetting.value.name;
+    } else if (currentGrade) {
       initialSelections["Grade"] = currentGrade;
     }
-    priceSettings.value.forEach((ps) => {
+    flattened.forEach((ps) => {
       if (ps.type === "Paper" || ps.type === "Fees") {
         if (!initialSelections[ps.type]) initialSelections[ps.type] = [];
       }
@@ -86,12 +98,15 @@ const handleScholarshipOrGradeChange = async () => {
     priceSettingsSelections.value = initialSelections;
 
     await nextTick();
-    applyDefaultPaymentMethod();
+    syncDefaultSelections();
   } catch (err) {
     console.error("Failed to fetch price settings:", err);
     notyf.error("Failed to fetch scholarship price settings.");
   } finally {
     loadingSettings.value = false;
+    await nextTick();
+    syncDefaultSelections();
+    runCalculation();
   }
 };
 
@@ -99,31 +114,14 @@ watch([selectedScholarshipId, selectedGrade], () => {
   handleScholarshipOrGradeChange();
 });
 
-const priceSettingTypes = computed(() => {
-  const activeTypes = priceSettings.value
-    .filter((ps) => ps.is_active !== false && ps.type !== "Grade" && ps.type !== "Sub Payment Method")
-    .map((ps) => ps.type);
-  return [...new Set(activeTypes)];
-});
-
-const getOptionsForType = (type) => {
-  let settings = priceSettings.value.filter((ps) => ps.type === type && ps.is_active !== false);
-
-  settings = settings.filter((ps) => {
-    const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
-    if (pids.length === 0) return true;
-
-    return pids.some((pid) => {
-      const parentSetting = priceSettings.value.find((x) => x.id === pid);
-      if (!parentSetting) return false;
-      const selectedVal = priceSettingsSelections.value[parentSetting.type];
-      if (Array.isArray(selectedVal)) return selectedVal.includes(parentSetting.name);
-      return selectedVal === parentSetting.name;
-    });
+const { activePriceSettings, calculatedBreakdown, priceSettingTypes, getOptionsForType } =
+  useScholarshipPricing({
+    priceSettings,
+    selections: priceSettingsSelections,
+    resolvedGradeSetting,
+    apiCalculationResult,
+    basePrice,
   });
-
-  return settings.map((ps) => ps.name);
-};
 
 const applyDefaultPaymentMethod = () => {
   const paymentOptions = getOptionsForType("Payment Method");
@@ -132,6 +130,14 @@ const applyDefaultPaymentMethod = () => {
   if (next && next !== current) {
     priceSettingsSelections.value["Payment Method"] = next;
   }
+};
+
+const syncDefaultSelections = () => {
+  const feesOptions = getOptionsForType("Fees");
+  if (feesOptions.length) {
+    priceSettingsSelections.value["Fees"] = feesOptions;
+  }
+  applyDefaultPaymentMethod();
 };
 
 const toggleOption = (opt, type) => {
@@ -185,49 +191,6 @@ const updatePriceSettingField = (type, value) => {
   }
 };
 
-const activePriceSettings = computed(() => {
-  const list = [];
-  const allPs = priceSettings.value || [];
-  const selectedSettings = priceSettingsSelections.value || {};
-
-  Object.keys(selectedSettings).forEach((type) => {
-    const selectedName = selectedSettings[type];
-    if (!selectedName) return;
-
-    if (Array.isArray(selectedName)) {
-      selectedName.forEach((name) => {
-        const ps = allPs.find((x) => x.type === type && x.name === name);
-        if (ps) list.push(ps);
-      });
-    } else {
-      const ps = allPs.find((x) => x.type === type && x.name === selectedName);
-      if (ps) list.push(ps);
-    }
-  });
-
-  allPs.forEach((ps) => {
-    if (list.some((x) => x.id === ps.id)) return;
-    if (!ps.is_active) return;
-
-    const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
-    if (pids.length === 0) return;
-
-    const allParentsSatisfied = pids.every((pid) => {
-      const parentObj = allPs.find((x) => x.id === pid);
-      if (!parentObj) return false;
-      const parentVal = selectedSettings[parentObj.type];
-      if (Array.isArray(parentVal)) return parentVal.includes(parentObj.name);
-      return parentVal === parentObj.name;
-    });
-
-    if (allParentsSatisfied && !selectedSettings[ps.type]) {
-      list.push(ps);
-    }
-  });
-
-  return list;
-});
-
 let calcTimeout = null;
 const runCalculation = () => {
   if (calcTimeout) clearTimeout(calcTimeout);
@@ -251,7 +214,7 @@ const runCalculation = () => {
       );
 
       if (response) {
-        const normalized = normalizeScholarshipPlanResponse(response);
+        const normalized = normalizeCalculationResponse(response);
         apiCalculationResult.value = normalized;
 
         const baseForModules =
@@ -271,63 +234,6 @@ const runCalculation = () => {
 watch(activePriceSettings, () => runCalculation(), { deep: true });
 
 const isCalculationActive = computed(() => calculatingPlan.value || calculationPending.value);
-
-const calculatedBreakdown = computed(() => {
-  const base = basePrice.value;
-
-  if (apiCalculationResult.value) {
-    const cb = apiCalculationResult.value.calculation_breakdown;
-    const apiBase = cb?.base_scholarship_price || base;
-    const list = [];
-
-    if (cb?.applied_modifiers) {
-      cb.applied_modifiers.forEach((item, index) => {
-        const val = parseFloat(item.calculated_value) || 0;
-        const absVal = Math.abs(val);
-        list.push({
-          id: `api-mod-${index}`,
-          name: item.name,
-          type: item.type,
-          description: item.description || "",
-          modifier: item.modifier,
-          impactSigned: val,
-          displayImpact: (val < 0 ? "-" : "+") + absVal.toLocaleString() + " EGP",
-          displayRate:
-            item.amount_type === "percentage"
-              ? `${parseFloat(item.raw_amount)}%`
-              : `${parseFloat(item.raw_amount).toLocaleString()} EGP`,
-        });
-      });
-    }
-
-    const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
-    const suggestedFinalAmount = apiCalculationResult.value.total_price || apiBase + totalAdjustments;
-    const remainingBalance = cb?.remaining_balance_to_be_split;
-    const installmentsCount = apiCalculationResult.value.installments_count;
-    const firstInstallment =
-      remainingBalance !== undefined ? suggestedFinalAmount - remainingBalance : null;
-
-    return {
-      basePrice: apiBase,
-      modifiers: list,
-      totalAdjustments,
-      suggestedFinalAmount,
-      remainingBalance,
-      installmentsCount,
-      firstInstallment,
-    };
-  }
-
-  return {
-    basePrice: base,
-    modifiers: [],
-    totalAdjustments: 0,
-    suggestedFinalAmount: base,
-    remainingBalance: null,
-    installmentsCount: null,
-    firstInstallment: null,
-  };
-});
 </script>
 
 <template>
@@ -380,7 +286,7 @@ const calculatedBreakdown = computed(() => {
               </div>
               <div v-if="selectedGrade" class="flex justify-between items-center mt-1 text-[10px]">
                 <span class="text-slate-400">Grade:</span>
-                <span class="font-bold text-slate-700">{{ selectedGrade }}</span>
+                <span class="font-bold text-slate-700">{{ resolvedGradeSetting?.name || selectedGrade }}</span>
               </div>
             </div>
           </div>

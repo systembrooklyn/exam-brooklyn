@@ -7,12 +7,20 @@ import ModulesTable from "@/components/Reservation/ModulesTable.vue";
 import FinalCasePanel from "@/components/Reservation/FinalCasePanel.vue";
 import ActionButtons from "@/components/Reservation/ActionButtons.vue";
 import { useReservationStore } from "@/stores/reservations";
-import { usePriceSettingsStore } from "@/stores/priceSettingsStore";
+import { useScholarshipPricing } from "@/composables/useScholarshipPricing";
+import {
+  normalizeCalculationResponse,
+  mapStudyPlanToModules,
+  mergeInstallmentsIntoModules,
+  flattenReservationPriceSettings,
+  initSelectionsFromReservation,
+  findGradeSetting,
+  getGradeSettingFromResponse,
+} from "@/utils/scholarshipPlanResponse";
 import { Loader2 } from "lucide-vue-next";
 
 const router = useRouter();
 const reservationStore = useReservationStore();
-const priceSettingsStore = usePriceSettingsStore();
 
 const showFinalCase = ref(false);
 const loadingDetails = ref(false);
@@ -35,169 +43,81 @@ const form = ref({
   finalCase: "",
   finalAmount: "",
   notes: "",
-  // Added helper properties to populate StudentInfoPanel
   studyCategory: "",
   paperID: "",
   paperCertificate: "",
   paperHR: "",
   topStudent: "",
   offerMode: "",
-  // Dynamic pricing selectors dictionary: type -> name
-  priceSettings: {}
+  priceSettings: {},
 });
 
-// Sync dynamic price settings selections with form properties for backward compatibility
-watch(() => form.value.priceSettings, (newVal) => {
-  if (newVal) {
-    form.value.grade = newVal["Grade"] || "";
-    form.value.paymentMethod = newVal["Payment Method"] || "";
-  }
-}, { deep: true });
-
-// Cascading resolver for active price settings based on form selections
-const activePriceSettings = computed(() => {
-  const list = [];
-  const allPs = priceSettingsStore.priceSettings || [];
-
-  if (!allPs || allPs.length === 0) {
-    // Fallback to static pricing settings if the store hasn't finished loading
-    return priceSettings.value;
-  }
-
-  const selectedSettings = form.value.priceSettings || {};
-
-  // First, add all explicitly selected settings by type
-  Object.keys(selectedSettings).forEach(type => {
-    const selectedName = selectedSettings[type];
-    if (selectedName) {
-      if (Array.isArray(selectedName)) {
-        selectedName.forEach(name => {
-          const ps = allPs.find(x => x.type === type && x.name === name);
-          if (ps) {
-            list.push(ps);
-          }
-        });
-      } else {
-        const ps = allPs.find(x => x.type === type && x.name === selectedName);
-        if (ps) {
-          list.push(ps);
-        }
-      }
+watch(
+  () => form.value.priceSettings,
+  (newVal) => {
+    if (newVal) {
+      form.value.grade = newVal["Grade"] || "";
+      form.value.paymentMethod = newVal["Payment Method"] || "";
     }
-  });
+  },
+  { deep: true }
+);
 
-  // Second, auto-apply child settings that depend on the selections but don't have their own selectors
-  allPs.forEach(ps => {
-    // If it's already explicitly added, skip
-    if (list.some(x => x.id === ps.id)) return;    if (ps.is_active) {
-      const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map(p => p.id) : []);
-      if (pids.length > 0) {
-        // All parent constraints must be satisfied by selected values
-        const allParentsSatisfied = pids.every(pid => {
-          const parentObj = allPs.find(x => x.id === pid);
-          if (!parentObj) return false;
-          const parentVal = selectedSettings[parentObj.type];
-          if (Array.isArray(parentVal)) {
-            return parentVal.includes(parentObj.name);
-          }
-          return parentVal === parentObj.name;
-        });
-
-        if (allParentsSatisfied) {
-          // If the setting's type is not explicitly selected in the form, auto-apply it
-          if (!selectedSettings[ps.type]) {
-            list.push(ps);
-          }
-        }
-      }
-    }
-  });
-
-  return list;
+const resolvedGradeSetting = computed(() => {
+  const studentGrade = reservationDetails.value?.student?.grade;
+  if (studentGrade) {
+    return (
+      findGradeSetting(studentGrade, priceSettings.value) ||
+      getGradeSettingFromResponse(priceSettings.value)
+    );
+  }
+  return getGradeSettingFromResponse(priceSettings.value);
 });
 
 const apiCalculationResult = ref(null);
 const calculatingDeadlines = ref(false);
+const modules = ref([]);
 
-const formatDateToDMMMYYYY = (dateStr) => {
-  if (!dateStr) return "TBD";
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  const day = date.getDate();
-  const month = date.toLocaleDateString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  return `${day} ${month} ${year}`;
-};
+const priceSelections = computed(() => form.value.priceSettings);
 
-const mergeInstallmentsIntoModules = (schedule) => {
-  if (!schedule || schedule.length === 0) return;
-
-  if (modules.value.length === 0) {
-    modules.value = schedule.map((item) => {
-      const dateObj = new Date(item.due_date);
-      const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
-      const dayName = !isNaN(dateObj.getTime()) ? dateObj.toLocaleDateString("en-US", { weekday: "short" }) : "TBD";
-
-      return {
-        name: `Installment #${item.installment_number}`,
-        code: "PAY",
-        startDate: formattedDeadline,
-        day: dayName,
-        time: "-",
-        amount: item.amount,
-        deadline: formattedDeadline
-      };
-    });
-    return;
-  }
-
-  modules.value = modules.value.map((mod, index) => {
-    if (index < schedule.length) {
-      const item = schedule[index];
-      const formattedDeadline = formatDateToDMMMYYYY(item.due_date);
-
-      return {
-        ...mod,
-        amount: item.amount,
-        deadline: formattedDeadline
-      };
-    } else {
-      return {
-        ...mod,
-        amount: null,
-        deadline: "-"
-      };
-    }
-  });
-};
+const { activePriceSettings, calculatedBreakdown } = useScholarshipPricing({
+  priceSettings,
+  selections: priceSelections,
+  resolvedGradeSetting,
+  apiCalculationResult,
+  basePrice,
+});
 
 let calcTimeout = null;
 let calcNonce = 0;
 
 const updateCalculationAndSchedule = async () => {
   if (calcTimeout) clearTimeout(calcTimeout);
-  
+
   calcTimeout = setTimeout(async () => {
     const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
     if (!scholarshipId) return;
 
-    const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
-
-    console.log("SENDING PRICE SETTINGS IDS TO API:", priceSettingIds);
-    console.log("ACTIVE PRICE SETTINGS OBJECTS:", JSON.stringify(activePriceSettings.value.map(p => p.name)));
+    const priceSettingIds = activePriceSettings.value.map((ps) => ps.id);
 
     calcNonce++;
     const currentNonce = calcNonce;
 
     try {
       calculatingDeadlines.value = true;
-      const response = await reservationStore.calculateDeadlines(scholarshipId, priceSettingIds);
-      
-      // Prevent race conditions: only apply if this is the most recent request
+      const response = await reservationStore.calculateDeadlines(
+        scholarshipId,
+        priceSettingIds
+      );
+
       if (response && currentNonce === calcNonce) {
-        apiCalculationResult.value = response;
-        mergeInstallmentsIntoModules(response.schedule);
-        form.value.finalAmount = response.total_price;
+        const normalized = normalizeCalculationResponse(response);
+        apiCalculationResult.value = normalized;
+        modules.value = mergeInstallmentsIntoModules(
+          modules.value,
+          normalized.schedule
+        );
+        form.value.finalAmount = normalized.total_price;
       }
     } catch (err) {
       console.error("Error calculating deadlines:", err);
@@ -206,155 +126,17 @@ const updateCalculationAndSchedule = async () => {
         calculatingDeadlines.value = false;
       }
     }
-  }, 100); // 100ms debounce
+  }, 100);
 };
 
-// Watch active price settings to update calculations dynamically
-watch(activePriceSettings, () => {
-  updateCalculationAndSchedule();
-}, { deep: true });
+watch(activePriceSettings, () => updateCalculationAndSchedule(), { deep: true });
 
-// Dynamic calculation of modifiers impact
-const calculatedBreakdown = computed(() => {
-  const base = basePrice.value;
-
-  if (apiCalculationResult.value) {
-    const cb = apiCalculationResult.value.calculation_breakdown;
-    const apiBase = cb?.base_scholarship_price || base;
-    const list = [];
-
-    // Map applied modifiers from API
-    if (cb?.applied_modifiers) {
-      cb.applied_modifiers.forEach((item, index) => {
-        const val = parseFloat(item.calculated_value) || 0;
-        const absVal = Math.abs(val);
-
-        list.push({
-          id: `api-mod-${index}`,
-          name: item.name,
-          type: item.type,
-          description: item.description || "",
-          modifier: item.modifier,
-          amount_type: item.amount_type,
-          amount: parseFloat(item.raw_amount) || 0,
-          impact: absVal,
-          impactSigned: val,
-          displayImpact: (val < 0 ? "-" : "+") + absVal.toLocaleString() + " EGP",
-          displayRate: item.amount_type === "percentage" ? `${parseFloat(item.raw_amount)}%` : `${parseFloat(item.raw_amount).toLocaleString()} EGP`
-        });
-      });
-    }
-
-    const suggestedFinalAmount = apiCalculationResult.value.total_price || (apiBase + list.reduce((sum, item) => sum + item.impactSigned, 0));
-    const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
-    const remainingBalance = cb?.remaining_balance_to_be_split;
-    const installmentsCount = apiCalculationResult.value.installments_count;
-    const firstInstallment = remainingBalance !== undefined ? (suggestedFinalAmount - remainingBalance) : null;
-
-    return {
-      basePrice: apiBase,
-      modifiers: list,
-      totalAdjustments,
-      suggestedFinalAmount,
-      remainingBalance,
-      installmentsCount,
-      firstInstallment
-    };
+watch(
+  () => calculatedBreakdown.value.suggestedFinalAmount,
+  (newAmount) => {
+    form.value.finalAmount = newAmount;
   }
-
-  const list = [];
-  activePriceSettings.value.forEach(item => {
-    const amountVal = parseFloat(item.amount) || 0;
-    let impact = 0;
-    if (item.amount_type === "percentage") {
-      impact = (amountVal / 100) * base;
-    } else {
-      impact = amountVal;
-    }
-
-    const isDiscount = item.modifier === "discount";
-    const impactSigned = isDiscount ? -impact : impact;
-
-    list.push({
-      id: item.id,
-      name: item.name,
-      type: item.type,
-      description: item.description,
-      modifier: item.modifier,
-      amount_type: item.amount_type,
-      amount: amountVal,
-      impact: impact,
-      impactSigned: impactSigned,
-      displayImpact: (isDiscount ? "-" : "+") + impact.toLocaleString() + " EGP",
-      displayRate: item.amount_type === "percentage" ? `${amountVal}%` : `${amountVal.toLocaleString()} EGP`
-    });
-  });
-
-  const totalAdjustments = list.reduce((sum, item) => sum + item.impactSigned, 0);
-  const suggestedFinalAmount = Math.max(0, base + totalAdjustments);
-
-  return {
-    basePrice: base,
-    modifiers: list,
-    totalAdjustments,
-    suggestedFinalAmount
-  };
-});
-
-// Watch suggested amount changes to update finalAmount dynamically
-watch(() => calculatedBreakdown.value.suggestedFinalAmount, (newAmount) => {
-  form.value.finalAmount = newAmount;
-});
-
-const modules = ref([]);
-
-const mapStudyPlanToModules = (studyPlan, baseScholarshipPrice) => {
-  if (!studyPlan || studyPlan.length === 0) {
-    modules.value = [];
-    return;
-  }
-
-  const avgAmount = Math.round(baseScholarshipPrice / studyPlan.length);
-
-  modules.value = studyPlan.map((item) => {
-    const startsAt = item.starts_at;
-    const dateObj = startsAt ? new Date(startsAt) : null;
-
-    let formattedDate = "";
-    let dayName = "";
-    let deadlineStr = "";
-
-    if (dateObj && !isNaN(dateObj.getTime())) {
-      const dd = String(dateObj.getDate()).padStart(2, "0");
-      const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
-      const yyyy = dateObj.getFullYear();
-      formattedDate = `${dd}/${mm}/${yyyy}`;
-
-      dayName = dateObj.toLocaleDateString("en-US", { weekday: "short" });
-
-      const deadlineDate = new Date(dateObj);
-      deadlineDate.setDate(deadlineDate.getDate() - 1);
-      const dlDay = deadlineDate.getDate();
-      const dlMonth = deadlineDate.toLocaleDateString("en-US", { month: "short" });
-      const dlYear = deadlineDate.getFullYear();
-      deadlineStr = `${dlDay} ${dlMonth} ${dlYear}`;
-    } else {
-      formattedDate = startsAt || "N/A";
-      dayName = "TBD";
-      deadlineStr = "TBD";
-    }
-
-    return {
-      name: item.course_name,
-      code: String(item.course_code),
-      startDate: formattedDate,
-      day: dayName,
-      time: "10 to 3",
-      amount: avgAmount,
-      deadline: deadlineStr
-    };
-  });
-};
+);
 
 const populateFromSummary = (summary) => {
   if (summary && summary.student) {
@@ -385,23 +167,8 @@ const fetchReservationDetails = async (showFullLoader = false) => {
 
           basePrice.value = detail.student?.scholarship?.price || 0;
 
-          // Flatten price_settings to include nested children and link them via parent_ids
-          const flattenedSettings = [];
-          detail.price_settings?.forEach(ps => {
-            flattenedSettings.push(ps);
-            if (ps.children && Array.isArray(ps.children)) {
-              ps.children.forEach(child => {
-                child.parent_ids = [ps.id];
-                flattenedSettings.push(child);
-              });
-            }
-          });
-
+          const flattenedSettings = flattenReservationPriceSettings(detail.price_settings);
           priceSettings.value = flattenedSettings;
-
-          // Inject the assigned price settings into the store so they render in the UI
-          // without needing to fetch all global settings.
-          priceSettingsStore.priceSettings = flattenedSettings;
 
           form.value.name = detail.student?.name || "";
           form.value.scholarship = detail.student?.scholarship?.name
@@ -413,25 +180,13 @@ const fetchReservationDetails = async (showFullLoader = false) => {
           form.value.notes = detail.student?.notes || "";
           form.value.studyCategory = detail.student?.faculity || "";
 
-          // Initialize dynamic pricing selectors dictionary from initially applied settings
-          const selectedSettings = {};
-          flattenedSettings.forEach(ps => {
-            if (ps.type === "Paper" || ps.type === "Fees") {
-              if (!selectedSettings[ps.type]) {
-                selectedSettings[ps.type] = [];
-              }
-              selectedSettings[ps.type].push(ps.name);
-            } else {
-              selectedSettings[ps.type] = ps.name;
-            }
-          });
-          form.value.priceSettings = selectedSettings;
+          form.value.priceSettings = initSelectionsFromReservation(flattenedSettings);
 
           form.value.paperID = detail.student?.ID_number ? "ID" : "";
           form.value.paperCertificate = detail.student?.grade ? "Certificate" : "";
           form.value.paperHR = detail.student?.company ? "HR" : "Not HR";
 
-          mapStudyPlanToModules(detail.study_plan, basePrice.value);
+          modules.value = mapStudyPlanToModules(detail.study_plan, basePrice.value);
 
           form.value.finalAmount = calculatedBreakdown.value.suggestedFinalAmount;
           await updateCalculationAndSchedule();
@@ -589,8 +344,15 @@ const submitForm = async () => {
     <!-- Main Content Panel (show when not loading) -->
     <div v-else class="grid grid-cols-12 gap-4">
       <div class="col-span-3">
-        <StudentInfoPanel v-model="form" :student-info="reservationDetails?.student" :is-saving="savingStudent" :is-calculating="calculatingDeadlines" @save-student="handleSaveStudent"
-          @refresh-data="fetchReservationDetails" />
+        <StudentInfoPanel
+          v-model="form"
+          :student-info="reservationDetails?.student"
+          :price-settings="priceSettings"
+          :is-saving="savingStudent"
+          :is-calculating="calculatingDeadlines"
+          @save-student="handleSaveStudent"
+          @refresh-data="fetchReservationDetails"
+        />
       </div>
       <div class="col-span-9 flex flex-col h-full gap-4">
         <!-- Academic Modules Schedule -->
