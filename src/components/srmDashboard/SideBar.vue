@@ -58,6 +58,10 @@
             class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-100/50 uppercase tracking-wide">
             {{ student?.careerType }}
           </span>
+          <span v-if="student?.grade"
+            class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-100/50 uppercase tracking-wide">
+            {{ student?.grade }}
+          </span>
         </div>
 
         <div v-show="student?.name && student?.st_num && student?.ID_number" class="w-full max-w-sm">
@@ -77,39 +81,159 @@
               class="w-full text-lg font-extrabold text-slate-800 bg-slate-50 border border-indigo-200 rounded-xl px-3 py-1.5 text-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mt-0.5" />
           </h2>
 
-          <div class="mt-3.5 space-y-1.5 text-xs text-slate-500 font-semibold">
-            <div class="flex items-center justify-center gap-2">
-              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Student No:</span>
-              <span class="text-slate-700 font-bold">{{ student?.st_num }}</span>
+          <div class="mt-3.5 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-slate-500 font-semibold w-full text-left">
+            <!-- Student No -->
+            <div class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">ST No:</span>
+              <span class="text-slate-700 font-bold truncate">{{ student?.st_num }}</span>
             </div>
 
-            <div class="flex items-center justify-center gap-2">
-              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Scholarship:</span>
-              <span class="text-slate-700 font-bold">{{ studentAllData?.student?.scholarship?.name }}</span>
-            </div>
-
-            <div class="flex items-center justify-center gap-2">
-              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">Code:</span>
+            <!-- Code -->
+            <div class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Code:</span>
               <template v-if="!isEditMode">
-                <span class="text-slate-700 font-bold">{{ studentAllData?.student?.marketing_code }}</span>
+                <span class="text-slate-700 font-bold truncate">{{ studentAllData?.student?.marketing_code }}</span>
               </template>
               <input v-else v-model="editForm.marketing_code" type="text"
-                class="w-36 text-center text-xs font-bold text-slate-750 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+                class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
             </div>
 
-            <div class="flex items-center justify-center gap-2">
-              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px]">National ID:</span>
+            <!-- Scholarship -->
+            <div class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Scholarship:</span>
+              <span class="text-slate-700 font-bold truncate" :title="studentAllData?.student?.scholarship?.name">
+                {{ studentAllData?.student?.scholarship?.name }}
+              </span>
+            </div>
+
+            <!-- National ID -->
+            <div class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">National ID:</span>
               <template v-if="!isEditMode">
-                <span class="text-slate-700 font-bold">{{ student?.ID_number || "Not Set Yet" }}</span>
+                <span class="text-slate-700 font-bold truncate">{{ student?.ID_number || "Not Set Yet" }}</span>
               </template>
               <input v-else v-model="editForm.ID_number" type="text"
-                class="w-48 text-center text-xs font-bold text-slate-750 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+                class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+            </div>
+
+            <!-- Branch -->
+            <div v-if="isEditMode || reservationDetails.branch?.name" class="flex items-center gap-1.5 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Branch:</span>
+              <template v-if="!isEditMode">
+                <span class="text-slate-700 font-bold truncate">{{ reservationDetails.branch?.name }}</span>
+              </template>
+              <template v-else>
+                <select v-model="editForm.branch_id"
+                  class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5">
+                  <option value="">Select Branch</option>
+                  <option v-for="b in reservationStore.branches" :key="b.id" :value="b.id">
+                    {{ b.name }}
+                  </option>
+                </select>
+              </template>
+            </div>
+
+            <!-- Religion -->
+            <div v-if="isEditMode || student?.religion || studentAllData?.student?.religion"
+              class="flex items-center gap-1.5 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Religion:</span>
+              <template v-if="!isEditMode">
+                <span class="text-slate-700 font-bold truncate">{{ student?.religion ||
+                  studentAllData?.student?.religion }}</span>
+              </template>
+              <input v-else v-model="editForm.religion" type="text"
+                class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+            </div>
+
+            <!-- Nationality -->
+            <div v-if="isEditMode || student?.nationality || studentAllData?.student?.nationality"
+              class="flex items-center gap-1.5 min-w-0 col-span-2">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Nationality:</span>
+              <template v-if="!isEditMode">
+                <span class="text-slate-700 font-bold truncate">{{ student?.nationality ||
+                  studentAllData?.student?.nationality }}</span>
+              </template>
+              <input v-else v-model="editForm.nationality" type="text"
+                class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+            </div>
+
+            <!-- Birth Date -->
+            <div v-if="isEditMode || student?.birth_date || studentAllData?.student?.birth_date"
+              class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Birth Date:</span>
+              <template v-if="!isEditMode">
+                <span class="text-slate-700 font-bold truncate">{{ formatDateTime(student?.birth_date ||
+                  studentAllData?.student?.birth_date) }}</span>
+              </template>
+              <input v-else v-model="editForm.birth_date" type="date"
+                class="w-full text-xs font-bold text-slate-755 bg-slate-50 border border-indigo-200 rounded-lg px-2 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
+            </div>
+
+            <!-- Reserved Time -->
+            <div v-if="reservationDetails.reserved_time" class="flex items-center gap-1.5 col-span-2 min-w-0">
+              <span class="font-bold text-slate-400 uppercase tracking-wider text-[9px] shrink-0">Reserved Time:</span>
+              <span class="text-slate-700 font-bold truncate">{{ formatDateTime(reservationDetails.reserved_time)
+              }}</span>
+            </div>
+          </div>
+
+          <!-- Employee 3-Column Table -->
+          <div class="mt-4.5 w-full grid grid-cols-3 gap-2.5 border-t border-slate-100 pt-3.5 text-center">
+            <!-- Registered By -->
+            <div v-if="isEditMode || reservationDetails.registered_by?.name" class="min-w-0 flex flex-col items-center">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Receptionist</span>
+              <template v-if="!isEditMode">
+                <span class="block text-[11px] font-bold text-slate-700 truncate mt-1 w-full"
+                  :title="reservationDetails.registered_by?.name">
+                  {{ reservationDetails.registered_by?.name ? (reservationDetails.registered_by.name.split(' ')[0] + '_'
+                    + reservationDetails.registered_by.fingerPrint) : '-' }}
+                </span>
+              </template>
+              <template v-else>
+                <multiselect v-model="selectedRegisteredBy" :options="employeeOptions" :searchable="true"
+                  :close-on-select="true" :show-labels="false" placeholder="Select" label="displayName" track-by="id"
+                  class="sidebar-multiselect mt-1 w-full text-left" />
+              </template>
+            </div>
+
+            <!-- Reserved By -->
+            <div v-if="isEditMode || reservationDetails.reserved_by?.name" class="min-w-0 flex flex-col items-center">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved By</span>
+              <template v-if="!isEditMode">
+                <span class="block text-[11px] font-bold text-slate-700 truncate mt-1 w-full"
+                  :title="reservationDetails.reserved_by?.name">
+                  {{ reservationDetails.reserved_by?.name ? (reservationDetails.reserved_by.name.split(' ')[0] + '_' +
+                    reservationDetails.reserved_by.fingerPrint) : '-' }}
+                </span>
+              </template>
+              <template v-else>
+                <multiselect v-model="selectedReservedBy" :options="employeeOptions" :searchable="true"
+                  :close-on-select="true" :show-labels="false" placeholder="Select" label="displayName" track-by="id"
+                  class="sidebar-multiselect mt-1 w-full text-left" />
+              </template>
+            </div>
+
+            <!-- Called By -->
+            <div v-if="isEditMode || reservationDetails.called_by?.name" class="min-w-0 flex flex-col items-center">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Called By</span>
+              <template v-if="!isEditMode">
+                <span class="block text-[11px] font-bold text-slate-700 truncate mt-1 w-full"
+                  :title="reservationDetails.called_by?.name">
+                  {{ reservationDetails.called_by?.name ? (reservationDetails.called_by.name.split(' ')[0] + '_' +
+                    reservationDetails.called_by.fingerPrint) : '-' }}
+                </span>
+              </template>
+              <template v-else>
+                <multiselect v-model="selectedCalledBy" :options="employeeOptions" :searchable="true"
+                  :close-on-select="true" :show-labels="false" placeholder="Select" label="displayName" track-by="id"
+                  class="sidebar-multiselect mt-1 w-full text-left" />
+              </template>
             </div>
           </div>
         </div>
 
-        <!-- Sleek Quick Action Bar -->
-        <div
+        <!-- Sleek Quick Action Bar or Save/Cancel Buttons -->
+        <div v-if="!isEditMode"
           class="flex justify-center items-center gap-2.5 mt-4.5 px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-2xl shadow-inner">
           <!-- Share -->
           <div class="relative group">
@@ -148,7 +272,7 @@
           </div>
 
           <!-- Edit Toggle -->
-          <div v-if="student?.name && !isEditMode && authStore.hasPermission('edit-student')" class="relative group">
+          <div v-if="student?.name && authStore.hasPermission('edit-student')" class="relative group">
             <button @click="enterEditMode"
               class="p-2 bg-white text-amber-500 hover:bg-amber-50 border border-slate-200/60 rounded-xl hover:scale-105 transition shadow-sm active:scale-95 cursor-pointer">
               <Edit class="w-4 h-4" />
@@ -159,41 +283,47 @@
             </div>
           </div>
         </div>
+        <div v-else
+          class="flex justify-center items-center gap-3 mt-4.5 px-3 py-2 bg-slate-50 border border-slate-100 rounded-2xl shadow-inner w-full">
+          <button @click="saveChanges" :disabled="!hasChanges || studentUpdateStore.loading"
+            class="flex-1 bg-indigo-400 hover:bg-indigo-500 text-white font-bold text-xs py-2 px-4 rounded-xl transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer flex items-center justify-center gap-1.5">
+            <span v-if="studentUpdateStore.loading"
+              class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>Save</span>
+          </button>
+          <button @click="cancelEdit"
+            class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs py-2 px-4 rounded-xl transition active:scale-95 cursor-pointer">
+            Cancel
+          </button>
+        </div>
       </div>
 
       <!-- DETAILS PANEL -->
-      <div class="p-5 space-y-4 bg-slate-50/30 flex-1 border-t border-slate-100" v-if="
+      <div class="p-3 space-y-4 bg-slate-50/30 flex-1 border-t border-slate-100" v-if="
         student &&
         (student.email ||
           student.phones?.length ||
           student.major ||
           student.company ||
           student.grade ||
-          student.faculity)
+          student.faculity ||
+          student.religion ||
+          studentAllData?.student?.religion ||
+          student.nationality ||
+          studentAllData?.student?.nationality ||
+          student.birth_date ||
+          studentAllData?.student?.birth_date)
       ">
-        <div class="flex justify-between items-center mb-1">
+        <!-- <div class="flex justify-between items-center mb-1">
           <h3 class="text-xs font-extrabold text-indigo-950 uppercase tracking-widest flex items-center gap-1.5">
             <span class="p-1 bg-indigo-50 text-indigo-600 rounded">
               <User class="w-3.5 h-3.5" />
             </span>
-            Profile Information
           </h3>
-          <div v-if="isEditMode" class="flex gap-2">
-            <button @click="saveChanges" :disabled="!hasChanges || studentUpdateStore.loading"
-              class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg text-xs hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm flex items-center gap-1.5 cursor-pointer">
-              <span v-if="studentUpdateStore.loading"
-                class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-              <span>Save</span>
-            </button>
-            <button @click="cancelEdit"
-              class="px-3 py-1.5 bg-slate-200 text-slate-700 font-bold rounded-lg text-xs hover:bg-slate-300 transition cursor-pointer">
-              Cancel
-            </button>
-          </div>
-        </div>
+        </div> -->
 
         <!-- CARD 1: CONTACT DETAILS -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
+        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-2">
           <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 border-b pb-1.5">Contact
             Details</h4>
 
@@ -249,7 +379,7 @@
                     <span
                       class="text-xs font-bold text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:underline select-all transition-colors duration-150"
                       :title="'Click to copy Email: ' + student?.email" @click="copyText(student?.email, 'Email')">{{
-                      student?.email }}</span>
+                        student?.email }}</span>
                     <button @click="showEmailModal = true"
                       class="p-1 hover:bg-blue-100 text-blue-600 rounded-lg transition cursor-pointer"
                       title="Send Email">
@@ -266,337 +396,137 @@
           </div>
         </div>
 
-        <!-- CARD 2: ACADEMIC & EMPLOYMENT -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
-          <div @click="!isEditMode && (isAcademicExpanded = !isAcademicExpanded)" :class="!isEditMode ? 'cursor-pointer' : ''" class="flex justify-between items-center select-none border-b pb-1.5">
-            <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Academic & Employment</h4>
-            <template v-if="!isEditMode">
-              <ChevronDown v-if="!isAcademicExpanded" class="w-3 h-3 text-slate-400" />
-              <ChevronUp v-else class="w-3 h-3 text-slate-400" />
-            </template>
+        <!-- CARD 2: ACADEMIC & EMPLOYMENT TRIGGER -->
+        <div 
+          ref="cardRef"
+          @click="toggleAcademic($event)"
+          class="bg-white p-4.5 rounded-2xl border border-slate-100 hover:border-slate-250/50 shadow-sm flex justify-between items-center cursor-pointer transition select-none hover:shadow-md"
+        >
+          <div class="flex items-center gap-3">
+            <div class="p-1.5 bg-indigo-50 text-indigo-650 rounded-lg">
+              <Briefcase class="w-4 h-4" />
+            </div>
+            <span class="text-xs font-bold text-slate-700 tracking-wide">Academic & Employment</span>
           </div>
+          <ChevronRight class="w-4 h-4 text-slate-400" />
+        </div>
 
-          <transition name="slide-fade">
-            <div v-show="isAcademicExpanded || isEditMode" class="grid grid-cols-2 gap-3 mt-3">
-            <!-- Company -->
-            <div
-              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
-              <div class="p-1.5 bg-purple-50 text-purple-600 rounded-lg shrink-0">
-                <Briefcase class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Company</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.company || "No Available"
-                    }}</span>
-                </template>
-                <template v-else>
-                  <input v-model="editForm.company" type="text"
-                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
-                </template>
-              </div>
-            </div>
-
-            <!-- Major -->
-            <div
-              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1.5 bg-amber-50 text-amber-600 rounded-lg shrink-0">
-                <BookOpen class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Major</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.major">{{
-                    student?.major || "No Available" }}</span>
-                </template>
-                <template v-else>
-                  <input v-model="editForm.major" type="text"
-                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
-                </template>
-              </div>
-            </div>
-
-            <!-- Grade -->
-            <div
-              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1.5 bg-sky-50 text-sky-600 rounded-lg shrink-0">
-                <Award class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Grade</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.grade || "Not Set Yet"
-                    }}</span>
-                </template>
-                <template v-else>
-                  <input v-model="editForm.grade" type="text"
-                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
-                </template>
-              </div>
-            </div>
-
-            <!-- Faculty -->
-            <div
-              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
-              <div class="p-1.5 bg-rose-50 text-rose-600 rounded-lg shrink-0">
-                <GraduationCap class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Faculty</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.faculity">{{
-                    student?.faculity || "No Available" }}</span>
-                </template>
-                <template v-else>
-                  <input v-model="editForm.faculity" type="text"
-                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
-                </template>
-              </div>
-            </div>
-
-            <!-- Career Type (In Edit mode or if available in read-only) -->
-            <div v-if="isEditMode || student?.careerType"
-              class="flex items-start gap-3 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition col-span-2">
-              <div class="p-1.5 bg-teal-50 text-teal-600 rounded-lg shrink-0">
-                <Activity class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[9px] font-extrabold text-slate-400 uppercase tracking-wider">Career Type</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.careerType || "Not Set Yet"
-                    }}</span>
-                </template>
-                <template v-else>
-                  <input v-model="editForm.careerType" type="text"
-                    class="w-full text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg px-2.5 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 mt-0.5" />
-                </template>
-              </div>
-            </div>
-          </div>
-        </transition>
       </div>
+    </aside>
 
-      <!-- CARD 3: RESERVATION & REGISTRATION -->
-        <div class="bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm space-y-3.5">
-          <div @click="!isEditMode && (isReservationExpanded = !isReservationExpanded)" :class="!isEditMode ? 'cursor-pointer' : ''" class="flex justify-between items-center select-none border-b pb-1.5">
-            <h4 class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Reservation & Registration</h4>
-            <template v-if="!isEditMode">
-              <ChevronDown v-if="!isReservationExpanded" class="w-3 h-3 text-slate-400" />
-              <ChevronUp v-else class="w-3 h-3 text-slate-400" />
-            </template>
+    <!-- Popover Backdrop to close when clicking outside -->
+    <div 
+      v-if="isAcademicExpanded" 
+      @click="isAcademicExpanded = false" 
+      class="fixed inset-0 bg-transparent z-[9998] cursor-default"
+    ></div>
+
+    <!-- Academic & Employment Popover Panel next to the card -->
+    <transition name="fade">
+      <div 
+        v-if="isAcademicExpanded" 
+        class="fixed bg-white rounded-2xl border border-slate-200 shadow-2xl z-[9999] p-4 w-[340px] flex flex-col space-y-3"
+        :style="{ top: popoverTop + 'px', left: '380px' }"
+      >
+        <!-- Popover Header -->
+        <div class="flex items-center justify-between pb-1.5 border-b border-slate-100 shrink-0">
+          <div class="flex items-center gap-1.5">
+            <span class="p-1 bg-indigo-50 text-indigo-650 rounded">
+              <Briefcase class="w-3.5 h-3.5" />
+            </span>
+            <span class="text-xs font-bold text-slate-805 uppercase tracking-wider">Academic & Employment</span>
+          </div>
+          <button @click="isAcademicExpanded = false" class="p-0.5 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition active:scale-95 cursor-pointer">
+            <X class="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <!-- Popover Content -->
+        <div class="space-y-2.5">
+          <!-- Company -->
+          <div class="flex items-start gap-2.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div class="p-1 bg-purple-50 text-purple-600 rounded shrink-0">
+              <Briefcase class="w-3.5 h-3.5" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Company</span>
+              <template v-if="!isEditMode">
+                <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.company || "No Available" }}</span>
+              </template>
+              <template v-else>
+                <input v-model="editForm.company" type="text"
+                  class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-0.5" />
+              </template>
+            </div>
           </div>
 
-          <transition name="slide-fade">
-            <div v-show="isReservationExpanded || isEditMode" class="space-y-3 mt-3">
-            <!-- Branch -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div
-                class="p-1 text-indigo-500 rounded shrink-0 bg-indigo-50/50 flex items-center justify-center w-6 h-6">
-                <MapPin class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Branch</span>
-                <span class="block text-xs font-bold text-slate-700 truncate"
-                  :title="reservationDetails.branch?.name || 'Not Set Yet'">
-                  {{ reservationDetails.branch?.name || "Not Set Yet" }}
-                </span>
-              </div>
+          <!-- Major -->
+          <div class="flex items-start gap-2.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div class="p-1 bg-amber-50 text-amber-600 rounded shrink-0">
+              <BookOpen class="w-3.5 h-3.5" />
             </div>
-
-            <!-- Registered At -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div
-                class="p-1 text-emerald-500 rounded shrink-0 bg-emerald-50/50 flex items-center justify-center w-6 h-6">
-                <Calendar class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered
-                  At</span>
-                <span class="block text-xs font-bold text-slate-700"
-                  :title="reservationDetails.registered_at || 'Not Set Yet'">
-                  {{ formatDateTime(reservationDetails.registered_at) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Registered By -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-blue-500 rounded shrink-0 bg-blue-50/50 flex items-center justify-center w-6 h-6">
-                <User class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Registered
-                  By</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate"
-                    :title="reservationDetails.registered_by?.name || 'Not Set Yet'">
-                    {{ reservationDetails.registered_by?.name ? (reservationDetails.registered_by.name.split(" ")[0] +
-                      "_" + reservationDetails.registered_by.fingerPrint) : "Not Set Yet" }}
-                  </span>
-                </template>
-                <template v-else>
-                  <multiselect
-                    v-model="selectedRegisteredBy"
-                    :options="employeeOptions"
-                    :searchable="true"
-                    :close-on-select="true"
-                    :show-labels="false"
-                    placeholder="Select Employee"
-                    label="displayName"
-                    track-by="id"
-                    class="sidebar-multiselect mt-0.5"
-                  />
-                </template>
-              </div>
-            </div>
-
-            <!-- Reserved By -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div
-                class="p-1 text-purple-500 rounded shrink-0 bg-purple-50/50 flex items-center justify-center w-6 h-6">
-                <UserCheck class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved By</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate"
-                    :title="reservationDetails.reserved_by?.name || 'Not Set Yet'">
-                    {{ reservationDetails.reserved_by?.name ? (reservationDetails.reserved_by.name.split(" ")[0] + "_" +
-                      reservationDetails.reserved_by.fingerPrint) : "Not Set Yet" }}
-                  </span>
-                </template>
-                <template v-else>
-                  <multiselect
-                    v-model="selectedReservedBy"
-                    :options="employeeOptions"
-                    :searchable="true"
-                    :close-on-select="true"
-                    :show-labels="false"
-                    placeholder="Select Employee"
-                    label="displayName"
-                    track-by="id"
-                    class="sidebar-multiselect mt-0.5"
-                  />
-                </template>
-              </div>
-            </div>
-
-            <!-- Reserved Time -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-amber-500 rounded shrink-0 bg-amber-50/50 flex items-center justify-center w-6 h-6">
-                <Clock class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Reserved
-                  Time</span>
-                <span class="block text-xs font-bold text-slate-700"
-                  :title="reservationDetails.reserved_time || 'Not Set Yet'">
-                  {{ formatDateTime(reservationDetails.reserved_time) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Called Time -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-rose-500 rounded shrink-0 bg-rose-50/50 flex items-center justify-center w-6 h-6">
-                <PhoneCall class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Called Time</span>
-                <span class="block text-xs font-bold text-slate-700"
-                  :title="reservationDetails.called_time || 'Not Set Yet'">
-                  {{ formatDateTime(reservationDetails.called_time) }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Called By -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-teal-500 rounded shrink-0 bg-teal-50/50 flex items-center justify-center w-6 h-6">
-                <User class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Called By</span>
-                <template v-if="!isEditMode">
-                  <span class="block text-xs font-bold text-slate-700 truncate"
-                    :title="reservationDetails.called_by?.name || 'Not Set Yet'">
-                    {{ reservationDetails.called_by?.name ? (reservationDetails.called_by.name.split(" ")[0] + "_" +
-                      reservationDetails.called_by.fingerPrint) : "Not Set Yet" }}
-                  </span>
-                </template>
-                <template v-else>
-                  <multiselect
-                    v-model="selectedCalledBy"
-                    :options="employeeOptions"
-                    :searchable="true"
-                    :close-on-select="true"
-                    :show-labels="false"
-                    placeholder="Select Employee"
-                    label="displayName"
-                    track-by="id"
-                    class="sidebar-multiselect mt-0.5"
-                  />
-                </template>
-              </div>
-            </div>
-
-            <!-- Religion -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-pink-500 rounded shrink-0 bg-pink-50/50 flex items-center justify-center w-6 h-6">
-                <Heart class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Religion</span>
-                <span class="block text-xs font-bold text-slate-700 truncate"
-                  :title="student?.religion || studentAllData?.student?.religion || 'Not Set Yet'">
-                  {{ student?.religion || studentAllData?.student?.religion || "Not Set Yet" }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Nationality -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div class="p-1 text-sky-500 rounded shrink-0 bg-sky-50/50 flex items-center justify-center w-6 h-6">
-                <Globe class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Nationality</span>
-                <span class="block text-xs font-bold text-slate-700 truncate"
-                  :title="student?.nationality || studentAllData?.student?.nationality || 'Not Set Yet'">
-                  {{ student?.nationality || studentAllData?.student?.nationality || "Not Set Yet" }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Birth Date -->
-            <div
-              class="flex items-start gap-3.5 p-2.5 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
-              <div
-                class="p-1 text-violet-500 rounded shrink-0 bg-violet-50/50 flex items-center justify-center w-6 h-6">
-                <Calendar class="w-3.5 h-3.5" />
-              </div>
-              <div class="min-w-0 flex-1">
-                <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Birth Date</span>
-                <span class="block text-xs font-bold text-slate-700"
-                  :title="student?.birth_date || studentAllData?.student?.birth_date || 'Not Set Yet'">
-                  {{ formatDateTime(student?.birth_date || studentAllData?.student?.birth_date) }}
-                </span>
-              </div>
+            <div class="min-w-0 flex-1">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Major</span>
+              <template v-if="!isEditMode">
+                <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.major">{{ student?.major || "No Available" }}</span>
+              </template>
+              <template v-else>
+                <input v-model="editForm.major" type="text"
+                  class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-0.5" />
+              </template>
             </div>
           </div>
-        </transition>
+
+          <!-- Faculty -->
+          <div class="flex items-start gap-2.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div class="p-1 bg-rose-50 text-rose-600 rounded shrink-0">
+              <GraduationCap class="w-3.5 h-3.5" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Faculty</span>
+              <template v-if="!isEditMode">
+                <span class="block text-xs font-bold text-slate-700 truncate" :title="student?.faculity">{{ student?.faculity || "No Available" }}</span>
+              </template>
+              <template v-else>
+                <input v-model="editForm.faculity" type="text"
+                  class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-0.5" />
+              </template>
+            </div>
+          </div>
+
+          <!-- Career Type -->
+          <div v-if="isEditMode || student?.careerType" class="flex items-start gap-2.5 p-2 bg-slate-50/40 hover:bg-slate-50 border border-slate-100 rounded-xl transition">
+            <div class="p-1 bg-teal-50 text-teal-600 rounded shrink-0">
+              <Activity class="w-3.5 h-3.5" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">Career Type</span>
+              <template v-if="!isEditMode">
+                <span class="block text-xs font-bold text-slate-700 truncate">{{ student?.careerType || "Not Set Yet" }}</span>
+              </template>
+              <template v-else>
+                <input v-model="editForm.careerType" type="text"
+                  class="w-full text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 mt-0.5" />
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popover Save/Cancel Actions -->
+        <div v-if="isEditMode" class="flex justify-center items-center gap-2.5 pt-2 border-t border-slate-100 shrink-0">
+          <button @click="saveChanges" :disabled="!hasChanges || studentUpdateStore.loading"
+            class="flex-1 bg-indigo-400 hover:bg-indigo-500 text-white font-bold text-xs py-1.5 px-3 rounded-xl transition shadow-sm disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer flex items-center justify-center gap-1">
+            <span v-if="studentUpdateStore.loading"
+              class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            <span>Save</span>
+          </button>
+          <button @click="cancelEdit"
+            class="flex-1 bg-slate-200 hover:bg-slate-350 text-slate-700 font-bold text-xs py-1.5 px-3 rounded-xl transition active:scale-95 cursor-pointer text-center">
+            Cancel
+          </button>
+        </div>
       </div>
-    </div>
-  </aside>
+    </transition>
 
     <!-- CONFIRM QR EMAIL MODAL -->
     <div v-if="showConfirmModal"
@@ -612,7 +542,7 @@
         </h3>
         <p class="text-xs text-slate-500 mb-4 leading-normal">
           The QR code will be generated and sent via email to <strong class="text-slate-700">{{ student?.email
-            }}</strong>
+          }}</strong>
         </p>
         <div class="flex justify-center gap-3">
           <button @click="sendQrEmail"
@@ -647,6 +577,7 @@ import { useStudentUpdateStore } from "@/stores/studentUpdateStore";
 import { useAuthStore } from "@/stores/auth";
 import { useEmployeeStore } from "@/stores/employeesStore";
 import apiClient from "@/api/axiosInstance";
+import { useReservationStore } from "@/stores/reservations";
 
 import {
   Mail,
@@ -672,6 +603,8 @@ import {
   Globe,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
+  X,
 } from "lucide-vue-next";
 import { useStudentMessageStore } from "../../stores/srmStore/studentMessageStore";
 import notyf from "@/components/global/notyf";
@@ -699,7 +632,22 @@ const reservationDetails = computed(() => {
 // Edit mode states
 const isEditMode = ref(false);
 const isAcademicExpanded = ref(false);
-const isReservationExpanded = ref(false);
+const cardRef = ref(null);
+const popoverTop = ref(420);
+
+const toggleAcademic = (event) => {
+  if (isAcademicExpanded.value) {
+    isAcademicExpanded.value = false;
+  } else {
+    if (event && event.currentTarget) {
+      const rect = event.currentTarget.getBoundingClientRect();
+      popoverTop.value = Math.max(10, Math.min(window.innerHeight - 360, rect.top - 80));
+    } else {
+      popoverTop.value = 420;
+    }
+    isAcademicExpanded.value = true;
+  }
+};
 const editForm = ref({});
 const originalData = ref({});
 const phoneInput = ref("");
@@ -710,10 +658,14 @@ const studentUpdateStore = useStudentUpdateStore();
 const messageStore = useStudentMessageStore();
 const authStore = useAuthStore();
 const employeeStore = useEmployeeStore();
+const reservationStore = useReservationStore();
 
 onMounted(() => {
   if (employeeStore.employees.length === 0) {
     employeeStore.fetchEmployees();
+  }
+  if (reservationStore.branches.length === 0) {
+    reservationStore.fetchBranches();
   }
 });
 
@@ -751,8 +703,13 @@ const selectedCalledBy = computed({
 });
 
 watch(isEditMode, (newVal) => {
-  if (newVal && employeeStore.employees.length === 0) {
-    employeeStore.fetchEmployees();
+  if (newVal) {
+    if (employeeStore.employees.length === 0) {
+      employeeStore.fetchEmployees();
+    }
+    if (reservationStore.branches.length === 0) {
+      reservationStore.fetchBranches();
+    }
   }
 });
 
@@ -779,6 +736,9 @@ const hasChanges = computed(() => {
     "registered_by",
     "reserved_by",
     "called_by",
+    "religion",
+    "nationality",
+    "branch_id",
   ];
 
   for (const field of fieldsToCompare) {
@@ -811,8 +771,23 @@ const enterEditMode = () => {
   if (employeeStore.employees.length === 0) {
     employeeStore.fetchEmployees();
   }
+  if (reservationStore.branches.length === 0) {
+    reservationStore.fetchBranches();
+  }
 
   isEditMode.value = true;
+  isAcademicExpanded.value = true;
+
+  const rawBirthDate = student.value.birth_date || studentAllData.value?.student?.birth_date || "";
+  let birthDateVal = "";
+  if (rawBirthDate && rawBirthDate !== "Not Set Yet" && rawBirthDate !== "-") {
+    const d = new Date(rawBirthDate);
+    if (!isNaN(d.getTime())) {
+      birthDateVal = d.toISOString().split("T")[0];
+    } else {
+      birthDateVal = String(rawBirthDate).slice(0, 10);
+    }
+  }
 
   // Initialize edit form with current student data
   editForm.value = {
@@ -825,13 +800,16 @@ const enterEditMode = () => {
     faculity: student.value.faculity || "",
     ID_number: student.value.ID_number || "",
     marketing_code: studentAllData.value?.student?.marketing_code || "",
-    birth_date: student.value.birth_date || "",
+    birth_date: birthDateVal,
+    religion: student.value.religion || studentAllData.value?.student?.religion || "",
+    nationality: student.value.nationality || studentAllData.value?.student?.nationality || "",
     careerType: student.value.careerType || "",
     scholar_status: student.value.scholar_status || "",
     ppUrl: student.value.ppUrl || "",
     registered_by: reservationDetails.value?.registered_by?.id || "",
     reserved_by: reservationDetails.value?.reserved_by?.id || "",
     called_by: reservationDetails.value?.called_by?.id || "",
+    branch_id: reservationDetails.value?.branch?.id || "",
   };
 
   // Store original data for comparison
@@ -882,6 +860,8 @@ const getChangedFields = () => {
     "careerType",
     "scholar_status",
     "ppUrl",
+    "religion",
+    "nationality",
   ];
 
   for (const field of fieldsToCheck) {
@@ -926,10 +906,13 @@ const saveChanges = async () => {
     const editRes = editForm.value.reserved_by || "";
     const originalCall = originalData.value.called_by || "";
     const editCall = editForm.value.called_by || "";
+    const originalBranch = originalData.value.branch_id || "";
+    const editBranch = editForm.value.branch_id || "";
 
     const reservationChanged = (String(originalReg) !== String(editReg)) ||
       (String(originalRes) !== String(editRes)) ||
-      (String(originalCall) !== String(editCall));
+      (String(originalCall) !== String(editCall)) ||
+      (String(originalBranch) !== String(editBranch));
 
     if (Object.keys(changedFields).length === 0 && !reservationChanged) {
       notyf.info("No changes to save");
@@ -957,8 +940,9 @@ const saveChanges = async () => {
         reserved_by: editForm.value.reserved_by ? Number(editForm.value.reserved_by) : null,
         registered_by: editForm.value.registered_by ? Number(editForm.value.registered_by) : null,
         called_by: editForm.value.called_by ? Number(editForm.value.called_by) : null,
+        branch_id: editForm.value.branch_id ? Number(editForm.value.branch_id) : null,
       });
-      notyf.success("Reservation employees updated successfully");
+      notyf.success("Reservation details updated successfully");
     }
 
     // Refresh student data
@@ -1130,15 +1114,18 @@ const copyText = (text, fieldName) => {
   border-radius: 8px !important;
   border: 1px solid #cbd5e1 !important;
 }
+
 .sidebar-multiselect .multiselect__select {
   height: 30px !important;
 }
+
 .sidebar-multiselect .multiselect__single {
   font-size: 12px !important;
   font-weight: 600 !important;
   color: #334155 !important;
   margin-bottom: 4px !important;
 }
+
 .sidebar-multiselect .multiselect__placeholder {
   font-size: 12px !important;
   font-weight: 600 !important;
@@ -1146,10 +1133,12 @@ const copyText = (text, fieldName) => {
   margin-bottom: 4px !important;
   padding-top: 0px !important;
 }
+
 .sidebar-multiselect .multiselect__input {
   font-size: 12px !important;
   margin-bottom: 4px !important;
 }
+
 .sidebar-multiselect .multiselect__content-wrapper {
   font-size: 12px !important;
 }
@@ -1161,10 +1150,31 @@ const copyText = (text, fieldName) => {
   max-height: 600px;
   overflow: hidden;
 }
+
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   max-height: 0;
   opacity: 0;
   transform: translateY(-10px);
+}
+
+/* Fade Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Slide Right Transition */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-right-enter-from,
+.slide-right-leave-to {
+  transform: translateX(100%);
 }
 </style>
