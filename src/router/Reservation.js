@@ -32,6 +32,12 @@ export default {
         import("@/views/reservation/StudentScholarshipForm.vue"),
     },
     {
+      path: "scholarship-calculator",
+      name: "scholarship-calculator",
+      component: () =>
+        import("@/views/reservation/ScholarshipCalculator.vue"),
+    },
+    {
       path: "success",
       name: "reservation-success",
       component: () => import("@/views/reservation/ReservationSuccess.vue"),

@@ -112,6 +112,34 @@ export const useReservationStore = defineStore("reservationStore", () => {
     }
   };
 
+  const fetchScholarshipPriceSettings = async (scholarshipId, grade) => {
+    try {
+      const response = await apiClient.post("reservations/scholarship-price-settings", {
+        scholarship_id: scholarshipId,
+        grade: grade || null,
+      });
+      return response.data.data;
+    } catch (err) {
+      handleError(err);
+      console.error("Failed to fetch scholarship price settings:", err);
+      throw err;
+    }
+  };
+
+  const calculateScholarshipPlan = async (scholarshipId, priceSettingIds) => {
+    try {
+      const response = await apiClient.post("reservations/calculator", {
+        scholarship_id: scholarshipId,
+        price_setting_ids: priceSettingIds,
+      });
+      return response.data.data;
+    } catch (err) {
+      handleError(err);
+      console.error("Failed to calculate scholarship plan:", err);
+      throw err;
+    }
+  };
+
   return {
     reservations,
     branches,
@@ -125,5 +153,7 @@ export const useReservationStore = defineStore("reservationStore", () => {
     deleteReservation,
     getReservationById,
     calculateDeadlines,
+    fetchScholarshipPriceSettings,
+    calculateScholarshipPlan,
   };
 });

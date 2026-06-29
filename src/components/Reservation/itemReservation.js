@@ -1,4 +1,4 @@
-import { Calendar, ListTodo, GraduationCap } from "lucide-vue-next";
+import { Calendar, ListTodo, GraduationCap, Calculator } from "lucide-vue-next";
 
 export const itemReservation = [
   {
@@ -18,5 +18,10 @@ export const itemReservation = [
     icon: GraduationCap,
     route: "waiting-list-table",
     permission: "view-reservation",
+  },
+  {
+    name: "Scholarship Calculator",
+    icon: Calculator,
+    route: "scholarship-calculator",
   },
 ];
