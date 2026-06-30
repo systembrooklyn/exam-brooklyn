@@ -10,15 +10,19 @@ import {
   canGenerateSchedule,
   pickDefaultPaymentMethod,
   flattenPriceSettings,
+  enrichPriceSettingsFromRawResponse,
   getGradeSettingFromResponse,
+  getParentIds,
   gradeNamesMatch,
 } from "@/utils/scholarshipPlanResponse";
 import { useScholarshipPricing } from "@/composables/useScholarshipPricing";
+import { usePriceSettingsStore } from "@/stores/priceSettingsStore";
 import { Loader2 } from "lucide-vue-next";
 import notyf from "@/components/global/notyf";
 
 const reservationStore = useReservationStore();
 const scholarshipStore = useScholarshipStore();
+const priceSettingsStore = usePriceSettingsStore();
 
 const selectedScholarshipId = ref("");
 const selectedGrade = ref("");
@@ -58,6 +62,36 @@ const currentScholarshipObj = computed(() => {
 
 const basePrice = computed(() => currentScholarshipObj.value?.price || 0);
 
+const ensureSubPaymentMethodsForSelection = async (paymentMethodName) => {
+  if (!paymentMethodName || !priceSettings.value.length) return;
+
+  const paymentMethod = priceSettings.value.find(
+    (ps) =>
+      ps.type === "Payment Method" &&
+      (ps.name === paymentMethodName || gradeNamesMatch(ps.name, paymentMethodName))
+  );
+  if (!paymentMethod) return;
+
+  const hasSubPayment = priceSettings.value.some(
+    (ps) =>
+      ps.type === "Sub Payment Method" &&
+      getParentIds(ps).includes(paymentMethod.id)
+  );
+  if (hasSubPayment) return;
+
+  try {
+    const detail = await priceSettingsStore.fetchPriceSettingById(paymentMethod.id);
+    if (!detail?.children?.length) return;
+
+    priceSettings.value = enrichPriceSettingsFromRawResponse(
+      [{ ...paymentMethod, children: detail.children }],
+      priceSettings.value
+    );
+  } catch (err) {
+    console.error("Failed to load sub payment methods for payment method:", err);
+  }
+};
+
 const handleScholarshipOrGradeChange = async () => {
   if (!selectedScholarshipId.value) {
     priceSettings.value = [];
@@ -80,7 +114,10 @@ const handleScholarshipOrGradeChange = async () => {
       currentGrade
     );
 
-    const flattened = flattenPriceSettings(data);
+    const flattened = enrichPriceSettingsFromRawResponse(
+      data,
+      flattenPriceSettings(data)
+    );
     resolvedGradeSetting.value = getGradeSettingFromResponse(flattened);
     priceSettings.value = flattened;
 
@@ -99,6 +136,9 @@ const handleScholarshipOrGradeChange = async () => {
 
     await nextTick();
     syncDefaultSelections();
+    await ensureSubPaymentMethodsForSelection(
+      priceSettingsSelections.value["Payment Method"]
+    );
   } catch (err) {
     console.error("Failed to fetch price settings:", err);
     notyf.error("Failed to fetch scholarship price settings.");
@@ -106,6 +146,9 @@ const handleScholarshipOrGradeChange = async () => {
     loadingSettings.value = false;
     await nextTick();
     syncDefaultSelections();
+    await ensureSubPaymentMethodsForSelection(
+      priceSettingsSelections.value["Payment Method"]
+    );
     runCalculation();
   }
 };
@@ -173,7 +216,7 @@ watch(
   { immediate: true, deep: true }
 );
 
-const updatePriceSettingField = (type, value) => {
+const updatePriceSettingField = async (type, value) => {
   priceSettingsSelections.value[type] = value;
 
   if (type === "Grade") {
@@ -189,7 +232,19 @@ const updatePriceSettingField = (type, value) => {
       }
     }
   }
+
+  if (type === "Payment Method" && value) {
+    await ensureSubPaymentMethodsForSelection(value);
+  }
 };
+
+watch(
+  () => priceSettingsSelections.value["Payment Method"],
+  async (paymentMethodName) => {
+    if (!paymentMethodName || loadingSettings.value) return;
+    await ensureSubPaymentMethodsForSelection(paymentMethodName);
+  }
+);
 
 let calcTimeout = null;
 const runCalculation = () => {

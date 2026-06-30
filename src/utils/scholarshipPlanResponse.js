@@ -250,7 +250,7 @@ function buildActivePriceSettingsFromSelections(allPs, selectedSettings) {
     if (ps.is_active === false) return;
     if (USER_SELECTABLE_TYPES.has(ps.type)) return;
 
-    const pids = ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
+    const pids = getParentIds(ps);
     if (pids.length === 0) return;
 
     const allParentsSatisfied = pids.every((pid) => {
@@ -266,9 +266,68 @@ function buildActivePriceSettingsFromSelections(allPs, selectedSettings) {
   return list;
 }
 
-/** Always include Grade from API response (e.g. id 13 "Very Good") in calculator payload */
+export function getParentIds(ps) {
+  if (!ps) return [];
+  return ps.parent_ids || ps.parent_id || (ps.parents ? ps.parents.map((p) => p.id) : []);
+}
+
+/** Sub Payment Method children for the currently selected Payment Method */
+export function resolveSubPaymentMethods(allPs, selectedSettings) {
+  const paymentMethodName = selectedSettings?.["Payment Method"];
+  if (!paymentMethodName || !allPs?.length) return [];
+
+  const paymentMethod = allPs.find(
+    (ps) =>
+      ps.type === "Payment Method" &&
+      ps.is_active !== false &&
+      (ps.name === paymentMethodName || gradeNamesMatch(ps.name, paymentMethodName))
+  );
+  if (!paymentMethod) return [];
+
+  return allPs.filter((ps) => {
+    if (ps.type !== "Sub Payment Method" || ps.is_active === false) return false;
+    return getParentIds(ps).includes(paymentMethod.id);
+  });
+}
+
+/** Merge Sub Payment Method entries from raw API (children under Payment Method) */
+export function enrichPriceSettingsFromRawResponse(rawData, flattened) {
+  if (!Array.isArray(rawData)) return flattened || [];
+
+  const result = [...(flattened || [])];
+  const addIfMissing = (ps, parentId = null) => {
+    if (!ps?.id || result.some((x) => x.id === ps.id)) return;
+    const entry = { ...ps };
+    const existingParentIds = getParentIds(entry);
+    if (parentId && !existingParentIds.includes(parentId)) {
+      entry.parent_ids = [...existingParentIds, parentId];
+    } else if (parentId && existingParentIds.length === 0) {
+      entry.parent_ids = [parentId];
+    }
+    result.push(entry);
+  };
+
+  rawData.forEach((ps) => {
+    if (ps.type === "Payment Method" && ps.children?.length) {
+      ps.children
+        .filter((c) => c.type === "Sub Payment Method")
+        .forEach((child) => addIfMissing(child, ps.id));
+    }
+    if (ps.type === "Sub Payment Method") {
+      addIfMissing(ps);
+    }
+  });
+
+  return result;
+}
+
+/** Always include Grade + Sub Payment Method from API/selections in calculator payload */
 export function buildActivePriceSettings(allPs, selectedSettings, gradeFromApi = null) {
   const list = buildActivePriceSettingsFromSelections(allPs, selectedSettings);
+
+  resolveSubPaymentMethods(allPs, selectedSettings).forEach((sp) => {
+    if (!list.some((x) => x.id === sp.id)) list.push(sp);
+  });
 
   if (gradeFromApi && !list.some((x) => x.id === gradeFromApi.id)) {
     list.push(gradeFromApi);
