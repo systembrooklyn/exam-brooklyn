@@ -153,6 +153,10 @@ const handleScholarshipOrGradeChange = async () => {
   }
 };
 
+watch(selectedScholarshipId, () => {
+  selectedGrade.value = "";
+});
+
 watch([selectedScholarshipId, selectedGrade], () => {
   handleScholarshipOrGradeChange();
 });

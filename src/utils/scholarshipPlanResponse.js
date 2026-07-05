@@ -296,7 +296,19 @@ export function enrichPriceSettingsFromRawResponse(rawData, flattened) {
 
   const result = [...(flattened || [])];
   const addIfMissing = (ps, parentId = null) => {
-    if (!ps?.id || result.some((x) => x.id === ps.id)) return;
+    if (!ps?.id) return;
+    const existing = result.find((x) => x.id === ps.id);
+    if (existing) {
+      if (parentId) {
+        if (!existing.parent_ids) {
+          existing.parent_ids = [...getParentIds(existing)];
+        }
+        if (!existing.parent_ids.includes(parentId)) {
+          existing.parent_ids.push(parentId);
+        }
+      }
+      return;
+    }
     const entry = { ...ps };
     const existingParentIds = getParentIds(entry);
     if (parentId && !existingParentIds.includes(parentId)) {
@@ -419,9 +431,27 @@ export function mergeInstallmentsIntoModules(modules, schedule) {
 
 export function flattenPriceSettings(data) {
   const flattened = [];
-  const addSetting = (ps) => {
-    if (!ps?.id || flattened.some((x) => x.id === ps.id)) return;
-    flattened.push(ps);
+  const addSetting = (ps, parentId = null) => {
+    if (!ps?.id) return;
+    const existing = flattened.find((x) => x.id === ps.id);
+    if (existing) {
+      if (parentId) {
+        if (!existing.parent_ids) {
+          existing.parent_ids = [...getParentIds(existing)];
+        }
+        if (!existing.parent_ids.includes(parentId)) {
+          existing.parent_ids.push(parentId);
+        }
+      }
+      return;
+    }
+    const entry = { ...ps };
+    if (parentId) {
+      entry.parent_ids = [parentId];
+    } else {
+      entry.parent_ids = entry.parent_ids || [];
+    }
+    flattened.push(entry);
   };
 
   if (!Array.isArray(data)) return flattened;
@@ -433,8 +463,7 @@ export function flattenPriceSettings(data) {
     }
     if (ps.children && Array.isArray(ps.children)) {
       ps.children.forEach((child) => {
-        child.parent_ids = [ps.id];
-        addSetting(child);
+        addSetting(child, ps.id);
         if (child.parents && Array.isArray(child.parents)) {
           child.parents.forEach((parent) => addSetting(parent));
         }
