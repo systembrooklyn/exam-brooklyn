@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "../api/axiosInstance";
-import { RESERVATIONS, BRANCHES } from "../api/Api";
+import { RESERVATIONS, BRANCHES, RESERVATION_SUBMIT } from "../api/Api";
 import notyf from "../components/global/notyf";
 import { handleError } from "./handleError";
 
@@ -140,6 +140,18 @@ export const useReservationStore = defineStore("reservationStore", () => {
     }
   };
 
+  const submitReservation = async (id, payload) => {
+    try {
+      const response = await apiClient.post(RESERVATION_SUBMIT(id), payload);
+      notyf.success("Reservation submitted successfully");
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      console.error("Failed to submit reservation:", err);
+      throw err;
+    }
+  };
+
   return {
     reservations,
     branches,
@@ -155,5 +167,6 @@ export const useReservationStore = defineStore("reservationStore", () => {
     calculateDeadlines,
     fetchScholarshipPriceSettings,
     calculateScholarshipPlan,
+    submitReservation,
   };
 });

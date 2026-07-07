@@ -6,6 +6,7 @@ import StudentInfoPanel from "@/components/Reservation/StudentInfoPanel.vue";
 import ModulesTable from "@/components/Reservation/ModulesTable.vue";
 import FinalCasePanel from "@/components/Reservation/FinalCasePanel.vue";
 import ActionButtons from "@/components/Reservation/ActionButtons.vue";
+import SubmitConfirmPopup from "@/components/Reservation/SubmitConfirmPopup.vue";
 import { useReservationStore } from "@/stores/reservations";
 import { useScholarshipPricing } from "@/composables/useScholarshipPricing";
 import {
@@ -23,6 +24,9 @@ const router = useRouter();
 const reservationStore = useReservationStore();
 
 const showFinalCase = ref(false);
+const showConfirmPopup = ref(false);
+const showSuccessModal = ref(false);
+const submittingFinal = ref(false);
 const loadingDetails = ref(false);
 const savingStudent = ref(false);
 const reservationDetails = ref(null);
@@ -272,55 +276,53 @@ const handleSaveStudent = async (updatedStudentFields) => {
   }
 };
 
-const submitForm = async () => {
+// Build the submit payload from reactive module and installment data
+const buildSubmitPayload = (status) => {
+  // Use the raw study_plan from the API calculation result (has group_id + starts_at).
+  // Fall back to reservationDetails.study_plan if calculation hasn't run yet or returned empty.
+  const rawStudyPlan =
+    apiCalculationResult.value?.study_plan?.length > 0
+      ? apiCalculationResult.value.study_plan
+      : reservationDetails.value?.study_plan || [];
+
+  const study_plan = rawStudyPlan.map((item) => ({
+    group_id: item.group_id,
+    starts_at: item.starts_at || "",
+  }));
+
+  const schedule = apiCalculationResult.value?.schedule || [];
+  const installments = { schedule };
+
+  return { status, study_plan, installments };
+};
+
+// Called when employee clicks SUBMIT in the FinalCase modal
+const submitForm = () => {
   if (!reservationDetails.value?.id) {
     notyf.error("No active reservation details found.");
     return;
   }
 
-  const statusMap = {
-    "RESERVATION": "reserve",
-    "MANUAL": "manual",
-    "MANUAL EXAM": "manual exam",
-    "Extend": "extend",
-    "CANCELLATION": "cancel"
-  };
+  // Close FinalCase modal and open the review/confirm popup
+  showFinalCase.value = false;
+  showConfirmPopup.value = true;
+};
 
-  const statusKey = statusMap[form.value.finalCase] || form.value.finalCase?.toLowerCase() || "reserve";
-  const scholarshipId = reservationDetails.value?.student?.scholarship?.id;
-  const priceSettingIds = activePriceSettings.value.map(ps => ps.id);
-
-  const payload = {
-    name: reservationDetails.value?.student?.name,
-    email: reservationDetails.value?.student?.email,
-    phones: reservationDetails.value?.student?.phones,
-    ID_number: reservationDetails.value?.student?.ID_number,
-    grade: form.value.grade,
-    birth_date: reservationDetails.value?.student?.birth_date,
-    company: reservationDetails.value?.student?.company,
-    marketing_code: reservationDetails.value?.student?.marketing_code,
-    scholarship: scholarshipId,
-    status: statusKey,
-    called_by: reservationDetails.value?.called_by?.id || reservationDetails.value?.called_by,
-    called_time: reservationDetails.value?.called_time,
-    careerType: reservationDetails.value?.student?.careerType,
-    faculity: reservationDetails.value?.student?.faculity || reservationDetails.value?.student?.faculty,
-    major: reservationDetails.value?.student?.major || reservationDetails.value?.student?.majorx,
-    final_amount: parseFloat(form.value.finalAmount) || 0,
-    finalAmount: parseFloat(form.value.finalAmount) || 0,
-    notes: form.value.notes,
-    price_setting_ids: priceSettingIds,
-    price_settings: priceSettingIds,
-  };
-
+// Called when employee picks Reserve / Cancel / Ask in the confirmation popup
+const handleFinalSubmit = async (status) => {
+  if (!reservationDetails.value?.id) return;
   try {
-    loadingDetails.value = true;
-    await reservationStore.updateReservation(reservationDetails.value.id, payload);
-    router.push({ name: "waiting-list" });
+    submittingFinal.value = true;
+    await reservationStore.submitReservation(
+      reservationDetails.value.id,
+      buildSubmitPayload(status)
+    );
+    showConfirmPopup.value = false;
+    showSuccessModal.value = true;
   } catch (err) {
-    console.error("Failed to submit waitlist handling:", err);
+    console.error("Failed to finalize reservation:", err);
   } finally {
-    loadingDetails.value = false;
+    submittingFinal.value = false;
   }
 };
 </script>
@@ -553,4 +555,43 @@ const submitForm = async () => {
     </div>
   </div>
   <!-- </div> -->
+
+  <!-- Confirmation / Review Popup -->
+  <SubmitConfirmPopup
+    v-if="showConfirmPopup"
+    :reservation-id="reservationDetails?.id"
+    :student-info="reservationDetails?.student"
+    :study-plan="(apiCalculationResult?.study_plan?.length ? apiCalculationResult.study_plan : (reservationDetails?.study_plan || [])).map(m => ({ group_id: m.group_id, starts_at: m.starts_at || '', name: m.course_name || '' }))"
+    :installments="{ schedule: apiCalculationResult?.schedule || [] }"
+    :final-case="form.finalCase"
+    :final-amount="form.finalAmount"
+    :notes="form.notes"
+    :is-submitting="submittingFinal"
+    @close="showConfirmPopup = false"
+    @submitted="handleFinalSubmit"
+  />
+
+  <!-- Success Congratulations Modal -->
+  <div v-if="showSuccessModal" class="fixed inset-0 z-[70] flex items-center justify-center p-4" style="background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(6px)">
+    <div class="relative w-full max-w-md bg-white rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95 duration-300">
+      <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mb-6 shadow-inner">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <h2 class="text-2xl font-black text-slate-800 mb-2">Reservation Submitted!</h2>
+      <p class="text-slate-500 mb-8 leading-relaxed">
+        Great job! The reservation has been successfully processed and updated in the system.
+      </p>
+      <button 
+        @click="router.push({ name: 'waiting-list' })"
+        class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        Home
+      </button>
+    </div>
+  </div>
 </template>

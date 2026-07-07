@@ -13,9 +13,9 @@ const updateField = (key, value) => {
   <div class="card p-6 space-y-4">
     <h2 class="text-xl font-bold text-indigo-600 border-b pb-2">Final Case Details</h2>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+    <!-- <div class="grid grid-cols-1 md:grid-cols-2 gap-5"> -->
       <!-- Final Case -->
-      <div>
+      <!-- <div>
         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Final Case</label>
         <div class="relative">
           <select
@@ -31,10 +31,10 @@ const updateField = (key, value) => {
             <option>CANCELLATION</option>
           </select>
         </div>
-      </div>
+      </div> -->
 
       <!-- Amount -->
-      <div>
+      <!-- <div>
         <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1">Amount</label>
         <input 
           class="input-field"
@@ -43,8 +43,8 @@ const updateField = (key, value) => {
           @input="updateField('finalAmount', $event.target.value)" 
           placeholder="Enter Amount"
         />
-      </div>
-    </div>
+      </div> -->
+    <!-- </div> -->
 
     <!-- Notes -->
     <div>

@@ -123,3 +123,6 @@ export const PAYROLL_EMPLOYEE_ADJUSTMENT_BY_ID = (id) =>
 // Price Settings
 export const PRICE_SETTINGS = "price-settings";
 export const PRICE_SETTINGS_BY_ID = (id) => `price-settings/${id}`;
+
+// Reservation Actions
+export const RESERVATION_SUBMIT = (id) => `reservations/${id}/submit`;
