@@ -342,6 +342,75 @@
           </template>
         </div>
 
+        <!-- Other Deductions (employee-deductions endpoint) -->
+        <div
+          v-if="selectedPayroll.other_deductions?.items?.length"
+          class="space-y-3"
+        >
+          <div class="bg-slate-100 text-slate-700 font-bold text-sm py-2 px-4 rounded-lg flex items-center justify-between">
+            <span>Other Deductions</span>
+            <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 tabular-nums">
+              {{ formatMoney(selectedPayroll.other_deductions.total) }} EGP
+            </span>
+          </div>
+
+          <div class="overflow-x-auto border border-gray-200 rounded-xl">
+            <table class="w-full text-sm min-w-[600px]">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">#</th>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Deduction Type</th>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Type</th>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Amount (EGP)</th>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap">Approved By</th>
+                  <th class="px-4 py-3 text-left font-semibold text-gray-600">Notes</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr
+                  v-for="(ded, index) in selectedPayroll.other_deductions.items"
+                  :key="ded.id"
+                  class="hover:bg-gray-50/60 transition-colors"
+                >
+                  <td class="px-4 py-3 text-gray-400 text-xs tabular-nums align-top"># {{ index + 1 }}</td>
+                  <td class="px-4 py-3 align-top">
+                    <span class="font-medium text-gray-800">{{ ded.deduction_type?.name ?? '-' }}</span>
+                  </td>
+                  <td class="px-4 py-3 align-top">
+                    <span
+                      class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                      :class="{
+                        'bg-blue-100 text-blue-700': ded.deduction_type?.type === 'percentage',
+                        'bg-emerald-100 text-emerald-700': ded.deduction_type?.type === 'fixed',
+                        'bg-purple-100 text-purple-700': ded.deduction_type?.type === 'static',
+                        'bg-amber-100 text-amber-700': ded.deduction_type?.type === 'daily_rate_fraction',
+                        'bg-gray-100 text-gray-600': !ded.deduction_type?.type,
+                      }"
+                    >
+                      {{ ded.deduction_type?.type ?? '-' }}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3 text-red-700 font-semibold align-top whitespace-nowrap tabular-nums">
+                    {{ formatMoney(ded.amount) }}
+                  </td>
+                  <td class="px-4 py-3 text-gray-600 align-top whitespace-nowrap">
+                    {{ ded.approved_by?.name ?? '-' }}
+                  </td>
+                  <td class="px-4 py-3 text-gray-500 align-top">{{ ded.notes || '-' }}</td>
+                </tr>
+                <!-- Total row -->
+                <tr class="bg-red-50/60 border-t-2 border-red-200">
+                  <td colspan="3" class="px-4 py-3 text-right text-xs font-bold text-red-600 uppercase tracking-wide">Total</td>
+                  <td class="px-4 py-3 text-red-700 font-bold tabular-nums">
+                    {{ formatMoney(selectedPayroll.other_deductions.total) }}
+                  </td>
+                  <td colspan="2" />
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Notes -->
         <div v-if="selectedPayroll.notes" class="bg-blue-50 p-3 rounded-xl border border-blue-100">
           <p class="text-[10px] uppercase font-bold text-blue-400 mb-1">Notes</p>
