@@ -75,4 +75,10 @@ export const HR_PERMISSION = {
   CREATE_DEDUCTION_TYPE: "create-deduction-type",
   UPDATE_DEDUCTION_TYPE: "update-deduction-type",
   DELETE_DEDUCTION_TYPE: "delete-deduction-type",
+
+  // Employee Deductions
+  VIEW_EMPLOYEE_DEDUCTION: "view-employee-deduction",
+  CREATE_EMPLOYEE_DEDUCTION: "create-employee-deduction",
+  UPDATE_EMPLOYEE_DEDUCTION: "update-employee-deduction",
+  DELETE_EMPLOYEE_DEDUCTION: "delete-employee-deduction",
 };

@@ -168,5 +168,11 @@ export default {
       meta: { requiresPermission: HR_PERMISSION.VIEW_DEDUCTION_TYPE },
       component: () => import("@/views/hr/DeductionTypes.vue"),
     },
+    {
+      path: "employee-deductions",
+      name: "hr-employee-deductions",
+      meta: { requiresPermission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION },
+      component: () => import("@/views/hr/EmployeeDeductions.vue"),
+    },
   ],
 };

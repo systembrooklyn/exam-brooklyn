@@ -13,6 +13,7 @@ import {
   CalendarClock,
   Link,
   Percent,
+  UserMinus,
 } from "lucide-vue-next";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
@@ -154,6 +155,12 @@ export function buildHrSidebarItems(
             icon: Percent,
             route: "hr-deduction-types",
             permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
+          },
+          {
+            name: "Employee Deductions",
+            icon: UserMinus,
+            route: "hr-employee-deductions",
+            permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
           },
         ]
       : []),

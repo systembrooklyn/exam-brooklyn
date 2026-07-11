@@ -124,6 +124,10 @@ export const PAYROLL_DEDUCTION_TYPES = "payroll-system/deduction-types";
 export const PAYROLL_DEDUCTION_TYPE_BY_ID = (id) =>
   `payroll-system/deduction-types/${id}`;
 
+export const PAYROLL_EMPLOYEE_DEDUCTIONS = "payroll-system/employee-deductions";
+export const PAYROLL_EMPLOYEE_DEDUCTION_BY_ID = (id) =>
+  `payroll-system/employee-deductions/${id}`;
+
 // Price Settings
 export const PRICE_SETTINGS = "price-settings";
 export const PRICE_SETTINGS_BY_ID = (id) => `price-settings/${id}`;
