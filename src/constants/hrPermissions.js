@@ -71,14 +71,14 @@ export const HR_PERMISSION = {
   LINK_CONTRACT_TO_HOLIDAY: "link-contract-to-holiday",
 
   // Deduction Types
-  VIEW_DEDUCTION_TYPE: "view-deduction-type",
-  CREATE_DEDUCTION_TYPE: "create-deduction-type",
-  UPDATE_DEDUCTION_TYPE: "update-deduction-type",
-  DELETE_DEDUCTION_TYPE: "delete-deduction-type",
+  VIEW_DEDUCTION_TYPE: "view-deduction-types",
+  CREATE_DEDUCTION_TYPE: "create-deduction-types",
+  UPDATE_DEDUCTION_TYPE: "edit-deduction-types",
+  DELETE_DEDUCTION_TYPE: "delete-deduction-types",
 
   // Employee Deductions
-  VIEW_EMPLOYEE_DEDUCTION: "view-employee-deduction",
-  CREATE_EMPLOYEE_DEDUCTION: "create-employee-deduction",
-  UPDATE_EMPLOYEE_DEDUCTION: "update-employee-deduction",
-  DELETE_EMPLOYEE_DEDUCTION: "delete-employee-deduction",
+  VIEW_EMPLOYEE_DEDUCTION: "view-employee-deductions",
+  CREATE_EMPLOYEE_DEDUCTION: "create-employee-deductions",
+  UPDATE_EMPLOYEE_DEDUCTION: "edit-employee-deductions",
+  DELETE_EMPLOYEE_DEDUCTION: "delete-employee-deductions",
 };

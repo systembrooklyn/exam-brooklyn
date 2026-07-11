@@ -14,6 +14,7 @@ import {
   Link,
   Percent,
   UserMinus,
+  Settings,
 } from "lucide-vue-next";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
@@ -35,46 +36,33 @@ export function buildHrSidebarItems(
       route: "hr-home",
       permission: HR_PERMISSION.VIEW_CONTRACT,
     },
-    {
-      name: "Departments",
-      icon: Building,
-      route: "hr-departments",
-      permission: HR_PERMISSION.VIEW_DEPARTMENT,
-    },
-    {
-      name: "Job Titles",
-      icon: Briefcase,
-      route: "hr-job-titles",
-      permission: HR_PERMISSION.VIEW_JOB_TITLE,
-    },
-    {
-      name: "Shifts",
-      icon: Clock,
-      route: "hr-shifts",
-      permission: HR_PERMISSION.VIEW_SHIFT,
-    },
-    {
-      name: "Official Holidays",
-      icon: Calendar,
-      route: "hr-holidays",
-      permission: HR_PERMISSION.VIEW_OFFICIAL_HOLIDAYS,
-    },
   ];
 
+  // Core Workforce
+  if (canManagePayrollAdminPages) {
+    items.push({
+      name: "Employees",
+      icon: Users,
+      route: "hr-employees",
+      permission: HR_PERMISSION.VIEW_PAYROLL,
+    });
+  }
+
+  items.push({
+    name: "Contracts",
+    icon: FileText,
+    route: "hr-contracts",
+    permission: HR_PERMISSION.VIEW_CONTRACT,
+  });
+
+  // Attendance
   if (!isAdminUser) {
     items.push({
       name: "My attendance",
       icon: CalendarClock,
       route: "hr-my-attendance",
     });
-    items.push({
-      name: "My payroll",
-      icon: Banknote,
-      route: "hr-my-payroll",
-    });
-  }
-
-  if (canManageFullAttendance) {
+  } else if (canManageFullAttendance) {
     items.push({
       name: "Attendance",
       icon: ClipboardList,
@@ -83,88 +71,102 @@ export function buildHrSidebarItems(
     });
   }
 
-  items.push(
-    {
-      name: "Requests",
-      icon: GitPullRequest,
-      route: "hr-requests",
-      permissions: [
-        HR_PERMISSION.VIEW_EMPLOYEE_REQUEST,
-        HR_PERMISSION.VIEW_PENDING_REQUESTS,
-        HR_PERMISSION.CREATE_EMPLOYEE_REQUEST,
-        HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS,
-      ],
-    },
-    ...(canManagePayrollAdminPages
-      ? [
-          {
-            name: "Employees",
-            icon: Users,
-            route: "hr-employees",
-            permission: HR_PERMISSION.VIEW_PAYROLL,
-          },
-        ]
-      : []),
-    {
-      name: "Contracts",
-      icon: FileText,
-      route: "hr-contracts",
-      permission: HR_PERMISSION.VIEW_CONTRACT,
-    },
-    // {
-    //   name: "Employee Links",
-    //   icon: Link,
-    //   route: "hr-links",
-    //   permissions: [
-    //     HR_PERMISSION.ASSIGN_RELATION_EMPLOYEE_JOB_DEPARTMENT,
-    //     HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT,
-    //   ],
-    // },
-    {
-      name: "Vacations",
-      icon: Palmtree,
+  // Operations/Requests & Vacations
+  items.push({
+    name: "Requests",
+    icon: GitPullRequest,
+    route: "hr-requests",
+    permissions: [
+      HR_PERMISSION.VIEW_EMPLOYEE_REQUEST,
+      HR_PERMISSION.VIEW_PENDING_REQUESTS,
+      HR_PERMISSION.CREATE_EMPLOYEE_REQUEST,
+      HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS,
+    ],
+  });
+
+  items.push({
+    name: "Vacations",
+    icon: Palmtree,
+    children: [
+      {
+        name: "Vacations Details",
+        route: "hr-vacation-balances",
+        permission: HR_PERMISSION.VIEW_VACATION_BALANCE,
+      },
+      {
+        name: "Vacation Balances",
+        route: "hr-my-vacations",
+        permission: HR_PERMISSION.VIEW_VACATION_BALANCE,
+      },
+    ],
+  });
+
+  // Employee Personal Payroll
+  if (!isAdminUser) {
+    items.push({
+      name: "My payroll",
+      icon: Banknote,
+      route: "hr-my-payroll",
+    });
+  }
+
+  // Admin Payroll Management
+  if (canManagePayrollAdminPages) {
+    items.push({
+      name: "Payroll",
+      icon: Banknote,
       children: [
         {
-          name: "Vacations Details",
-          route: "hr-vacation-balances",
-          permission: HR_PERMISSION.VIEW_VACATION_BALANCE,
+          name: "Payrolls",
+          route: "hr-payrolls",
+          permission: HR_PERMISSION.VIEW_PAYROLL,
         },
         {
-          name: "Vacation Balances",
-          route: "hr-my-vacations",
-          permission: HR_PERMISSION.VIEW_VACATION_BALANCE,
+          name: "Adjustments",
+          route: "hr-employee-adjustments",
+          permission: HR_PERMISSION.VIEW_PAYROLL,
+        },
+        {
+          name: "Deduction Types",
+          route: "hr-deduction-types",
+          permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
+        },
+        {
+          name: "Employee Deductions",
+          route: "hr-employee-deductions",
+          permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
         },
       ],
-    },
-    ...(canManagePayrollAdminPages
-      ? [
-          {
-            name: "Adjustments",
-            icon: Banknote,
-            route: "hr-employee-adjustments",
-            permission: HR_PERMISSION.VIEW_PAYROLL,
-          },
-          {
-            name: "Payrolls",
-            icon: Banknote,
-            route: "hr-payrolls",
-            permission: HR_PERMISSION.VIEW_PAYROLL,
-          },
-          {
-            name: "Deduction Types",
-            icon: Percent,
-            route: "hr-deduction-types",
-            permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
-          },
-          {
-            name: "Employee Deductions",
-            icon: UserMinus,
-            route: "hr-employee-deductions",
-            permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
-          },
-        ]
-      : []),
-  );
+    });
+  }
+
+  // System/Org Configuration
+  items.push({
+    name: "Organization",
+    icon: Settings,
+    children: [
+      {
+        name: "Departments",
+        route: "hr-departments",
+        permission: HR_PERMISSION.VIEW_DEPARTMENT,
+      },
+      {
+        name: "Job Titles",
+        route: "hr-job-titles",
+        permission: HR_PERMISSION.VIEW_JOB_TITLE,
+      },
+      {
+        name: "Shifts",
+        route: "hr-shifts",
+        permission: HR_PERMISSION.VIEW_SHIFT,
+      },
+      {
+        name: "Official Holidays",
+        route: "hr-holidays",
+        permission: HR_PERMISSION.VIEW_OFFICIAL_HOLIDAYS,
+      },
+    ],
+  });
 
   return items;
 }
