@@ -39,14 +39,12 @@ export function buildHrSidebarItems(
   ];
 
   // Core Workforce
-  if (canManagePayrollAdminPages) {
-    items.push({
-      name: "Employees",
-      icon: Users,
-      route: "hr-employees",
-      permission: HR_PERMISSION.VIEW_PAYROLL,
-    });
-  }
+  items.push({
+    name: "Employees",
+    icon: Users,
+    route: "hr-employees",
+    permission: HR_PERMISSION.VIEW_PAYROLL,
+  });
 
   items.push({
     name: "Contracts",
@@ -111,34 +109,32 @@ export function buildHrSidebarItems(
   }
 
   // Admin Payroll Management
-  if (canManagePayrollAdminPages) {
-    items.push({
-      name: "Payroll",
-      icon: Banknote,
-      children: [
-        {
-          name: "Payrolls",
-          route: "hr-payrolls",
-          permission: HR_PERMISSION.VIEW_PAYROLL,
-        },
-        {
-          name: "Adjustments",
-          route: "hr-employee-adjustments",
-          permission: HR_PERMISSION.VIEW_PAYROLL,
-        },
-        {
-          name: "Deduction Types",
-          route: "hr-deduction-types",
-          permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
-        },
-        {
-          name: "Employee Deductions",
-          route: "hr-employee-deductions",
-          permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
-        },
-      ],
-    });
-  }
+  items.push({
+    name: "Payroll",
+    icon: Banknote,
+    children: [
+      {
+        name: "Payrolls",
+        route: "hr-payrolls",
+        permission: HR_PERMISSION.VIEW_PAYROLL,
+      },
+      {
+        name: "Adjustments",
+        route: "hr-employee-adjustments",
+        permission: HR_PERMISSION.VIEW_PAYROLL,
+      },
+      {
+        name: "Deduction Types",
+        route: "hr-deduction-types",
+        permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
+      },
+      {
+        name: "Employee Deductions",
+        route: "hr-employee-deductions",
+        permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
+      },
+    ],
+  });
 
   // System/Org Configuration
   items.push({

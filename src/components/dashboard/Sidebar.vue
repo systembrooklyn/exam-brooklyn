@@ -1,7 +1,7 @@
 <template>
   <transition name="slide">
     <aside
-      class="fixed md:static min-h-screen bg-white shadow-lg z-[60] transition-all duration-300 ease-in-out flex flex-col overflow-x-hidden flex-shrink-0"
+      class="fixed md:static min-h-screen bg-white shadow-lg z-40 transition-all duration-300 ease-in-out flex flex-col overflow-x-hidden flex-shrink-0"
       :class="isSidebarOpen ? 'w-64' : 'w-0 md:w-20 overflow-hidden'">
       <X @click="isSidebarOpen = false"
         class="cursor-pointer md:hidden absolute top-4 right-4 w-4 h-4 hover:text-gray-400 z-10" />

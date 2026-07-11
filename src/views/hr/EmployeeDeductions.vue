@@ -105,6 +105,7 @@
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
             title="Edit"
             @click="openEditModal(item)"
+            v-if="canEdit"
           >
             <LucidePencil class="w-5 h-5" />
           </button>
@@ -113,6 +114,7 @@
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
             title="Delete"
             @click="confirmDelete(item)"
+            v-if="canDelete"
           >
             <LucideTrash2 class="w-5 h-5" />
           </button>
@@ -254,11 +256,13 @@ const deductionTypesStore = useHrDeductionTypesStore();
 const store = useHrEmployeeDeductionsStore();
 
 const canCreate = computed(() => authStore.can(HR_PERMISSION.CREATE_EMPLOYEE_DEDUCTION));
-const canMutate = computed(
-  () =>
-    authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_DEDUCTION) ||
-    authStore.can(HR_PERMISSION.DELETE_EMPLOYEE_DEDUCTION),
-);
+
+const canEdit = computed(() => authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE_DEDUCTION));
+const canDelete = computed(() => authStore.can(HR_PERMISSION.DELETE_EMPLOYEE_DEDUCTION));
+
+const canMutate = computed(() => canEdit.value || canDelete.value);
+
+
 
 const headers = [
   { label: "Employee", key: "employee" },
@@ -270,7 +274,14 @@ const headers = [
 ];
 
 // ── Filters ──────────────────────────────────────────────────────────────────
-const filters = ref({ employee_id: "", payroll_month: "" });
+const getCurrentMonth = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+};
+
+const filters = ref({ employee_id: "", payroll_month: getCurrentMonth() });
 
 const normalizeMonth = (raw) => String(raw || "").slice(0, 7);
 
@@ -314,7 +325,7 @@ const editingId = ref(null);
 const emptyForm = () => ({
   employee_id: "",
   deduction_type_id: "",
-  payroll_month: "",
+  payroll_month: getCurrentMonth(),
   amount: null,
   notes: "",
   approved_by: "",

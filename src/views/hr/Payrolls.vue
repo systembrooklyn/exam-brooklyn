@@ -84,15 +84,17 @@
           </button>
         </div>
 
-        <!-- <div v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL) " class="rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-center min-w-[180px] shrink-0">
-          <p class="text-[10px] uppercase font-bold text-indigo-600 tracking-wide">Total Net Salary</p>
-          <p class="text-2xl font-bold text-indigo-900 tabular-nums leading-tight">
-            {{ formatMoney(filteredNetSalaryTotal) }}
-          </p>
-          <p class="text-[11px] text-indigo-500 mt-0.5">
-            {{ filteredActionablePayrolls.length }} row{{ filteredActionablePayrolls.length === 1 ? '' : 's' }} shown
-          </p>
-        </div> -->
+        
+      </div>
+      <div v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL)"
+        class="rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 py-2.5 flex items-center justify-between gap-6 shrink-0 shadow-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Net Salary:</span>
+          <span class="text-xl font-extrabold text-indigo-900 tabular-nums">{{ formatMoney(filteredNetSalaryTotal) }} EGP</span>
+        </div>
+        <div class="text-[11px] text-indigo-600 bg-indigo-100/60 px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap">
+          {{ filteredActionablePayrolls.length }} row{{ filteredActionablePayrolls.length === 1 ? '' : 's' }} shown
+        </div>
       </div>
     </div>
 

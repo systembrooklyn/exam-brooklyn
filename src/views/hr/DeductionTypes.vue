@@ -63,6 +63,7 @@
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
             title="Edit"
             @click="openEditModal(item)"
+            v-if="canEdit"
           >
             <LucidePencil class="w-5 h-5" />
           </button>
@@ -71,6 +72,7 @@
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
             title="Delete"
             @click="confirmDelete(item)"
+            v-if="canDelete"
           >
             <LucideTrash2 class="w-5 h-5" />
           </button>
@@ -187,11 +189,9 @@ const authStore = useAuthStore();
 const store = useHrDeductionTypesStore();
 
 const canCreate = computed(() => authStore.can(HR_PERMISSION.CREATE_DEDUCTION_TYPE));
-const canMutate = computed(
-  () =>
-    authStore.can(HR_PERMISSION.UPDATE_DEDUCTION_TYPE) ||
-    authStore.can(HR_PERMISSION.DELETE_DEDUCTION_TYPE),
-);
+const canEdit = computed(() => authStore.can(HR_PERMISSION.UPDATE_DEDUCTION_TYPE));
+const canDelete = computed(() => authStore.can(HR_PERMISSION.DELETE_DEDUCTION_TYPE));
+const canMutate = computed(() => canEdit.value || canDelete.value);
 
 const headers = [
   { label: "Name", key: "name" },
@@ -239,7 +239,7 @@ const typeClass = (type) => TYPE_CLASSES[type] ?? "bg-gray-100 text-gray-600";
 const formatValue = (item) => {
   const v = Number(item?.value ?? 0);
   if (item?.type === "percentage") return `${v}%`;
-  if (item?.type === "daily_rate_fraction") return `1/${v || "?"}`;
+  if (item?.type === "daily_rate_fraction") return `${v || "?"}`;
   return v.toFixed(2);
 };
 
