@@ -162,5 +162,11 @@ export default {
       },
       component: () => import("@/views/hr/EmployeeAdjustments.vue"),
     },
+    {
+      path: "deduction-types",
+      name: "hr-deduction-types",
+      meta: { requiresPermission: HR_PERMISSION.VIEW_DEDUCTION_TYPE },
+      component: () => import("@/views/hr/DeductionTypes.vue"),
+    },
   ],
 };

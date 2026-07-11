@@ -12,6 +12,7 @@ import {
   Palmtree,
   CalendarClock,
   Link,
+  Percent,
 } from "lucide-vue-next";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
@@ -147,6 +148,12 @@ export function buildHrSidebarItems(
             icon: Banknote,
             route: "hr-payrolls",
             permission: HR_PERMISSION.VIEW_PAYROLL,
+          },
+          {
+            name: "Deduction Types",
+            icon: Percent,
+            route: "hr-deduction-types",
+            permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
           },
         ]
       : []),

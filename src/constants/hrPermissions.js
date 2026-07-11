@@ -69,4 +69,10 @@ export const HR_PERMISSION = {
   UPDATE_OFFICIAL_HOLIDAYS: "update-official-holidays",
   DELETE_OFFICIAL_HOLIDAYS: "delete-official-holidays",
   LINK_CONTRACT_TO_HOLIDAY: "link-contract-to-holiday",
+
+  // Deduction Types
+  VIEW_DEDUCTION_TYPE: "view-deduction-type",
+  CREATE_DEDUCTION_TYPE: "create-deduction-type",
+  UPDATE_DEDUCTION_TYPE: "update-deduction-type",
+  DELETE_DEDUCTION_TYPE: "delete-deduction-type",
 };
