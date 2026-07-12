@@ -54,18 +54,18 @@ export function buildHrSidebarItems(
   });
 
   // Attendance
-  if (!isAdminUser) {
-    items.push({
-      name: "My attendance",
-      icon: CalendarClock,
-      route: "hr-my-attendance",
-    });
-  } else if (canManageFullAttendance) {
+  if (canManageFullAttendance) {
     items.push({
       name: "Attendance",
       icon: ClipboardList,
       route: "hr-attendance",
       permission: HR_PERMISSION.VIEW_ATTENDANCE_LOG,
+    });
+  } else if (!isAdminUser) {
+    items.push({
+      name: "My attendance",
+      icon: CalendarClock,
+      route: "hr-my-attendance",
     });
   }
 
