@@ -484,6 +484,12 @@ const handleFinalSubmit = async (status) => {
                       EGP</span>
                   </div>
                   <div
+                    v-if="calculatedBreakdown.firstDeadline"
+                    class="flex justify-between text-slate-500">
+                    <span>First Deadline:</span>
+                    <span class="font-medium text-slate-700">{{ calculatedBreakdown.firstDeadline }}</span>
+                  </div>
+                  <div
                     v-if="calculatedBreakdown.remainingBalance !== null && calculatedBreakdown.remainingBalance !== undefined"
                     class="flex justify-between text-slate-500">
                     <span>Remaining Balance:</span>

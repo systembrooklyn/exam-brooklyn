@@ -59,10 +59,17 @@ export function buildCalculatedBreakdown(apiResult, basePrice, activePriceSettin
     const suggestedFinalAmount = apiResult.total_price ?? apiBase + totalAdjustments;
     const remainingBalance = cb?.remaining_balance_to_be_split;
     const installmentsCount = apiResult.installments_count;
-    const firstInstallment =
-      remainingBalance !== undefined && remainingBalance !== null
-        ? suggestedFinalAmount - remainingBalance
-        : null;
+    const subPaymentMethod = cb?.sub_payment_method ?? apiResult?.sub_payment_method;
+    const calculatedValue = subPaymentMethod?.calculated_value;
+
+    let firstInstallment = null;
+    if (calculatedValue !== null && calculatedValue !== undefined) {
+      firstInstallment = parseFloat(calculatedValue);
+    }
+
+    const firstDeadline = (calculatedValue !== null && calculatedValue !== undefined && apiResult.schedule?.[0]?.due_date)
+      ? formatDateToDMMMYYYY(apiResult.schedule[0].due_date)
+      : null;
 
     return {
       basePrice: apiBase,
@@ -72,6 +79,7 @@ export function buildCalculatedBreakdown(apiResult, basePrice, activePriceSettin
       remainingBalance,
       installmentsCount,
       firstInstallment,
+      firstDeadline,
     };
   }
 
@@ -110,6 +118,7 @@ export function buildCalculatedBreakdown(apiResult, basePrice, activePriceSettin
       remainingBalance: null,
       installmentsCount: null,
       firstInstallment: null,
+      firstDeadline: null,
     };
   }
 
@@ -121,6 +130,7 @@ export function buildCalculatedBreakdown(apiResult, basePrice, activePriceSettin
     remainingBalance: null,
     installmentsCount: null,
     firstInstallment: null,
+    firstDeadline: null,
   };
 }
 

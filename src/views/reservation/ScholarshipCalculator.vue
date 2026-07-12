@@ -309,10 +309,8 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
           <div class="space-y-3 text-xs">
             <div>
               <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Scholarship Program</label>
-              <select
-                v-model="selectedScholarshipId"
-                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-semibold text-slate-700 bg-slate-50/50"
-              >
+              <select v-model="selectedScholarshipId"
+                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-semibold text-slate-700 bg-slate-50/50">
                 <option value="" disabled>Select Scholarship</option>
                 <option v-for="s in scholarshipStore.scholarships" :key="s.id" :value="s.id">
                   {{ s.name }}
@@ -322,10 +320,8 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
 
             <div>
               <label class="block text-[10px] font-extrabold uppercase text-slate-400 mb-1">Grade (Optional)</label>
-              <select
-                v-model="selectedGrade"
-                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-semibold text-slate-700 bg-slate-50/50"
-              >
+              <select v-model="selectedGrade"
+                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-semibold text-slate-700 bg-slate-50/50">
                 <option value="">No specific grade</option>
                 <option value="Pass">Pass</option>
                 <option value="Good">Good</option>
@@ -337,8 +333,10 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
             </div>
 
             <div v-if="currentScholarshipObj" class="bg-indigo-50/20 p-2.5 rounded-xl border border-indigo-100/30">
-              <span class="block text-[9px] font-extrabold uppercase tracking-wider text-indigo-700">Selected Program</span>
-              <span class="font-bold text-slate-800 text-xs mt-1 block leading-tight">{{ currentScholarshipObj.name }}</span>
+              <span class="block text-[9px] font-extrabold uppercase tracking-wider text-indigo-700">Selected
+                Program</span>
+              <span class="font-bold text-slate-800 text-xs mt-1 block leading-tight">{{ currentScholarshipObj.name
+                }}</span>
               <div class="flex justify-between items-center mt-2 pt-1.5 border-t border-indigo-100/30 text-[10px]">
                 <span class="text-slate-400">Base Price:</span>
                 <span class="font-extrabold text-indigo-900">{{ basePrice.toLocaleString() }} EGP</span>
@@ -353,19 +351,20 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
 
         <!-- Pricing options (from scholarship-price-settings API) -->
         <div v-if="selectedScholarshipId" class="card p-5 bg-white border border-slate-100 shadow-sm relative">
-          <div
-            v-if="loadingSettings"
-            class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-2xl gap-2"
-          >
+          <div v-if="loadingSettings"
+            class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 flex flex-col items-center justify-center rounded-2xl gap-2">
             <Loader2 class="w-7 h-7 text-indigo-600 animate-spin" />
             <span class="text-[10px] font-bold text-slate-500">Loading pricing settings...</span>
           </div>
 
           <div v-if="priceSettingTypes.length > 0" class="space-y-3">
-            <h2 class="text-sm font-bold text-indigo-650 uppercase tracking-wide border-b pb-1 mb-2 flex items-center gap-1.5">
+            <h2
+              class="text-sm font-bold text-indigo-650 uppercase tracking-wide border-b pb-1 mb-2 flex items-center gap-1.5">
               <span class="p-1 bg-indigo-50 text-indigo-600 rounded">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
               </span>
               Pricing Options
@@ -374,36 +373,25 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
             <div v-for="type in priceSettingTypes" :key="type">
               <label class="block text-xs font-semibold text-gray-750 mb-1">{{ type }}</label>
 
-              <div
-                v-if="type === 'Paper' || type === 'Fees'"
-                class="space-y-1 bg-slate-50/50 p-2 rounded-xl border border-slate-100/60 max-h-36 overflow-y-auto"
-              >
-                <label
-                  v-for="opt in getOptionsForType(type)"
-                  :key="opt"
+              <div v-if="type === 'Paper' || type === 'Fees'"
+                class="space-y-1 bg-slate-50/50 p-2 rounded-xl border border-slate-100/60 max-h-36 overflow-y-auto">
+                <label v-for="opt in getOptionsForType(type)" :key="opt"
                   class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer select-none"
-                  :class="type === 'Fees' ? 'opacity-80 cursor-not-allowed' : 'hover:bg-white hover:border-slate-100'"
-                >
-                  <input
-                    type="checkbox"
-                    :checked="type === 'Fees' || priceSettingsSelections[type]?.includes(opt)"
-                    :disabled="type === 'Fees'"
-                    @change="type !== 'Fees' && toggleOption(opt, type)"
-                    class="rounded text-indigo-600 w-3.5 h-3.5"
-                  />
-                  <span class="text-xs font-medium" :class="type === 'Fees' ? 'text-indigo-600' : 'text-slate-600'">{{ opt }}</span>
+                  :class="type === 'Fees' ? 'opacity-80 cursor-not-allowed' : 'hover:bg-white hover:border-slate-100'">
+                  <input type="checkbox" :checked="type === 'Fees' || priceSettingsSelections[type]?.includes(opt)"
+                    :disabled="type === 'Fees'" @change="type !== 'Fees' && toggleOption(opt, type)"
+                    class="rounded text-indigo-600 w-3.5 h-3.5" />
+                  <span class="text-xs font-medium" :class="type === 'Fees' ? 'text-indigo-600' : 'text-slate-600'">{{
+                    opt }}</span>
                 </label>
                 <div v-if="getOptionsForType(type).length === 0" class="text-xs text-slate-400 italic py-2 text-center">
                   No options available
                 </div>
               </div>
 
-              <select
-                v-else
-                :value="priceSettingsSelections[type] || ''"
+              <select v-else :value="priceSettingsSelections[type] || ''"
                 @change="updatePriceSettingField(type, $event.target.value)"
-                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-medium text-slate-700 bg-slate-50/50"
-              >
+                class="w-full px-2.5 py-2 rounded-lg border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none font-medium text-slate-700 bg-slate-50/50">
                 <option value="" disabled>Select {{ type }}</option>
                 <option v-for="opt in getOptionsForType(type)" :key="opt" :value="opt">{{ opt }}</option>
               </select>
@@ -418,43 +406,44 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
 
       <!-- Right: Modules + breakdown (same as Scholarship tab) -->
       <div class="col-span-9 flex flex-col gap-4">
-        <div v-if="!selectedScholarshipId" class="card p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
+        <div v-if="!selectedScholarshipId"
+          class="card p-8 flex flex-col items-center justify-center min-h-[400px] text-center">
           <h3 class="font-extrabold text-slate-800 text-lg">Scholarship Calculator</h3>
           <p class="text-xs text-slate-400 mt-2 max-w-sm">
-            Select a scholarship program and grade on the left, then configure pricing options to calculate the study plan and payment schedule.
+            Select a scholarship program and grade on the left, then configure pricing options to calculate the study
+            plan and payment schedule.
           </p>
         </div>
 
         <template v-else>
           <div class="relative">
             <ModulesTable :modules="modules" @refresh-data="runCalculation" />
-            <div
-              v-if="isCalculationActive"
-              class="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center rounded-2xl gap-2"
-            >
+            <div v-if="isCalculationActive"
+              class="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center rounded-2xl gap-2">
               <Loader2 class="w-8 h-8 text-indigo-600 animate-spin" />
               <span class="text-xs font-bold text-indigo-600">Calculating plan...</span>
             </div>
           </div>
 
           <div class="card p-5 overflow-hidden border-indigo-50 bg-white relative">
-            <div
-              v-if="isCalculationActive"
-              class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl"
-            >
+            <div v-if="isCalculationActive"
+              class="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
               <Loader2 class="w-8 h-8 text-indigo-600 animate-spin" />
             </div>
 
             <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
               <h3 class="text-md font-bold text-indigo-950 flex items-center gap-2">
                 <span class="p-1 bg-indigo-50 text-indigo-600 rounded">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M12 14h.01M15 11h.01M15 7h.01M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 11h.01M12 7h.01M12 14h.01M15 11h.01M15 7h.01M5 12a7 7 0 1014 0 7 7 0 00-14 0z" />
                   </svg>
                 </span>
                 Applied Pricing & Adjustments
               </h3>
-              <span class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
+              <span
+                class="text-[10px] font-bold text-slate-400 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-full">
                 Calculated dynamically
               </span>
             </div>
@@ -477,7 +466,8 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
                         Scholarship Program Price (Base)
                       </td>
                       <td class="py-2.5">
-                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">Base</span>
+                        <span
+                          class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-slate-100 text-slate-600">Base</span>
                       </td>
                       <td class="py-2.5 text-right font-medium text-slate-400">-</td>
                       <td class="py-2.5 text-right font-bold text-slate-800">
@@ -485,16 +475,22 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
                       </td>
                     </tr>
 
-                    <tr v-for="item in calculatedBreakdown.modifiers" :key="item.id" class="text-slate-600 hover:bg-slate-50/50 transition">
+                    <tr v-for="item in calculatedBreakdown.modifiers" :key="item.id"
+                      class="text-slate-600 hover:bg-slate-50/50 transition">
                       <td class="py-2.5">
                         <div class="font-bold text-slate-700">{{ item.name }}</div>
-                        <div v-if="item.description" class="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{{ item.description }}</div>
+                        <div v-if="item.description"
+                          class="text-[10px] text-slate-400 font-normal leading-tight mt-0.5">{{ item.description }}
+                        </div>
                       </td>
                       <td class="py-2.5">
-                        <span class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/50">{{ item.type }}</span>
+                        <span
+                          class="inline-flex px-1.5 py-0.5 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100/50">{{
+                          item.type }}</span>
                       </td>
                       <td class="py-2.5 text-right font-semibold text-slate-600">{{ item.displayRate }}</td>
-                      <td class="py-2.5 text-right font-extrabold" :class="item.modifier === 'discount' ? 'text-emerald-600' : 'text-rose-600'">
+                      <td class="py-2.5 text-right font-extrabold"
+                        :class="item.modifier === 'discount' ? 'text-emerald-600' : 'text-rose-600'">
                         {{ item.displayImpact }}
                       </td>
                     </tr>
@@ -508,40 +504,49 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
                 </table>
               </div>
 
-              <div class="bg-gradient-to-br from-indigo-50/20 to-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 flex flex-col justify-between">
+              <div
+                class="bg-gradient-to-br from-indigo-50/20 to-indigo-50/50 rounded-2xl p-4 border border-indigo-100/50 flex flex-col justify-between">
                 <div>
-                  <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-950 mb-2.5 border-b border-indigo-100/60 pb-1.5">
+                  <h4
+                    class="text-xs font-bold uppercase tracking-wider text-indigo-950 mb-2.5 border-b border-indigo-100/60 pb-1.5">
                     Summary Calculations
                   </h4>
                   <div class="space-y-2 text-xs">
                     <div class="flex justify-between text-slate-500">
                       <span>Base Program:</span>
-                      <span class="font-medium text-slate-700">{{ calculatedBreakdown.basePrice.toLocaleString() }} EGP</span>
+                      <span class="font-medium text-slate-700">{{ calculatedBreakdown.basePrice.toLocaleString() }}
+                        EGP</span>
                     </div>
                     <div class="flex justify-between text-slate-500">
                       <span>Total Adjustments:</span>
-                      <span class="font-bold" :class="calculatedBreakdown.totalAdjustments < 0 ? 'text-emerald-600' : (calculatedBreakdown.totalAdjustments > 0 ? 'text-rose-600' : 'text-slate-700')">
-                        {{ calculatedBreakdown.totalAdjustments < 0 ? '' : '+' }}{{ calculatedBreakdown.totalAdjustments.toLocaleString() }} EGP
-                      </span>
+                      <span class="font-bold"
+                        :class="calculatedBreakdown.totalAdjustments < 0 ? 'text-emerald-600' : (calculatedBreakdown.totalAdjustments > 0 ? 'text-rose-600' : 'text-slate-700')">
+                        {{ calculatedBreakdown.totalAdjustments < 0 ? '' : '+' }}{{
+                          calculatedBreakdown.totalAdjustments.toLocaleString() }} EGP </span>
                     </div>
                     <div
                       v-if="calculatedBreakdown.firstInstallment !== null && calculatedBreakdown.firstInstallment !== undefined"
-                      class="flex justify-between text-slate-500 border-t border-indigo-100/40 pt-1.5 mt-1.5"
-                    >
+                      class="flex justify-between text-slate-500 border-t border-indigo-100/40 pt-1.5 mt-1.5">
                       <span>First Installment:</span>
-                      <span class="font-bold text-slate-700">{{ calculatedBreakdown.firstInstallment.toLocaleString() }} EGP</span>
+                      <span class="font-bold text-slate-700">{{ calculatedBreakdown.firstInstallment.toLocaleString() }}
+                        EGP</span>
+                    </div>
+                    <div
+                      v-if="calculatedBreakdown.firstDeadline"
+                      class="flex justify-between text-slate-500">
+                      <span>First Deadline:</span>
+                      <span class="font-medium text-slate-700">{{ calculatedBreakdown.firstDeadline }}</span>
                     </div>
                     <div
                       v-if="calculatedBreakdown.remainingBalance !== null && calculatedBreakdown.remainingBalance !== undefined"
-                      class="flex justify-between text-slate-500"
-                    >
+                      class="flex justify-between text-slate-500">
                       <span>Remaining Balance:</span>
-                      <span class="font-medium text-slate-700">{{ calculatedBreakdown.remainingBalance.toLocaleString() }} EGP</span>
+                      <span class="font-medium text-slate-700">{{ calculatedBreakdown.remainingBalance.toLocaleString()
+                        }} EGP</span>
                     </div>
                     <div
                       v-if="calculatedBreakdown.installmentsCount !== null && calculatedBreakdown.installmentsCount !== undefined"
-                      class="flex justify-between text-slate-500"
-                    >
+                      class="flex justify-between text-slate-500">
                       <span>Installments Count:</span>
                       <span class="font-medium text-slate-700">{{ calculatedBreakdown.installmentsCount }}</span>
                     </div>
@@ -549,7 +554,8 @@ const isCalculationActive = computed(() => calculatingPlan.value || calculationP
                 </div>
 
                 <div class="mt-4 pt-3 border-t border-indigo-100/60">
-                  <span class="block text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">Suggested Final Amount</span>
+                  <span class="block text-[10px] font-extrabold uppercase tracking-wider text-indigo-800">Suggested
+                    Final Amount</span>
                   <div class="flex items-baseline gap-1 mt-1">
                     <span class="text-2xl font-black text-indigo-950 tracking-tight">
                       {{ calculatedBreakdown.suggestedFinalAmount.toLocaleString() }}
