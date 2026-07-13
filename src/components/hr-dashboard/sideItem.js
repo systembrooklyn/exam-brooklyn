@@ -15,6 +15,7 @@ import {
   Percent,
   UserMinus,
   Settings,
+  MapPin,
 } from "lucide-vue-next";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
@@ -152,6 +153,11 @@ export function buildHrSidebarItems(
         name: "Job Titles",
         route: "hr-job-titles",
         permission: HR_PERMISSION.VIEW_JOB_TITLE,
+      },
+      {
+        name: "Positions",
+        route: "hr-positions",
+        permission: HR_PERMISSION.VIEW_DEPARTMENT,
       },
       {
         name: "Shifts",

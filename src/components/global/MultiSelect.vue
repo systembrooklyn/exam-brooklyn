@@ -98,7 +98,10 @@
           >
             <svg v-if="isSelected(option)" class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
-          <span class="text-sm text-gray-700" :class="{'font-medium text-indigo-700': isSelected(option)}">{{ getOptionLabel(option) }}</span>
+          <div class="flex flex-col text-left">
+            <span class="text-sm text-gray-700" :class="{'font-medium text-indigo-700': isSelected(option)}">{{ getOptionLabel(option) }}</span>
+            <span v-if="subLabelKey && option[subLabelKey]" class="text-xs text-gray-400 mt-0.5">{{ option[subLabelKey] }}</span>
+          </div>
         </div>
         <div v-if="filteredOptions.length === 0" class="px-3 py-4 text-center text-sm text-gray-500">
           No results found
@@ -131,6 +134,10 @@ const props = defineProps({
   labelKey: {
     type: String,
     default: 'name'
+  },
+  subLabelKey: {
+    type: String,
+    default: ''
   },
   valueKey: {
     type: String,

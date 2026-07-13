@@ -81,4 +81,10 @@ export const HR_PERMISSION = {
   CREATE_EMPLOYEE_DEDUCTION: "create-employee-deductions",
   UPDATE_EMPLOYEE_DEDUCTION: "edit-employee-deductions",
   DELETE_EMPLOYEE_DEDUCTION: "delete-employee-deductions",
+
+  // Manpower – Positions
+  VIEW_POSITION: "view-position",
+  CREATE_POSITION: "create-position",
+  UPDATE_POSITION: "update-position",
+  DELETE_POSITION: "delete-position",
 };

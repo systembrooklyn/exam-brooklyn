@@ -128,6 +128,12 @@ export const PAYROLL_EMPLOYEE_DEDUCTIONS = "payroll-system/employee-deductions";
 export const PAYROLL_EMPLOYEE_DEDUCTION_BY_ID = (id) =>
   `payroll-system/employee-deductions/${id}`;
 
+// Manpower System APIs
+export const MANPOWER_POSITIONS = "manpower/positions";
+export const MANPOWER_POSITION_BY_ID = (id) => `manpower/positions/${id}`;
+export const MANPOWER_POSITION_REQUIREMENTS = "manpower/position-requirements";
+export const MANPOWER_POSITION_REQUIREMENTS_BY_ID = (id) => `manpower/position-requirements/${id}`;
+
 // Price Settings
 export const PRICE_SETTINGS = "price-settings";
 export const PRICE_SETTINGS_BY_ID = (id) => `price-settings/${id}`;

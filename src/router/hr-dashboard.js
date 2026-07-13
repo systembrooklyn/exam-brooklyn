@@ -58,6 +58,12 @@ export default {
       component: () => import("@/views/hr/Holidays.vue"),
     },
     {
+      path: "positions",
+      name: "hr-positions",
+      meta: { requiresPermission: HR_PERMISSION.VIEW_DEPARTMENT },
+      component: () => import("@/views/hr/Positions.vue"),
+    },
+    {
       path: "my-attendance",
       name: "hr-my-attendance",
       beforeEnter: (_to, _from, next) => {

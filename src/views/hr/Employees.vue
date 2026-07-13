@@ -207,6 +207,33 @@
                 <MultiSelect v-model="form.job_title_ids" :options="jobTitleOptions" labelKey="title_name" valueKey="id"
                   placeholder="Select Job Titles" />
               </div>
+              <!-- Positions -->
+              <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  Positions
+                  <span class="ml-1 text-xs font-normal text-gray-400">(optional)</span>
+                </label>
+                <MultiSelect
+                  v-model="form.position_ids"
+                  :options="positionOptions"
+                  labelKey="name"
+                  valueKey="id"
+                  placeholder="Select Positions"
+                />
+              </div>
+              <!-- Branch -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                <select
+                  v-model="form.branch_id"
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
+                >
+                  <option :value="null">— No Branch —</option>
+                  <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">
+                    {{ branch.name }}
+                  </option>
+                </select>
+              </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Hiring Date <span
                     class="text-red-500">*</span></label>
@@ -374,6 +401,8 @@ import { onMounted, ref, computed } from 'vue';
 import { useHrEmployeesStore } from '@/stores/hr/employees';
 import { useHrLinksStore } from '@/stores/hr/links';
 import { useHrJobTitlesStore } from '@/stores/hr/jobTitles';
+import { useHrPositionsStore } from '@/stores/hr/positions';
+import { useReservationStore } from '@/stores/reservations';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import HrDataTable from '@/components/hr-dashboard/HrDataTable.vue';
@@ -387,6 +416,8 @@ const store = useHrEmployeesStore();
 const authStore = useAuthStore();
 const linksStore = useHrLinksStore();
 const jobTitlesStore = useHrJobTitlesStore();
+const positionsStore = useHrPositionsStore();
+const reservationStore = useReservationStore();
 
 const canOpenEmployeeModal = computed(
   () =>
@@ -474,8 +505,28 @@ const departmentNameById = (id) => {
   return d?.department_name ?? null;
 };
 
-// Timeline Data
-const employeeLinks = ref([]);
+/** Extract position_id from a job_department assignment row. */
+const positionIdFromAssignmentRow = (jd) =>
+  parsePositiveInt(jd?.position_id ?? jd?.position?.id);
+
+/** Positions from the positionsStore (loaded on demand). */
+const positionOptions = computed(() => {
+  const rows = Array.isArray(positionsStore.positions) ? positionsStore.positions : [];
+  return rows
+    .map((p) => ({
+      id: Number(p?.id),
+      name: String(p?.name ?? '').trim(),
+    }))
+    .filter((p) => Number.isInteger(p.id) && p.id > 0 && p.name);
+});
+
+/** Branch options from reservationStore. */
+const branchOptions = computed(() => {
+  const rows = Array.isArray(reservationStore.branches) ? reservationStore.branches : [];
+  return rows.map((b) => ({ id: Number(b.id), name: String(b.name ?? b.branch_name ?? '').trim() }));
+});
+
+
 const loadingLinks = ref(false);
 
 const searchQuery = ref('');
@@ -637,6 +688,8 @@ const form = ref({
   manager_id: null,
   department_ids: [],
   job_title_ids: [],
+  position_ids: [],
+  branch_id: null,
   hiring_date: '',
   left_at: null,
   status: 'active'
@@ -657,6 +710,19 @@ onMounted(async () => {
   } catch (error) {
     // Fallback remains employee-derived options when this request fails.
     console.error('Error fetching job titles:', error);
+  }
+
+  // Fetch positions and branches for the employee form dropdowns.
+  try {
+    await positionsStore.getPositions();
+  } catch (error) {
+    console.error('Error fetching positions:', error);
+  }
+
+  try {
+    await reservationStore.fetchBranches();
+  } catch (error) {
+    console.error('Error fetching branches:', error);
   }
 });
 
@@ -792,6 +858,9 @@ const openAddModal = () => {
   void jobTitlesStore.getJobTitles().catch((error) => {
     console.error('Error refreshing job titles:', error);
   });
+  void positionsStore.getPositions().catch((error) => {
+    console.error('Error refreshing positions:', error);
+  });
 
   isEditing.value = false;
   editingId.value = null;
@@ -803,6 +872,8 @@ const openAddModal = () => {
     manager_id: null,
     department_ids: [],
     job_title_ids: [],
+    position_ids: [],
+    branch_id: null,
     hiring_date: new Date().toISOString().slice(0, 10),
     left_at: null,
     status: 'active'
@@ -861,6 +932,10 @@ const openEditModal = async (emp) => {
       job_title_ids: assignmentRows
         .map((jd) => jobTitleIdFromAssignmentRow(jd))
         .filter((id) => id != null),
+      position_ids: assignmentRows
+        .map((jd) => positionIdFromAssignmentRow(jd))
+        .filter((id) => id != null),
+      branch_id: assignmentRows[0]?.branch_id ?? assignmentRows[0]?.branch?.id ?? null,
 
       hiring_date: personal.hiring_date,
       left_at: personal.left_at,
@@ -933,13 +1008,14 @@ const normalizeIdArray = (value) => {
 const validateAssignmentPairs = () => {
   const departmentIds = normalizeIdArray(form.value.department_ids);
   const jobTitleIds = normalizeIdArray(form.value.job_title_ids);
+  const positionIds = normalizeIdArray(form.value.position_ids);
 
   if (departmentIds.length !== jobTitleIds.length) {
     notyf.error('Departments and job titles must have the same count.');
     return null;
   }
 
-  return { departmentIds, jobTitleIds };
+  return { departmentIds, jobTitleIds, positionIds };
 };
 
 const handleSubmit = async () => {
@@ -962,15 +1038,20 @@ const handleSubmit = async () => {
 
   let editCurrentDepartmentIds = [];
   let editCurrentJobTitleIds = [];
+  let editCurrentPositionIds = [];
   let editAssignmentChanged = false;
   if (isEditing.value) {
     editCurrentDepartmentIds = normalizeIdArray(form.value.department_ids);
     editCurrentJobTitleIds = normalizeIdArray(form.value.job_title_ids);
+    editCurrentPositionIds = normalizeIdArray(form.value.position_ids);
     const originalDepartmentIds = normalizeIdArray(originalForm.value.department_ids);
     const originalJobTitleIds = normalizeIdArray(originalForm.value.job_title_ids);
+    const originalPositionIds = normalizeIdArray(originalForm.value.position_ids);
     editAssignmentChanged =
       JSON.stringify(editCurrentDepartmentIds) !== JSON.stringify(originalDepartmentIds) ||
-      JSON.stringify(editCurrentJobTitleIds) !== JSON.stringify(originalJobTitleIds);
+      JSON.stringify(editCurrentJobTitleIds) !== JSON.stringify(originalJobTitleIds) ||
+      JSON.stringify(editCurrentPositionIds) !== JSON.stringify(originalPositionIds) ||
+      String(form.value.branch_id ?? '') !== String(originalForm.value.branch_id ?? '');
     if (editAssignmentChanged && editCurrentDepartmentIds.length !== editCurrentJobTitleIds.length) {
       notyf.error('Departments and job titles must have the same count.');
       return;
@@ -1005,6 +1086,8 @@ const handleSubmit = async () => {
           employee_id: editingId.value,
           department_id: editCurrentDepartmentIds,
           job_title_id: editCurrentJobTitleIds,
+          position_id: editCurrentPositionIds,
+          branch_id: form.value.branch_id || undefined,
           hired_at: form.value.hiring_date
         });
         if (!employeesListRefreshed) {
@@ -1039,6 +1122,8 @@ const handleSubmit = async () => {
           employee_id: empId,
           department_id: assignmentPairs.departmentIds,
           job_title_id: assignmentPairs.jobTitleIds,
+          position_id: assignmentPairs.positionIds,
+          branch_id: form.value.branch_id || undefined,
           hired_at: form.value.hiring_date
         }, { showNotification: false, refresh: true });
         notyf.success('Employee created and assigned successfully');

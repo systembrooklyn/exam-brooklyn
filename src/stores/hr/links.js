@@ -24,12 +24,22 @@ export const useHrLinksStore = defineStore("hr-links", () => {
   const buildAssignmentsPayload = (payload = {}, { includeEmployeeId = true } = {}) => {
     const departmentIds = normalizeIdList(payload.department_id);
     const jobTitleIds = normalizeIdList(payload.job_title_id);
+    const positionIds = normalizeIdList(payload.position_id);
 
     const normalizedPayload = {
       ...payload,
       department_id: departmentIds,
       job_title_id: jobTitleIds,
+      position_id: positionIds,
     };
+
+    // branch_id: single integer or omit if not provided
+    if (payload.branch_id != null && payload.branch_id !== '') {
+      const bid = Number(payload.branch_id);
+      normalizedPayload.branch_id = Number.isInteger(bid) && bid > 0 ? bid : undefined;
+    } else {
+      delete normalizedPayload.branch_id;
+    }
 
     if (
       includeEmployeeId &&
