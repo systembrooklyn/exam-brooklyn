@@ -55,7 +55,7 @@ function roleLooksAdmin(role, depth = 0) {
 function roleLooksHr(role, depth = 0) {
   if (role == null || depth > MAX_ADMIN_ROLE_NEST_DEPTH) return false;
   const label = roleLabelFromShape(role);
-  if (String(label).trim().toLowerCase() === "hr") return true;
+  if (label && /\bhr\b/i.test(String(label))) return true;
   if (typeof role === "object" && role.role != null) {
     return roleLooksHr(role.role, depth + 1);
   }
