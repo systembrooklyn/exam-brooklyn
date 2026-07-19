@@ -64,6 +64,12 @@ export default {
       component: () => import("@/views/hr/Positions.vue"),
     },
     {
+      path: "manpower-overview",
+      name: "hr-manpower-overview",
+      meta: { requiresPermission: HR_PERMISSION.VIEW_MANPOWER_PLANS },
+      component: () => import("@/views/hr/ManpowerOverview.vue"),
+    },
+    {
       path: "my-attendance",
       name: "hr-my-attendance",
       beforeEnter: (_to, _from, next) => {

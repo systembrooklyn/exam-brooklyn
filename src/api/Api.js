@@ -133,6 +133,8 @@ export const MANPOWER_POSITIONS = "manpower/positions";
 export const MANPOWER_POSITION_BY_ID = (id) => `manpower/positions/${id}`;
 export const MANPOWER_POSITION_REQUIREMENTS = "manpower/position-requirements";
 export const MANPOWER_POSITION_REQUIREMENTS_BY_ID = (id) => `manpower/position-requirements/${id}`;
+export const MANPOWER_PLANS = "manpower/manpower-plans";
+export const MANPOWER_PLAN_BY_ID = (id) => `manpower/manpower-plans/${id}`;
 
 // Price Settings
 export const PRICE_SETTINGS = "price-settings";

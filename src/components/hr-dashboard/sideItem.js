@@ -16,6 +16,7 @@ import {
   UserMinus,
   Settings,
   MapPin,
+  BarChart3,
 } from "lucide-vue-next";
 import { HR_PERMISSION } from "@/constants/hrPermissions";
 
@@ -38,6 +39,14 @@ export function buildHrSidebarItems(
       permission: HR_PERMISSION.VIEW_CONTRACT,
     },
   ];
+
+  items.push({
+    name: "Manpower Overview",
+    icon: BarChart3,
+    route: "hr-manpower-overview",
+    permission: HR_PERMISSION.VIEW_MANPOWER_PLANS,
+  });
+
 
   // Core Workforce
   items.push({
@@ -159,6 +168,7 @@ export function buildHrSidebarItems(
         route: "hr-positions",
         permission: HR_PERMISSION.VIEW_DEPARTMENT,
       },
+      
       {
         name: "Shifts",
         route: "hr-shifts",

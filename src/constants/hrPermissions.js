@@ -87,4 +87,13 @@ export const HR_PERMISSION = {
   CREATE_POSITION: "create-position",
   UPDATE_POSITION: "update-position",
   DELETE_POSITION: "delete-position",
+
+  // Manpower – Plans
+  VIEW_MANPOWER_PLANS: "view-manpower-plans",
+  CREATE_MANPOWER_PLANS: "create-manpower-plans",
+  UPDATE_MANPOWER_PLANS: "update-manpower-plans",
+  DELETE_MANPOWER_PLANS: "delete-manpower-plans",
+  RECALC_MANPOWER_PLANS: "recalc-manpower-plans",
+  RECALC_ALL_MANPOWER_PLANS: "recalc-all-manpower-plans",
+  VIEW_MANPOWER_REPORT: "view-manpower-report",
 };
