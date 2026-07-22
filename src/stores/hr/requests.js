@@ -302,6 +302,87 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     }
   };
 
+  /**
+   * Queue-based bulk approve: processes each ID individually via PUT /employee-requests.update/{id}.
+   * Sends { status: 'approved' } for each request one by one.
+   * Used for rows that are already 'approved' or 'rejected' (not pending).
+   * @param {number[]} requestIds
+   * @param {(progress: { done: number, failed: number, total: number }) => void} [onProgress]
+   * @returns {{ done: number, failed: number, errors: Array }}
+   */
+  const queueBulkApproveRequests = async (requestIds, onProgress) => {
+    const ids = Array.isArray(requestIds)
+      ? requestIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+      : [];
+    if (!ids.length) return { done: 0, failed: 0, errors: [] };
+    const total = ids.length;
+    let done = 0;
+    let failed = 0;
+    const errors = [];
+    for (const id of ids) {
+      try {
+        await apiClient.put(PAYROLL_UPDATE_REQUEST(id), { status: 'approved' });
+        done++;
+      } catch (err) {
+        failed++;
+        errors.push({ id, err });
+        console.warn(`Queue approve failed for id=${id}:`, err);
+      }
+      if (typeof onProgress === "function") {
+        onProgress({ done, failed, total });
+      }
+    }
+    if (done > 0) {
+      notyf.success(`${done} of ${total} request(s) approved.`);
+    }
+    if (failed > 0) {
+      notyf.error(`${failed} request(s) failed to approve.`);
+    }
+    await refreshCurrentList();
+    return { done, failed, errors };
+  };
+
+  /**
+   * Queue-based bulk reject: processes each ID individually via PUT /employee-requests.update/{id}.
+   * Sends { status: 'rejected' } for each request one by one.
+   * Used for rows that are already 'approved' or 'rejected' (not pending).
+   * @param {number[]} requestIds
+   * @param {(progress: { done: number, failed: number, total: number }) => void} [onProgress]
+   * @returns {{ done: number, failed: number, errors: Array }}
+   */
+  const queueBulkRejectRequests = async (requestIds, onProgress) => {
+    const ids = Array.isArray(requestIds)
+      ? requestIds.map((id) => Number(id)).filter((n) => Number.isFinite(n))
+      : [];
+    if (!ids.length) return { done: 0, failed: 0, errors: [] };
+    const total = ids.length;
+    let done = 0;
+    let failed = 0;
+    const errors = [];
+    for (const id of ids) {
+      try {
+        await apiClient.put(PAYROLL_UPDATE_REQUEST(id), { status: 'rejected' });
+        done++;
+      } catch (err) {
+        failed++;
+        errors.push({ id, err });
+        console.warn(`Queue reject failed for id=${id}:`, err);
+      }
+      if (typeof onProgress === "function") {
+        onProgress({ done, failed, total });
+      }
+    }
+    if (done > 0) {
+      notyf.success(`${done} of ${total} request(s) rejected.`);
+    }
+    if (failed > 0) {
+      notyf.error(`${failed} request(s) failed to reject.`);
+    }
+    await refreshCurrentList();
+    return { done, failed, errors };
+  };
+
+
   const getApprovedVacations = async (employeeId) => {
     loading.value = true;
     try {
@@ -332,6 +413,8 @@ export const useHrRequestsStore = defineStore("hr-requests", () => {
     rejectRequest,
     bulkApproveRequests,
     bulkRejectRequests,
+    queueBulkApproveRequests,
+    queueBulkRejectRequests,
     getApprovedVacations,
   };
 });

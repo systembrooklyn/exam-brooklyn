@@ -20,10 +20,12 @@
         </button>
         <button v-if="showBulkSelectionColumn" type="button" :disabled="selectedRequestIds.length === 0 ||
           !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) ||
-          store.loading
+          store.loading ||
+          !canBulkApprove
           " class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" :class="selectedRequestIds.length > 0 &&
             authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) &&
-            !store.loading
+            !store.loading &&
+            canBulkApprove
             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
             : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
             " @click="confirmBulkApprove">
@@ -31,10 +33,12 @@
         </button>
         <button v-if="showBulkSelectionColumn" type="button" :disabled="selectedRequestIds.length === 0 ||
           !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) ||
-          store.loading
+          store.loading ||
+          !canBulkReject
           " class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors" :class="selectedRequestIds.length > 0 &&
             authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) &&
-            !store.loading
+            !store.loading &&
+            canBulkReject
             ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
             : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
             " @click="confirmBulkReject">
@@ -266,7 +270,7 @@
           :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)" @change="toggleSelectAllPending" />
         <span>Select all</span>
       </label>
-      <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} pending)</span>
+      <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} {{ selectableStatusLabel }})</span>
     </div>
 
     <!-- Table -->
@@ -274,7 +278,7 @@
       :loading="store.loading" :emptyMessage="emptyMessage" :reset-page-on-items-change="false" :hasActions="false"
       :hasDelete="false" :hasEdit="false" @edit="null">
       <template #select="{ item }">
-        <div v-if="item.status === 'pending'" class="flex justify-center">
+        <div class="flex justify-center">
           <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
             :checked="isBulkSelected(item.id)" :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
             @change="toggleBulkSelect(item.id)" />
@@ -490,12 +494,53 @@
       text="Are you sure you want to approve this request?" icon="question" confirmButtonText="Yes, Approve"
       confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" @confirm="handleApprove"
       @cancel="showConfirmApprove = false" />
-    <SweetAlert2Modal v-if="showConfirmBulkApprove" title="Bulk approve requests?" :text="bulkApproveConfirmText"
+    <SweetAlert2Modal v-if="showConfirmBulkApprove" :title="bulkApproveConfirmTitle" :text="bulkApproveConfirmText"
       icon="question" confirmButtonText="Yes, approve all" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
       @confirm="handleBulkApprove" @cancel="showConfirmBulkApprove = false" />
-    <SweetAlert2Modal v-if="showConfirmBulkReject" title="Bulk reject requests?" :text="bulkRejectConfirmText"
+    <SweetAlert2Modal v-if="showConfirmBulkReject" :title="bulkRejectConfirmTitle" :text="bulkRejectConfirmText"
       icon="warning" confirmButtonText="Yes, reject all" confirmButtonClass="bg-rose-600 hover:bg-rose-700"
       @confirm="handleBulkReject" @cancel="showConfirmBulkReject = false" />
+
+    <!-- Queue Progress Modal -->
+    <Teleport to="body">
+      <Transition name="queue-modal">
+        <div v-if="queueProgress.running" class="fixed inset-0 z-[9999] flex items-center justify-center">
+          <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+          <div class="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-5">
+            <!-- Icon -->
+            <div class="w-14 h-14 rounded-full flex items-center justify-center"
+              :class="queueProgress.type === 'approve' ? 'bg-emerald-50' : 'bg-rose-50'">
+              <LucideRefreshCw class="w-7 h-7 animate-spin"
+                :class="queueProgress.type === 'approve' ? 'text-emerald-600' : 'text-rose-600'" />
+            </div>
+            <!-- Label -->
+            <div class="text-center">
+              <p class="text-base font-semibold text-gray-800">
+                {{ queueProgress.type === 'approve' ? 'Approving requests…' : 'Rejecting requests…' }}
+              </p>
+              <p class="text-sm text-gray-500 mt-1">
+                Processing {{ queueProgress.done + queueProgress.failed }} of {{ queueProgress.total }}
+              </p>
+            </div>
+            <!-- Progress bar -->
+            <div class="w-full">
+              <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                <div class="h-3 rounded-full transition-all duration-300"
+                  :class="queueProgress.type === 'approve' ? 'bg-emerald-500' : 'bg-rose-500'"
+                  :style="{ width: queueProgress.total > 0 ? ((queueProgress.done + queueProgress.failed) / queueProgress.total * 100).toFixed(1) + '%' : '0%' }"
+                ></div>
+              </div>
+              <div class="flex justify-between text-xs text-gray-400 mt-1.5">
+                <span class="text-emerald-600 font-medium">✓ {{ queueProgress.done }} done</span>
+                <span v-if="queueProgress.failed > 0" class="text-rose-500 font-medium">✕ {{ queueProgress.failed }} failed</span>
+                <span class="tabular-nums">{{ queueProgress.total }} total</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Rejection Modal -->
     <HrModal v-if="showConfirmReject" :show="showConfirmReject" title="Reject Request" :loading="store.loading"
       saveLabel="Reject" @close="showConfirmReject = false" @save="handleReject">
@@ -513,6 +558,7 @@
     </HrModal>
   </div>
 </template>
+
 
 <script setup>
 import { onMounted, onUnmounted, ref, computed, watch, nextTick } from 'vue';
@@ -1218,18 +1264,6 @@ const headers = computed(() => {
   return baseHeaders;
 });
 
-const bulkApproveConfirmText = computed(() => {
-  const n = selectedRequestIds.value.length;
-  if (n === 0) return 'No requests selected.';
-  return `Approve ${n} selected request${n === 1 ? '' : 's'}?`;
-});
-
-const bulkRejectConfirmText = computed(() => {
-  const n = selectedRequestIds.value.length;
-  if (n === 0) return 'No requests selected.';
-  return `Reject ${n} selected request${n === 1 ? '' : 's'}?`;
-});
-
 function clearBulkSelection() {
   selectedRequestIds.value = [];
 }
@@ -1237,6 +1271,13 @@ function clearBulkSelection() {
 function normalizeRequestId(raw) {
   const id = Number(raw);
   return Number.isFinite(id) ? id : null;
+}
+
+/** Queue progress state (shown for approved/rejected queue-mode bulk ops). */
+const queueProgress = ref({ running: false, type: '', done: 0, failed: 0, total: 0 });
+
+function resetQueueProgress() {
+  queueProgress.value = { running: false, type: '', done: 0, failed: 0, total: 0 };
 }
 
 function isBulkSelected(rawId) {
@@ -1257,15 +1298,44 @@ function toggleBulkSelect(rawId) {
   else selectedRequestIds.value.push(id);
 }
 
-/** Pending rows in the current list (bulk targets). */
+/** Selectable rows in the current list (bulk targets). */
 const pendingSelectableIds = computed(() => {
   const out = [];
   for (const r of filteredRequests.value) {
-    if (r.status !== 'pending') continue;
     const id = normalizeRequestId(r.id);
     if (id != null) out.push(id);
   }
   return out;
+});
+
+const selectableStatusLabel = computed(() => {
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  if (st === 'approved') return 'approved';
+  if (st === 'rejected') return 'rejected';
+  if (st === 'pending') return 'pending';
+  return 'items';
+});
+
+const canBulkApprove = computed(() => {
+  if (pendingFilterStatus.value === 'approved') return false;
+  const selectedItems = filteredRequests.value.filter((r) =>
+    selectedRequestIds.value.includes(normalizeRequestId(r.id)),
+  );
+  if (selectedItems.length > 0 && selectedItems.every((r) => r.status === 'approved')) {
+    return false;
+  }
+  return true;
+});
+
+const canBulkReject = computed(() => {
+  if (pendingFilterStatus.value === 'rejected') return false;
+  const selectedItems = filteredRequests.value.filter((r) =>
+    selectedRequestIds.value.includes(normalizeRequestId(r.id)),
+  );
+  if (selectedItems.length > 0 && selectedItems.every((r) => r.status === 'rejected')) {
+    return false;
+  }
+  return true;
 });
 
 const allPendingSelected = computed(() => {
@@ -1810,53 +1880,113 @@ const handleApprove = async () => {
   }
 };
 
+const bulkApproveConfirmTitle = computed(() => {
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  if (st === 'rejected') return 'Re-approve requests via queue?';
+  return 'Bulk approve requests?';
+});
+
+const bulkRejectConfirmTitle = computed(() => {
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  if (st === 'approved') return 'Re-reject requests via queue?';
+  return 'Bulk reject requests?';
+});
+
+const bulkApproveConfirmText = computed(() => {
+  const n = selectedRequestIds.value.length;
+  if (n === 0) return 'No requests selected.';
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  if (st === 'rejected') {
+    return `Send ${n} rejected request${n === 1 ? '' : 's'} through the approve queue (one by one)?`;
+  }
+  return `Approve ${n} selected request${n === 1 ? '' : 's'}?`;
+});
+
+const bulkRejectConfirmText = computed(() => {
+  const n = selectedRequestIds.value.length;
+  if (n === 0) return 'No requests selected.';
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  if (st === 'approved') {
+    return `Send ${n} approved request${n === 1 ? '' : 's'} through the reject queue (one by one)?`;
+  }
+  return `Reject ${n} selected request${n === 1 ? '' : 's'}?`;
+});
+
 const confirmBulkApprove = () => {
-  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) || !canBulkApprove.value) return;
   if (selectedRequestIds.value.length === 0) return;
   showConfirmBulkApprove.value = true;
 };
 
 const handleBulkApprove = async () => {
-  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) {
-    showConfirmBulkApprove.value = false;
+  showConfirmBulkApprove.value = false;
+  if (!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST)) return;
+  if (selectedRequestIds.value.length === 0) return;
+
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  const ids = [...selectedRequestIds.value];
+
+  // For pending status → use the existing bulk endpoint
+  if (st === 'pending') {
+    try {
+      await store.bulkApproveRequests(ids);
+      clearBulkSelection();
+    } catch (e) {
+      console.error('Bulk approval failed:', e);
+    }
     return;
   }
-  if (selectedRequestIds.value.length === 0) {
-    showConfirmBulkApprove.value = false;
-    return;
-  }
+
+  // For approved/rejected → process via queue (individual /approve endpoints)
+  queueProgress.value = { running: true, type: 'approve', done: 0, failed: 0, total: ids.length };
   try {
-    await store.bulkApproveRequests([...selectedRequestIds.value]);
+    await store.queueBulkApproveRequests(ids, ({ done, failed, total }) => {
+      queueProgress.value = { running: true, type: 'approve', done, failed, total };
+    });
     clearBulkSelection();
   } catch (e) {
-    console.error("Bulk approval failed:", e);
+    console.error('Queue approval failed:', e);
   } finally {
-    showConfirmBulkApprove.value = false;
+    resetQueueProgress();
   }
 };
 
 const confirmBulkReject = () => {
-  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) return;
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) || !canBulkReject.value) return;
   if (selectedRequestIds.value.length === 0) return;
   showConfirmBulkReject.value = true;
 };
 
 const handleBulkReject = async () => {
-  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) {
-    showConfirmBulkReject.value = false;
+  showConfirmBulkReject.value = false;
+  if (!authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)) return;
+  if (selectedRequestIds.value.length === 0) return;
+
+  const st = String(pendingFilterStatus.value ?? '').toLowerCase();
+  const ids = [...selectedRequestIds.value];
+
+  // For pending status → use the existing bulk endpoint
+  if (st === 'pending') {
+    try {
+      await store.bulkRejectRequests(ids);
+      clearBulkSelection();
+    } catch (e) {
+      console.error('Bulk rejection failed:', e);
+    }
     return;
   }
-  if (selectedRequestIds.value.length === 0) {
-    showConfirmBulkReject.value = false;
-    return;
-  }
+
+  // For approved/rejected → process via queue (individual /reject endpoints)
+  queueProgress.value = { running: true, type: 'reject', done: 0, failed: 0, total: ids.length };
   try {
-    await store.bulkRejectRequests([...selectedRequestIds.value]);
+    await store.queueBulkRejectRequests(ids, ({ done, failed, total }) => {
+      queueProgress.value = { running: true, type: 'reject', done, failed, total };
+    });
     clearBulkSelection();
   } catch (e) {
-    console.error("Bulk rejection failed:", e);
+    console.error('Queue rejection failed:', e);
   } finally {
-    showConfirmBulkReject.value = false;
+    resetQueueProgress();
   }
 };
 
@@ -1880,3 +2010,15 @@ const handleReject = async () => {
   }
 };
 </script>
+
+<style scoped>
+.queue-modal-enter-active,
+.queue-modal-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.queue-modal-enter-from,
+.queue-modal-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+</style>
