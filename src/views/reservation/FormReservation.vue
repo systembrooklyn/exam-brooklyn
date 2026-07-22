@@ -39,7 +39,8 @@ function getEmployeeDisplayLabel(emp) {
 }
 
 const filteredCalledByEmployees = computed(() => {
-  const list = employeeStore.employees || [];
+  const manualOption = { id: "manual", name: "Manual", fingerprint: "" };
+  const list = [manualOption, ...(employeeStore.employees || [])];
   const q = String(calledBySearchQuery.value ?? "").toLowerCase().trim();
   if (!q) return list;
   return list.filter((emp) => {
@@ -63,6 +64,7 @@ const filteredReceptionistEmployees = computed(() => {
 const selectedCalledByLabel = computed(() => {
   const id = form.called_by;
   if (!id) return "";
+  if (id === "manual") return "Manual";
   const emp = (employeeStore.employees || []).find((e) => String(e.id) === String(id));
   return emp ? getEmployeeDisplayLabel(emp) : "";
 });
@@ -244,7 +246,7 @@ async function handleSubmit() {
     has_scholarship_code: form.has_scholarship_code,
     marketing_code: form.has_scholarship_code === "Yes" ? form.marketing_code : "",
     scholarship: form.scholarship,
-    called_by: form.called_by,
+    ...(form.called_by !== "manual" && { called_by: form.called_by }),
     faculity: form.faculity,
     major: form.major,
     careerType: form.careerType,
