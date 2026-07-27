@@ -582,27 +582,39 @@ const contractStore = useHrContractsStore()
 const authStore = useAuthStore()
 
 // ─── Helpers ──────────────────────────────────────────────
-// Given YYYY-MM, payroll cycle: day 21 of that month → day 20 of next month
-const getPayrollDates = (month) => {
-  if (!month) return { from_date: "", to_date: "" };
-
-  const [year, mon] = month.split("-").map(Number);
-
-  const fromYear = mon === 1 ? year - 1 : year;
-  const fromMon = mon === 1 ? 12 : mon - 1;
-
-  const fromDate = `${fromYear}-${String(fromMon).padStart(2, "0")}-21`;
-  const toDate = `${year}-${String(mon).padStart(2, "0")}-20`;
-
-  return { from_date: fromDate, to_date: toDate };
+// Given YYYY-MM or YYYY-MM-DD:
+const getPayrollDates = (monthOrDate) => {
+  if (!monthOrDate) return { from_date: "", to_date: "" };
+  const str = String(monthOrDate).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    const [y, m, d] = str.split("-").map(Number);
+    const toDate = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    const prevYear = m === 1 ? y - 1 : y;
+    const prevMon = m === 1 ? 12 : m - 1;
+    const dt = new Date(prevYear, prevMon - 1, d + 1);
+    const fy = dt.getFullYear();
+    const fm = dt.getMonth() + 1;
+    const fd = dt.getDate();
+    const fromDate = `${fy}-${String(fm).padStart(2, "0")}-${String(fd).padStart(2, "0")}`;
+    return { from_date: fromDate, to_date: toDate };
+  }
+  if (/^\d{4}-\d{2}$/.test(str)) {
+    const [year, mon] = str.split("-").map(Number);
+    const fromYear = mon === 1 ? year - 1 : year;
+    const fromMon = mon === 1 ? 12 : mon - 1;
+    const fromDate = `${fromYear}-${String(fromMon).padStart(2, "0")}-21`;
+    const toDate = `${year}-${String(mon).padStart(2, "0")}-20`;
+    return { from_date: fromDate, to_date: toDate };
+  }
+  return { from_date: "", to_date: "" };
 };
 
 /** Match PayrollsTable period resolution: row first, then payroll_month, then screen filter. */
 function resolvePayrollRowPeriodForStatus(item) {
   let from = item.period_from || item.period?.from || item.period?.period_from;
   let to = item.period_to || item.period?.to || item.period?.period_to;
-  const ym = item.period?.payroll_month;
-  if ((!from || !to) && ym && /^\d{4}-\d{2}$/.test(String(ym))) {
+  const ym = item.period?.payroll_month || item.payroll_month;
+  if ((!from || !to) && ym) {
     const { from_date, to_date } = getPayrollDates(ym);
     from = from || from_date;
     to = to || to_date;

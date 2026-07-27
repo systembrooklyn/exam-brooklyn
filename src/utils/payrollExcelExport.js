@@ -81,14 +81,9 @@ function boundsFromPayrollMonthYm(ym) {
 function effectivePeriodBounds(item, filterPeriodFrom, filterPeriodTo) {
   let from = item.period_from || item.period?.from || item.period?.period_from;
   let to = item.period_to || item.period?.to || item.period?.period_to;
-  const ym = item.period?.payroll_month;
-  if ((!from || !to) && ym && /^\d{4}-\d{2}$/.test(String(ym))) {
-    const b = boundsFromPayrollMonthYm(ym);
-    from = from || b.from;
-    to = to || b.to;
-  }
-  if ((!from || !to) && ym && /^\d{4}-\d{2}-\d{2}$/.test(String(ym))) {
-    const { from_date, to_date } = getPayrollDates(String(ym).slice(0, 7));
+  const ym = item.period?.payroll_month || item.payroll_month;
+  if ((!from || !to) && ym) {
+    const { from_date, to_date } = getPayrollDates(ym);
     from = from || from_date;
     to = to || to_date;
   }

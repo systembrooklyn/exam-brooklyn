@@ -151,6 +151,7 @@ import { LucideEye, LucideCheckCircle, LucidePauseCircle, LucideXCircle } from '
 import { computed, ref, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { HR_PERMISSION } from '@/constants/hrPermissions'
+import { getPayrollDates } from '@/utils/payrollPeriod'
 
 const authStore = useAuthStore()
 
@@ -226,25 +227,14 @@ const emitBulkApprove = () => {
 // Clear selection when the items list changes (e.g. after a fetch refresh)
 watch(() => props.items, () => { selectedIds.value = new Set() })
 
-/** Same rule as Payrolls.vue getPayrollDates: YYYY-MM payroll month → prev month 21 → selected month 20 */
-function boundsFromPayrollMonthYm(ym) {
-  if (!ym || !/^\d{4}-\d{2}$/.test(String(ym))) return { from: '', to: '' }
-  const [year, mon] = String(ym).split('-').map(Number)
-  const fromYear = mon === 1 ? year - 1 : year
-  const fromMon = mon === 1 ? 12 : mon - 1
-  const from = `${fromYear}-${String(fromMon).padStart(2, '0')}-21`
-  const to = `${year}-${String(mon).padStart(2, '0')}-20`
-  return { from, to }
-}
-
 function effectivePeriodBounds(item) {
   let from = item.period_from || item.period?.from || item.period?.period_from
   let to = item.period_to || item.period?.to || item.period?.period_to
-  const ym = item.period?.payroll_month
-  if ((!from || !to) && ym && /^\d{4}-\d{2}$/.test(String(ym))) {
-    const b = boundsFromPayrollMonthYm(ym)
-    from = from || b.from
-    to = to || b.to
+  const ym = item.period?.payroll_month || item.payroll_month
+  if ((!from || !to) && ym) {
+    const { from_date, to_date } = getPayrollDates(ym)
+    from = from || from_date
+    to = to || to_date
   }
   if ((!from || !to) && props.filterPeriodFrom && props.filterPeriodTo) {
     from = from || props.filterPeriodFrom
