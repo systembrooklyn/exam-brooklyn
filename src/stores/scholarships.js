@@ -119,7 +119,8 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     error.value = null;
     try {
       const response = await apiClient.get(SCHOLARSHIPS_PLANS);
-      scholarshipPlans.value = normalizeScholarshipPlansList(response);
+      const rawList = normalizeScholarshipPlansList(response);
+      scholarshipPlans.value = rawList.filter((s) => Number(s?.is_deleted ?? 0) === 0);
     } catch (err) {
       handleError(err);
       console.error(err);

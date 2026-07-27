@@ -268,7 +268,7 @@ async function handleSubmit() {
 }
 
 onMounted(() => {
-  scholarshipStore.fetchScholarships();
+  scholarshipStore.fetchScholarshipPlans();
   employeeStore.fetchEmployees();
   document.addEventListener("mousedown", handleClickOutsidePickers);
 });
@@ -464,9 +464,9 @@ onBeforeUnmount(() => {
 
       <div>
         <label class="form-label">Select Scholarship</label>
-        <select v-model="form.scholarship" class="form-input">
-          <option disabled value="">Select Scholarship</option>
-          <option v-for="scholarship in scholarshipStore.scholarships" :key="scholarship.id" :value="scholarship.id">
+        <select v-model="form.scholarship" class="form-input !pl-3 text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
+          <option disabled value="" class="text-gray-400 bg-white dark:bg-gray-700">Select Scholarship</option>
+          <option v-for="scholarship in scholarshipStore.scholarshipPlans" :key="scholarship.id" :value="scholarship.id" class="text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
             {{ scholarship.name }}
           </option>
         </select>
@@ -556,11 +556,10 @@ onBeforeUnmount(() => {
           />
         </div>
       </div>
-
       <!-- Nationality -->
       <div>
         <label class="form-label">Nationality</label>
-        <select v-model="form.nationality" class="form-input">
+        <select v-model="form.nationality" class="form-input !pl-3 text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
           <option disabled value="">Select Nationality</option>
           <option value="Egyptian">Egyptian</option>
           <option value="Sudanese">Sudanese</option>
@@ -578,7 +577,7 @@ onBeforeUnmount(() => {
       <!-- Governorate (Conditional) -->
       <div v-if="form.nationality === 'Egyptian'">
         <label class="form-label">Governorate</label>
-        <select v-model="form.governorate" class="form-input">
+        <select v-model="form.governorate" class="form-input !pl-3 text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
           <option disabled value="">Select Governorate</option>
           <option value="Cairo">Cairo</option>
           <option value="Giza">Giza</option>
@@ -632,12 +631,10 @@ onBeforeUnmount(() => {
           @input="restrictToEnglish('major')" />
       </div>
 
-
-
       <!-- Grade -->
       <div>
         <label class="form-label">Grade</label>
-        <select v-model="form.grade" class="form-input">
+        <select v-model="form.grade" class="form-input !pl-3 text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
           <option disabled value="">Select Grade</option>
           <option>Pass</option>
           <option>Good</option>
@@ -650,7 +647,7 @@ onBeforeUnmount(() => {
       <!-- Student Category -->
       <div>
         <label class="form-label">Career Type</label>
-        <select v-model="form.careerType" class="form-input">
+        <select v-model="form.careerType" class="form-input !pl-3 text-gray-800 bg-white dark:bg-gray-700 dark:text-white">
           <option disabled value="">Select Career Type</option>
           <option value="Engineer">Engineer</option>
           <option value="healthcare">Healthcare</option>
