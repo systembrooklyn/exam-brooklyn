@@ -72,6 +72,17 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     }
   };
 
+  const restoreScholarship = async (id) => {
+    try {
+      await apiClient.put(`${SCHOLARSHIPS_PLANS}/${id}/restore`);
+      notyf.success("Scholarship plan restored successfully");
+    } catch (err) {
+      handleError(err);
+      console.error(err);
+      throw err;
+    }
+  };
+
   const getScholarshipById = async (id) => {
     error.value = null;
     try {
@@ -114,13 +125,20 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
     return [];
   }
 
-  const fetchScholarshipPlans = async () => {
+  const inactiveScholarshipPlans = ref([]);
+
+  const fetchScholarshipPlans = async (params = { is_deleted: 0 }) => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await apiClient.get(SCHOLARSHIPS_PLANS);
+      const response = await apiClient.get(SCHOLARSHIPS_PLANS, { params });
       const rawList = normalizeScholarshipPlansList(response);
-      scholarshipPlans.value = rawList.filter((s) => Number(s?.is_deleted ?? 0) === 0);
+      const filtered = rawList.filter((s) => Number(s?.is_deleted ?? 0) === Number(params.is_deleted ?? 0));
+      if (Number(params.is_deleted ?? 0) === 1) {
+        inactiveScholarshipPlans.value = filtered;
+      } else {
+        scholarshipPlans.value = filtered;
+      }
     } catch (err) {
       handleError(err);
       console.error(err);
@@ -183,12 +201,14 @@ export const useScholarshipStore = defineStore("scholarshipStore", () => {
   return {
     scholarships,
     scholarshipPlans,
+    inactiveScholarshipPlans,
     loading,
     error,
     fetchScholarships,
     addScholarship,
     updateScholarship,
     deleteScholarship,
+    restoreScholarship,
     getScholarshipById,
     fetchScholarshipPlanById,
     fetchScholarshipPlans,

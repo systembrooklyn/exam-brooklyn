@@ -9,7 +9,7 @@
           </span>
           <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Scholarships</h1>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-850 dark:bg-indigo-950/40 dark:text-indigo-300">
-            {{ scholarshipStore.scholarshipPlans.length }} plans
+            {{ activeTab === 'active' ? scholarshipStore.scholarshipPlans.length : scholarshipStore.inactiveScholarshipPlans.length }} plans
           </span>
         </div>
         <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base leading-relaxed">
@@ -24,63 +24,84 @@
       </div>
     </div>
 
-    <!-- Bulk Update Price Bar -->
-    <transition name="fade">
-      <div v-if="selectedIds.length > 0" class="mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
-        <div class="flex items-center gap-3">
-          <span class="p-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-xl">
-            <CheckSquare class="w-5 h-5" />
-          </span>
-          <div>
-            <h3 class="text-sm font-bold text-gray-900 dark:text-white leading-none">
-              {{ selectedIds.length }} scholarships selected
-            </h3>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              Apply a bulk price update to all selected scholarship plans.
-            </p>
-          </div>
+    <!-- Custom Card Wrapper for Integrated Header and DataTable -->
+    <div class="rounded-2xl border border-gray-150 dark:border-gray-700/60 bg-white dark:bg-gray-800 shadow-sm overflow-hidden mt-4">
+      <!-- Card Header with Tabs on Left and Search on Right -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 px-6 py-4 border-b border-gray-150 dark:border-gray-700/60 bg-white dark:bg-gray-800">
+        <!-- Tab Switcher (Left side) -->
+        <div class="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl max-w-xs w-full sm:w-auto">
+          <button
+            @click="activeTab = 'active'"
+            :class="activeTab === 'active' 
+              ? 'bg-white dark:bg-gray-650 text-indigo-650 dark:text-indigo-400 shadow-sm font-bold' 
+              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+            class="flex-1 sm:flex-initial px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            Active
+            <span 
+              :class="activeTab === 'active' ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800/80'"
+              class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
+            >
+              {{ scholarshipStore.scholarshipPlans.length }}
+            </span>
+          </button>
+          <button
+            @click="activeTab = 'inactive'"
+            :class="activeTab === 'inactive' 
+              ? 'bg-white dark:bg-gray-650 text-rose-650 dark:text-rose-400 shadow-sm font-bold' 
+              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+            class="flex-1 sm:flex-initial px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5"
+          >
+            Inactive
+            <span 
+              :class="activeTab === 'inactive' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-800/80'"
+              class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
+            >
+              {{ scholarshipStore.inactiveScholarshipPlans.length }}
+            </span>
+          </button>
         </div>
 
-        <div class="flex items-center gap-3 self-start sm:self-auto">
-          <div class="relative">
-            <input
-              v-model="bulkPriceInput"
-              type="number"
-              placeholder="Enter new price..."
-              class="border border-gray-200 dark:border-gray-700 rounded-xl pl-4 pr-12 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all w-48"
-            />
-            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400 dark:text-gray-550 pointer-events-none">
-              EGP
-            </span>
-          </div>
-          <button
-            @click="applyBulkPriceUpdate"
-            :disabled="bulkUpdating || !bulkPriceInput"
-            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-xl transition-colors shadow-md shadow-indigo-600/10 cursor-pointer flex items-center gap-2"
-          >
-            <span v-if="bulkUpdating" class="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-            Update Price
-          </button>
-          <button
-            @click="clearSelection"
-            class="px-3 py-2 text-sm font-semibold text-gray-650 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer"
-          >
-            Cancel
-          </button>
+        <!-- Search input (Right side) -->
+        <div class="relative w-full sm:max-w-sm">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 dark:text-gray-500">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </span>
+          <input
+            type="text"
+            v-model="search"
+            placeholder="Search by name..."
+            class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
+          />
         </div>
       </div>
-    </transition>
 
-    <div>
-      <DataTable :headers="[
-        { label: 'Scholarship Name', key: 'name' },
-        { label: 'Price (EGP)', key: 'price' },
-        { label: 'Courses', key: 'courses' },
-        { label: 'Type', key: 'study_type' }
-       
-      ]" :badge-keys="['study_type']" :selectable="true" v-model:selected="selectedIds" :items="tableRows" :search="search" resourceType="scholarship" @edit="editScholarship"
-        @delete="confirmDelete" @open-scholarship-detail="openScholarshipPlanDetail"
-        :loading="scholarshipStore.loading" :loading-edit-id="scholarshipEditLoadingId" />
+      <!-- Embedded DataTable -->
+      <DataTable 
+        :headers="[
+          { label: 'Scholarship Name', key: 'name' },
+          { label: 'Price (EGP)', key: 'price' },
+          { label: 'Courses', key: 'courses' },
+          { label: 'Type', key: 'study_type' }
+        ]" 
+        :badge-keys="['study_type']" 
+        :selectable="true" 
+        v-model:selected="selectedIds" 
+        :items="tableRows" 
+        :search="search" 
+        resourceType="scholarship" 
+        :showSearch="false"
+        :embedded="true"
+        @edit="editScholarship"
+        @delete="confirmDelete" 
+        @open-scholarship-detail="openScholarshipPlanDetail" 
+        @restore="confirmRestore"
+        :loading="scholarshipStore.loading" 
+        :loading-edit-id="scholarshipEditLoadingId" 
+        :loading-restore-id="scholarshipRestoreLoadingId" 
+      />
     </div>
 
     <ScholarshipPlanDetailModal
@@ -109,6 +130,11 @@
     <SweetAlert2Modal v-if="showDeleteAlert" :title="'Are you sure?'" :text="'This scholarship plan will be deleted.'"
       :confirmButtonText="'Yes, delete it!'" :cancelButtonText="'Cancel'" @confirm="deleteScholarship"
       @cancel="cancelDelete" />
+
+    <!-- SweetAlert2 Modal for Restore Confirmation -->
+    <SweetAlert2Modal v-if="showRestoreAlert" :title="'Are you sure?'" :text="'This scholarship plan will be restored to active.'"
+      :confirmButtonText="'Yes, restore it!'" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" :cancelButtonText="'Cancel'" @confirm="executeRestoreScholarship"
+      @cancel="cancelRestore" />
   </div>
 </template>
 
@@ -150,6 +176,9 @@ function emptyPlanForm() {
 const form = ref(emptyPlanForm());
 const showDeleteAlert = ref(false);
 const scholarshipIdToDelete = ref(null);
+const showRestoreAlert = ref(false);
+const scholarshipIdToRestore = ref(null);
+const scholarshipRestoreLoadingId = ref(null);
 const search = ref("");
 const showPlanDetail = ref(false);
 const planDetail = ref(null);
@@ -187,12 +216,21 @@ const applyBulkPriceUpdate = async () => {
   }
 };
 
+const activeTab = ref("active");
+
+watch(activeTab, () => {
+  clearSelection();
+});
+
 watch(showPlanDetail, (open) => {
   if (!open) planDetail.value = null;
 });
 
 const filteredScholarships = computed(() => {
-  return scholarshipStore.scholarshipPlans.filter((scholarship) => {
+  const source = activeTab.value === "active"
+    ? scholarshipStore.scholarshipPlans
+    : scholarshipStore.inactiveScholarshipPlans;
+  return source.filter((scholarship) => {
     return scholarship.name.toLowerCase().includes(search.value.toLowerCase());
   });
 });
@@ -283,7 +321,10 @@ const saveScholarship = async () => {
       await scholarshipStore.createScholarshipPlan(payload);
     }
     closeModal();
-    await scholarshipStore.fetchScholarshipPlans();
+    await Promise.all([
+      scholarshipStore.fetchScholarshipPlans({ is_deleted: 0 }),
+      scholarshipStore.fetchScholarshipPlans({ is_deleted: 1 })
+    ]);
   } catch (error) {
     console.error(error);
   } finally {
@@ -301,6 +342,10 @@ const deleteScholarship = async () => {
   await scholarshipStore.deleteScholarship(scholarshipIdToDelete.value);
   showDeleteAlert.value = false;
   scholarshipIdToDelete.value = null;
+  await Promise.all([
+    scholarshipStore.fetchScholarshipPlans({ is_deleted: 0 }),
+    scholarshipStore.fetchScholarshipPlans({ is_deleted: 1 })
+  ]);
 };
 
 const cancelDelete = () => {
@@ -308,7 +353,37 @@ const cancelDelete = () => {
   scholarshipIdToDelete.value = null;
 };
 
+const confirmRestore = (id) => {
+  showRestoreAlert.value = true;
+  scholarshipIdToRestore.value = id;
+};
+
+const cancelRestore = () => {
+  showRestoreAlert.value = false;
+  scholarshipIdToRestore.value = null;
+};
+
+const executeRestoreScholarship = async () => {
+  const id = scholarshipIdToRestore.value;
+  if (!id) return;
+  showRestoreAlert.value = false;
+  scholarshipRestoreLoadingId.value = id;
+  try {
+    await scholarshipStore.restoreScholarship(id);
+    await Promise.all([
+      scholarshipStore.fetchScholarshipPlans({ is_deleted: 0 }),
+      scholarshipStore.fetchScholarshipPlans({ is_deleted: 1 })
+    ]);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    scholarshipRestoreLoadingId.value = null;
+    scholarshipIdToRestore.value = null;
+  }
+};
+
 onMounted(() => {
-  scholarshipStore.fetchScholarshipPlans();
+  scholarshipStore.fetchScholarshipPlans({ is_deleted: 0 });
+  scholarshipStore.fetchScholarshipPlans({ is_deleted: 1 });
 });
 </script>

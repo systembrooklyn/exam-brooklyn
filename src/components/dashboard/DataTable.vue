@@ -1,135 +1,88 @@
 <template>
-  <div
-    class="w-full overflow-x-auto dark:bg-gray-800"
-    :class="
-      embedded
-        ? 'rounded-none border-0 bg-transparent shadow-none'
-        : roundedTop
-          ? 'rounded-t-2xl rounded-b-xl border border-gray-150 bg-white shadow-sm dark:border-gray-700/60 overflow-hidden'
-          : 'rounded-2xl border border-gray-150 dark:border-gray-700/60 bg-white shadow-sm overflow-hidden'
-    "
-  >
+  <div class="w-full overflow-x-auto dark:bg-gray-800" :class="embedded
+      ? 'rounded-none border-0 bg-transparent shadow-none'
+      : roundedTop
+        ? 'rounded-t-2xl rounded-b-xl border border-gray-150 bg-white shadow-sm dark:border-gray-700/60 overflow-hidden'
+        : 'rounded-2xl border border-gray-150 dark:border-gray-700/60 bg-white shadow-sm overflow-hidden'
+    ">
     <div>
       <div class="flex flex-col pt-0">
         <!-- Modern Card Search Header -->
-        <div
-          v-if="showSearch"
-          class="flex items-center justify-between"
-          :class="embedded ? 'px-4 py-3 border-b border-gray-100 dark:border-gray-750 bg-transparent' : 'px-6 py-4 border-b border-gray-150 dark:border-gray-700/60 bg-white dark:bg-gray-800'"
-        >
+        <div v-if="showSearch" class="flex items-center justify-between"
+          :class="embedded ? 'px-4 py-3 border-b border-gray-100 dark:border-gray-750 bg-transparent' : 'px-6 py-4 border-b border-gray-150 dark:border-gray-700/60 bg-white dark:bg-gray-800'">
           <div class="relative w-full max-w-sm">
-            <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 dark:text-gray-500">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <span
+              class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-gray-400 dark:text-gray-500">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
             </span>
-            <input
-              type="text"
-              v-model="search"
-              :placeholder="embedded ? 'Search by name...' : 'Search...'"
-              class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
-            />
+            <input type="text" v-model="search" :placeholder="embedded ? 'Search by name...' : 'Search...'"
+              class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500" />
           </div>
         </div>
       </div>
     </div>
 
     <!-- Loading Spinner -->
-    <div
-      v-if="!sortedFilteredItems.length && loading"
-      :class="compact ? 'flex justify-center items-center py-10' : 'flex justify-center items-center py-20'"
-    >
-      <div
-        class="animate-spin border-4 border-indigo-500 border-t-transparent rounded-full w-10 h-10"
-      ></div>
+    <div v-if="!sortedFilteredItems.length && loading"
+      :class="compact ? 'flex justify-center items-center py-10' : 'flex justify-center items-center py-20'">
+      <div class="animate-spin border-4 border-indigo-500 border-t-transparent rounded-full w-10 h-10"></div>
     </div>
 
     <div v-else>
       <!-- Table -->
       <table
         class="w-full min-w-[960px] table-auto divide-y divide-gray-200 text-center dark:divide-gray-700 md:min-w-[1024px]"
-        :class="compact ? 'text-sm' : ''"
-      >
+        :class="compact ? 'text-sm' : ''">
         <thead
           class="bg-slate-50/75 dark:bg-slate-900/40 border-b border-gray-150 dark:border-gray-700/60 text-gray-500 dark:text-gray-400"
           :class="[
             embedded ? 'sticky top-0 z-[2] shadow-sm' : '',
-          ]"
-        >
+          ]">
           <tr>
-            <th
-              v-if="selectable"
-              class="w-12 px-4 py-4 text-center align-middle"
-            >
-              <input
-                type="checkbox"
-                :checked="isAllSelected"
-                :ref="(el) => { if (el) el.indeterminate = isSomeSelected }"
-                @change="toggleSelectAllRows"
-                class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-              />
+            <th v-if="selectable" class="w-12 px-4 py-4 text-center align-middle">
+              <input type="checkbox" :checked="isAllSelected"
+                :ref="(el) => { if (el) el.indeterminate = isSomeSelected }" @change="toggleSelectAllRows"
+                class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
             </th>
-            <th
-              v-for="header in headers"
-              :key="header.key"
-              class="font-bold tracking-wider text-center align-middle text-xs uppercase whitespace-nowrap"
-              :class="
-                compact
+            <th v-for="header in headers" :key="header.key"
+              class="font-bold tracking-wider text-center align-middle text-xs uppercase whitespace-nowrap" :class="compact
                   ? 'px-3.5 py-3'
                   : 'px-6 py-4'
-              "
-            >
-              <button
-                v-if="header.sortable"
-                type="button"
+                ">
+              <button v-if="header.sortable" type="button"
                 class="mx-auto flex w-full max-w-[11rem] items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-center font-bold tracking-wider text-xs uppercase text-gray-500 dark:text-gray-400 transition hover:bg-gray-100/70 dark:hover:bg-gray-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/60"
-                @click="toggleSortByColumn(header)"
-                :aria-sort="
-                  sortColumnKey === header.key
+                @click="toggleSortByColumn(header)" :aria-sort="sortColumnKey === header.key
                     ? sortDirection === 'asc'
                       ? 'ascending'
                       : 'descending'
                     : 'none'
-                "
-                :aria-label="`Sort by ${header.label}`"
-              >
+                  " :aria-label="`Sort by ${header.label}`">
                 <span class="leading-snug">{{ header.label }}</span>
-                <ArrowUpWideNarrow
-                  v-if="sortHeaderState(header) === 'asc'"
-                  class="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400"
-                  aria-hidden="true"
-                />
-                <ArrowDownWideNarrow
-                  v-else-if="sortHeaderState(header) === 'desc'"
-                  class="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400"
-                  aria-hidden="true"
-                />
-                <ArrowUpDown
-                  v-else
-                  class="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-550"
-                  aria-hidden="true"
-                />
+                <ArrowUpWideNarrow v-if="sortHeaderState(header) === 'asc'"
+                  class="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                <ArrowDownWideNarrow v-else-if="sortHeaderState(header) === 'desc'"
+                  class="w-3.5 h-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                <ArrowUpDown v-else class="w-3.5 h-3.5 shrink-0 text-gray-400 dark:text-gray-550" aria-hidden="true" />
               </button>
               <template v-else>{{ header.label }}</template>
             </th>
-            <th
-              v-if="showEmployeeReply"
+            <th v-if="showEmployeeReply"
               class="text-center font-bold tracking-wider text-xs uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
-              :class="
-                compact
+              :class="compact
                   ? 'px-3.5 py-3'
                   : 'px-6 py-4'
-              "
-            >
+                ">
               Reply
             </th>
-            <th
-              v-if="!hideActions"
+            <th v-if="!hideActions"
               class="text-center font-bold tracking-wider text-xs uppercase text-gray-500 dark:text-gray-400 whitespace-nowrap"
-              :class="
-                compact
+              :class="compact
                   ? 'px-3.5 py-3'
                   : 'px-6 py-4'
-              "
-            >
+                ">
               Actions
             </th>
           </tr>
@@ -137,27 +90,13 @@
 
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
           <!-- Render data rows -->
-          <tr
-            v-for="item in paginatedItems"
-            :key="item.id"
-            class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 bg-white dark:bg-gray-800 transition-all duration-150 group border-b border-gray-100 dark:border-gray-700/50"
-          >
-            <td
-              v-if="selectable"
-              class="w-12 px-4 py-4 text-center align-middle"
-            >
-              <input
-                type="checkbox"
-                :checked="isSelectedRow(item.id)"
-                @change="toggleSelectRow(item.id)"
-                class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer"
-              />
+          <tr v-for="item in paginatedItems" :key="item.id"
+            class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 bg-white dark:bg-gray-800 transition-all duration-150 group border-b border-gray-100 dark:border-gray-700/50">
+            <td v-if="selectable" class="w-12 px-4 py-4 text-center align-middle">
+              <input type="checkbox" :checked="isSelectedRow(item.id)" @change="toggleSelectRow(item.id)"
+                class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
             </td>
-            <td
-              v-for="header in headers"
-              :key="header.key"
-              :class="bodyTdClass(header)"
-            >
+            <td v-for="header in headers" :key="header.key" :class="bodyTdClass(header)">
               <!-- Special handling for Courses column -->
               <div v-if="header.key === 'courses'" :class="cellsCentered ? 'text-center' : ''">
                 <span>
@@ -169,52 +108,36 @@
                   }}
                 </span>
                 <span v-if="item.courses.length > COURSES_INCREMENT">
-                  <button
-                    class="ml-2 text-indigo-600 underline text-xs"
-                    @click="toggleExpand(item.id, item.courses.length)"
-                  >
+                  <button class="ml-2 text-indigo-600 underline text-xs"
+                    @click="toggleExpand(item.id, item.courses.length)">
                     {{
-                      (expandedRows[item.id] || COURSES_INCREMENT) <
-                      item.courses.length
-                        ? "More"
-                        : "Less"
-                    }}
-                  </button>
+                      (expandedRows[item.id] || COURSES_INCREMENT) < item.courses.length ? "More" : "Less" }} </button>
                 </span>
               </div>
 
-              <div
-                v-else-if="header.key === 'student_st_num_and_id'"
-                :class="[
-                  cellsCentered ? 'text-center' : 'text-start',
-                  'font-medium text-gray-900 dark:text-gray-100 tabular-nums',
-                ]"
-              >
+              <div v-else-if="header.key === 'student_st_num_and_id'" :class="[
+                cellsCentered ? 'text-center' : 'text-start',
+                'font-medium text-gray-900 dark:text-gray-100 tabular-nums',
+              ]">
                 <span class="text-xs sm:text-sm">{{
                   formatStudentNumAndId(item)
                 }}</span>
               </div>
 
-              <span
-                v-else-if="badgeKeys.includes(header.key)"
-                :class="badgeSpanClass(header.key, item)"
-              >
+              <span v-else-if="badgeKeys.includes(header.key)" :class="badgeSpanClass(header.key, item)">
                 {{ badgeDisplayText(item, header.key) }}
               </span>
 
-              <div v-else-if="collapsibleTextKeys.includes(header.key)" :class="cellsCentered ? 'flex flex-col items-center gap-0.5' : ''">
-                <span class="whitespace-pre-wrap break-words leading-snug">{{ displayCollapsibleText(item, header.key) }}</span>
-                <button
-                  v-if="collapsibleNeedsToggle(item, header.key)"
-                  type="button"
+              <div v-else-if="collapsibleTextKeys.includes(header.key)"
+                :class="cellsCentered ? 'flex flex-col items-center gap-0.5' : ''">
+                <span class="whitespace-pre-wrap break-words leading-snug">{{ displayCollapsibleText(item, header.key)
+                  }}</span>
+                <button v-if="collapsibleNeedsToggle(item, header.key)" type="button"
                   class="mt-0.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs font-medium underline-offset-2 hover:underline"
-                  :class="
-                    cellsCentered
+                  :class="cellsCentered
                       ? 'mx-auto inline-block w-auto text-center'
                       : 'block w-full text-start'
-                  "
-                  @click="toggleTextMore(item.id, header.key)"
-                >
+                    " @click="toggleTextMore(item.id, header.key)">
                   {{
                     isTextMoreExpanded(item.id, header.key)
                       ? "See less"
@@ -223,45 +146,31 @@
                 </button>
               </div>
 
-              <div
-                v-else-if="attributedReplyKeys.includes(header.key)"
-                class="min-w-0 w-full"
-                :class="cellsCentered ? 'flex flex-col items-center text-center' : 'text-start'"
-              >
-                <template
-                  v-if="!String(rawCellValue(item, header.key) ?? '').trim()"
-                >
+              <div v-else-if="attributedReplyKeys.includes(header.key)" class="min-w-0 w-full"
+                :class="cellsCentered ? 'flex flex-col items-center text-center' : 'text-start'">
+                <template v-if="!String(rawCellValue(item, header.key) ?? '').trim()">
                   <span class="text-gray-400 dark:text-gray-500">—</span>
                 </template>
-                <template
-                  v-else-if="
-                    parseAttributedReply(rawCellValue(item, header.key))
-                      .hasAttribution
-                  "
-                >
-                  <div
-                    :class="[
-                      'rounded-lg border p-2.5 sm:p-3 shadow-sm',
-                      header.key === 'employee_response'
-                        ? 'bg-blue-50/95 dark:bg-blue-950/35 border-blue-200/90 dark:border-blue-800/55'
-                        : 'bg-indigo-50/95 dark:bg-indigo-950/35 border-indigo-200/90 dark:border-indigo-800/55',
-                    ]"
-                  >
+                <template v-else-if="
+                  parseAttributedReply(rawCellValue(item, header.key))
+                    .hasAttribution
+                ">
+                  <div :class="[
+                    'rounded-lg border p-2.5 sm:p-3 shadow-sm',
+                    header.key === 'employee_response'
+                      ? 'bg-blue-50/95 dark:bg-blue-950/35 border-blue-200/90 dark:border-blue-800/55'
+                      : 'bg-indigo-50/95 dark:bg-indigo-950/35 border-indigo-200/90 dark:border-indigo-800/55',
+                  ]">
                     <div
-                      class="flex flex-wrap items-center gap-x-2 gap-y-1 pb-2 mb-2 border-b border-gray-900/10 dark:border-white/10"
-                    >
-                      <span
-                        class="text-[9px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-                      >
+                      class="flex flex-wrap items-center gap-x-2 gap-y-1 pb-2 mb-2 border-b border-gray-900/10 dark:border-white/10">
+                      <span class="text-[9px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                         Responded by
                       </span>
                       <span
                         class="text-[11px] sm:text-xs font-semibold text-gray-800 dark:text-gray-100 break-all sm:break-words"
-                        :title="
-                          parseAttributedReply(rawCellValue(item, header.key))
+                        :title="parseAttributedReply(rawCellValue(item, header.key))
                             .actor
-                        "
-                      >
+                          ">
                         {{
                           parseAttributedReply(rawCellValue(item, header.key))
                             .actor
@@ -270,16 +179,12 @@
                     </div>
                     <div class="min-w-0">
                       <p
-                        class="whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-gray-100 leading-relaxed"
-                      >
+                        class="whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
                         {{ displayAttributedReplyBody(item, header.key) }}
                       </p>
-                      <button
-                        v-if="attributedReplyBodyNeedsToggle(item, header.key)"
-                        type="button"
+                      <button v-if="attributedReplyBodyNeedsToggle(item, header.key)" type="button"
                         class="mt-1.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs font-medium underline-offset-2 hover:underline text-start"
-                        @click="toggleTextMore(item.id, header.key)"
-                      >
+                        @click="toggleTextMore(item.id, header.key)">
                         {{
                           isTextMoreExpanded(item.id, header.key)
                             ? "See less"
@@ -290,25 +195,18 @@
                   </div>
                 </template>
                 <template v-else>
-                  <div
-                    :class="[
-                      'rounded-lg border p-2.5 sm:p-3 shadow-sm',
-                      header.key === 'employee_response'
-                        ? 'bg-blue-50/95 dark:bg-blue-950/35 border-blue-200/90 dark:border-blue-800/55'
-                        : 'bg-indigo-50/95 dark:bg-indigo-950/35 border-indigo-200/90 dark:border-indigo-800/55',
-                    ]"
-                  >
-                    <p
-                      class="whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-gray-100 leading-relaxed"
-                    >
+                  <div :class="[
+                    'rounded-lg border p-2.5 sm:p-3 shadow-sm',
+                    header.key === 'employee_response'
+                      ? 'bg-blue-50/95 dark:bg-blue-950/35 border-blue-200/90 dark:border-blue-800/55'
+                      : 'bg-indigo-50/95 dark:bg-indigo-950/35 border-indigo-200/90 dark:border-indigo-800/55',
+                  ]">
+                    <p class="whitespace-pre-wrap break-words text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
                       {{ displayAttributedReplyBody(item, header.key) }}
                     </p>
-                    <button
-                      v-if="attributedReplyBodyNeedsToggle(item, header.key)"
-                      type="button"
+                    <button v-if="attributedReplyBodyNeedsToggle(item, header.key)" type="button"
                       class="mt-1.5 text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 text-xs font-medium underline-offset-2 hover:underline text-start"
-                      @click="toggleTextMore(item.id, header.key)"
-                    >
+                      @click="toggleTextMore(item.id, header.key)">
                       {{
                         isTextMoreExpanded(item.id, header.key)
                           ? "See less"
@@ -320,12 +218,11 @@
               </div>
 
               <!-- Booking: date on first line, full time (incl. AM/PM) on second -->
-              <div
-                v-else-if="header.key === 'booking_datetime'"
+              <div v-else-if="header.key === 'booking_datetime'"
                 class="flex flex-col gap-0.5 leading-tight tabular-nums"
-                :class="cellsCentered ? 'items-center text-center' : 'items-center'"
-              >
-                <template v-for="bd in [bookingDatetimeLines(item)]" :key="`${item?.id}-${bd?.dateLine ?? ''}-${bd?.timeLine ?? ''}`">
+                :class="cellsCentered ? 'items-center text-center' : 'items-center'">
+                <template v-for="bd in [bookingDatetimeLines(item)]"
+                  :key="`${item?.id}-${bd?.dateLine ?? ''}-${bd?.timeLine ?? ''}`">
                   <template v-if="bd">
                     <span class="text-gray-900 dark:text-gray-100">{{ bd.dateLine }}</span>
                     <span class="text-slate-600 dark:text-slate-400">{{ bd.timeLine }}</span>
@@ -335,75 +232,61 @@
               </div>
 
               <!-- Default rendering for other columns -->
-              <span
-                v-else-if="
-                  linkNameToDetails &&
-                  (header.key === 'name' || header.key === 'student.name')
-                "
-                @click="showDetails(item)"
-                :class="
-                  cellsCentered
+              <span v-else-if="
+                linkNameToDetails &&
+                (header.key === 'name' || header.key === 'student.name')
+              " @click="showDetails(item)" :class="cellsCentered
                     ? 'inline-flex cursor-pointer font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-850 dark:hover:text-indigo-300 transition-colors'
                     : 'cursor-pointer font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-850 dark:hover:text-indigo-300 transition-colors'
-                "
-              >
+                  ">
                 {{ getValueByPath(item, header.key) }}
               </span>
-              <span v-else :class="cellsCentered && 'inline-block max-w-full'">{{ getValueByPath(item, header.key) }}</span>
+              <span v-else :class="cellsCentered && 'inline-block max-w-full'">{{ getValueByPath(item, header.key)
+                }}</span>
             </td>
 
-            <td
-              v-if="showEmployeeReply"
-              class="whitespace-nowrap align-middle"
-              :class="[
-                compact ? 'px-3 py-2' : 'px-6 py-4',
-                cellsCentered && 'text-center',
-              ]"
-            >
-              <button
-                v-if="canShowEmployeeReplyButton(item)"
-                type="button"
+            <td v-if="showEmployeeReply" class="whitespace-nowrap align-middle" :class="[
+              compact ? 'px-3 py-2' : 'px-6 py-4',
+              cellsCentered && 'text-center',
+            ]">
+              <button v-if="canShowEmployeeReplyButton(item)" type="button"
                 class="inline-flex items-center justify-center gap-1 cursor-pointer bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/40 dark:hover:bg-blue-900/55 text-blue-800 dark:text-blue-200 font-semibold text-xs px-3 py-1 rounded-lg shadow-sm transition"
-                style="direction: auto; unicode-bidi: plaintext"
-                @click="emit('employee-reply', item)"
-              >
+                style="direction: auto; unicode-bidi: plaintext" @click="emit('employee-reply', item)">
                 Reply
                 <MessageCircleReply class="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
               </button>
               <span v-else class="text-gray-400 dark:text-gray-500">—</span>
             </td>
 
-            <td
-              v-if="!hideActions"
-              class="whitespace-nowrap align-middle"
-              :class="[
-                compact ? 'px-3 py-2' : 'px-6 py-4',
-                cellsCentered ? 'text-center' : '',
-              ]"
-            >
+            <td v-if="!hideActions" class="whitespace-nowrap align-middle" :class="[
+              compact ? 'px-3 py-2' : 'px-6 py-4',
+              cellsCentered ? 'text-center' : '',
+            ]">
               <div class="flex items-center gap-2" :class="cellsCentered ? 'justify-center' : ''">
-                <button
-                  v-if="canEdit"
-                  type="button"
-                  :disabled="isEditLoadingForRow(item)"
-                  @click="emit('edit', item)"
+                <!-- Edit Button (Always shown if canEdit) -->
+                <button v-if="canEdit" type="button" :disabled="isEditLoadingForRow(item)" @click="emit('edit', item)"
                   class="p-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 hover:text-indigo-750 transition-all duration-200 cursor-pointer shadow-sm inline-flex items-center justify-center disabled:opacity-60 disabled:cursor-not-allowed"
-                  title="Edit"
-                >
-                  <span
-                    v-if="isEditLoadingForRow(item)"
+                  title="Edit">
+                  <span v-if="isEditLoadingForRow(item)"
                     class="inline-block h-4 w-4 shrink-0 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin"
-                    aria-hidden="true"
-                  />
+                    aria-hidden="true" />
                   <Edit v-else class="w-4 h-4 shrink-0" />
                 </button>
-                <button
-                  v-show="!isReservation || canDelete"
-                  type="button"
-                  @click="emit('delete', item.id)"
+
+                <!-- Restore Button (if inactive, is_deleted === 1) -->
+                <button v-if="Number(item.is_deleted ?? 0) === 1" type="button" :disabled="isRestoreLoadingForRow(item)" @click="emit('restore', item.id)"
+                  class="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 hover:text-emerald-750 transition-all duration-200 cursor-pointer shadow-sm inline-flex items-center justify-center animate-fade-in disabled:opacity-60 disabled:cursor-not-allowed"
+                  title="Restore">
+                  <span v-if="isRestoreLoadingForRow(item)"
+                    class="inline-block h-4 w-4 shrink-0 rounded-full border-2 border-emerald-600 border-t-transparent animate-spin"
+                    aria-hidden="true" />
+                  <RotateCcw v-else class="w-4 h-4 shrink-0" />
+                </button>
+
+                <!-- Delete Button (if active, is_deleted === 0) -->
+                <button v-else v-show="!isReservation || canDelete" type="button" @click="emit('delete', item.id)"
                   class="p-2 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 hover:text-rose-750 transition-all duration-200 cursor-pointer shadow-sm inline-flex items-center justify-center"
-                  title="Delete"
-                >
+                  title="Delete">
                   <Trash2 class="w-4 h-4 shrink-0" />
                 </button>
               </div>
@@ -412,23 +295,16 @@
 
           <!-- No results found for the search -->
           <tr v-if="sortedFilteredItems.length === 0 && search.length > 0">
-            <td
-              :colspan="headers.length + tailColumnCount"
-              class="font-bold text-gray-700 dark:text-gray-300"
-              :class="[
-                compact ? 'px-3 py-2 text-sm' : 'px-6 py-4',
-                cellsCentered ? 'text-center' : 'text-start',
-              ]"
-            >
+            <td :colspan="headers.length + tailColumnCount" class="font-bold text-gray-700 dark:text-gray-300" :class="[
+              compact ? 'px-3 py-2 text-sm' : 'px-6 py-4',
+              cellsCentered ? 'text-center' : 'text-start',
+            ]">
               No results found for "{{ search }}".
             </td>
           </tr>
           <tr v-if="sortedFilteredItems.length === 0 && !loading">
-            <td
-              :colspan="headers.length + tailColumnCount"
-              class="text-center font-bold text-gray-600"
-              :class="compact ? 'px-3 py-2 text-sm' : 'px-6 py-4'"
-            >
+            <td :colspan="headers.length + tailColumnCount" class="text-center font-bold text-gray-600"
+              :class="compact ? 'px-3 py-2 text-sm' : 'px-6 py-4'">
               No data found.
             </td>
           </tr>
@@ -436,16 +312,10 @@
       </table>
 
       <!-- Pagination -->
-      <div
-        class="mt-4 flex justify-center gap-3 border-t border-slate-100 p-4"
-        :class="embedded ? 'bg-slate-50/60' : ''"
-        v-if="sortedFilteredItems.length > 0"
-      >
-        <button
-          @click="goToPreviousPage"
-          :disabled="currentPage === 1"
-          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45"
-        >
+      <div class="mt-4 flex justify-center gap-3 border-t border-slate-100 p-4"
+        :class="embedded ? 'bg-slate-50/60' : ''" v-if="sortedFilteredItems.length > 0">
+        <button @click="goToPreviousPage" :disabled="currentPage === 1"
+          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45">
           Previous
         </button>
         <div class="flex items-center">
@@ -453,32 +323,22 @@
             Page {{ currentPage }} of {{ totalPages }}
           </span>
         </div>
-        <button
-          @click="goToNextPage"
-          :disabled="currentPage === totalPages"
-          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45"
-        >
+        <button @click="goToNextPage" :disabled="currentPage === totalPages"
+          class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#5346e0] disabled:cursor-not-allowed disabled:opacity-45">
           Next
         </button>
       </div>
     </div>
 
-    <DetailsPopup
-      v-if="selectedExam"
-      :selectedExam="selectedExam"
-      :isCourse="isCourse"
-      :isExam="isExam"
-      :isReservation="isReservation"
-      :isInstructors="isInstructors"
-      :isEmployee="isEmployee"
-      @close="selectedExam = null"
-    />
+    <DetailsPopup v-if="selectedExam" :selectedExam="selectedExam" :isCourse="isCourse" :isExam="isExam"
+      :isReservation="isReservation" :isInstructors="isInstructors" :isEmployee="isEmployee"
+      @close="selectedExam = null" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-vue-next";
+import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow, RotateCcw } from "lucide-vue-next";
 import DetailsPopup from "../global/DetailsPopup.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -504,6 +364,10 @@ const props = defineProps({
   hideActions: Boolean,
   /** When set to an item id, that row's edit button shows an inline spinner */
   loadingEditId: {
+    type: [Number, String],
+    default: null,
+  },
+  loadingRestoreId: {
     type: [Number, String],
     default: null,
   },
@@ -588,6 +452,7 @@ const emit = defineEmits([
   "open-scholarship-detail",
   "employee-reply",
   "update:selected",
+  "restore",
 ]);
 
 const tailColumnCount = computed(() => {
@@ -775,6 +640,12 @@ const canDelete = computed(() =>
 
 function isEditLoadingForRow(item) {
   const lid = props.loadingEditId;
+  if (lid == null || lid === "") return false;
+  return String(lid) === String(item?.id);
+}
+
+function isRestoreLoadingForRow(item) {
+  const lid = props.loadingRestoreId;
   if (lid == null || lid === "") return false;
   return String(lid) === String(item?.id);
 }
@@ -1032,9 +903,8 @@ function getValueByPath(obj, path) {
 
     const moreOrLessBtn =
       fullCourses.length > 3
-        ? `<button class="ml-2 text-indigo-600 underline" onclick="__TOGGLE__"> ${
-            isExpanded ? "Less" : "More"
-          }</button>`
+        ? `<button class="ml-2 text-indigo-600 underline" onclick="__TOGGLE__"> ${isExpanded ? "Less" : "More"
+        }</button>`
         : "";
 
     return displayedCourses.join(", ") + moreOrLessBtn;
