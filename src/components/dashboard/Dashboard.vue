@@ -1,15 +1,15 @@
 <template>
-  <div class="flex min-h-screen bg-blue-50">
+  <div class="flex h-screen overflow-hidden bg-blue-50">
     <!-- Sidebar -->
-    <Sidebar /> 
+    <Sidebar class="h-full" /> 
 
     <!-- Main content -->
-    <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col h-full overflow-hidden">
       <!-- Navbar -->
       <NavBar />
 
       <!-- Content area -->
-      <main class="flex-1 px-1 bg-indigo-50 pb-5">
+      <main class="flex-1 px-1 bg-indigo-50 pb-5 overflow-y-auto">
         <router-view />
       </main>
     </div>

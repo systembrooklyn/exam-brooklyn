@@ -95,6 +95,20 @@ export default {
       meta: { requiresPermission: "view-price-settings" },
       component: () => import("@/views/dashboard/PriceSettingsList.vue"),
     },
-
+    {
+      path: "tickets",
+      name: "tickets",
+      component: () => import("@/views/dashboard/tickets/TicketsList.vue"),
+    },
+    {
+      path: "tickets/new",
+      name: "tickets-new",
+      component: () => import("@/views/dashboard/tickets/TicketCreate.vue"),
+    },
+    {
+      path: "tickets/:serial",
+      name: "tickets-details",
+      component: () => import("@/views/dashboard/tickets/TicketDetails.vue"),
+    },
   ],
 };

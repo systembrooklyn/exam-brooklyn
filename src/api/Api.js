@@ -142,3 +142,11 @@ export const PRICE_SETTINGS_BY_ID = (id) => `price-settings/${id}`;
 
 // Reservation Actions
 export const RESERVATION_SUBMIT = (id) => `reservations/${id}/submit`;
+
+// Tickets System APIs
+export const TICKETS_BASE = "tickets";
+export const TICKETS_META = "tickets/meta";
+export const TICKET_BY_SERIAL = (serial) => `tickets/${serial}`;
+export const TICKET_COMMENTS = (serial) => `tickets/${serial}/comments`;
+export const TICKET_STATUS = (serial) => `tickets/${serial}/status`;
+export const TICKET_EVALUATE = (serial) => `tickets/${serial}/evaluate`;

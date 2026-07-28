@@ -1,4 +1,4 @@
-import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog ,ClipboardCheck, Brain, CalendarDays, Tag } from 'lucide-vue-next'
+import { BookOpenCheck, PlusCircle, Settings, Users, FileText, GraduationCap, ShieldCheck, UserCog ,ClipboardCheck, Brain, CalendarDays, Tag, Ticket } from 'lucide-vue-next'
 
 export const items = [
   {
@@ -51,6 +51,11 @@ export const items = [
     name: 'Price Settings',
     icon: Tag,
     route: 'price-settings'
+  },
+  {
+    name: 'Tickets',
+    icon: Ticket,
+    route: 'tickets'
   },
   {
     name: 'Settings',
