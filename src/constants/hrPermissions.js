@@ -83,10 +83,10 @@ export const HR_PERMISSION = {
   DELETE_EMPLOYEE_DEDUCTION: "delete-employee-deductions",
 
   // Manpower – Positions
-  VIEW_POSITION: "view-position",
-  CREATE_POSITION: "create-position",
-  UPDATE_POSITION: "update-position",
-  DELETE_POSITION: "delete-position",
+  VIEW_POSITION: "view-positions",
+  CREATE_POSITION: "create-positions",
+  UPDATE_POSITION: "update-positions",
+  DELETE_POSITION: "delete-positions",
 
   // Manpower – Plans
   VIEW_MANPOWER_PLANS: "view-manpower-plans",

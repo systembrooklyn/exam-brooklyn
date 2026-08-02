@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-4 bg-gray-50/50 dark:bg-gray-900/50 animate-fade-in">
+  <div class="min-h-screen w-full bg-gray-50/50 dark:bg-gray-900/50 py-4 sm:py-6 animate-fade-in">
+    <div class="mx-auto w-full min-w-0 max-w-[1200px] px-4 sm:px-6 md:px-8">
 
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-3">
@@ -18,8 +19,18 @@
         </p>
       </div>
 
-      <div class="self-start sm:self-auto">
-        <router-link to="/dashboard/tickets/new" class="buttons">
+      <div class="flex items-center gap-2.5 self-start sm:self-auto">
+        <!-- Refresh Button -->
+        <button
+          @click="refreshData"
+          :disabled="pageLoading"
+          class="inline-flex items-center justify-center p-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer disabled:opacity-60"
+          title="Refresh Tickets"
+        >
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': pageLoading }" />
+        </button>
+
+        <router-link to="/tickets/new" class="buttons">
           <button class="btn"><span></span>
             <p data-start="good luck!" data-text="ADD!" data-title="new Ticket"></p>
           </button>
@@ -112,6 +123,26 @@
             class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
           />
 
+          <!-- Unread Comments Toggle -->
+          <button
+            @click="toggleUnreadOnly"
+            class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-sm"
+            :class="filters.unread_only
+              ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40'
+              : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
+          >
+            <MessageSquare class="w-3.5 h-3.5" :class="{ 'fill-rose-500/10': filters.unread_only }" />
+            <span>Unread Comments</span>
+            <span v-if="unreadCurrentCount > 0"
+              class="px-1.5 py-0.5 text-[9px] font-extrabold rounded-full"
+              :class="filters.unread_only
+                ? 'bg-rose-200 text-rose-800 dark:bg-rose-900 dark:text-rose-250'
+                : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'"
+            >
+              {{ unreadCurrentCount }}
+            </span>
+          </button>
+
           <button
             v-if="hasActiveFilters"
             @click="clearFilters"
@@ -143,7 +174,7 @@
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">There aren't any tickets that match your current filters.</p>
             </div>
             <router-link
-              to="/dashboard/tickets/new"
+              to="/tickets/new"
               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm transition-all duration-200 cursor-pointer"
             >
               <Plus class="w-4 h-4" />
@@ -158,12 +189,12 @@
             v-for="ticket in ticketsList"
             :key="ticket.serial"
             class="px-5 py-4 flex gap-3 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 cursor-pointer"
-            @click="$router.push(`/dashboard/tickets/${ticket.serial}`)"
+            @click="$router.push(`/tickets/${ticket.serial}`)"
           >
             <!-- Status Icon -->
             <div class="pt-0.5 flex-shrink-0">
               <CircleCheck v-if="ticket.status === 'closed' || ticket.is_closed" class="w-5 h-5 text-purple-500" />
-              <CircleDot v-else class="w-5 h-5 text-emerald-500" />
+              <CircleDot v-else class="w-5 h-5 text-emerald-500" :class="{ 'fill-emerald-500': !ticket.is_read }" />
             </div>
 
             <!-- Ticket Info -->
@@ -183,7 +214,7 @@
                   {{ ticket.category }}
                 </span>
                 <span class="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
-                  opened {{ formatDate(ticket.created_at) }} by <span class="font-semibold text-gray-700 dark:text-gray-300 ml-0.5">{{ ticket.user.name }}</span>
+                  created at {{ formatDate(ticket.created_at) }} by <span class="font-semibold text-gray-700 dark:text-gray-300 ml-0.5">{{ ticket.user.name }}</span>
                 </span>
                 <span
                   @click.stop="copyEmail(ticket.user.email)"
@@ -193,9 +224,28 @@
                   <Mail class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
                   {{ ticket.user.email }}
                 </span>
-                <span v-if="ticket.comments_count" class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500  bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50">
-                  <MessageSquare class="w-3 h-3" />
+                <span v-if="ticket.comments_count"
+                  class="relative flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg border transition-colors"
+                  :class="ticket.has_unread_comments
+                    ? 'bg-rose-50 text-rose-650 dark:bg-rose-950/20 dark:text-rose-400 border-rose-150 dark:border-rose-900/40 font-bold shadow-sm'
+                    : 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-750 border-gray-150 dark:border-gray-700/50'"
+                  :title="ticket.has_unread_comments ? 'Unread comments available' : 'Comments count'"
+                >
+                  <MessageSquare class="w-3 h-3" :class="{ 'fill-rose-500/10': ticket.has_unread_comments }" />
                   {{ ticket.comments_count }}
+
+                  <!-- Red dot indicator for unread comments -->
+                  <span v-if="ticket.has_unread_comments" class="absolute -top-1 -right-1 flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                </span>
+                <span v-if="getOtherReaders(ticket.readers, ticket.user).length"
+                  class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50"
+                  :title="getOtherReaders(ticket.readers, ticket.user).map(formatReaderNameWithTime).join('\n')"
+                >
+                  <Eye class="w-3 h-3" />
+                  Seen by: {{ getOtherReaders(ticket.readers, ticket.user).map(formatReaderName).join(', ') }}
                 </span>
               </div>
             </div>
@@ -220,13 +270,14 @@
         </div>
       </div>
     </template>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail } from 'lucide-vue-next';
+import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye } from 'lucide-vue-next';
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
 import notyf from '@/components/global/notyf';
@@ -243,17 +294,34 @@ const filters = reactive({
   category: '',
   start_date: '',
   end_date: '',
+  unread_only: false,
 });
 
 const ticketsList = computed(() => {
-  return filters.is_closed ? store.closedTickets : store.openTickets;
+  let list = filters.is_closed ? store.closedTickets : store.openTickets;
+  if (filters.unread_only) {
+    list = list.filter(t => t.has_unread_comments);
+  }
+  return list;
 });
 
-const openCount = computed(() => store.openTickets.length);
-const closedCount = computed(() => store.closedTickets.length);
+const openCount = computed(() => {
+  let list = store.openTickets;
+  if (filters.unread_only) {
+    list = list.filter(t => t.has_unread_comments);
+  }
+  return list.length;
+});
+const closedCount = computed(() => {
+  let list = store.closedTickets;
+  if (filters.unread_only) {
+    list = list.filter(t => t.has_unread_comments);
+  }
+  return list.length;
+});
 
 const hasActiveFilters = computed(() =>
-  filters.type || filters.category || filters.start_date || filters.end_date
+  filters.type || filters.category || filters.start_date || filters.end_date || filters.unread_only
 );
 
 const buildParams = () => {
@@ -282,6 +350,65 @@ const categoryOptions = computed(() => {
   const meta = store.metaOptions;
   return meta?.category || meta?.categories || [];
 });
+
+const getOtherReaders = (readers, ticketOwner) => {
+  if (!readers || !Array.isArray(readers)) return [];
+  const currentUser = authStore.user;
+  return readers.filter(r => {
+    const isSelf = currentUser && (
+      (currentUser.id && r.id && String(currentUser.id) === String(r.id)) ||
+      (currentUser.fingerPrint && r.fingerprint && String(currentUser.fingerPrint) === String(r.fingerprint)) ||
+      (currentUser.fingerprint && r.fingerprint && String(currentUser.fingerprint) === String(r.fingerprint)) ||
+      (currentUser.name && r.name && currentUser.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
+      (currentUser.email && r.email && currentUser.email.trim().toLowerCase() === r.email.trim().toLowerCase())
+    );
+
+    const isOwner = ticketOwner && (
+      (ticketOwner.id && r.id && String(ticketOwner.id) === String(r.id)) ||
+      (ticketOwner.fingerPrint && r.fingerprint && String(ticketOwner.fingerPrint) === String(r.fingerprint)) ||
+      (ticketOwner.fingerprint && r.fingerprint && String(ticketOwner.fingerprint) === String(r.fingerprint)) ||
+      (ticketOwner.name && r.name && ticketOwner.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
+      (ticketOwner.email && r.email && ticketOwner.email.trim().toLowerCase() === r.email.trim().toLowerCase())
+    );
+
+    return !isSelf && !isOwner;
+  });
+};
+
+const formatReaderName = (r) => {
+  return `${r.name}${r.fingerprint ? '_' + r.fingerprint : ''}`;
+};
+
+const formatReaderNameWithTime = (r) => {
+  if (!r.read_at) return formatReaderName(r);
+  const timeStr = new Date(r.read_at).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+  return `${formatReaderName(r)} at ${timeStr}`;
+};
+
+const toggleUnreadOnly = () => {
+  filters.unread_only = !filters.unread_only;
+};
+
+const unreadCurrentCount = computed(() => {
+  const list = filters.is_closed ? store.closedTickets : store.openTickets;
+  return list.filter(t => t.has_unread_comments).length;
+});
+
+const refreshData = async () => {
+  pageLoading.value = true;
+  try {
+    const params = buildParams();
+    await store.fetchTickets(params);
+    await store.fetchMetaOptions();
+  } catch (e) {
+    console.error(e);
+  } finally {
+    pageLoading.value = false;
+  }
+};
 
 const fetchData = async () => {
   const params = buildParams();
@@ -323,6 +450,7 @@ const clearFilters = () => {
   filters.category = '';
   filters.start_date = '';
   filters.end_date = '';
+  filters.unread_only = false;
   fetchData();
 };
 

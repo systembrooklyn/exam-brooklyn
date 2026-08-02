@@ -1,6 +1,6 @@
 <template>
-  <div
-    class="min-h-screen w-full px-4 py-5 sm:px-6 sm:py-6 md:px-8 md:py-4 bg-gray-50/50 dark:bg-gray-900/50 animate-fade-in">
+  <div class="min-h-screen w-full bg-gray-50/50 dark:bg-gray-900/50 py-4 sm:py-6 animate-fade-in">
+    <div class="mx-auto w-full min-w-0 max-w-[1200px] px-4 sm:px-6 md:px-8">
 
     <!-- Loading Skeleton -->
     <div v-if="store.loading && !store.currentTicket"
@@ -17,7 +17,7 @@
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div>
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-            <router-link to="/dashboard/tickets"
+            <router-link to="/tickets"
               class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">Tickets</router-link>
             <ChevronRight class="w-3.5 h-3.5" />
             <span>#{{ store.currentTicket.serial }}</span>
@@ -46,13 +46,24 @@
           </div>
         </div>
 
-        <router-link to="/dashboard/tickets/new" class="self-start">
+        <div class="flex items-center gap-2 self-start">
           <button
-            class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 cursor-pointer">
-            <Plus class="w-4 h-4" />
-            New Ticket
+            @click="loadTicket(store.currentTicket.serial)"
+            :disabled="store.loading"
+            class="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer disabled:opacity-60"
+            title="Refresh Ticket"
+          >
+            <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': store.loading }" />
           </button>
-        </router-link>
+
+          <router-link to="/tickets/new">
+            <button
+              class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all duration-200 cursor-pointer">
+              <Plus class="w-4 h-4" />
+              New Ticket
+            </button>
+          </router-link>
+        </div>
       </div>
 
       <!-- Main Content: Thread + Sidebar -->
@@ -127,6 +138,17 @@
                 <Paperclip class="w-3.5 h-3.5" />
                 View Attachment
               </a>
+            </div>
+            <!-- Seen by section -->
+            <div v-if="getOtherReaders(comment.readers, comment.user || comment.author_name).length"
+              class="px-5 pb-4 -mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
+              <Eye class="w-3.5 h-3.5 flex-shrink-0" />
+              <span class="font-medium text-gray-500 dark:text-gray-400">Seen by:</span>
+              <span v-for="(r, idx) in getOtherReaders(comment.readers, comment.user || comment.author_name)" :key="r.id" class="inline-flex items-center gap-1">
+                <span class="font-medium text-gray-650 dark:text-gray-300">{{ formatReaderName(r) }}</span>
+                <span class="text-[10px] text-gray-450 dark:text-gray-500">at {{ formatDate(r.read_at) }}</span>
+                <span v-if="idx < getOtherReaders(comment.readers, comment.user || comment.author_name).length - 1" class="text-gray-300 dark:text-gray-700 ml-1">•</span>
+              </span>
             </div>
           </div>
 
@@ -204,7 +226,7 @@
 
               <!-- Actions -->
               <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/60">
-                <button type="button" @click="closeTicket" :disabled="store.loading"
+                <button v-if="authStore.can('can-close-ticket')" type="button" @click="closeTicket" :disabled="store.loading"
                   class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer disabled:opacity-60">
                   <CircleCheck class="w-4 h-4 text-purple-500" />
                   Close Ticket
@@ -353,9 +375,10 @@
         <Ticket class="w-8 h-8" />
       </div>
       <h3 class="text-base font-semibold text-gray-900 dark:text-white">Ticket not found</h3>
-      <router-link to="/dashboard/tickets"
+      <router-link to="/tickets"
         class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">← Back to all
         tickets</router-link>
+    </div>
     </div>
   </div>
 </template>
@@ -365,7 +388,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import {
   ChevronRight, CircleDot, CircleCheck, MessageSquare, Plus,
-  FileText, Link, Paperclip, Star, Ticket, RotateCcw
+  FileText, Link, Paperclip, Star, Ticket, RotateCcw, Eye, RefreshCw
 } from 'lucide-vue-next';
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
@@ -391,6 +414,39 @@ const isTicketOwner = computed(() => {
   if (!currentUser || !ticketUser) return false;
   return currentUser.id === ticketUser.id || currentUser.email === ticketUser.email;
 });
+
+const getOtherReaders = (readers, commentOwner) => {
+  if (!readers || !Array.isArray(readers)) return [];
+  const currentUser = authStore.user;
+  return readers.filter(r => {
+    const isSelf = currentUser && (
+      (currentUser.id && r.id && String(currentUser.id) === String(r.id)) ||
+      (currentUser.fingerPrint && r.fingerprint && String(currentUser.fingerPrint) === String(r.fingerprint)) ||
+      (currentUser.fingerprint && r.fingerprint && String(currentUser.fingerprint) === String(r.fingerprint)) ||
+      (currentUser.name && r.name && currentUser.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
+      (currentUser.email && r.email && currentUser.email.trim().toLowerCase() === r.email.trim().toLowerCase())
+    );
+
+    const isAuthor = commentOwner && (
+      (commentOwner.id && r.id && String(commentOwner.id) === String(r.id)) ||
+      (commentOwner.fingerPrint && r.fingerprint && String(commentOwner.fingerPrint) === String(r.fingerprint)) ||
+      (commentOwner.fingerprint && r.fingerprint && String(commentOwner.fingerprint) === String(r.fingerprint)) ||
+      (commentOwner.name && r.name && commentOwner.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
+      (commentOwner.email && r.email && commentOwner.email.trim().toLowerCase() === r.email.trim().toLowerCase())
+    );
+
+    const matchesAuthorName = !isAuthor && r.name && (
+      (typeof commentOwner === 'string' && commentOwner.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
+      (commentOwner && typeof commentOwner === 'object' && commentOwner.author_name && String(commentOwner.author_name).trim().toLowerCase() === r.name.trim().toLowerCase())
+    );
+
+    return !isSelf && !isAuthor && !matchesAuthorName;
+  });
+};
+
+const formatReaderName = (r) => {
+  return `${r.name}${r.fingerprint ? '_' + r.fingerprint : ''}`;
+};
 
 const loadTicket = (serial) => {
   store.currentTicket = null;

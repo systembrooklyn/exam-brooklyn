@@ -55,6 +55,7 @@ import bookingExamIcon from "@/assets/booking-exam.png";
 import requestsIcon from "@/assets/requests.jpg";
 import Placement2 from "@/assets/plasment2.jpeg";
 import papersIcon from "@/assets/papers.png";
+import ticketIcon from "@/assets/tickets.png";
 
 
 const systems = [
@@ -143,13 +144,31 @@ const systems = [
     route: "/papers",
     image: papersIcon,
   },
+  {
+    name: "Ticket System",
+    route: "/tickets",
+    image: ticketIcon,
+  },
 ];
 
 
 const authStore = useAuthStore();
 
 const filteredSystems = computed(() => {
+  const currentUser = authStore.user;
+  const userEmail = currentUser?.email ? currentUser.email.trim().toLowerCase() : "";
+  const excludedEmails = [
+    "abbasya@brooklynacademy.net",
+    "ramsis@brooklynacademy.net",
+    "5thsettlement@brooklynacademy.net"
+  ];
+
   return systems.filter((system) => {
+    // Exclude Ticket System for the specified accounts
+    if (system.name === "Ticket System" && excludedEmails.includes(userEmail)) {
+      return false;
+    }
+
     if (system.requiresPermission) {
       return authStore.hasPermission(system.requiresPermission);
     }

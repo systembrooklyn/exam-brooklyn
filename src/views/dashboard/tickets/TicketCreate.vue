@@ -6,7 +6,7 @@
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-            <router-link to="/dashboard/tickets" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">Tickets</router-link>
+            <router-link to="/tickets" class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">Tickets</router-link>
             <ChevronRight class="w-3.5 h-3.5" />
             <span>New</span>
           </div>
@@ -137,7 +137,7 @@
         <!-- Footer Actions -->
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/60">
           <router-link
-            to="/dashboard/tickets"
+            to="/tickets"
             class="px-4 py-2 text-sm font-semibold text-gray-650 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
             Cancel
@@ -209,7 +209,7 @@ const submitTicket = async () => {
     if (file.value) formData.append('attachment', file.value);
 
     await store.createTicket(formData);
-    router.push('/dashboard/tickets');
+    router.push('/tickets');
   } catch (error) {
     console.error('Failed to create ticket', error);
   }
