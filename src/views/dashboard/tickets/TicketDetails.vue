@@ -243,7 +243,7 @@
 
           <!-- Evaluation Section -->
           <div v-if="isClosed && !store.currentTicket.evaluate && isTicketOwner"
-            class="bg-white dark:bg-gray-800 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-sm relative">
+            class="bg-white dark:bg-gray-800 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-sm relative mb-4">
             <!-- Timeline Dot -->
             <div class="absolute -left-7 top-4 w-6 h-6 rounded-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-550 dark:text-amber-400 z-10">
               <Star class="w-3.5 h-3.5" />
@@ -255,45 +255,77 @@
               </span>
               <div>
                 <h3 class="text-sm font-bold text-gray-900 dark:text-white leading-none">Rate Your Experience</h3>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How was your support experience? Rate from 1 to
-                  10.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How was your support experience? Rate from 1 to 10.</p>
               </div>
             </div>
-            <div class="px-6 py-5">
+            <div class="px-6 py-5 space-y-4">
+              <!-- Rating Selector (1-10) -->
               <div class="flex flex-wrap gap-2 justify-center">
-                <button v-for="i in 10" :key="i" @click="submitEvaluation(i)" :disabled="store.loading || submittingScore !== null"
-                  class="w-10 h-10 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-110 cursor-pointer disabled:opacity-60 flex items-center justify-center"
-                  :class="submittingScore === i
-                    ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                <button v-for="i in 10" :key="i" type="button" @click="selectedScore = i" :disabled="store.loading"
+                  class="w-10 h-10 rounded-xl font-bold text-sm transition-all duration-200 hover:scale-110 cursor-pointer disabled:opacity-60 flex items-center justify-center border"
+                  :class="selectedScore === i
+                    ? 'bg-indigo-600 text-white shadow-md border-indigo-650'
                     : evalHover === i
-                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-                      : i <= 3 ? 'bg-red-50 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-950/30 dark:text-red-400 border border-red-100 dark:border-red-900/40'
-                        : i <= 7 ? 'bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white dark:bg-amber-950/30 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40'
-                          : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-500 hover:text-white dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/40'"
+                      ? 'bg-indigo-600 text-white shadow-md border-indigo-650'
+                      : i <= 3 
+                        ? 'bg-red-50/45 dark:bg-red-950/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30 hover:bg-red-50 dark:hover:bg-red-950/30'
+                        : i <= 7 
+                          ? 'bg-amber-50/45 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-900/30 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                          : 'bg-emerald-50/45 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/30'"
                   @mouseover="evalHover = i" @mouseleave="evalHover = null">
-                  <span v-if="submittingScore === i" class="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                  <span v-else>{{ i }}</span>
+                  <span>{{ i }}</span>
                 </button>
+              </div>
+
+              <!-- Notes and Submit Button (Shown when a rating is selected) -->
+              <div v-if="selectedScore !== null" class="space-y-3 pt-2 border-t border-gray-100 dark:border-gray-700/60 max-w-lg mx-auto animate-fade-in">
+                <div>
+                  <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                    Feedback Notes <span class="text-[10px] text-gray-400 lowercase italic normal-case">(optional)</span>
+                  </label>
+                  <textarea
+                    v-model="evaluationNotes"
+                    rows="3"
+                    placeholder="Tell us more about your support experience (optional)..."
+                    class="w-full border border-gray-200 dark:border-gray-750 rounded-xl px-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600"
+                  ></textarea>
+                </div>
+                <div class="flex justify-end">
+                  <button
+                    type="button"
+                    @click="submitEvaluation"
+                    :disabled="store.loading"
+                    class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-2 shadow-md shadow-indigo-600/10"
+                  >
+                    <span v-if="submittingScore !== null" class="block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Submit Rating
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Evaluation Done -->
           <div v-if="store.currentTicket.evaluate"
-            class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl px-5 py-4 flex items-center gap-3 relative">
+            class="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 rounded-2xl px-5 py-4 flex flex-col gap-2 relative">
             <!-- Timeline Dot -->
-            <div class="absolute -left-7 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-450 z-10">
+            <div class="absolute -left-7 top-6 w-6 h-6 rounded-full bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-600 dark:text-emerald-450 z-10">
               <Star class="w-3.5 h-3.5 text-amber-500" />
             </div>
-            <Star class="w-5 h-5 text-amber-500 flex-shrink-0" />
-            <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              <template v-if="isTicketOwner">
-                You rated this ticket <strong>{{ store.currentTicket.evaluate }} / 10</strong>. Thank you for your feedback!
-              </template>
-              <template v-else>
-                {{ store.currentTicket.user?.name || 'The user' }} rated this ticket <strong>{{ store.currentTicket.evaluate }} / 10</strong>.
-              </template>
-            </span>
+            <div class="flex items-center gap-3">
+              <Star class="w-5 h-5 text-amber-500 flex-shrink-0" />
+              <span class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                <template v-if="isTicketOwner">
+                  You rated this ticket <strong>{{ store.currentTicket.evaluate }} / 10</strong>. Thank you for your feedback!
+                </template>
+                <template v-else>
+                  {{ store.currentTicket.user?.name || 'The user' }} rated this ticket <strong>{{ store.currentTicket.evaluate }} / 10</strong>.
+                </template>
+              </span>
+            </div>
+            <div v-if="store.currentTicket.evaluation_notes" class="mt-1 pl-8 text-xs text-gray-650 dark:text-gray-400 italic">
+              "{{ store.currentTicket.evaluation_notes }}"
+            </div>
           </div>
         </div>
 
@@ -360,6 +392,9 @@
                   <span class="text-xs font-bold text-gray-800 dark:text-gray-200">{{ store.currentTicket.evaluate }}
                     / 10</span>
                 </div>
+                <p v-if="store.currentTicket.evaluation_notes" class="text-[11px] text-gray-550 dark:text-gray-400 italic mt-1 max-w-full truncate" :title="store.currentTicket.evaluation_notes">
+                  "{{ store.currentTicket.evaluation_notes }}"
+                </p>
               </div>
             </div>
           </div>
@@ -403,6 +438,8 @@ const authStore = useAuthStore();
 const commentForm = ref({ body: '' });
 const commentFile = ref(null);
 const evalHover = ref(null);
+const selectedScore = ref(null);
+const evaluationNotes = ref('');
 
 const isClosed = computed(() => {
   return store.currentTicket?.status === 'closed' || store.currentTicket?.is_closed;
@@ -524,11 +561,17 @@ const closeTicket = async () => {
 
 const submittingScore = ref(null);
 
-const submitEvaluation = async (score) => {
+const submitEvaluation = async () => {
+  if (selectedScore.value === null) return;
+  const score = selectedScore.value;
+  const notes = evaluationNotes.value.trim() || null;
   submittingScore.value = score;
   try {
-    await store.evaluateTicket(store.currentTicket.serial, score);
-    if (store.currentTicket) store.currentTicket.evaluate = score;
+    await store.evaluateTicket(store.currentTicket.serial, score, notes);
+    if (store.currentTicket) {
+      store.currentTicket.evaluate = score;
+      store.currentTicket.evaluation_notes = notes;
+    }
     Swal.fire({
       icon: 'success',
       title: 'Thank You!',

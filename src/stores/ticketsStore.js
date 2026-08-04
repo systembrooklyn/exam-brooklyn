@@ -132,11 +132,15 @@ export const useTicketsStore = defineStore("ticketsStore", () => {
   };
 
   // Evaluate ticket
-  const evaluateTicket = async (serial, evaluate) => {
+  const evaluateTicket = async (serial, evaluate, evaluation_notes = null) => {
     loading.value = true;
     error.value = null;
     try {
-      const response = await apiClient.post(TICKET_EVALUATE(serial), { evaluate });
+      const payload = { evaluate };
+      if (evaluation_notes !== null) {
+        payload.evaluation_notes = evaluation_notes;
+      }
+      const response = await apiClient.post(TICKET_EVALUATE(serial), payload);
       return response.data;
     } catch (err) {
       handleError(err);
