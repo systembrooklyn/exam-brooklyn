@@ -402,6 +402,7 @@ import { useHrEmployeesStore } from '@/stores/hr/employees';
 import { useHrLinksStore } from '@/stores/hr/links';
 import { useHrJobTitlesStore } from '@/stores/hr/jobTitles';
 import { useHrPositionsStore } from '@/stores/hr/positions';
+import { useHrDepartmentsStore } from '@/stores/hr/departments';
 import { useReservationStore } from '@/stores/reservations';
 import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
@@ -417,7 +418,11 @@ const authStore = useAuthStore();
 const linksStore = useHrLinksStore();
 const jobTitlesStore = useHrJobTitlesStore();
 const positionsStore = useHrPositionsStore();
+const departmentsStore = useHrDepartmentsStore();
 const reservationStore = useReservationStore();
+
+const department = computed(() => store.department);
+console.log('department', department.value);
 
 const canOpenEmployeeModal = computed(
   () =>
@@ -426,6 +431,8 @@ const canOpenEmployeeModal = computed(
 );
 
 const employees = computed(() => store.employees);
+console.log('employees', employees.value);
+
 
 /** API may send flat *_id fields or only nested department / job_title objects. */
 const parsePositiveInt = (raw) => {
@@ -440,10 +447,19 @@ const jobTitleIdFromAssignmentRow = (jd) =>
   parsePositiveInt(jd?.job_title_id ?? jd?.job_title?.id);
 
 /**
- * MultiSelect + table name fallbacks — derived only from GET /employees (`job_departments`),
- * so we do not call /departments, /job-titles, or /managers (avoids permission errors for regular users).
+ * Master departments list from store, fallback to employee-derived list if empty (avoids permission errors).
  */
-const departmentOptions = computed(() => {
+const masterDepartmentOptions = computed(() => {
+  const rows = Array.isArray(departmentsStore.departments) ? departmentsStore.departments : [];
+  return rows
+    .map((d) => ({
+      id: Number(d?.id),
+      department_name: String(d?.department_name ?? '').trim(),
+    }))
+    .filter((d) => Number.isInteger(d.id) && d.id > 0 && d.department_name);
+});
+
+const employeeDerivedDepartmentOptions = computed(() => {
   const byId = new Map();
   for (const emp of employees.value) {
     const rows = emp?.job_departments;
@@ -458,6 +474,12 @@ const departmentOptions = computed(() => {
   }
   return [...byId.values()].sort((a, b) => a.id - b.id);
 });
+
+const departmentOptions = computed(() =>
+  masterDepartmentOptions.value.length > 0
+    ? [...masterDepartmentOptions.value].sort((a, b) => a.id - b.id)
+    : employeeDerivedDepartmentOptions.value
+);
 
 const employeeDerivedJobTitleOptions = computed(() => {
   const byId = new Map();
@@ -704,6 +726,13 @@ onMounted(async () => {
     console.error('Error fetching employees:', error);
   }
 
+  // Keep dropdown sourced from master Departments list when available.
+  try {
+    await departmentsStore.getDepartments();
+  } catch (error) {
+    console.error('Error fetching departments:', error);
+  }
+
   // Keep dropdown sourced from master Job Titles list when available.
   try {
     await jobTitlesStore.getJobTitles();
@@ -854,7 +883,10 @@ const potentialManagers = computed(() => {
 const openAddModal = () => {
   if (!authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)) return;
 
-  // Refresh to include newly created titles without page reload.
+  // Refresh to include newly created departments and titles without page reload.
+  void departmentsStore.getDepartments().catch((error) => {
+    console.error('Error refreshing departments:', error);
+  });
   void jobTitlesStore.getJobTitles().catch((error) => {
     console.error('Error refreshing job titles:', error);
   });
@@ -897,6 +929,17 @@ const openEditModal = async (emp) => {
   isEditing.value = true;
   editingId.value = emp.id;
   editLoadingId.value = emp.id;
+
+  // Background refresh for editing dropdown options
+  void departmentsStore.getDepartments().catch((error) => {
+    console.error('Error refreshing departments:', error);
+  });
+  void jobTitlesStore.getJobTitles().catch((error) => {
+    console.error('Error refreshing job titles:', error);
+  });
+  void positionsStore.getPositions().catch((error) => {
+    console.error('Error refreshing positions:', error);
+  });
 
   try {
     const personal = emp.personal_info || {};

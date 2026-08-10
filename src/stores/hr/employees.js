@@ -8,11 +8,13 @@ import {
   PAYROLL_MANAGERS,
   PAYROLL_ASSIGN_MANAGER,
   PAYROLL_TERMINATE_EMPLOYEE,
+  PAYROLL_DEPARTMENTS,
 } from "@/api/Api";
 
 export const useHrEmployeesStore = defineStore("hr-employees", () => {
   const employees = ref([]);
   const managers = ref([]);
+  const department = ref([]);
   const loading = ref(false);
 
   const getEmployees = async () => {
@@ -151,6 +153,26 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     }
   };
 
+  const getDepartment = async () => {
+    loading.value = true;
+    try {
+      const response = await apiClient.get(PAYROLL_DEPARTMENTS);
+      department.value = response.data.data;
+      console.log("Department from API:", response.data.data);
+      return response.data.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  getDepartment();
+
+
+  
+
   return {
     employees,
     managers,
@@ -163,5 +185,6 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     updateEmployee,
     deleteEmployee,
     terminateEmployee,
+    getDepartment,
   };
 });
