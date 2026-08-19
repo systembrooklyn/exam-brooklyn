@@ -57,42 +57,56 @@
       <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-4 mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         
         <!-- Status Tabs -->
-        <div class="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl">
+        <div class="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl flex-shrink-0">
           <button
-            @click="setStatusFilter(false)"
-            :class="!filters.is_closed
+            @click="setActiveTab('open')"
+            :class="activeTab === 'open'
               ? 'bg-white dark:bg-gray-650 text-emerald-650 dark:text-emerald-400 shadow-sm font-bold'
               : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
-            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
           >
             <CircleDot class="w-3.5 h-3.5" />
             Open
             <span
-              :class="!filters.is_closed ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
+              :class="activeTab === 'open' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
               class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
             >{{ openCount }}</span>
           </button>
+          
           <button
-            @click="setStatusFilter(true)"
-            :class="filters.is_closed
+            @click="setActiveTab('closed')"
+            :class="activeTab === 'closed'
               ? 'bg-white dark:bg-gray-650 text-purple-650 dark:text-purple-400 shadow-sm font-bold'
               : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
-            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
           >
             <CircleCheck class="w-3.5 h-3.5" />
             Closed
             <span
-              :class="filters.is_closed ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
+              :class="activeTab === 'closed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
               class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
             >{{ closedCount }}</span>
+          </button>
+
+          <!-- Insights Tab (Only for managers) -->
+          <button
+            v-if="authStore.can('view-others-tickets')"
+            @click="setActiveTab('insights')"
+            :class="activeTab === 'insights'
+              ? 'bg-white dark:bg-gray-650 text-amber-655 dark:text-amber-400 shadow-sm font-bold'
+              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+          >
+            <TrendingUp class="w-3.5 h-3.5 text-amber-500" />
+            Insights
           </button>
         </div>
 
         <!-- Dropdowns & Date Filters -->
         <div class="flex flex-wrap items-center gap-2">
           <select
-            v-model="filters.type"
-            @change="fetchData"
+            v-model="activeFilters.type"
+            @change="handleFilterChange"
             class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
           >
             <option value="">All Types</option>
@@ -100,8 +114,8 @@
           </select>
 
           <select
-            v-model="filters.category"
-            @change="fetchData"
+            v-model="activeFilters.category"
+            @change="handleFilterChange"
             class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
           >
             <option value="">All Categories</option>
@@ -110,21 +124,22 @@
 
           <input
             type="date"
-            v-model="filters.start_date"
+            v-model="activeFilters.start_date"
             @change="onDateChange"
             title="Start Date"
             class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
           />
           <input
             type="date"
-            v-model="filters.end_date"
+            v-model="activeFilters.end_date"
             @change="onDateChange"
             title="End Date"
             class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
           />
 
-          <!-- Unread Comments Toggle -->
+          <!-- Unread Comments Toggle (Only shown when not on Insights tab) -->
           <button
+            v-if="activeTab !== 'insights'"
             @click="toggleUnreadOnly"
             class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-sm"
             :class="filters.unread_only
@@ -154,8 +169,193 @@
         </div>
       </div>
 
+      <!-- Performance / Satisfaction Dashboard (Only for users with view-others-tickets permission, and activeTab === 'insights') -->
+      <div v-if="authStore.can('view-others-tickets') && activeTab === 'insights'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-6 mb-4 transition-all duration-300 relative overflow-hidden">
+        <!-- Loading Overlay -->
+        <div v-if="insightsLoading" class="absolute inset-0 bg-white/70 dark:bg-gray-800/70 z-20 flex flex-col items-center justify-center backdrop-blur-[1px] transition-all duration-200">
+          <div class="flex flex-col items-center gap-3">
+            <div class="relative w-10 h-10">
+              <span class="absolute inset-0 border-3 border-indigo-100 dark:border-indigo-950 rounded-full"></span>
+              <span class="absolute inset-0 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+            </div>
+            <p class="text-xs font-bold text-indigo-600 dark:text-indigo-400 animate-pulse tracking-wide">Recalculating metrics...</p>
+          </div>
+        </div>
+        <!-- Card Header -->
+        <div class="flex items-center gap-2.5 mb-6">
+          <span class="p-2 bg-amber-50 dark:bg-amber-950/50 rounded-xl text-amber-600 dark:text-amber-450 border border-amber-100/50 dark:border-amber-900/40">
+            <TrendingUp class="w-5 h-5 text-amber-500" />
+          </span>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-none">Employee Satisfaction Insights</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Based on evaluations from closed tickets in the selected date range</p>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- KPIs Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- KPI 1: Satisfaction Percentage -->
+            <div class="bg-gradient-to-br from-indigo-50/30 to-indigo-100/5 dark:from-indigo-950/15 dark:to-indigo-950/5 border border-indigo-100/40 dark:border-indigo-900/20 rounded-xl p-4 flex items-center gap-4">
+              <div class="p-3 bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-xl border border-indigo-100/50 dark:border-indigo-900/30">
+                <Smile class="w-6 h-6" />
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-450 font-medium">Average Satisfaction</p>
+                <div class="flex items-baseline gap-1.5 mt-0.5">
+                  <span class="text-2xl font-black text-gray-900 dark:text-white">{{ satisfactionStats.averagePct.toFixed(1) }}%</span>
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full" :class="satisfactionStats.badgeClass">
+                    {{ satisfactionStats.ratingLabel }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- KPI 2: Rated vs Auto Rated -->
+            <div class="bg-gradient-to-br from-amber-50/30 to-amber-100/5 dark:from-amber-950/15 dark:to-amber-950/5 border border-amber-100/40 dark:border-amber-900/20 rounded-xl p-4 flex items-center gap-4">
+              <div class="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-450 border border-amber-100/50 dark:border-amber-900/30">
+                <Star class="w-6 h-6" />
+              </div>
+              <div>
+                <p class="text-xs text-gray-550 dark:text-gray-455 font-medium">Ratings Breakdown</p>
+                <p class="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
+                  {{ satisfactionStats.ratedCount }} <span class="text-xs font-normal text-gray-550">rated</span>
+                  <span class="mx-1 text-gray-300 dark:text-gray-650">/</span>
+                  {{ satisfactionStats.autoCount }} <span class="text-xs font-normal text-gray-550">auto (10/10)</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- KPI 3: Total Closed Tickets -->
+            <div class="bg-gradient-to-br from-purple-50/30 to-purple-100/5 dark:from-purple-950/15 dark:to-purple-950/5 border border-purple-100/40 dark:border-purple-900/20 rounded-xl p-4 flex items-center gap-4">
+              <div class="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-xl border border-purple-100/50 dark:border-purple-900/30">
+                <CircleCheck class="w-6 h-6" />
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 dark:text-gray-450 font-medium">Total Closed Tickets</p>
+                <p class="text-2xl font-black text-gray-900 dark:text-white mt-0.5">{{ satisfactionStats.totalClosed }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Area -->
+          <div class="bg-gray-50/30 dark:bg-gray-900/10 border border-gray-150 dark:border-gray-700/45 rounded-xl p-4 relative min-h-[300px]">
+            <div v-if="satisfactionStats.totalClosed === 0" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+              <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">No closed tickets found in this date range.</p>
+              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Adjust filters to display metrics.</p>
+            </div>
+            <div v-else class="h-[280px]">
+              <Line :data="chartData" :options="chartOptions" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Insights Tickets List Under Chart -->
+      <div v-if="activeTab === 'insights' && authStore.can('view-others-tickets')" class="mt-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden animate-fade-in">
+          <!-- Card Header Strip -->
+          <div class="px-5 py-3.5 border-b border-gray-150 dark:border-gray-700/60 flex items-center justify-between bg-gray-50/20 dark:bg-gray-900/10">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0 animate-pulse"></span>
+              <span class="text-sm font-bold text-gray-900 dark:text-white">Contributing Tickets</span>
+              <span class="text-xs text-gray-400 dark:text-gray-550">{{ filteredInsightsTickets.length }} closed {{ filteredInsightsTickets.length === 1 ? 'ticket' : 'tickets' }}</span>
+            </div>
+            <div class="text-xs text-gray-400 dark:text-gray-550 italic">Sorted chronologically</div>
+          </div>
+
+          <!-- Loading State -->
+          <div v-if="insightsLoading" class="px-6 py-20 flex flex-col items-center justify-center text-center">
+            <div class="relative w-10 h-10 mb-3">
+              <span class="absolute inset-0 border-3 border-amber-100 dark:border-amber-950 rounded-full"></span>
+              <span class="absolute inset-0 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-455 animate-pulse font-medium">Loading contributing tickets...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div v-else-if="filteredInsightsTickets.length === 0" class="px-6 py-16 text-center">
+            <div class="flex flex-col items-center justify-center max-w-xs mx-auto space-y-4">
+              <div class="p-4 rounded-full ring-8 bg-gray-50 dark:bg-gray-750 text-gray-400 ring-gray-100/60 dark:ring-gray-700/40">
+                <Ticket class="w-8 h-8" />
+              </div>
+              <div>
+                <h3 class="text-base font-semibold text-gray-900 dark:text-white">No closed tickets found</h3>
+                <p class="text-xs text-gray-550 dark:text-gray-400 mt-1.5">Adjust filter criteria to display closed tickets.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ticket Rows -->
+          <div v-else class="divide-y divide-gray-100 dark:divide-gray-700/50">
+            <div
+              v-for="ticket in filteredInsightsTickets"
+              :key="ticket.serial"
+              class="px-5 py-4 flex gap-3 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-all duration-150 cursor-pointer"
+              @click="$router.push(`/tickets/${ticket.serial}`)"
+            >
+              <!-- Star Indicator or Check -->
+              <div class="pt-0.5 flex-shrink-0">
+                <Star class="w-5 h-5 text-amber-500 fill-amber-500" v-if="ticket.evaluate" />
+                <CircleCheck class="w-5 h-5 text-purple-500" v-else />
+              </div>
+
+              <!-- Ticket Info -->
+              <div class="flex-grow min-w-0">
+                <p class="text-sm font-semibold text-gray-900 dark:text-white truncate hover:text-indigo-650 dark:hover:text-indigo-400 transition-colors">
+                  {{ ticket.desc ? truncate(ticket.desc, 80) : `Ticket #${ticket.serial}` }}
+                </p>
+
+                <div class="flex flex-wrap items-center gap-2 mt-1.5">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border border-indigo-100/60">
+                    #{{ ticket.serial }}
+                  </span>
+                  <span v-if="ticket.type" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-100/60">
+                    {{ ticket.type }}
+                  </span>
+                  <span v-if="ticket.category" class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-100/60">
+                    {{ ticket.category }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
+                    created at {{ formatDate(ticket.created_at) }} by <span class="font-semibold text-gray-700 dark:text-gray-300 ml-0.5">{{ ticket.user.name }}</span>
+                  </span>
+                  <span
+                    @click.stop="copyEmail(ticket.user.email)"
+                    class="inline-flex items-center gap-1 text-[10px] text-gray-450 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50 transition-all font-medium"
+                    title="Click to copy email"
+                  >
+                    <Mail class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
+                    {{ ticket.user.email }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Rating Evaluation Badge -->
+              <div class="flex-shrink-0 flex flex-col items-end justify-center mr-1">
+                <div v-if="ticket.evaluate" class="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/40 rounded-xl px-2.5 py-1 text-xs font-bold">
+                  <Star class="w-3 h-3 fill-amber-500 text-amber-500" />
+                  <span>{{ ticket.evaluate }} / 10</span>
+                </div>
+                <div v-else class="flex items-center gap-1 bg-gray-50 dark:bg-gray-700/30 text-gray-500 dark:text-gray-400 border border-gray-150 dark:border-gray-700/50 rounded-xl px-2.5 py-1 text-xs font-bold" title="Auto-evaluated to 10/10">
+                  <Star class="w-3 h-3 text-gray-400" />
+                  <span>10 / 10 <span class="text-[9px] font-normal text-gray-400 ml-0.5">(auto)</span></span>
+                </div>
+                <span v-if="ticket.evaluation_notes" class="text-[10px] text-gray-400 dark:text-gray-500 italic mt-1 max-w-[150px] truncate" :title="ticket.evaluation_notes">
+                  "{{ ticket.evaluation_notes }}"
+                </span>
+              </div>
+
+              <!-- Chevron -->
+              <div class="flex-shrink-0 flex items-center text-gray-300 dark:text-gray-600">
+                <ChevronRight class="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Tickets List Card -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
+      <div v-if="activeTab !== 'insights'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
         <!-- Card Header Strip -->
         <div class="px-5 py-3 border-b border-gray-150 dark:border-gray-700/60 flex items-center gap-3">
           <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="filters.is_closed ? 'bg-purple-500' : 'bg-emerald-500'"></span>
@@ -277,16 +477,269 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye } from 'lucide-vue-next';
+import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye, TrendingUp, ChevronDown, Smile } from 'lucide-vue-next';
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
 import notyf from '@/components/global/notyf';
+import { Line } from 'vue-chartjs';
+import apiClient from '@/api/axiosInstance';
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+} from 'chart.js';
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Filler
+);
 
 const router = useRouter();
 const store = useTicketsStore();
 const authStore = useAuthStore();
 
 const pageLoading = ref(false);
+const activeTab = ref('open');
+
+// Independent filter and data states for the Insights tab
+const insightsLoading = ref(false);
+const insightsFilters = reactive({
+  type: '',
+  category: '',
+  start_date: '',
+  end_date: '',
+});
+const insightsClosedTickets = ref([]);
+
+const filteredInsightsTickets = computed(() => {
+  return (insightsClosedTickets.value || []).filter(t => {
+    if (!t.type) return true;
+    return t.type.toLowerCase().trim() !== 'task';
+  });
+});
+
+// Active filters computed wrapper
+const activeFilters = computed(() => {
+  return activeTab.value === 'insights' ? insightsFilters : filters;
+});
+
+const setActiveTab = (tab) => {
+  activeTab.value = tab;
+  if (tab === 'open') {
+    filters.is_closed = false;
+    fetchData();
+  } else if (tab === 'closed') {
+    filters.is_closed = true;
+    fetchData();
+  } else if (tab === 'insights') {
+    fetchInsightsData();
+  }
+};
+
+const fetchInsightsData = async () => {
+  insightsLoading.value = true;
+  try {
+    const params = {
+      is_closed: 1,
+    };
+    if (insightsFilters.type) params.type = insightsFilters.type;
+    if (insightsFilters.category) params.category = insightsFilters.category;
+    if (insightsFilters.start_date) params.start_date = insightsFilters.start_date;
+    if (insightsFilters.end_date) params.end_date = insightsFilters.end_date;
+
+    const response = await apiClient.get('tickets', { params });
+    insightsClosedTickets.value = response.data.data || response.data || [];
+  } catch (e) {
+    console.error(e);
+  } finally {
+    insightsLoading.value = false;
+  }
+};
+
+// Computed property for satisfaction metrics statistics
+const satisfactionStats = computed(() => {
+  const tickets = filteredInsightsTickets.value || [];
+  const totalClosed = tickets.length;
+  let ratedCount = 0;
+  let autoCount = 0;
+  let sumScores = 0;
+
+  tickets.forEach(t => {
+    if (t.evaluate !== null && t.evaluate !== undefined && t.evaluate !== '') {
+      ratedCount++;
+      sumScores += Number(t.evaluate);
+    } else {
+      autoCount++;
+      sumScores += 10;
+    }
+  });
+
+  const averageScore = totalClosed > 0 ? (sumScores / totalClosed) : 10;
+  const averagePct = (averageScore / 10) * 100;
+
+  let ratingLabel = 'Excellent';
+  let badgeClass = 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30';
+  
+  if (averagePct < 60) {
+    ratingLabel = 'Poor';
+    badgeClass = 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-450 border border-rose-100 dark:border-rose-900/30';
+  } else if (averagePct < 80) {
+    ratingLabel = 'Average';
+    badgeClass = 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-450 border border-amber-100 dark:border-amber-900/30';
+  } else if (averagePct < 90) {
+    ratingLabel = 'Good';
+    badgeClass = 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-450 border border-teal-100 dark:border-teal-900/30';
+  }
+
+  return {
+    totalClosed,
+    ratedCount,
+    autoCount,
+    averagePct,
+    ratingLabel,
+    badgeClass
+  };
+});
+
+// Helper to calculate difference in days
+const getDiffInDays = (d1, d2) => {
+  const diffTime = Math.abs(new Date(d2) - new Date(d1));
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// Computed property for Chart Data
+const chartData = computed(() => {
+  const tickets = [...(filteredInsightsTickets.value || [])];
+  if (tickets.length === 0) {
+    return { labels: [], datasets: [] };
+  }
+
+  // Sort tickets chronologically by creation date
+  tickets.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  // Determine grouping interval
+  const dates = tickets.map(t => new Date(t.created_at)).filter(d => !isNaN(d));
+  const minDate = dates.length > 0 ? new Date(Math.min(...dates)) : new Date();
+  const maxDate = dates.length > 0 ? new Date(Math.max(...dates)) : new Date();
+  
+  const diffInDays = getDiffInDays(minDate, maxDate);
+  const groups = {};
+
+  tickets.forEach(ticket => {
+    const dateObj = new Date(ticket.created_at);
+    if (isNaN(dateObj)) return;
+
+    let groupKey = '';
+    if (diffInDays <= 31) {
+      // Group by Day: e.g. "Aug 19"
+      groupKey = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (diffInDays <= 180) {
+      // Group by Week: e.g. "Wk of Aug 17"
+      const day = dateObj.getDay();
+      const diff = dateObj.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(dateObj.setDate(diff));
+      groupKey = 'Wk of ' + monday.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else {
+      // Group by Month: e.g. "Aug 2026"
+      groupKey = dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    
+    const score = (ticket.evaluate !== null && ticket.evaluate !== undefined && ticket.evaluate !== '')
+      ? Number(ticket.evaluate)
+      : 10;
+    groups[groupKey].push(score);
+  });
+
+  const labels = Object.keys(groups);
+  const data = labels.map(key => {
+    const scores = groups[key];
+    const avg = scores.reduce((s, val) => s + val, 0) / scores.length;
+    return Math.round((avg / 10) * 100); // percentage
+  });
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Satisfaction Rate',
+        data,
+        borderColor: '#4f46e5', // indigo-600
+        backgroundColor: 'rgba(79, 70, 229, 0.08)',
+        tension: 0.35,
+        fill: true,
+        pointBackgroundColor: '#4f46e5',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#4f46e5',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        borderWidth: 3
+      }
+    ]
+  };
+});
+
+// Chart Options
+const chartOptions = computed(() => {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: '#1f2937',
+        titleColor: '#f3f4f6',
+        bodyColor: '#f3f4f6',
+        padding: 10,
+        borderColor: '#374151',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            return `Satisfaction: ${context.parsed.y}%`;
+          }
+        }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          },
+          stepSize: 20
+        },
+        grid: {
+          color: 'rgba(156, 163, 175, 0.08)'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        }
+      }
+    }
+  };
+});
 
 const filters = reactive({
   is_closed: false,
@@ -400,9 +853,16 @@ const unreadCurrentCount = computed(() => {
 const refreshData = async () => {
   pageLoading.value = true;
   try {
-    const params = buildParams();
-    await store.fetchTickets(params);
-    await store.fetchMetaOptions();
+    if (activeTab.value === 'insights') {
+      await Promise.all([
+        fetchInsightsData(),
+        store.fetchMetaOptions()
+      ]);
+    } else {
+      const params = buildParams();
+      await store.fetchTickets(params);
+      await store.fetchMetaOptions();
+    }
   } catch (e) {
     console.error(e);
   } finally {
@@ -432,37 +892,51 @@ const fetchData = async () => {
   }
 };
 
-const onDateChange = () => {
-  const start = filters.start_date;
-  const end = filters.end_date;
-  if ((start && end) || (!start && !end)) {
+const handleFilterChange = () => {
+  if (activeTab.value === 'insights') {
+    fetchInsightsData();
+  } else {
     fetchData();
   }
 };
 
-const setStatusFilter = (isClosed) => {
-  filters.is_closed = isClosed;
-  fetchData();
+const onDateChange = () => {
+  const start = activeFilters.value.start_date;
+  const end = activeFilters.value.end_date;
+  if ((start && end) || (!start && !end)) {
+    handleFilterChange();
+  }
 };
 
 const clearFilters = () => {
-  filters.type = '';
-  filters.category = '';
-  filters.start_date = '';
-  filters.end_date = '';
-  filters.unread_only = false;
-  fetchData();
+  if (activeTab.value === 'insights') {
+    insightsFilters.type = '';
+    insightsFilters.category = '';
+    insightsFilters.start_date = '';
+    insightsFilters.end_date = '';
+    fetchInsightsData();
+  } else {
+    filters.type = '';
+    filters.category = '';
+    filters.start_date = '';
+    filters.end_date = '';
+    filters.unread_only = false;
+    fetchData();
+  }
 };
 
 onMounted(async () => {
   pageLoading.value = true;
   try {
     await store.fetchMetaOptions();
-    // Fetch both sets in parallel on mount to populate tabs and cache them
-    await Promise.all([
+    const promises = [
       store.fetchTickets({}), // Open
       store.fetchTickets({ is_closed: 1 }) // Closed
-    ]);
+    ];
+    if (authStore.can('view-others-tickets')) {
+      promises.push(fetchInsightsData());
+    }
+    await Promise.all(promises);
   } catch (e) {
     console.error(e);
   } finally {

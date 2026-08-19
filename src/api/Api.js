@@ -131,6 +131,7 @@ export const PAYROLL_EMPLOYEE_DEDUCTION_BY_ID = (id) =>
 // Manpower System APIs
 export const MANPOWER_POSITIONS = "manpower/positions";
 export const MANPOWER_POSITION_BY_ID = (id) => `manpower/positions/${id}`;
+export const MANPOWER_POSITION_EMPLOYEES = (id) => `manpower/positions/${id}/employees`;
 export const MANPOWER_POSITION_REQUIREMENTS = "manpower/position-requirements";
 export const MANPOWER_POSITION_REQUIREMENTS_BY_ID = (id) => `manpower/position-requirements/${id}`;
 export const MANPOWER_PLANS = "manpower/manpower-plans";

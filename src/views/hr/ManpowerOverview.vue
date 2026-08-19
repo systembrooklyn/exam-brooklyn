@@ -246,7 +246,13 @@
 
                 <!-- Aggregated Current -->
                 <td class="px-4 py-3.5 text-center font-bold text-gray-700">
-                  <span v-if="row.plans.length > 0">{{ row.current }}</span>
+                  <span
+                    v-if="row.plans.length > 0"
+                    @click="row.current > 0 ? viewEmployees(row.position.id, null, row.position.name) : null"
+                    :class="row.current > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''"
+                  >
+                    {{ row.current }}
+                  </span>
                   <span v-else class="text-gray-200">—</span>
                 </td>
 
@@ -332,7 +338,12 @@
 
                 <!-- Current Branch Count -->
                 <td class="px-4 py-2.5 text-center font-semibold text-gray-700">
-                  {{ plan.current_count }}
+                  <span
+                    @click="plan.current_count > 0 ? viewEmployees(row.position.id, plan.branch?.id ?? plan.branch_id, row.position.name, plan.branch?.name || plan.branch?.branch_name) : null"
+                    :class="plan.current_count > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''"
+                  >
+                    {{ plan.current_count }}
+                  </span>
                 </td>
 
                 <!-- Branch Vacancy -->
@@ -510,6 +521,44 @@
       @confirm="handleDeletePlan"
       @cancel="showDeleteConfirm = false"
     />
+
+    <!-- ── Employees List Modal ────────────────────────────── -->
+    <HrModal
+      :show="showEmployeesModal"
+      :title="`Current Staff — ${selectedPositionName} ${selectedBranchName ? `(${selectedBranchName})` : ''}`"
+      :has-save="false"
+      cancel-label="Close"
+      @close="showEmployeesModal = false"
+    >
+      <div v-if="loadingEmployees" class="flex justify-center items-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+      <div v-else-if="selectedEmployees.length === 0" class="text-center py-8 text-gray-500">
+        <Users class="w-12 h-12 mx-auto text-gray-300 mb-2" />
+        <p class="text-sm font-medium">No employees assigned to this position.</p>
+      </div>
+      <div v-else class="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+        <div
+          v-for="emp in selectedEmployees"
+          :key="emp.employee_id"
+          class="py-3 flex items-center justify-between hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
+        >
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+              {{ emp.name ? emp.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'E' }}
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-gray-900">{{ emp.name }}</p>
+              <p class="text-xs text-gray-400">FP: {{ emp.finger_print ?? '—' }}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+            <MapPin class="w-3.5 h-3.5 text-indigo-500" />
+            {{ emp.branch_name }}
+          </div>
+        </div>
+      </div>
+    </HrModal>
   </div>
 </template>
 
@@ -518,7 +567,7 @@ import { ref, computed, onMounted } from 'vue';
 import {
   Briefcase, CheckCircle, AlertCircle, ClipboardList, Search,
   Building, Plus, BarChart3, TrendingDown, Trash2,
-  ChevronDown, ChevronRight, MapPin, Edit, RefreshCw
+  ChevronDown, ChevronRight, MapPin, Edit, RefreshCw, Users
 } from 'lucide-vue-next';
 import { useManpowerPlansStore } from '@/stores/hr/manpowerPlans';
 import { useHrPositionsStore } from '@/stores/hr/positions';
@@ -665,6 +714,29 @@ const planCoveragePct = (plan) =>
   plan.ideal_count > 0 ? Math.round((plan.current_count / plan.ideal_count) * 100) : 0;
 
 // ── Plan Modal actions ─────────────────────────────────────────────────────
+// ── Employees Modal actions ────────────────────────────────────────────────
+const showEmployeesModal = ref(false);
+const selectedEmployees = ref([]);
+const selectedPositionName = ref('');
+const selectedBranchName = ref('');
+const loadingEmployees = ref(false);
+
+const viewEmployees = async (positionId, branchId, positionName, branchName = null) => {
+  selectedPositionName.value = positionName;
+  selectedBranchName.value = branchName;
+  selectedEmployees.value = [];
+  showEmployeesModal.value = true;
+  loadingEmployees.value = true;
+  try {
+    const res = await positionsStore.getPositionEmployees(positionId, branchId);
+    selectedEmployees.value = res.data || [];
+  } catch (err) {
+    showEmployeesModal.value = false;
+  } finally {
+    loadingEmployees.value = false;
+  }
+};
+
 const showPlanModal = ref(false);
 const editingPlan   = ref(null);
 const planForm      = ref({ position_id: null, branch_id: null, ideal_count: 1, current_count: 0 });

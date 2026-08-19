@@ -3,7 +3,7 @@ import apiClient from "@/api/axiosInstance";
 import notyf from "@/components/global/notyf";
 import { handleError } from "@/stores/handleError";
 import { ref } from "vue";
-import { MANPOWER_POSITIONS, MANPOWER_POSITION_BY_ID } from "@/api/Api";
+import { MANPOWER_POSITIONS, MANPOWER_POSITION_BY_ID, MANPOWER_POSITION_EMPLOYEES } from "@/api/Api";
 
 export const useHrPositionsStore = defineStore("hr-positions", () => {
   const positions = ref([]);
@@ -79,6 +79,18 @@ export const useHrPositionsStore = defineStore("hr-positions", () => {
     }
   };
 
+  const getPositionEmployees = async (id, branchId = null) => {
+    try {
+      const params = {};
+      if (branchId) params.branch_id = branchId;
+      const response = await apiClient.get(MANPOWER_POSITION_EMPLOYEES(id), { params });
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
   return {
     positions,
     loading,
@@ -87,5 +99,6 @@ export const useHrPositionsStore = defineStore("hr-positions", () => {
     createPosition,
     updatePosition,
     deletePosition,
+    getPositionEmployees,
   };
 });
