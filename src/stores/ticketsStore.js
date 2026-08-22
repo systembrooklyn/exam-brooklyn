@@ -28,11 +28,18 @@ export const useTicketsStore = defineStore("ticketsStore", () => {
     try {
       const response = await apiClient.get(TICKETS_BASE, { params: filters });
       const data = response.data.data || response.data;
+      const rawList = Array.isArray(data) ? data : [];
       if (filters.is_closed) {
-        closedTickets.value = data;
+        closedTickets.value = rawList.filter(t => {
+          const statusStr = String(t.status || '').toLowerCase().trim();
+          return statusStr === 'closed' || !!t.is_closed || String(t.is_closed) === '1';
+        });
         lastClosedFilters.value = JSON.stringify(filters);
       } else {
-        openTickets.value = data;
+        openTickets.value = rawList.filter(t => {
+          const statusStr = String(t.status || '').toLowerCase().trim();
+          return statusStr !== 'closed' && !t.is_closed && String(t.is_closed) !== '1';
+        });
         lastOpenFilters.value = JSON.stringify(filters);
       }
     } catch (err) {

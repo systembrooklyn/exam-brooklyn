@@ -11,7 +11,7 @@
           </span>
           <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Tickets</h1>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300">
-            {{ ticketsList.length }} tickets
+            {{ displayedTickets.length }} tickets
           </span>
         </div>
         <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm sm:text-base leading-relaxed">
@@ -38,135 +38,160 @@
       </div>
     </div>
 
-    <!-- Loading Skeleton -->
-    <div v-if="pageLoading" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-6 space-y-4 animate-pulse">
-      <div class="h-8 bg-gray-100 dark:bg-gray-700 rounded-lg w-1/4 mb-6"></div>
-      <div class="space-y-3">
-        <div v-for="i in 5" :key="i" class="flex gap-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
-          <div class="h-5 w-5 bg-gray-100 dark:bg-gray-700 rounded-full flex-shrink-0 mt-1"></div>
-          <div class="flex-1 space-y-2">
-            <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded w-3/4"></div>
-            <div class="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/2"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <template v-else>
       <!-- Filters Bar -->
-      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-4 mb-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm p-4 mb-4 flex flex-col gap-3">
         
-        <!-- Status Tabs -->
-        <div class="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl flex-shrink-0">
-          <button
-            @click="setActiveTab('open')"
-            :class="activeTab === 'open'
-              ? 'bg-white dark:bg-gray-650 text-emerald-650 dark:text-emerald-400 shadow-sm font-bold'
-              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
-            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
-          >
-            <CircleDot class="w-3.5 h-3.5" />
-            Open
-            <span
-              :class="activeTab === 'open' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
-              class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
-            >{{ openCount }}</span>
-          </button>
-          
-          <button
-            @click="setActiveTab('closed')"
-            :class="activeTab === 'closed'
-              ? 'bg-white dark:bg-gray-650 text-purple-650 dark:text-purple-400 shadow-sm font-bold'
-              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
-            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
-          >
-            <CircleCheck class="w-3.5 h-3.5" />
-            Closed
-            <span
-              :class="activeTab === 'closed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
-              class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
-            >{{ closedCount }}</span>
-          </button>
-
-          <!-- Insights Tab (Only for managers) -->
-          <button
-            v-if="authStore.can('view-others-tickets')"
-            @click="setActiveTab('insights')"
-            :class="activeTab === 'insights'
-              ? 'bg-white dark:bg-gray-650 text-amber-655 dark:text-amber-400 shadow-sm font-bold'
-              : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
-            class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
-          >
-            <TrendingUp class="w-3.5 h-3.5 text-amber-500" />
-            Insights
-          </button>
-        </div>
-
-        <!-- Dropdowns & Date Filters -->
-        <div class="flex flex-wrap items-center gap-2">
-          <select
-            v-model="activeFilters.type"
-            @change="handleFilterChange"
-            class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
-          >
-            <option value="">All Types</option>
-            <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
-          </select>
-
-          <select
-            v-model="activeFilters.category"
-            @change="handleFilterChange"
-            class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
-          >
-            <option value="">All Categories</option>
-            <option v-for="c in categoryOptions" :key="c" :value="c">{{ c }}</option>
-          </select>
-
-          <input
-            type="date"
-            v-model="activeFilters.start_date"
-            @change="onDateChange"
-            title="Start Date"
-            class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
-          />
-          <input
-            type="date"
-            v-model="activeFilters.end_date"
-            @change="onDateChange"
-            title="End Date"
-            class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer"
-          />
-
-          <!-- Unread Comments Toggle (Only shown when not on Insights tab) -->
-          <button
-            v-if="activeTab !== 'insights'"
-            @click="toggleUnreadOnly"
-            class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-sm"
-            :class="filters.unread_only
-              ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40'
-              : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
-          >
-            <MessageSquare class="w-3.5 h-3.5" :class="{ 'fill-rose-500/10': filters.unread_only }" />
-            <span>Unread Comments</span>
-            <span v-if="unreadCurrentCount > 0"
-              class="px-1.5 py-0.5 text-[9px] font-extrabold rounded-full"
-              :class="filters.unread_only
-                ? 'bg-rose-200 text-rose-800 dark:bg-rose-900 dark:text-rose-250'
-                : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'"
+        <!-- Row 1: Status Tabs & Toggle Filters -->
+        <div class="flex items-center justify-between w-full flex-wrap gap-3">
+          <div class="flex items-center gap-1.5 p-1 bg-gray-100 dark:bg-gray-700 rounded-xl flex-shrink-0">
+            <button
+              @click="setActiveTab('open')"
+              :class="activeTab === 'open'
+                ? 'bg-white dark:bg-gray-650 text-emerald-650 dark:text-emerald-400 shadow-sm font-bold'
+                : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+              class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
             >
-              {{ unreadCurrentCount }}
-            </span>
-          </button>
+              <CircleDot class="w-3.5 h-3.5" />
+              Open
+              <span
+                :class="activeTab === 'open' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
+                class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
+              >{{ openCount }}</span>
+            </button>
+            
+            <button
+              @click="setActiveTab('closed')"
+              :class="activeTab === 'closed'
+                ? 'bg-white dark:bg-gray-650 text-purple-650 dark:text-purple-400 shadow-sm font-bold'
+                : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+              class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+            >
+              <CircleCheck class="w-3.5 h-3.5" />
+              Closed
+              <span
+                :class="activeTab === 'closed' ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
+                class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
+              >{{ closedCount }}</span>
+            </button>
 
+            <!-- Tasks Tab (Only for task-allowed users) -->
+            <button
+              v-if="authStore.can('view-task-tickets')"
+              @click="setActiveTab('tasks')"
+              :class="activeTab === 'tasks'
+                ? 'bg-white dark:bg-gray-650 text-indigo-650 dark:text-indigo-400 shadow-sm font-bold'
+                : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+              class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+            >
+              <ClipboardList class="w-3.5 h-3.5 text-indigo-500" />
+              Tasks
+              <span
+                :class="activeTab === 'tasks' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-400' : 'bg-gray-200 dark:bg-gray-800 text-gray-500'"
+                class="px-1.5 py-0.5 text-[10px] font-extrabold rounded-full"
+              >{{ taskCount }}</span>
+            </button>
+
+            <!-- Insights Tab (Only for managers) -->
+            <button
+              v-if="authStore.can('view-others-tickets')"
+              @click="setActiveTab('insights')"
+              :class="activeTab === 'insights'
+                ? 'bg-white dark:bg-gray-650 text-amber-655 dark:text-amber-400 shadow-sm font-bold'
+                : 'text-gray-500 hover:text-gray-750 dark:hover:text-gray-300 font-medium'"
+              class="px-4 py-1.5 text-xs rounded-lg transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap flex-shrink-0"
+            >
+              <TrendingUp class="w-3.5 h-3.5 text-amber-500" />
+              Insights
+            </button>
+          </div>
+
+          <!-- Filters Toggle Button -->
           <button
-            v-if="hasActiveFilters"
-            @click="clearFilters"
-            class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer"
+            @click="showFilters = !showFilters"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border border-gray-250 dark:border-gray-700 rounded-xl shadow-sm transition-all cursor-pointer relative"
           >
-            <X class="w-3.5 h-3.5" />
-            Clear
+            <SlidersHorizontal class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+            <span>Filters</span>
+            <span v-if="activeFiltersCount > 0" class="w-2 h-2 bg-indigo-600 dark:bg-indigo-400 rounded-full"></span>
+            <ChevronDown class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" :class="{ 'rotate-180': showFilters }" />
           </button>
         </div>
+
+        <!-- Row 2: Dropdowns & Date Filters (Collapsible with smooth transition) -->
+        <transition
+          enter-active-class="transition duration-200 ease-out"
+          enter-from-class="transform scale-y-95 opacity-0 -translate-y-2"
+          enter-to-class="transform scale-y-100 opacity-100 translate-y-0"
+          leave-active-class="transition duration-150 ease-in"
+          leave-from-class="transform scale-y-100 opacity-100 translate-y-0"
+          leave-to-class="transform scale-y-95 opacity-0 -translate-y-2"
+        >
+          <div v-if="showFilters" class="flex flex-wrap items-center gap-2 pt-3 border-t border-gray-150 dark:border-gray-700/50 origin-top">
+            <select
+              v-if="activeTab !== 'tasks'"
+              v-model="activeFilters.type"
+              @change="handleFilterChange"
+              class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer w-full sm:w-32 flex-shrink-0"
+            >
+              <option value="">All Types</option>
+              <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
+            </select>
+
+            <select
+              v-model="activeFilters.category"
+              @change="handleFilterChange"
+              class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer w-full sm:w-32 flex-shrink-0"
+            >
+              <option value="">All Categories</option>
+              <option v-for="c in categoryOptions" :key="c" :value="c">{{ c }}</option>
+            </select>
+
+            <input
+              type="date"
+              v-model="activeFilters.start_date"
+              @change="onDateChange"
+              title="Start Date"
+              class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer w-full sm:w-32 flex-shrink-0"
+            />
+            <input
+              type="date"
+              v-model="activeFilters.end_date"
+              @change="onDateChange"
+              title="End Date"
+              class="border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all cursor-pointer w-full sm:w-32 flex-shrink-0"
+            />
+
+            <!-- Unread Comments Toggle (Only shown when not on Insights tab) -->
+            <button
+              v-if="activeTab !== 'insights'"
+              @click="toggleUnreadOnly"
+              class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer shadow-sm flex-shrink-0"
+              :class="filters.unread_only
+                ? 'bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-900/40'
+                : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'"
+            >
+              <MessageSquare class="w-3.5 h-3.5" :class="{ 'fill-rose-500/10': filters.unread_only }" />
+              <span>Unread Comments</span>
+              <span v-if="unreadCurrentCount > 0"
+                class="px-1.5 py-0.5 text-[9px] font-extrabold rounded-full"
+                :class="filters.unread_only
+                  ? 'bg-rose-200 text-rose-800 dark:bg-rose-900 dark:text-rose-250'
+                  : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'"
+              >
+                {{ unreadCurrentCount }}
+              </span>
+            </button>
+
+            <button
+              v-if="hasActiveFilters"
+              @click="clearFilters"
+              class="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all cursor-pointer flex-shrink-0"
+            >
+              <X class="w-3.5 h-3.5" />
+              Clear
+            </button>
+          </div>
+        </transition>
       </div>
 
       <!-- Performance / Satisfaction Dashboard (Only for users with view-others-tickets permission, and activeTab === 'insights') -->
@@ -358,13 +383,26 @@
       <div v-if="activeTab !== 'insights'" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm overflow-hidden">
         <!-- Card Header Strip -->
         <div class="px-5 py-3 border-b border-gray-150 dark:border-gray-700/60 flex items-center gap-3">
-          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="filters.is_closed ? 'bg-purple-500' : 'bg-emerald-500'"></span>
-          <span class="text-sm font-bold text-gray-900 dark:text-white">{{ filters.is_closed ? 'Closed' : 'Open' }} Tickets</span>
-          <span class="text-xs text-gray-400 dark:text-gray-500">{{ ticketsList.length }} {{ ticketsList.length === 1 ? 'result' : 'results' }}</span>
+          <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="activeTab === 'tasks' ? 'bg-indigo-500' : (filters.is_closed ? 'bg-purple-500' : 'bg-emerald-500')"></span>
+          <span class="text-sm font-bold text-gray-900 dark:text-white">{{ activeTab === 'tasks' ? 'Task' : (filters.is_closed ? 'Closed' : 'Open') }} Tickets</span>
+          <span class="text-xs text-gray-400 dark:text-gray-550">{{ displayedTickets.length }} {{ displayedTickets.length === 1 ? 'result' : 'results' }}</span>
+        </div>
+
+        <!-- Loading Skeleton -->
+        <div v-if="pageLoading" class="p-6 space-y-4 animate-pulse">
+          <div class="space-y-3">
+            <div v-for="i in 5" :key="i" class="flex gap-4 py-3 border-b border-gray-100 dark:border-gray-700/50">
+              <div class="h-5 w-5 bg-gray-100 dark:bg-gray-700 rounded-full flex-shrink-0 mt-1"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-4 bg-gray-100 dark:bg-gray-700 rounded w-3/4"></div>
+                <div class="h-3 bg-gray-100 dark:bg-gray-700 rounded w-1/2"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
-        <div v-if="!ticketsList || ticketsList.length === 0" class="px-6 py-16 text-center">
+        <div v-else-if="!displayedTickets || displayedTickets.length === 0" class="px-6 py-16 text-center">
           <div class="flex flex-col items-center justify-center max-w-xs mx-auto space-y-4">
             <div class="p-4 rounded-full ring-8 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-400 ring-indigo-100/60 dark:ring-indigo-900/40">
               <Ticket class="w-8 h-8" />
@@ -386,7 +424,7 @@
         <!-- Ticket Rows -->
         <div v-else class="divide-y divide-gray-100 dark:divide-gray-700/50">
           <div
-            v-for="ticket in ticketsList"
+            v-for="ticket in displayedTickets"
             :key="ticket.serial"
             class="px-5 py-4 flex gap-3 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 cursor-pointer"
             @click="$router.push(`/tickets/${ticket.serial}`)"
@@ -469,7 +507,7 @@
           </div>
         </div>
       </div>
-    </template>
+
     </div>
   </div>
 </template>
@@ -477,7 +515,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye, TrendingUp, ChevronDown, Smile } from 'lucide-vue-next';
+import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye, TrendingUp, ChevronDown, Smile, ClipboardList, SlidersHorizontal } from 'lucide-vue-next';
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
 import notyf from '@/components/global/notyf';
@@ -545,6 +583,10 @@ const setActiveTab = (tab) => {
     fetchData();
   } else if (tab === 'insights') {
     fetchInsightsData();
+  } else if (tab === 'tasks') {
+    // Tasks needs both open + closed fetched, reset is_closed to neutral
+    filters.is_closed = false;
+    fetchData();
   }
 };
 
@@ -751,7 +793,25 @@ const filters = reactive({
 });
 
 const ticketsList = computed(() => {
-  let list = filters.is_closed ? store.closedTickets : store.openTickets;
+  let list = filters.is_closed ? (store.closedTickets || []) : (store.openTickets || []);
+  if (!filters.is_closed && authStore.can('view-task-tickets')) {
+    list = list.filter(t => !t.type || t.type.toLowerCase().trim() !== 'task');
+  }
+  if (filters.type) {
+    list = list.filter(t => t.type === filters.type);
+  }
+  if (filters.category) {
+    list = list.filter(t => t.category === filters.category);
+  }
+  if (filters.start_date) {
+    const start = new Date(filters.start_date);
+    list = list.filter(t => new Date(t.created_at) >= start);
+  }
+  if (filters.end_date) {
+    const end = new Date(filters.end_date);
+    end.setHours(23, 59, 59, 999);
+    list = list.filter(t => new Date(t.created_at) <= end);
+  }
   if (filters.unread_only) {
     list = list.filter(t => t.has_unread_comments);
   }
@@ -759,23 +819,100 @@ const ticketsList = computed(() => {
 });
 
 const openCount = computed(() => {
-  let list = store.openTickets;
-  if (filters.unread_only) {
-    list = list.filter(t => t.has_unread_comments);
+  let list = store.openTickets || [];
+  if (authStore.can('view-task-tickets')) {
+    list = list.filter(t => !t.type || t.type.toLowerCase().trim() !== 'task');
   }
-  return list.length;
-});
-const closedCount = computed(() => {
-  let list = store.closedTickets;
+  if (filters.type) {
+    list = list.filter(t => t.type === filters.type);
+  }
+  if (filters.category) {
+    list = list.filter(t => t.category === filters.category);
+  }
+  if (filters.start_date) {
+    const start = new Date(filters.start_date);
+    list = list.filter(t => new Date(t.created_at) >= start);
+  }
+  if (filters.end_date) {
+    const end = new Date(filters.end_date);
+    end.setHours(23, 59, 59, 999);
+    list = list.filter(t => new Date(t.created_at) <= end);
+  }
   if (filters.unread_only) {
     list = list.filter(t => t.has_unread_comments);
   }
   return list.length;
 });
 
+const closedCount = computed(() => {
+  let list = store.closedTickets || [];
+  if (filters.type) {
+    list = list.filter(t => t.type === filters.type);
+  }
+  if (filters.category) {
+    list = list.filter(t => t.category === filters.category);
+  }
+  if (filters.start_date) {
+    const start = new Date(filters.start_date);
+    list = list.filter(t => new Date(t.created_at) >= start);
+  }
+  if (filters.end_date) {
+    const end = new Date(filters.end_date);
+    end.setHours(23, 59, 59, 999);
+    list = list.filter(t => new Date(t.created_at) <= end);
+  }
+  if (filters.unread_only) {
+    list = list.filter(t => t.has_unread_comments);
+  }
+  return list.length;
+});
+
+const taskTicketsList = computed(() => {
+  const allTickets = store.openTickets || [];
+  let list = allTickets.filter(t => t.type && t.type.toLowerCase().trim() === 'task');
+  
+  if (filters.category) {
+    list = list.filter(t => t.category === filters.category);
+  }
+  if (filters.start_date) {
+    const start = new Date(filters.start_date);
+    list = list.filter(t => new Date(t.created_at) >= start);
+  }
+  if (filters.end_date) {
+    const end = new Date(filters.end_date);
+    end.setHours(23, 59, 59, 999);
+    list = list.filter(t => new Date(t.created_at) <= end);
+  }
+  if (filters.unread_only) {
+    list = list.filter(t => t.has_unread_comments);
+  }
+  return list;
+});
+
+const taskCount = computed(() => {
+  return taskTicketsList.value.length;
+});
+
+const displayedTickets = computed(() => {
+  return activeTab.value === 'tasks' ? taskTicketsList.value : ticketsList.value;
+});
+
 const hasActiveFilters = computed(() =>
   filters.type || filters.category || filters.start_date || filters.end_date || filters.unread_only
 );
+
+const showFilters = ref(false);
+
+const activeFiltersCount = computed(() => {
+  let count = 0;
+  const active = activeFilters.value;
+  if (active.type) count++;
+  if (active.category) count++;
+  if (active.start_date) count++;
+  if (active.end_date) count++;
+  if (activeTab.value !== 'insights' && filters.unread_only) count++;
+  return count;
+});
 
 const buildParams = () => {
   // Open tickets → no is_closed param at all
@@ -796,7 +933,11 @@ const buildParams = () => {
 
 const typeOptions = computed(() => {
   const meta = store.metaOptions;
-  return meta?.type || meta?.types || [];
+  const rawTypes = meta?.type || meta?.types || [];
+  if (activeTab.value === 'open' && authStore.can('view-task-tickets')) {
+    return rawTypes.filter(t => t.toLowerCase().trim() !== 'task');
+  }
+  return rawTypes;
 });
 
 const categoryOptions = computed(() => {
@@ -846,7 +987,35 @@ const toggleUnreadOnly = () => {
 };
 
 const unreadCurrentCount = computed(() => {
-  const list = filters.is_closed ? store.closedTickets : store.openTickets;
+  let list = [];
+  if (activeTab.value === 'tasks') {
+    const allOpenTasks = (store.openTickets || []).filter(t => t.type && t.type.toLowerCase().trim() === 'task');
+    list = allOpenTasks;
+  } else if (activeTab.value === 'closed') {
+    list = store.closedTickets || [];
+  } else {
+    let openList = store.openTickets || [];
+    if (authStore.can('view-task-tickets')) {
+      openList = openList.filter(t => !t.type || t.type.toLowerCase().trim() !== 'task');
+    }
+    list = openList;
+  }
+
+  // Apply Category filter
+  if (filters.category) {
+    list = list.filter(t => t.category === filters.category);
+  }
+  // Apply Date filters
+  if (filters.start_date) {
+    const start = new Date(filters.start_date);
+    list = list.filter(t => new Date(t.created_at) >= start);
+  }
+  if (filters.end_date) {
+    const end = new Date(filters.end_date);
+    end.setHours(23, 59, 59, 999);
+    list = list.filter(t => new Date(t.created_at) <= end);
+  }
+
   return list.filter(t => t.has_unread_comments).length;
 });
 
@@ -856,6 +1025,17 @@ const refreshData = async () => {
     if (activeTab.value === 'insights') {
       await Promise.all([
         fetchInsightsData(),
+        store.fetchMetaOptions()
+      ]);
+    } else if (filters.type || filters.category || filters.start_date || filters.end_date) {
+      const params = buildParams();
+      const openParams = { ...params };
+      delete openParams.is_closed;
+      const closedParams = { ...params, is_closed: 1 };
+      
+      await Promise.all([
+        store.fetchTickets(openParams),
+        store.fetchTickets(closedParams),
         store.fetchMetaOptions()
       ]);
     } else {
@@ -876,13 +1056,24 @@ const fetchData = async () => {
 
   pageLoading.value = true;
   try {
-    if (filters.is_closed) {
-      if (store.lastClosedFilters !== paramsStr) {
-        await store.fetchTickets(params);
-      }
+    if (filters.type || filters.category || filters.start_date || filters.end_date) {
+      const openParams = { ...params };
+      delete openParams.is_closed;
+      const closedParams = { ...params, is_closed: 1 };
+      
+      await Promise.all([
+        store.fetchTickets(openParams),
+        store.fetchTickets(closedParams)
+      ]);
     } else {
-      if (store.lastOpenFilters !== paramsStr) {
-        await store.fetchTickets(params);
+      if (filters.is_closed) {
+        if (store.lastClosedFilters !== paramsStr) {
+          await store.fetchTickets(params);
+        }
+      } else {
+        if (store.lastOpenFilters !== paramsStr) {
+          await store.fetchTickets(params);
+        }
       }
     }
   } catch (e) {

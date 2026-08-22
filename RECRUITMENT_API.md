@@ -52,12 +52,12 @@
 | List all job requests (filters:`status`, `department_id`) | `/api/recruitment/job-requests`              | Bearer | `GET`    |
 | Create a new job request                                      | `/api/recruitment/job-requests`              | Bearer | `POST`   |
 | Show a job request                                            | `/api/recruitment/job-requests/{id}`         | Bearer | `GET`    |
-| Update a job request*(only draft allowed)*                  | `/api/recruitment/job-requests/{id}`         | Bearer | `PUT`    |
+| Update a job request*(only draft allowed)*                    | `/api/recruitment/job-requests/{id}`         | Bearer | `PUT`    |
 | Soft-delete a job request                                     | `/api/recruitment/job-requests/{id}`         | Bearer | `DELETE` |
-| Submit request for approval*(draft → pending)*             | `/api/recruitment/job-requests/{id}/submit`  | Bearer | `POST`   |
+| Submit request for approval*(draft → pending)*               | `/api/recruitment/job-requests/{id}/submit`  | Bearer | `POST`   |
 | Approve a pending request                                     | `/api/recruitment/job-requests/{id}/approve` | Bearer | `POST`   |
 | Reject a pending request                                      | `/api/recruitment/job-requests/{id}/reject`  | Bearer | `POST`   |
-| Reopen a rejected request*(sets back to draft)*             | `/api/recruitment/job-requests/{id}/reopen`  | Bearer | `POST`   |
+| Reopen a rejected request*(sets back to draft)*               | `/api/recruitment/job-requests/{id}/reopen`  | Bearer | `POST`   |
 
 ### `POST /api/recruitment/job-requests` — Create
 
@@ -124,11 +124,11 @@
 | Description                                                                      | Endpoint                                    | Auth   | Method     |
 | -------------------------------------------------------------------------------- | ------------------------------------------- | ------ | ---------- |
 | List all job posts (filters:`status`, `job_request_id`, `employment_type`) | `/api/recruitment/job-posts`              | Bearer | `GET`    |
-| Create a job post*(requires approved job request)*                             | `/api/recruitment/job-posts`              | Bearer | `POST`   |
+| Create a job post*(requires approved job request)*                               | `/api/recruitment/job-posts`              | Bearer | `POST`   |
 | Show a job post with full details                                                | `/api/recruitment/job-posts/{id}`         | Bearer | `GET`    |
 | Update a job post                                                                | `/api/recruitment/job-posts/{id}`         | Bearer | `PUT`    |
 | Soft-delete a job post                                                           | `/api/recruitment/job-posts/{id}`         | Bearer | `DELETE` |
-| Publish a job post*(draft → published)*                                       | `/api/recruitment/job-posts/{id}/publish` | Bearer | `POST`   |
+| Publish a job post*(draft → published)*                                         | `/api/recruitment/job-posts/{id}/publish` | Bearer | `POST`   |
 | Close a published or draft job post                                              | `/api/recruitment/job-posts/{id}/close`   | Bearer | `POST`   |
 | Archive a closed job post                                                        | `/api/recruitment/job-posts/{id}/archive` | Bearer | `POST`   |
 
@@ -263,18 +263,18 @@
 | Description                                                                             | Endpoint                                                | Auth   | Method     |
 | --------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------ | ---------- |
 | List applications (filters:`status`, `stage_id`, `job_post_id`, `candidate_id`) | `/api/recruitment/applications`                       | Bearer | `GET`    |
-| Create an application manually*(for internal use)*                                    | `/api/recruitment/applications`                       | Bearer | `POST`   |
-| Show full application details*(with candidate, job post, interviews, offer, hire)*    | `/api/recruitment/applications/{id}`                  | Bearer | `GET`    |
-| Update an application*(e.g. notes, status)*                                           | `/api/recruitment/applications/{id}`                  | Bearer | `PUT`    |
+| Create an application manually*(for internal use)*                                      | `/api/recruitment/applications`                       | Bearer | `POST`   |
+| Show full application details*(with candidate, job post, interviews, offer, hire)*      | `/api/recruitment/applications/{id}`                  | Bearer | `GET`    |
+| Update an application*(e.g. notes, status)*                                             | `/api/recruitment/applications/{id}`                  | Bearer | `PUT`    |
 | Soft-delete an application                                                              | `/api/recruitment/applications/{id}`                  | Bearer | `DELETE` |
 | Assign a recruiter to the application                                                   | `/api/recruitment/applications/{id}/assign-recruiter` | Bearer | `POST`   |
 | Move application to a specific stage                                                    | `/api/recruitment/applications/{id}/move-stage`       | Bearer | `POST`   |
 | Reject an application                                                                   | `/api/recruitment/applications/{id}/reject`           | Bearer | `POST`   |
-| Withdraw an application*(by candidate/HR)*                                            | `/api/recruitment/applications/{id}/withdraw`         | Bearer | `POST`   |
-| Mark application as hired*(moves to hiring stage)*                                    | `/api/recruitment/applications/{id}/hire`             | Bearer | `POST`   |
+| Withdraw an application*(by candidate/HR)*                                              | `/api/recruitment/applications/{id}/withdraw`         | Bearer | `POST`   |
+| Mark application as hired*(moves to hiring stage)*                                      | `/api/recruitment/applications/{id}/hire`             | Bearer | `POST`   |
 | Get activity log for an application                                                     | `/api/recruitment/applications/{id}/activity-log`     | Bearer | `GET`    |
 | Get all interviews for an application                                                   | `/api/recruitment/applications/{id}/interviews`       | Bearer | `GET`    |
-| Get the offer for an application*(if exists)*                                         | `/api/recruitment/applications/{id}/offer`            | Bearer | `GET`    |
+| Get the offer for an application*(if exists)*                                           | `/api/recruitment/applications/{id}/offer`            | Bearer | `GET`    |
 
 ### `POST /api/recruitment/applications` — Create
 
@@ -344,8 +344,8 @@
 | Show an interview                                                                | `/api/recruitment/interviews/{id}`               | Bearer | `GET`    |
 | Update interview details                                                         | `/api/recruitment/interviews/{id}`               | Bearer | `PUT`    |
 | Soft-delete an interview                                                         | `/api/recruitment/interviews/{id}`               | Bearer | `DELETE` |
-| Reschedule an interview*(updates time, link, location)*                        | `/api/recruitment/interviews/{id}/schedule`      | Bearer | `POST`   |
-| Submit interview result*(passed/rejected/no-show)*                             | `/api/recruitment/interviews/{id}/submit-result` | Bearer | `POST`   |
+| Reschedule an interview*(updates time, link, location)*                          | `/api/recruitment/interviews/{id}/schedule`      | Bearer | `POST`   |
+| Submit interview result*(passed/rejected/no-show)*                               | `/api/recruitment/interviews/{id}/submit-result` | Bearer | `POST`   |
 | Cancel a pending interview                                                       | `/api/recruitment/interviews/{id}/cancel`        | Bearer | `POST`   |
 
 ### `POST /api/recruitment/interviews` — Schedule
@@ -412,7 +412,7 @@
 | Show an offer                                        | `/api/recruitment/offers/{id}`        | Bearer | `GET`    |
 | Update an offer                                      | `/api/recruitment/offers/{id}`        | Bearer | `PUT`    |
 | Soft-delete an offer                                 | `/api/recruitment/offers/{id}`        | Bearer | `DELETE` |
-| Mark offer as sent*(resends email if needed)*      | `/api/recruitment/offers/{id}/send`   | Bearer | `POST`   |
+| Mark offer as sent*(resends email if needed)*        | `/api/recruitment/offers/{id}/send`   | Bearer | `POST`   |
 | Manually expire a pending offer                      | `/api/recruitment/offers/{id}/expire` | Bearer | `POST`   |
 
 ### `POST /api/recruitment/offers` — Create
@@ -454,7 +454,7 @@
 | List hires (filters:`application_id`, `candidate_id`, `status`) | `/api/recruitment/hires`      | Bearer | `GET`    |
 | Create a hire manually                                                | `/api/recruitment/hires`      | Bearer | `POST`   |
 | Show a hire                                                           | `/api/recruitment/hires/{id}` | Bearer | `GET`    |
-| Update a hire*(e.g. status)*                                        | `/api/recruitment/hires/{id}` | Bearer | `PUT`    |
+| Update a hire*(e.g. status)*                                          | `/api/recruitment/hires/{id}` | Bearer | `PUT`    |
 | Soft-delete a hire                                                    | `/api/recruitment/hires/{id}` | Bearer | `DELETE` |
 
 ### `POST /api/recruitment/hires` — Create
