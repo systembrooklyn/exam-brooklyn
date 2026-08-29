@@ -284,9 +284,9 @@
             <div class="flex items-center gap-3">
               <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0 animate-pulse"></span>
               <span class="text-sm font-bold text-gray-900 dark:text-white">Contributing Tickets</span>
-              <span class="text-xs text-gray-400 dark:text-gray-550">{{ filteredInsightsTickets.length }} closed {{ filteredInsightsTickets.length === 1 ? 'ticket' : 'tickets' }}</span>
+              <span class="text-xs text-gray-400 dark:text-gray-550">{{ sortedInsightsTickets.length }} closed {{ sortedInsightsTickets.length === 1 ? 'ticket' : 'tickets' }}</span>
             </div>
-            <div class="text-xs text-gray-400 dark:text-gray-550 italic">Sorted chronologically</div>
+            <div class="text-xs text-gray-400 dark:text-gray-550 italic">Sorted by rating (lowest first)</div>
           </div>
 
           <!-- Loading State -->
@@ -299,7 +299,7 @@
           </div>
 
           <!-- Empty State -->
-          <div v-else-if="filteredInsightsTickets.length === 0" class="px-6 py-16 text-center">
+          <div v-else-if="sortedInsightsTickets.length === 0" class="px-6 py-16 text-center">
             <div class="flex flex-col items-center justify-center max-w-xs mx-auto space-y-4">
               <div class="p-4 rounded-full ring-8 bg-gray-50 dark:bg-gray-750 text-gray-400 ring-gray-100/60 dark:ring-gray-700/40">
                 <Ticket class="w-8 h-8" />
@@ -314,7 +314,7 @@
           <!-- Ticket Rows -->
           <div v-else class="divide-y divide-gray-100 dark:divide-gray-700/50">
             <div
-              v-for="ticket in filteredInsightsTickets"
+              v-for="ticket in sortedInsightsTickets"
               :key="ticket.serial"
               class="px-5 py-4 flex gap-3 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-all duration-150 cursor-pointer"
               @click="$router.push(`/tickets/${ticket.serial}`)"
@@ -566,6 +566,23 @@ const filteredInsightsTickets = computed(() => {
     if (!t.type) return true;
     return t.type.toLowerCase().trim() !== 'task';
   });
+});
+
+const sortedInsightsTickets = computed(() => {
+  const tickets = [...(filteredInsightsTickets.value || [])];
+  tickets.sort((a, b) => {
+    const scoreA = (a.evaluate !== null && a.evaluate !== undefined && a.evaluate !== '')
+      ? Number(a.evaluate)
+      : 11;
+    const scoreB = (b.evaluate !== null && b.evaluate !== undefined && b.evaluate !== '')
+      ? Number(b.evaluate)
+      : 11;
+    if (scoreA !== scoreB) {
+      return scoreA - scoreB;
+    }
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+  return tickets;
 });
 
 // Active filters computed wrapper
