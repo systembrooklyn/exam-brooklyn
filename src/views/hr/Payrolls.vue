@@ -11,34 +11,31 @@
         <div class="flex flex-wrap items-center gap-2 bg-gray-50 p-2 rounded-xl border border-indigo-200">
           <div class="flex flex-col px-2 min-w-[200px] flex-1 sm:flex-none sm:min-w-[220px] max-w-md">
             <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-            <input
-              v-model="payrollSearchQuery"
-              type="search"
-              autocomplete="off"
+            <input v-model="payrollSearchQuery" type="search" autocomplete="off"
               placeholder="Employee name or fingerprint..."
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-            />
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none" />
           </div>
           <div class="w-px h-8 bg-gray-200 hidden sm:block"></div>
           <div class="flex flex-col px-2 min-w-[200px]">
             <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
             <div class="relative">
-              <input
-                v-model="filterPayrollMonth"
-                type="month"
+              <input v-model="filterPayrollMonth" type="month"
                 class="w-full pr-9 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                @change="applyFilterMonth"
-              />
-              <LucideCalendar class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                @change="applyFilterMonth" />
+              <LucideCalendar
+                class="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
             <p v-if="filterPayrollMonth" class="text-xs text-gray-400 mt-1">
-              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} → {{ getPayrollDates(filterPayrollMonth).to_date }}
+              Period: {{ getPayrollDates(filterPayrollMonth).from_date }} → {{
+                getPayrollDates(filterPayrollMonth).to_date }}
             </p>
           </div>
           <div class="w-px h-8 bg-gray-200"></div>
           <div class="flex flex-col px-2 min-w-[120px]">
             <label class="text-[10px] uppercase font-bold text-gray-400">Status</label>
-            <select v-model="filterForm.status" class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5" @change="fetchPayrolls">
+            <select v-model="filterForm.status"
+              class="bg-transparent border-none text-sm font-medium focus:ring-0 focus:outline-none p-0 h-5"
+              @change="fetchPayrolls">
               <option value="">All</option>
               <option value="pending">Pending</option>
               <option value="hr-approved">HR Approved</option>
@@ -52,15 +49,16 @@
           </div>
           <div class="w-px h-8 bg-gray-200"></div>
           <div class="flex items-center gap-2 px-2">
-            <input v-model="filterForm.include_missing" type="checkbox" id="include_missing" class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" @change="fetchPayrolls" />
-            <label for="include_missing" class="text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">Missing Payrolls</label>
+            <input v-model="filterForm.include_missing" type="checkbox" id="include_missing"
+              class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+              @change="fetchPayrolls" />
+            <label for="include_missing"
+              class="text-xs font-medium text-gray-700 cursor-pointer whitespace-nowrap">Missing Payrolls</label>
           </div>
-          <button
-            @click="fetchPayrolls"
+          <button @click="fetchPayrolls"
             class="p-2 rounded-lg hover:bg-indigo-100 transition-colors text-indigo-600 bg-indigo-50 cursor-pointer"
-            title="Apply Filters"
-          >
-            <LucideRefreshCw class="w-4 h-4" :class="{'animate-spin': store.loading}" />
+            title="Apply Filters">
+            <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': store.loading }" />
           </button>
         </div>
 
@@ -75,104 +73,73 @@
             <LucideDownload class="w-4 h-4" /> Export Excel
           </button> -->
 
-          <button
-            v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)"
-            @click="openCalcModal"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full"
-          >
+          <button v-if="authStore.can(HR_PERMISSION.CALCULATE_PAYROLL)" @click="openCalcModal"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer w-full">
             <LucideCalculator class="w-4 h-4" /> Calculate Payroll
           </button>
         </div>
 
-        
+
       </div>
       <div v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL)"
         class="rounded-xl border border-indigo-200 bg-indigo-50/50 px-4 py-2.5 flex items-center justify-between gap-6 shrink-0 shadow-sm">
         <div class="flex items-center gap-3">
           <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">Total Net Salary:</span>
-          <span class="text-xl font-extrabold text-indigo-900 tabular-nums">{{ formatMoney(filteredNetSalaryTotal) }} EGP</span>
+          <span class="text-xl font-extrabold text-indigo-900 tabular-nums">{{ formatMoney(filteredNetSalaryTotal) }}
+            EGP</span>
         </div>
-        <div class="text-[11px] text-indigo-600 bg-indigo-100/60 px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap">
+        <div
+          class="text-[11px] text-indigo-600 bg-indigo-100/60 px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap">
           {{ filteredActionablePayrolls.length }} row{{ filteredActionablePayrolls.length === 1 ? '' : 's' }} shown
         </div>
       </div>
     </div>
 
     <!-- Payrolls Table -->
-    <PayrollsTable 
-      :items="filteredActionablePayrolls" 
-      :loading="store.loading" 
-      :fetchingId="fetchingId"
-      :manual-adjustment-net-by-employee="manualAdjustmentNetByEmployee"
-      :filter-period-from="filterForm.period_from"
-      :filter-period-to="filterForm.period_to"
-      @view="showDetails"
-      @update-status="handleUpdateStatus"
-      @bulk-approve="handleBulkApprove"
-    />
+    <PayrollsTable :items="filteredActionablePayrolls" :loading="store.loading" :fetchingId="fetchingId"
+      :manual-adjustment-net-by-employee="manualAdjustmentNetByEmployee" :filter-period-from="filterForm.period_from"
+      :filter-period-to="filterForm.period_to" @view="showDetails" @update-status="handleUpdateStatus"
+      @bulk-approve="handleBulkApprove" />
 
     <!-- Calculate Payroll Modal -->
-    <HrModal
-      :show="showCalcModal"
-      title="Calculate Payroll"
-      :loading="store.loading"
-      bodyOverflowVisible
-      @close="showCalcModal = false"
-      @save="handleCalculate"
-    >
+    <HrModal :show="showCalcModal" title="Calculate Payroll" :loading="store.loading" bodyOverflowVisible
+      @close="showCalcModal = false" @save="handleCalculate">
       <div class="grid grid-cols-1 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
           <div ref="employeePickerRoot" class="relative">
-            <button
-              type="button"
+            <button type="button"
               class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer flex justify-between items-center h-10"
-              @click.stop="toggleEmployeePicker"
-            >
+              @click.stop="toggleEmployeePicker">
               <span class="truncate text-gray-800">
                 {{ selectedEmployeeLabel }}
               </span>
-              <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform" :class="{ 'rotate-180': employeePickerOpen }" />
+              <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform"
+                :class="{ 'rotate-180': employeePickerOpen }" />
             </button>
-            
-            <div
-              v-show="employeePickerOpen"
+
+            <div v-show="employeePickerOpen"
               class="absolute left-0 right-0 bottom-full z-50 mb-1 rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
-              role="listbox"
-              @mousedown.prevent
-            >
+              role="listbox" @mousedown.prevent>
               <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
-                <input
-                  ref="employeeSearchInputRef"
-                  v-model="employeeSearchQuery"
-                  type="search"
-                  autocomplete="off"
+                <input ref="employeeSearchInputRef" v-model="employeeSearchQuery" type="search" autocomplete="off"
                   placeholder="Search name..."
                   class="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                  @keydown.escape.prevent="employeePickerOpen = false"
-                />
+                  @keydown.escape.prevent="employeePickerOpen = false" />
               </div>
               <div class="max-h-56 overflow-y-auto">
-                <button
-                  type="button"
-                  role="option"
+                <button type="button" role="option"
                   class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
-                  :class="{ 'bg-indigo-50 text-indigo-900': !calcForm.employee_id }"
-                  @click="selectEmployee('')"
-                >
+                  :class="{ 'bg-indigo-50 text-indigo-900': !calcForm.employee_id }" @click="selectEmployee('')">
                   <span>Select Employee</span>
                 </button>
-                <button
-                  v-for="emp in filteredEmployeesForPicker"
-                  :key="emp.id"
-                  type="button"
-                  role="option"
+                <button v-for="emp in filteredEmployeesForPicker" :key="emp.id" type="button" role="option"
                   class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
                   :class="{ 'bg-indigo-50 text-indigo-900': calcForm.employee_id === emp.id }"
-                  @click="selectEmployee(emp.id)"
-                >
+                  @click="selectEmployee(emp.id)">
                   <span class="truncate text-gray-800 font-medium">{{ emp.name }}</span>
-                  <span v-if="emp.contractType" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
+                  <span v-if="emp.contractType"
+                    class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
                     {{ emp.contractType }}
                   </span>
                 </button>
@@ -186,18 +153,22 @@
         <div v-if="isSelectedEmployeeHourly" class="grid grid-cols-2 gap-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input v-model="calcForm.from_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input v-model="calcForm.from_date" type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input v-model="calcForm.to_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+            <input v-model="calcForm.to_date" type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           </div>
         </div>
         <div v-else>
           <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
-          <input v-model="calcForm.payroll_month" type="month" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
+          <input v-model="calcForm.payroll_month" type="month"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none" />
           <p v-if="calcForm.payroll_month" class="text-xs text-gray-400 mt-1">
-            Period: {{ getPayrollDates(calcForm.payroll_month).from_date }} → {{ getPayrollDates(calcForm.payroll_month).to_date }}
+            Period: {{ getPayrollDates(calcForm.payroll_month).from_date }} → {{
+              getPayrollDates(calcForm.payroll_month).to_date }}
           </p>
         </div>
         <div v-if="isSelectedEmployeeHourly">
@@ -207,29 +178,16 @@
               (Calculating from attendance logs...)
             </span>
           </label>
-          <input
-            v-model.number="calcForm.worked_hours"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="e.g. 80"
+          <input v-model.number="calcForm.worked_hours" type="number" min="0" step="0.01" placeholder="e.g. 80"
             :disabled="autoCalculatingHours"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-50"
-          />
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-50" />
         </div>
       </div>
     </HrModal>
 
     <!-- Details Modal -->
-    <HrModal
-      :show="showDetailsModal"
-      title="Payroll Details"
-      :loading="store.loading"
-      maxWidthClass="max-w-4xl"
-      @close="showDetailsModal = false"
-      cancelLabel="Close"
-      :hasSave="false"
-    >
+    <HrModal :show="showDetailsModal" title="Payroll Details" :loading="store.loading" maxWidthClass="max-w-4xl"
+      @close="showDetailsModal = false" cancelLabel="Close" :hasSave="false">
       <div v-if="selectedPayroll" class="space-y-5">
 
         <!-- Employee Info -->
@@ -240,7 +198,8 @@
           </div>
           <div class="bg-indigo-50 rounded-lg p-3 border border-indigo-200">
             <p class="text-xs font-bold text-indigo-600 uppercase mb-0.5">E-Mail</p>
-            <p class="text-base font-medium text-gray-800">{{ selectedPayroll.employee?.email ?? selectedPayroll.employee?.personal_info?.email ?? '-' }}</p>
+            <p class="text-base font-medium text-gray-800">{{ selectedPayroll.employee?.email ??
+              selectedPayroll.employee?.personal_info?.email ?? '-' }}</p>
           </div>
         </div>
 
@@ -248,7 +207,8 @@
         <div class="flex justify-between items-center">
           <div>
             <p class="text-xs text-gray-400 uppercase font-bold">Payroll Period</p>
-            <p class="text-base font-bold text-gray-800">{{ selectedPayroll.period?.payroll_month || selectedPayroll.period?.from || selectedPayroll.period?.to }}</p>
+            <p class="text-base font-bold text-gray-800">{{ selectedPayroll.period?.payroll_month ||
+              selectedPayroll.period?.from || selectedPayroll.period?.to }}</p>
           </div>
           <PayrollStatusBadge :status="selectedPayroll.current_status || selectedPayroll.status" />
         </div>
@@ -275,8 +235,7 @@
           :deduction-details="selectedPayroll.deduction_details ?? selectedPayroll.financials?.deductions?.details"
           :additions-details="selectedPayroll.additions_details ?? selectedPayroll.financials?.additions?.details"
           :deductions-total="selectedPayroll.financials?.deductions"
-          :additions-total="selectedPayroll.financials?.additions"
-        />
+          :additions-total="selectedPayroll.financials?.additions" />
 
         <!-- Employee Adjustments -->
         <div class="space-y-3">
@@ -314,19 +273,17 @@
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr v-for="adj in selectedAdjustments" :key="adj.id">
-                    <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap min-w-[6rem]">{{ normalizeMonth(adj.month) || '-' }}</td>
-                    <td class="px-4 py-3 text-green-700 font-semibold align-top whitespace-nowrap">{{ formatMoney(adj.bonus) }}</td>
-                    <td class="px-4 py-3 text-red-700 font-semibold align-top whitespace-nowrap">{{ formatMoney(adj.deductions) }}</td>
+                    <td class="px-4 py-3 text-gray-700 align-top whitespace-nowrap min-w-[6rem]">{{
+                      normalizeMonth(adj.month) || '-' }}</td>
+                    <td class="px-4 py-3 text-green-700 font-semibold align-top whitespace-nowrap">{{
+                      formatMoney(adj.bonus) }}</td>
+                    <td class="px-4 py-3 text-red-700 font-semibold align-top whitespace-nowrap">{{
+                      formatMoney(adj.deductions) }}</td>
                     <td class="px-4 py-3 text-gray-700 align-top leading-6">
                       <template v-if="adj.notes">
                         <template v-for="(part, i) in noteParts(adj.notes)" :key="`${adj.id}-${i}`">
-                          <a
-                            v-if="part.type === 'link'"
-                            :href="part.value"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-indigo-600 underline break-all hover:text-indigo-700"
-                          >
+                          <a v-if="part.type === 'link'" :href="part.value" target="_blank" rel="noopener noreferrer"
+                            class="text-indigo-600 underline break-all hover:text-indigo-700">
                             {{ part.value }}
                           </a>
                           <span v-else class="whitespace-pre-wrap break-words">{{ part.value }}</span>
@@ -345,13 +302,12 @@
         </div>
 
         <!-- Other Deductions (employee-deductions endpoint) -->
-        <div
-          v-if="selectedPayroll.other_deductions?.items?.length"
-          class="space-y-3"
-        >
-          <div class="bg-slate-100 text-slate-700 font-bold text-sm py-2 px-4 rounded-lg flex items-center justify-between">
+        <div v-if="selectedPayroll.other_deductions?.items?.length" class="space-y-3">
+          <div
+            class="bg-slate-100 text-slate-700 font-bold text-sm py-2 px-4 rounded-lg flex items-center justify-between">
             <span>Other Deductions</span>
-            <span class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 tabular-nums">
+            <span
+              class="inline-flex items-center rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-bold text-red-700 tabular-nums">
               {{ formatMoney(selectedPayroll.other_deductions.total) }} EGP
             </span>
           </div>
@@ -369,26 +325,20 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                <tr
-                  v-for="(ded, index) in selectedPayroll.other_deductions.items"
-                  :key="ded.id"
-                  class="hover:bg-gray-50/60 transition-colors"
-                >
+                <tr v-for="(ded, index) in selectedPayroll.other_deductions.items" :key="ded.id"
+                  class="hover:bg-gray-50/60 transition-colors">
                   <td class="px-4 py-3 text-gray-400 text-xs tabular-nums align-top"># {{ index + 1 }}</td>
                   <td class="px-4 py-3 align-top">
                     <span class="font-medium text-gray-800">{{ ded.deduction_type?.name ?? '-' }}</span>
                   </td>
                   <td class="px-4 py-3 align-top">
-                    <span
-                      class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                      :class="{
-                        'bg-blue-100 text-blue-700': ded.deduction_type?.type === 'percentage',
-                        'bg-emerald-100 text-emerald-700': ded.deduction_type?.type === 'fixed',
-                        'bg-purple-100 text-purple-700': ded.deduction_type?.type === 'static',
-                        'bg-amber-100 text-amber-700': ded.deduction_type?.type === 'daily_rate_fraction',
-                        'bg-gray-100 text-gray-600': !ded.deduction_type?.type,
-                      }"
-                    >
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium" :class="{
+                      'bg-blue-100 text-blue-700': ded.deduction_type?.type === 'percentage',
+                      'bg-emerald-100 text-emerald-700': ded.deduction_type?.type === 'fixed',
+                      'bg-purple-100 text-purple-700': ded.deduction_type?.type === 'static',
+                      'bg-amber-100 text-amber-700': ded.deduction_type?.type === 'daily_rate_fraction',
+                      'bg-gray-100 text-gray-600': !ded.deduction_type?.type,
+                    }">
                       {{ ded.deduction_type?.type ?? '-' }}
                     </span>
                   </td>
@@ -402,7 +352,8 @@
                 </tr>
                 <!-- Total row -->
                 <tr class="bg-red-50/60 border-t-2 border-red-200">
-                  <td colspan="3" class="px-4 py-3 text-right text-xs font-bold text-red-600 uppercase tracking-wide">Total</td>
+                  <td colspan="3" class="px-4 py-3 text-right text-xs font-bold text-red-600 uppercase tracking-wide">
+                    Total</td>
                   <td class="px-4 py-3 text-red-700 font-bold tabular-nums">
                     {{ formatMoney(selectedPayroll.other_deductions.total) }}
                   </td>
@@ -424,14 +375,11 @@
         <div v-if="selectedPayroll.statuses_history?.length">
           <h4 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b pb-2">Status History</h4>
           <ul class="space-y-3">
-            <li
-              v-for="(entry, i) in selectedPayroll.statuses_history"
-              :key="i"
-              class="flex gap-3 items-start"
-            >
+            <li v-for="(entry, i) in selectedPayroll.statuses_history" :key="i" class="flex gap-3 items-start">
               <div class="flex flex-col items-center">
                 <div class="w-2.5 h-2.5 rounded-full bg-indigo-500 mt-1 flex-shrink-0"></div>
-                <div v-if="i < selectedPayroll.statuses_history.length - 1" class="w-px flex-1 bg-indigo-100 mt-1"></div>
+                <div v-if="i < selectedPayroll.statuses_history.length - 1" class="w-px flex-1 bg-indigo-100 mt-1">
+                </div>
               </div>
               <div class="flex-1 pb-2">
                 <div class="flex items-center gap-2 flex-wrap">
@@ -453,56 +401,40 @@
 
 
     <!-- Update Status Modal (Notes) -->
-    <HrModal
-      :show="showStatusModal"
-      :title="payrollStatusModalTitle"
-      :loading="store.loading"
-      @close="showStatusModal = false"
-      @save="executeStatusUpdate"
-    >
+    <HrModal :show="showStatusModal" :title="payrollStatusModalTitle" :loading="store.loading"
+      @close="showStatusModal = false" @save="executeStatusUpdate">
       <div class="space-y-4">
         <p class="text-sm text-gray-600">{{ payrollStatusModalMessage }}</p>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
-          <textarea 
-            v-model="statusUpdateForm.notes" 
-            rows="3" 
+          <textarea v-model="statusUpdateForm.notes" rows="3"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
-            placeholder="Add any comments here..."
-          ></textarea>
+            placeholder="Add any comments here..."></textarea>
         </div>
       </div>
     </HrModal>
 
     <!-- ─── Bulk Approve Overlay ──────────────────────────────── -->
     <transition name="fade-overlay">
-      <div
-        v-if="bulkApprove.active"
-        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-      >
+      <div v-if="bulkApprove.active"
+        class="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
           <!-- Header -->
           <div class="px-6 pt-6 pb-4 border-b border-gray-100">
             <div class="flex items-center gap-3 mb-1">
               <span class="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100">
-                <span
-                  v-if="bulkApprove.done < bulkApprove.total"
-                  class="block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin"
-                />
+                <span v-if="bulkApprove.done < bulkApprove.total"
+                  class="block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin" />
                 <svg v-else class="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
                 </svg>
               </span>
               <h2 class="text-lg font-bold text-gray-800">
-                {{ bulkApprove.done < bulkApprove.total ? 'Processing Bulk Approve…' : 'Bulk Approve Complete' }}
-              </h2>
+                {{ bulkApprove.done < bulkApprove.total ? 'Processing Bulk Approve…' : 'Bulk Approve Complete' }} </h2>
             </div>
             <p class="text-sm text-gray-500 mt-1 pl-11">
-              {{ bulkApprove.done < bulkApprove.total
-                ? `Please wait while each payroll is approved. Do not close or navigate away.`
-                : `All done! ${bulkApprove.success} approved, ${bulkApprove.failed} failed.`
-              }}
-            </p>
+              {{ bulkApprove.done < bulkApprove.total ? `Please wait while each payroll is approved. Do not close or
+                navigate away.` : `All done! ${bulkApprove.success} approved, ${bulkApprove.failed} failed.` }} </p>
           </div>
 
           <!-- Progress -->
@@ -515,22 +447,24 @@
             <div class="h-2.5 bg-gray-100 rounded-full overflow-hidden">
               <div
                 class="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-500"
-                :style="{ width: bulkApprove.total ? (bulkApprove.done / bulkApprove.total * 100) + '%' : '0%' }"
-              />
+                :style="{ width: bulkApprove.total ? (bulkApprove.done / bulkApprove.total * 100) + '%' : '0%' }" />
             </div>
 
             <!-- Current Item Message -->
             <div class="mt-4 max-h-48 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
-              <div
-                v-for="(msg, i) in bulkApprove.log"
-                :key="i"
+              <div v-for="(msg, i) in bulkApprove.log" :key="i"
                 class="flex items-start gap-2 text-sm py-1.5 px-3 rounded-lg"
-                :class="msg.type === 'success' ? 'bg-emerald-50 text-emerald-700' : msg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-indigo-50 text-indigo-700'"
-              >
+                :class="msg.type === 'success' ? 'bg-emerald-50 text-emerald-700' : msg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-indigo-50 text-indigo-700'">
                 <span class="mt-0.5 flex-shrink-0">
-                  <span v-if="msg.type === 'processing'" class="block w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                  <svg v-else-if="msg.type === 'success'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
-                  <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                  <span v-if="msg.type === 'processing'"
+                    class="block w-3 h-3 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                  <svg v-else-if="msg.type === 'success'" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <svg v-else class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </span>
                 <span>{{ msg.text }}</span>
               </div>
@@ -539,11 +473,8 @@
 
           <!-- Footer -->
           <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-            <button
-              v-if="bulkApprove.done >= bulkApprove.total"
-              @click="closeBulkApproveOverlay"
-              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer"
-            >
+            <button v-if="bulkApprove.done >= bulkApprove.total" @click="closeBulkApproveOverlay"
+              class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer">
               Done
             </button>
             <span v-else class="text-xs text-gray-400 italic">Please wait…</span>
@@ -773,7 +704,7 @@ watch(
       calcForm.value.worked_hours = '';
       return;
     }
-    
+
     if (isSelectedEmployeeHourly.value) {
       if (!calcForm.value.from_date || !calcForm.value.to_date) {
         const m = calcForm.value.payroll_month || defaultPayrollMonth;
@@ -786,7 +717,7 @@ watch(
       calcForm.value.worked_hours = '';
       return;
     }
-    
+
     autoCalculatingHours.value = true;
     try {
       const response = await apiClient.get(PAYROLL_ATTENDANCE, {
@@ -797,21 +728,21 @@ watch(
         },
       });
       const logs = response.data?.data || [];
-      
+
       const timeToMinutes = (timeStr) => {
         if (!timeStr) return 0;
         const parts = String(timeStr).split(':').map(Number);
         if (parts.length < 2) return 0;
         return (parts[0] || 0) * 60 + (parts[1] || 0);
       };
-      
+
       let totalMinutes = 0;
       for (const log of logs) {
         if (log.check_in && log.check_out) {
           const checkInMin = timeToMinutes(log.check_in);
           const checkOutMin = timeToMinutes(log.check_out);
           let duration = checkOutMin - checkInMin;
-          
+
           if (log.break_in && log.break_out) {
             const breakInMin = timeToMinutes(log.break_in);
             const breakOutMin = timeToMinutes(log.break_out);
@@ -840,10 +771,10 @@ const handleCalculate = async () => {
     notyf.error('Please select an employee')
     return
   }
-  
+
   let from_date = ''
   let to_date = ''
-  
+
   if (isSelectedEmployeeHourly.value) {
     if (!calcForm.value.from_date || !calcForm.value.to_date) {
       notyf.error('Please select date range')
@@ -860,12 +791,12 @@ const handleCalculate = async () => {
     from_date = dates.from_date
     to_date = dates.to_date
   }
-  
+
   if (isSelectedEmployeeHourly.value && (calcForm.value.worked_hours === '' || calcForm.value.worked_hours === null)) {
     notyf.error('Please enter worked hours')
     return
   }
-  
+
   try {
     const payload = {
       employee_id: calcForm.value.employee_id,
@@ -1244,7 +1175,7 @@ onMounted(async () => {
   await Promise.all([
     fetchPayrolls(),
     employeeStore.getEmployees(),
-    contractStore.getContracts().catch(() => {})
+    contractStore.getContracts().catch(() => { })
   ])
 })
 
@@ -1258,6 +1189,7 @@ onBeforeUnmount(() => {
 .fade-overlay-leave-active {
   transition: opacity 0.25s ease;
 }
+
 .fade-overlay-enter-from,
 .fade-overlay-leave-to {
   opacity: 0;

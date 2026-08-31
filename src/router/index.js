@@ -10,6 +10,7 @@ import dashboardRoutes from "./dashboard";
 import finnanceDashboard from "./finnance-dashboard";
 import hrDashboard from "./hr-dashboard";
 import Reservation from "./Reservation";
+import recruitmentRoutes from "./recruitment";
 
 const routes = [
   { path: "/", name: "login", component: LogIn },
@@ -119,12 +120,24 @@ const routes = [
     name: "tickets-details",
     component: () => import("@/views/dashboard/tickets/TicketDetails.vue"),
   },
+  {
+    path: "/careers",
+    name: "public-careers",
+    component: () => import("../views/public/CareersList.vue"),
+  },
+  {
+    path: "/careers/:slug",
+    name: "public-career-detail",
+    component: () => import("../views/public/CareerJobDetails.vue"),
+  },
   // dashboard
   dashboardRoutes,
   // finance-dashboard
   finnanceDashboard,
   // hr-dashboard
   hrDashboard,
+  // recruitment
+  recruitmentRoutes,
   // reservation
   Reservation,
 ];
@@ -142,7 +155,7 @@ router.beforeEach((to, from, next) => {
     return next({ name: "SystemsPage" });
   }
 
-  const publicPages = ["login", "reset-password", "error"];
+  const publicPages = ["login", "reset-password", "error", "public-careers", "public-career-detail"];
 
   const authRequired = !publicPages.includes(to.name);
 

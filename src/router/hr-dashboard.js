@@ -186,5 +186,17 @@ export default {
       meta: { requiresPermission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION },
       component: () => import("@/views/hr/EmployeeDeductions.vue"),
     },
+    {
+      path: "freelancers-payroll",
+      name: "hr-freelancers-payroll",
+      meta: { requiresPermission: "view-freelancers" },
+      component: () => import("@/views/hr/FreelancersPayroll.vue"),
+    },
+    {
+      path: "payroll-reports",
+      name: "hr-payroll-reports",
+      meta: { requiresPermission: "view-payroll-dashboard" },
+      component: () => import("@/views/hr/PayrollReports.vue"),
+    },
   ],
 };

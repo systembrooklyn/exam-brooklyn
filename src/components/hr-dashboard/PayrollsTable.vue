@@ -2,10 +2,8 @@
   <div>
     <!-- Bulk Selection Toolbar -->
     <transition name="slide-down">
-      <div
-        v-if="selectedIds.size > 0 && authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
-        class="flex items-center justify-between gap-4 mb-3 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl"
-      >
+      <div v-if="selectedIds.size > 0 && authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
+        class="flex items-center justify-between gap-4 mb-3 px-4 py-3 bg-indigo-50 border border-indigo-200 rounded-xl">
         <div class="flex items-center gap-3">
           <div class="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
           <span class="text-sm font-semibold text-indigo-700">
@@ -13,16 +11,12 @@
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <button
-            @click="clearSelection"
-            class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer font-medium"
-          >
+          <button @click="clearSelection"
+            class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer font-medium">
             Clear
           </button>
-          <button
-            @click="emitBulkApprove"
-            class="px-4 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors cursor-pointer font-semibold flex items-center gap-2 shadow-sm"
-          >
+          <button @click="emitBulkApprove"
+            class="px-4 py-1.5 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors cursor-pointer font-semibold flex items-center gap-2 shadow-sm">
             <LucideCheckCircle class="w-4 h-4" />
             Bulk Approve ({{ selectedIds.size }})
           </button>
@@ -30,22 +24,13 @@
       </div>
     </transition>
 
-    <HrDataTable
-      :headers="headers"
-      :items="items"
-      :loading="loading"
-      :has-actions="hasRowActions"
-      emptyMessage="No payrolls found."
-    >
+    <HrDataTable :headers="headers" :items="items" :loading="loading" :has-actions="hasRowActions"
+      emptyMessage="No payrolls found.">
 
       <!-- Row Checkbox -->
       <template #select="{ item }">
-        <input
-          type="checkbox"
-          :checked="selectedIds.has(itemKey(item))"
-          @change="toggleItem(item)"
-          class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-        />
+        <input type="checkbox" :checked="selectedIds.has(itemKey(item))" @change="toggleItem(item)"
+          class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
       </template>
 
       <!-- Employee -->
@@ -62,7 +47,8 @@
 
       <!-- Period -->
       <template #period="{ item }">
-       <div class="flex flex-col gap-0.5 items-center text-center">          <span class="text-sm font-medium text-gray-800">{{ payrollMonthLabel(item) }}</span>
+        <div class="flex flex-col gap-0.5 items-center text-center"> <span class="text-sm font-medium text-gray-800">{{
+          payrollMonthLabel(item) }}</span>
           <span v-if="periodRangeLine(item)" class="text-[11px] text-gray-400">
             Period: {{ periodRangeLine(item) }}
           </span>
@@ -92,48 +78,33 @@
       <template #actions="{ item }">
         <div class="flex items-center gap-2">
           <!-- Eye / Loading Spinner -->
-          <button
-            v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL)"
-            @click="$emit('view', item)"
+          <button v-if="authStore.can(HR_PERMISSION.VIEW_PAYROLL)" @click="$emit('view', item)"
             class="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
-            title="View Details"
-            :disabled="fetchingId === (item.payroll_id || item.id)"
-          >
-            <span
-              v-if="fetchingId === (item.payroll_id || item.id)"
-              class="block w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"
-            />
+            title="View Details" :disabled="fetchingId === (item.payroll_id || item.id)">
+            <span v-if="fetchingId === (item.payroll_id || item.id)"
+              class="block w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
             <LucideEye v-else class="w-4 h-4" />
           </button>
 
           <!-- Approval Actions -->
-          <div
-            v-if="authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
-            class="flex items-center gap-1 border-l pl-2 ml-1"
-          >
+          <div v-if="authStore.can(HR_PERMISSION.UPDATE_PAYROLL_STATUS)"
+            class="flex items-center gap-1 border-l pl-2 ml-1">
             <!-- Approve -->
-            <button
-              @click="$emit('update-status', { item, status: 'approve' })"
+            <button @click="$emit('update-status', { item, status: 'approve' })"
               class="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors cursor-pointer"
-              title="Approve"
-            >
+              title="Approve">
               <LucideCheckCircle class="w-4 h-4" />
             </button>
 
-            <button
-              @click="$emit('update-status', { item, status: 'suspend' })"
+            <button @click="$emit('update-status', { item, status: 'suspend' })"
               class="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
-              title="Stop salary (suspend)"
-            >
+              title="Stop salary (suspend)">
               <LucidePauseCircle class="w-4 h-4" />
             </button>
 
             <!-- Reject -->
-            <button
-              @click="$emit('update-status', { item, status: 'reject' })"
-              class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-              title="Reject"
-            >
+            <button @click="$emit('update-status', { item, status: 'reject' })"
+              class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Reject">
               <LucideXCircle class="w-4 h-4" />
             </button>
           </div>
@@ -291,9 +262,10 @@ function finalNetSalary(item) {
 .slide-down-leave-active {
   transition: all 0.2s ease;
 }
+
 .slide-down-enter-from,
 .slide-down-leave-to {
   opacity: 0;
   transform: translateY(-8px);
 }
-</style>
+</style>

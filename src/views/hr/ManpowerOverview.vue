@@ -187,7 +187,7 @@
               <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Coverage</th>
               <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
               <th
-                v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS)"
+                v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS) || authStore.can('create-job-requests')"
                 class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide"
               >Actions</th>
             </tr>
@@ -297,15 +297,26 @@
                   </span>
                 </td>
 
-                <!-- Parent Actions: Set/Add Plan -->
-                <td v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)" class="px-4 py-3.5 text-center">
-                  <button
-                    @click="openPlanModal(row)"
-                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                    title="Add branch plan"
-                  >
-                    <Plus class="w-3 h-3" /> Add Plan
-                  </button>
+                <!-- Parent Actions: Set/Add Plan + Request Hiring -->
+                <td v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can('create-job-requests')" class="px-4 py-3.5 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button
+                      v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)"
+                      @click="openPlanModal(row)"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      title="Add branch plan"
+                    >
+                      <Plus class="w-3 h-3" /> Add Plan
+                    </button>
+                    <button
+                      v-if="row.vacancy > 0 && authStore.can('create-job-requests')"
+                      @click="requestHiring(row)"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                      title="Request to hire for this vacancy"
+                    >
+                      <UserPlus class="w-3 h-3" /> Request Hiring
+                    </button>
+                  </div>
                 </td>
               </tr>
 
@@ -381,8 +392,8 @@
                   </span>
                 </td>
 
-                <!-- Branch Plan Actions (Edit / Recalc / Delete) -->
-                <td v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS)" class="px-4 py-2.5">
+                <!-- Branch Plan Actions (Edit / Recalc / Delete / Request Hiring) -->
+                <td v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS) || authStore.can('create-job-requests')" class="px-4 py-2.5">
                   <div class="flex items-center justify-center gap-1.5">
                     <button
                       v-if="authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS)"
@@ -408,6 +419,14 @@
                       title="Remove branch plan"
                     >
                       <Trash2 class="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      v-if="plansStore.vacancyOf(plan) > 0 && authStore.can('create-job-requests')"
+                      @click="requestHiringBranch(row, plan)"
+                      class="p-1 text-amber-500 hover:bg-amber-50 rounded transition-colors cursor-pointer"
+                      title="Request hiring for this branch vacancy"
+                    >
+                      <UserPlus class="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </td>
@@ -564,10 +583,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import {
   Briefcase, CheckCircle, AlertCircle, ClipboardList, Search,
   Building, Plus, BarChart3, TrendingDown, Trash2,
-  ChevronDown, ChevronRight, MapPin, Edit, RefreshCw, Users
+  ChevronDown, ChevronRight, MapPin, Edit, RefreshCw, Users, UserPlus
 } from 'lucide-vue-next';
 import { useManpowerPlansStore } from '@/stores/hr/manpowerPlans';
 import { useHrPositionsStore } from '@/stores/hr/positions';
@@ -584,6 +604,7 @@ const positionsStore  = useHrPositionsStore();
 const deptsStore      = useHrDepartmentsStore();
 const reservationStore = useReservationStore();
 const authStore       = useAuthStore();
+const router          = useRouter();
 
 // ── Filters ───────────────────────────────────────────────────────────────
 const searchQuery = ref('');
@@ -615,6 +636,34 @@ const expandAll = () => {
 
 const collapseAll = () => {
   expandedPositions.value.clear();
+};
+
+// ── Recruitment: Request Hiring ────────────────────────────────────────────
+/** Navigate to Job Request form pre-filled with this position's vacancy info */
+const requestHiring = (row) => {
+  router.push({
+    name: 'recruitment-job-request-create',
+    query: {
+      position_id:   row.position.id,
+      position_name: row.position.name,
+      department_id: row.deptId ?? '',
+      vacancy:       row.vacancy ?? 1,
+    },
+  });
+};
+
+/** Navigate to Job Request form pre-filled with a specific branch plan's vacancy info */
+const requestHiringBranch = (row, plan) => {
+  router.push({
+    name: 'recruitment-job-request-create',
+    query: {
+      position_id:   row.position.id,
+      position_name: row.position.name,
+      department_id: row.deptId ?? '',
+      branch_id:     plan.branch?.id ?? plan.branch_id ?? '',
+      vacancy:       plansStore.vacancyOf(plan),
+    },
+  });
 };
 
 // ── Computed Rows with Aggregation & Grouping ────────────────────────────────

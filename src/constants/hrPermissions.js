@@ -96,4 +96,27 @@ export const HR_PERMISSION = {
   RECALC_MANPOWER_PLANS: "recalc-manpower-plans",
   RECALC_ALL_MANPOWER_PLANS: "recalc-all-manpower-plans",
   VIEW_MANPOWER_REPORT: "view-manpower-report",
+
+  // Recruitment Module
+  VIEW_JOB_REQUESTS: "view-job-requests",
+  CREATE_JOB_REQUESTS: "create-job-requests",
+  UPDATE_JOB_REQUESTS: "update-job-requests",
+  DELETE_JOB_REQUESTS: "delete-job-requests",
+  APPROVE_JOB_REQUESTS: "approve-job-requests",
+  REJECT_JOB_REQUESTS: "reject-job-requests",
+  VIEW_JOB_POSTS: "view-job-posts",
+  CREATE_JOB_POSTS: "create-job-posts",
+  UPDATE_JOB_POSTS: "update-job-posts",
+  VIEW_CANDIDATES: "view-candidates",
+  CREATE_CANDIDATES: "create-candidates",
+  VIEW_APPLICATIONS: "view-applications",
+  VIEW_INTERVIEWS: "view-interviews",
+  VIEW_OFFERS: "view-offers",
+  VIEW_HIRES: "view-hires",
+  VIEW_INTERVIEW_STAGES: "view-interview-stages",
+  VIEW_RECRUITMENT_REPORTS: "view-recruitment-reports",
+
+  // Freelancer Payroll & Reports
+  VIEW_FREELANCERS: "view-freelancers",
+  VIEW_PAYROLL_DASHBOARD: "view-payroll-dashboard",
 };

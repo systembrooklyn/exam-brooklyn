@@ -47,6 +47,62 @@ export function buildHrSidebarItems(
     permission: HR_PERMISSION.VIEW_MANPOWER_PLANS,
   });
 
+  items.push({
+    name: "Recruitment",
+    icon: ClipboardList,
+    children: [
+      {
+        name: "Dashboard",
+        route: "recruitment-dashboard",
+        permission: "view-recruitment-reports",
+      },
+      {
+        name: "Job Requests",
+        route: "recruitment-job-requests",
+        permission: "view-job-requests",
+      },
+      {
+        name: "Job Posts",
+        route: "recruitment-job-posts",
+        permission: "view-job-posts",
+      },
+      {
+        name: "Candidates",
+        route: "recruitment-candidates",
+        permission: "view-candidates",
+      },
+      {
+        name: "Applications",
+        route: "recruitment-applications",
+        permission: "view-applications",
+      },
+      {
+        name: "Interviews",
+        route: "recruitment-interviews",
+        permission: "view-interviews",
+      },
+      {
+        name: "Offers",
+        route: "recruitment-offers",
+        permission: "view-offers",
+      },
+      {
+        name: "Hires",
+        route: "recruitment-hires",
+        permission: "view-hires",
+      },
+      {
+        name: "Interview Stages",
+        route: "recruitment-interview-stages",
+        permission: "view-interview-stages",
+      },
+      {
+        name: "Reports",
+        route: "recruitment-reports",
+        permission: "view-recruitment-reports",
+      },
+    ],
+  });
 
   // Core Workforce
   items.push({
@@ -121,32 +177,44 @@ export function buildHrSidebarItems(
   }
 
   // Admin Payroll Management
-  items.push({
-    name: "Payroll",
-    icon: Banknote,
-    children: [
-      {
-        name: "Payrolls",
-        route: "hr-payrolls",
-        permission: HR_PERMISSION.VIEW_PAYROLL,
-      },
-      {
-        name: "Adjustments",
-        route: "hr-employee-adjustments",
-        permission: HR_PERMISSION.VIEW_PAYROLL,
-      },
-      {
-        name: "Deduction Types",
-        route: "hr-deduction-types",
-        permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
-      },
-      {
-        name: "Employee Deductions",
-        route: "hr-employee-deductions",
-        permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
-      },
-    ],
-  });
+  if (canManagePayrollAdminPages) {
+    items.push({
+      name: "Payroll",
+      icon: Banknote,
+      children: [
+        {
+          name: "Payrolls",
+          route: "hr-payrolls",
+          permission: HR_PERMISSION.VIEW_PAYROLL,
+        },
+        {
+          name: "Adjustments",
+          route: "hr-employee-adjustments",
+          permission: HR_PERMISSION.VIEW_PAYROLL,
+        },
+        {
+          name: "Deduction Types",
+          route: "hr-deduction-types",
+          permission: HR_PERMISSION.VIEW_DEDUCTION_TYPE,
+        },
+        {
+          name: "Employee Deductions",
+          route: "hr-employee-deductions",
+          permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
+        },
+        {
+          name: "Freelancers Payroll",
+          route: "hr-freelancers-payroll",
+          permission: "view-freelancers",
+        },
+        {
+          name: "Payroll Reports",
+          route: "hr-payroll-reports",
+          permission: "view-payroll-dashboard",
+        },
+      ],
+    });
+  }
 
   // System/Org Configuration
   items.push({

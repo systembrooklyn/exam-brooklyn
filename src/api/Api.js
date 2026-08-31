@@ -151,3 +151,70 @@ export const TICKET_BY_SERIAL = (serial) => `tickets/${serial}`;
 export const TICKET_COMMENTS = (serial) => `tickets/${serial}/comments`;
 export const TICKET_STATUS = (serial) => `tickets/${serial}/status`;
 export const TICKET_EVALUATE = (serial) => `tickets/${serial}/evaluate`;
+
+// ── Recruitment System APIs ────────────────────────────────────────────────
+export const RECRUITMENT_JOB_REQUESTS       = 'recruitment/job-requests';
+export const RECRUITMENT_JOB_REQUEST_BY_ID  = (id) => `recruitment/job-requests/${id}`;
+export const RECRUITMENT_JOB_REQUEST_SUBMIT = (id) => `recruitment/job-requests/${id}/submit`;
+export const RECRUITMENT_JOB_REQUEST_APPROVE= (id) => `recruitment/job-requests/${id}/approve`;
+export const RECRUITMENT_JOB_REQUEST_REJECT = (id) => `recruitment/job-requests/${id}/reject`;
+export const RECRUITMENT_JOB_REQUEST_REOPEN = (id) => `recruitment/job-requests/${id}/reopen`;
+
+export const RECRUITMENT_JOB_POSTS          = 'recruitment/job-posts';
+export const RECRUITMENT_JOB_POST_BY_ID     = (id) => `recruitment/job-posts/${id}`;
+export const RECRUITMENT_JOB_POST_PUBLISH   = (id) => `recruitment/job-posts/${id}/publish`;
+export const RECRUITMENT_JOB_POST_CLOSE     = (id) => `recruitment/job-posts/${id}/close`;
+export const RECRUITMENT_JOB_POST_ARCHIVE   = (id) => `recruitment/job-posts/${id}/archive`;
+
+export const RECRUITMENT_CANDIDATES         = 'recruitment/candidates';
+export const RECRUITMENT_CANDIDATE_BY_ID    = (id) => `recruitment/candidates/${id}`;
+
+export const RECRUITMENT_APPLICATIONS               = 'recruitment/applications';
+export const RECRUITMENT_APPLICATION_BY_ID          = (id) => `recruitment/applications/${id}`;
+export const RECRUITMENT_APPLICATION_ASSIGN_RECRUITER = (id) => `recruitment/applications/${id}/assign-recruiter`;
+export const RECRUITMENT_APPLICATION_MOVE_STAGE     = (id) => `recruitment/applications/${id}/move-stage`;
+export const RECRUITMENT_APPLICATION_REJECT         = (id) => `recruitment/applications/${id}/reject`;
+export const RECRUITMENT_APPLICATION_WITHDRAW       = (id) => `recruitment/applications/${id}/withdraw`;
+export const RECRUITMENT_APPLICATION_HIRE           = (id) => `recruitment/applications/${id}/hire`;
+export const RECRUITMENT_APPLICATION_ACTIVITY       = (id) => `recruitment/applications/${id}/activity-log`;
+export const RECRUITMENT_APPLICATION_INTERVIEWS     = (id) => `recruitment/applications/${id}/interviews`;
+export const RECRUITMENT_APPLICATION_OFFER          = (id) => `recruitment/applications/${id}/offer`;
+
+export const RECRUITMENT_INTERVIEWS             = 'recruitment/interviews';
+export const RECRUITMENT_INTERVIEW_BY_ID        = (id) => `recruitment/interviews/${id}`;
+export const RECRUITMENT_INTERVIEW_SCHEDULE     = (id) => `recruitment/interviews/${id}/schedule`;
+export const RECRUITMENT_INTERVIEW_SUBMIT_RESULT= (id) => `recruitment/interviews/${id}/submit-result`;
+export const RECRUITMENT_INTERVIEW_CANCEL       = (id) => `recruitment/interviews/${id}/cancel`;
+
+export const RECRUITMENT_OFFERS         = 'recruitment/offers';
+export const RECRUITMENT_OFFER_BY_ID   = (id) => `recruitment/offers/${id}`;
+export const RECRUITMENT_OFFER_SEND    = (id) => `recruitment/offers/${id}/send`;
+export const RECRUITMENT_OFFER_EXPIRE  = (id) => `recruitment/offers/${id}/expire`;
+
+export const RECRUITMENT_HIRES         = 'recruitment/hires';
+export const RECRUITMENT_HIRE_BY_ID    = (id) => `recruitment/hires/${id}`;
+
+export const RECRUITMENT_INTERVIEW_STAGES       = 'recruitment/interview-stages';
+export const RECRUITMENT_INTERVIEW_STAGE_BY_ID  = (id) => `recruitment/interview-stages/${id}`;
+
+export const RECRUITMENT_DASHBOARD      = 'recruitment/dashboard';
+export const RECRUITMENT_REPORTS_BASE   = 'recruitment/reports';
+
+// ── Public Career Page APIs (no auth) ──────────────────────────────────────
+export const PUBLIC_JOBS             = 'jobs';
+export const PUBLIC_JOB_BY_SLUG      = (slug) => `jobs/${slug}`;
+export const PUBLIC_JOB_APPLY        = (slug) => `jobs/${slug}/apply`;
+
+// ── Freelancer Payroll APIs ────────────────────────────────────────────────
+export const FREELANCERS_BASE                  = 'freelancers-payroll/freelancers';
+export const FREELANCER_BY_ID                  = (id) => `freelancers-payroll/freelancers/${id}`;
+export const FREELANCER_PAYROLLS               = 'freelancers-payroll/payrolls';
+export const FREELANCER_PAYROLLS_FOR_MEMBER    = (id) => `freelancers-payroll/freelancers/${id}/payrolls`;
+export const FREELANCER_PAYROLL_BY_ID          = (id) => `freelancers-payroll/payrolls/${id}`;
+export const FREELANCER_TOTAL_BY_MONTH          = 'freelancers-payroll/total-by-month';
+
+// ── Payroll Reports APIs ───────────────────────────────────────────────────
+export const PAYROLL_REPORTS_DASHBOARD         = 'payroll-reports/dashboard';
+export const PAYROLL_REPORTS_PERIOD            = 'payroll-reports/period';
+export const PAYROLL_REPORTS_EMPLOYEE_HISTORY  = (id) => `payroll-reports/employees/${id}/history`;
+export const PAYROLL_REPORTS_FREELANCERS       = 'payroll-reports/freelancers';

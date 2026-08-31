@@ -268,6 +268,7 @@ export const useAuthStore = defineStore("authStore", () => {
   };
 
   const hasPermission = (permissionName) => {
+    if (isAdminUser.value) return true;
     return permissions.value.includes(permissionName);
   };
 

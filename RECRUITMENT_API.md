@@ -4,11 +4,11 @@
 
 ## 🔹 1. Public Endpoints (Career Page)
 
-| Description                                    | Endpoint                   | Auth      | Method   |
-| ---------------------------------------------- | -------------------------- | --------- | -------- |
-| List all published job posts (for career page) | `/api/jobs`              | – (none) | `GET`  |
-| Show full details of a single job post         | `/api/jobs/{slug}`       | – (none) | `GET`  |
-| Submit an application for a job                | `/api/jobs/{slug}/apply` | – (none) | `POST` |
+| Description                                                    | Endpoint                   | Auth      | Method   |
+| -------------------------------------------------------------- | -------------------------- | --------- | -------- |
+| List all published job posts (for career pagRequest Type ***** |                            | – (none) | `GET`  |
+| Show full details ofRequest Type ***** a single job post       | `/api/jobs/{slug}`       | – (none) | `GET`  |
+| Submit an application for a job                                | `/api/jobs/{slug}/apply` | – (none) | `POST` |
 
 ### `POST /api/jobs/{slug}/apply`
 
@@ -516,6 +516,209 @@
   "allow_score": true            // optional | boolean
 }
 ```
+
+---
+
+## 🔹 10. Dashboard & Reports
+
+| Description                   | Endpoint                                  | Auth   | Method  | Filters                                                                                                                              |
+| ----------------------------- | ----------------------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Recruitment dashboard metrics | `/api/recruitment/dashboard`            | Bearer | `GET` | `date_from`, `date_to`, `branch_id`, `department_id`, `recruiter_id`, `job_post_id`                                      |
+| Job requests report           | `/api/recruitment/reports/job-requests` | Bearer | `GET` | `date_from`, `date_to`, `status`, `department_id`, `branch_id`, `sort_by`, `sort_dir`                                  |
+| Job posts report              | `/api/recruitment/reports/job-posts`    | Bearer | `GET` | `date_from`, `date_to`, `status`, `employment_type`, `job_request_id`, `sort_by`, `sort_dir`                           |
+| Candidates report             | `/api/recruitment/reports/candidates`   | Bearer | `GET` | `date_from`, `date_to`, `status`, `source`, `sort_by`, `sort_dir`                                                        |
+| Applications report           | `/api/recruitment/reports/applications` | Bearer | `GET` | `date_from`, `date_to`, `status`, `stage_id`, `job_post_id`, `recruiter_id`, `candidate_id`, `sort_by`, `sort_dir` |
+| Interviews report             | `/api/recruitment/reports/interviews`   | Bearer | `GET` | `date_from`, `date_to`, `result`, `interview_stage_id`, `application_id`, `sort_by`, `sort_dir`                        |
+| Offers report                 | `/api/recruitment/reports/offers`       | Bearer | `GET` | `date_from`, `date_to`, `status`, `application_id`, `sort_by`, `sort_dir`                                                |
+| Hires report                  | `/api/recruitment/reports/hires`        | Bearer | `GET` | `date_from`, `date_to`, `status`, `application_id`, `candidate_id`, `sort_by`, `sort_dir`                              |
+| Recruiters performance report | `/api/recruitment/reports/recruiters`   | Bearer | `GET` | `date_from`, `date_to`, `status`                                                                                               |
+
+---
+
+## 🔹 11. Recruitment Module Permissions
+
+### Job Requests
+
+| Permission               | Description                          |
+| ------------------------ | ------------------------------------ |
+| `view-job-requests`    | View the job requests list & details |
+| `create-job-requests`  | Create new job requests              |
+| `update-job-requests`  | Edit draft job requests              |
+| `delete-job-requests`  | Soft-delete job requests             |
+| `submit-job-requests`  | Submit draft → pending              |
+| `approve-job-requests` | Approve pending requests             |
+| `reject-job-requests`  | Reject pending requests              |
+| `reopen-job-requests`  | Reopen rejected requests → draft    |
+
+### Job Posts
+
+| Permission            | Description                     |
+| --------------------- | ------------------------------- |
+| `view-job-posts`    | View job posts list & details   |
+| `create-job-posts`  | Create new job posts            |
+| `update-job-posts`  | Edit job posts                  |
+| `delete-job-posts`  | Soft-delete job posts           |
+| `publish-job-posts` | Publish draft → published      |
+| `close-job-posts`   | Close published/draft job posts |
+| `archive-job-posts` | Archive closed job posts        |
+
+### Candidates
+
+| Permission            | Description                     |
+| --------------------- | ------------------------------- |
+| `view-candidates`   | View candidates list & profiles |
+| `create-candidates` | Add new candidates manually     |
+| `update-candidates` | Edit candidate info             |
+| `delete-candidates` | Soft-delete candidates          |
+
+### Applications
+
+| Permission                      | Description                              |
+| ------------------------------- | ---------------------------------------- |
+| `view-applications`           | View applications list & details         |
+| `create-applications`         | Create applications manually             |
+| `update-applications`         | Update application notes/status          |
+| `delete-applications`         | Soft-delete applications                 |
+| `assign-recruiter`            | Assign a recruiter to an application     |
+| `move-application-stage`      | Move application to a pipeline stage     |
+| `reject-applications`         | Reject an application                    |
+| `withdraw-applications`       | Withdraw an application                  |
+| `hire-candidate`              | Mark application as hired                |
+| `view-application-activity`   | View activity log for an application     |
+| `view-application-interviews` | View interviews linked to an application |
+| `view-application-offer`      | View offer linked to an application      |
+
+### Interviews
+
+| Permission                   | Description                             |
+| ---------------------------- | --------------------------------------- |
+| `view-interviews`          | View interviews list & details          |
+| `create-interviews`        | Schedule a new interview                |
+| `update-interviews`        | Edit interview details                  |
+| `delete-interviews`        | Soft-delete interviews                  |
+| `schedule-interviews`      | Reschedule an existing interview        |
+| `submit-interview-results` | Submit result (passed/rejected/no-show) |
+| `cancel-interviews`        | Cancel a pending interview              |
+
+### Offers
+
+| Permission        | Description                       |
+| ----------------- | --------------------------------- |
+| `view-offers`   | View offers list & details        |
+| `create-offers` | Create a new offer                |
+| `update-offers` | Edit offer details                |
+| `delete-offers` | Soft-delete offers                |
+| `send-offers`   | Send offer to candidate via email |
+| `expire-offers` | Manually expire a pending offer   |
+
+### Hires
+
+| Permission       | Description               |
+| ---------------- | ------------------------- |
+| `view-hires`   | View hires list & details |
+| `create-hires` | Create a hire manually    |
+| `update-hires` | Update hire status        |
+| `delete-hires` | Soft-delete hires         |
+
+### Interview Stages (Configuration)
+
+| Permission                  | Description                |
+| --------------------------- | -------------------------- |
+| `view-interview-stages`   | View configured stages     |
+| `create-interview-stages` | Create new pipeline stages |
+| `update-interview-stages` | Edit existing stages       |
+| `delete-interview-stages` | Delete stages              |
+
+### Reports
+
+| Permission                   | Description                                |
+| ---------------------------- | ------------------------------------------ |
+| `view-recruitment-reports` | Access all recruitment reports & dashboard |
+
+---
+
+## 🔹 12. Freelancer Payroll APIs
+
+### 12.1 Freelancer Management
+
+| Description                       | Endpoint                                      | Auth   | Method     | Filters                                  |
+| --------------------------------- | --------------------------------------------- | ------ | ---------- | ---------------------------------------- |
+| List all freelancers              | `/api/freelancers-payroll/freelancers`      | Bearer | `GET`    | `first_name`, `last_name`, `email` |
+| Create a new freelancer           | `/api/freelancers-payroll/freelancers`      | Bearer | `POST`   |                                          |
+| Show a single freelancer          | `/api/freelancers-payroll/freelancers/{id}` | Bearer | `GET`    |                                          |
+| Update a freelancer               | `/api/freelancers-payroll/freelancers/{id}` | Bearer | `PUT`    |                                          |
+| Delete a freelancer (soft delete) | `/api/freelancers-payroll/freelancers/{id}` | Bearer | `DELETE` |                                          |
+
+#### `POST /api/freelancers-payroll/freelancers` — Create
+
+```json
+{
+  "first_name": "John",                              // required | string, max:255
+  "last_name": "Doe",                                // optional | string, max:255
+  "email": "john@example.com",                       // optional | email, unique
+  "phone": "+201234567890",                          // optional | string, max:20
+  "contract_link": "https://example.com/contract.pdf", // optional | url, max:500
+  "notes": "Freelance developer"                     // optional | string
+}
+```
+
+### 12.2 Freelancer Payroll Records
+
+| Description                             | Endpoint                                                  | Auth   | Method     | Filters                                                |
+| --------------------------------------- | --------------------------------------------------------- | ------ | ---------- | ------------------------------------------------------ |
+| List all payrolls                       | `/api/freelancers-payroll/payrolls`                     | Bearer | `GET`    | `freelancer_id`, `payroll_month`, `from`, `to` |
+| List payrolls for a specific freelancer | `/api/freelancers-payroll/freelancers/{id}/payrolls`    | Bearer | `GET`    |                                                        |
+| Create a new payroll record             | `/api/freelancers-payroll/payrolls`                     | Bearer | `POST`   |                                                        |
+| Show a single payroll record            | `/api/freelancers-payroll/payrolls/{id}`                | Bearer | `GET`    |                                                        |
+| Update a payroll record                 | `/api/freelancers-payroll/payrolls/{id}`                | Bearer | `PUT`    |                                                        |
+| Delete a payroll record (soft delete)   | `/api/freelancers-payroll/payrolls/{id}`                | Bearer | `DELETE` |                                                        |
+| Get total net amount for a month        | `/api/freelancers-payroll/total-by-month?month=YYYY-MM` | Bearer | `GET`    |                                                        |
+
+#### `POST /api/freelancers-payroll/payrolls` — Create
+
+```json
+{
+  "freelancer_id": 1,              // required | exists:freelancers
+  "payroll_month": "2026-07",      // required | date_format:Y-m
+  "net_amount": 500.00,            // required | numeric, min:0
+  "payment_date": "2026-07-15",    // optional | date
+  "notes": "July 2026 payment"     // optional | string
+}
+```
+
+### 12.3 Freelancer Payroll Permissions
+
+| Permission                        | Description                        |
+| --------------------------------- | ---------------------------------- |
+| `view-freelancers`              | View freelancers list & details    |
+| `create-freelancers`            | Add new freelancers                |
+| `update-freelancers`            | Edit freelancer info               |
+| `delete-freelancers`            | Soft-delete freelancers            |
+| `view-freelancer-payrolls`      | View payroll records               |
+| `create-freelancer-payrolls`    | Create payroll records             |
+| `update-freelancer-payrolls`    | Edit payroll records               |
+| `delete-freelancer-payrolls`    | Delete payroll records             |
+| `view-freelancer-payroll-total` | View monthly total payroll amounts |
+
+---
+
+## 🔹 13. Payroll Reports
+
+| Description                      | Endpoint                                                                | Auth   | Method  |
+| -------------------------------- | ----------------------------------------------------------------------- | ------ | ------- |
+| Payroll dashboard summary        | `/api/payroll-reports/dashboard?month=YYYY-MM&department_id={id}`     | Bearer | `GET` |
+| Payroll period summary           | `/api/payroll-reports/period?from=YYYY-MM&to=YYYY-MM`                 | Bearer | `GET` |
+| Employee payroll history         | `/api/payroll-reports/employees/{id}/history?from=YYYY-MM&to=YYYY-MM` | Bearer | `GET` |
+| Freelancer payroll monthly total | `/api/payroll-reports/freelancers?month=YYYY-MM`                      | Bearer | `GET` |
+
+### Payroll Reports Permissions
+
+| Permission                          | Description                             |
+| ----------------------------------- | --------------------------------------- |
+| `view-payroll-dashboard`          | Access payroll dashboard summary        |
+| `view-payroll-period`             | View period payroll summaries           |
+| `view-payroll-employee-history`   | View historical payroll for an employee |
+| `view-payroll-freelancer-summary` | View freelancer monthly payroll total   |
 
 ---
 
