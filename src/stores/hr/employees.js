@@ -9,6 +9,7 @@ import {
   PAYROLL_ASSIGN_MANAGER,
   PAYROLL_TERMINATE_EMPLOYEE,
   PAYROLL_DEPARTMENTS,
+  MANPOWER_EMPLOYEE_NOTICE,
 } from "@/api/Api";
 
 export const useHrEmployeesStore = defineStore("hr-employees", () => {
@@ -168,10 +169,29 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     }
   };
 
+  /** Toggle employee notice period; caller owns list refresh. */
+  const setEmployeeNotice = async (id, payload) => {
+    try {
+      const body = {
+        is_on_notice: Boolean(payload?.is_on_notice),
+      };
+      if (body.is_on_notice) {
+        const endsAt = String(payload?.notice_period_ends_at ?? "").trim();
+        if (endsAt) body.notice_period_ends_at = endsAt;
+      }
+      const response = await apiClient.post(MANPOWER_EMPLOYEE_NOTICE(id), body);
+      notyf.success(
+        response.data?.message ||
+          "Employee notice status updated and headcount recalculated.",
+      );
+      return response.data;
+    } catch (err) {
+      handleError(err);
+      throw err;
+    }
+  };
+
   getDepartment();
-
-
-  
 
   return {
     employees,
@@ -185,6 +205,7 @@ export const useHrEmployeesStore = defineStore("hr-employees", () => {
     updateEmployee,
     deleteEmployee,
     terminateEmployee,
+    setEmployeeNotice,
     getDepartment,
   };
 });

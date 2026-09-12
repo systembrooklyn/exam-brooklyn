@@ -144,17 +144,17 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="row in reportData" :key="row.id" class="hover:bg-gray-50/40">
-              <td class="px-5 py-4 font-bold text-gray-900">{{ row.position?.name || '—' }}</td>
-              <td class="px-5 py-4 text-gray-700">{{ row.department?.department_name || row.department?.name || '—' }}</td>
+              <td class="px-5 py-4 font-bold text-gray-900">{{ row.position_name || row.position?.name || '—' }}</td>
+              <td class="px-5 py-4 text-gray-700">{{ row.department_name || row.department?.department_name || row.department?.name || '—' }}</td>
               <td class="px-5 py-4 text-center font-semibold text-gray-800">{{ row.requested_count }}</td>
-              <td class="px-5 py-4 text-gray-600">{{ row.requested_by_employee?.personal_info?.first_name || row.requested_by_employee?.name || '—' }}</td>
+              <td class="px-5 py-4 text-gray-600">{{ row.requested_by_name || row.requested_by_employee?.personal_info?.first_name || row.requested_by_employee?.name || '—' }}</td>
               <td class="px-5 py-4 text-center">
                 <span class="inline-flex px-2 py-0.5 rounded text-xs font-semibold uppercase" :class="priorityColor(row.priority)">{{ row.priority }}</span>
               </td>
               <td class="px-5 py-4 text-center">
                 <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold border" :class="statusColorMap(row.status)">{{ formatLabel(row.status) }}</span>
               </td>
-              <td class="px-5 py-4 text-gray-500">{{ formatDate(row.needed_before) }}</td>
+              <td class="px-5 py-4 text-gray-500">{{ formatDate(row.needed_before || row.submitted_at || row.created_at) }}</td>
             </tr>
           </tbody>
         </table>

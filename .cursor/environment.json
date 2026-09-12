@@ -1,0 +1,5 @@
+{
+  "$schema": "https://cursor.com/schemas/environment.json",
+  "install": "npm ci",
+  "terminals": []
+}

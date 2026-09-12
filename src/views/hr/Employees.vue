@@ -246,6 +246,32 @@
                   class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                   placeholder="e.g. 1024" />
               </div>
+              <!-- Notice period (edit only; frees manpower headcount) -->
+              <div v-if="isEditing" class="md:col-span-2 space-y-3 pt-1">
+                <label
+                  class="flex items-start gap-3 cursor-pointer select-none"
+                  :class="editingEmployeeWasTerminated ? 'opacity-50 cursor-not-allowed' : ''">
+                  <input
+                    v-model="form.is_on_notice"
+                    type="checkbox"
+                    class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                    :disabled="editingEmployeeWasTerminated"
+                    @change="onNoticeCheckboxChange" />
+                  <span>
+                    <span class="block text-sm font-medium text-gray-700">On notice period</span>
+                    <span class="block text-xs text-gray-500 mt-0.5">
+                      When enabled, this employee is excluded from manpower headcount so you can open a replacement job request.
+                    </span>
+                  </span>
+                </label>
+                <div v-if="form.is_on_notice && !editingEmployeeWasTerminated">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Notice period ends at</label>
+                  <input
+                    v-model="form.notice_period_ends_at"
+                    type="date"
+                    class="w-full max-w-xs border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -714,10 +740,55 @@ const form = ref({
   branch_id: null,
   hiring_date: '',
   left_at: null,
-  status: 'active'
+  status: 'active',
+  is_on_notice: false,
+  notice_period_ends_at: null,
 });
 
 const originalForm = ref({}); // Store original data for comparison
+
+function normalizeNoticeEndsAt(value) {
+  if (value == null || value === '') return null;
+  const s = String(value).trim();
+  if (!s) return null;
+  // Accept ISO datetime by keeping date portion
+  return s.slice(0, 10);
+}
+
+function readEmployeeNoticeFields(emp) {
+  const personal = emp?.personal_info || {};
+  const rawFlag =
+    emp?.is_on_notice ??
+    personal.is_on_notice ??
+    emp?.on_notice ??
+    false;
+  const isOnNotice =
+    rawFlag === true ||
+    rawFlag === 1 ||
+    String(rawFlag).trim().toLowerCase() === 'true' ||
+    String(rawFlag).trim().toLowerCase() === '1';
+  const endsAt = normalizeNoticeEndsAt(
+    emp?.notice_period_ends_at ?? personal.notice_period_ends_at ?? null,
+  );
+  return {
+    is_on_notice: isOnNotice,
+    notice_period_ends_at: isOnNotice ? endsAt : null,
+  };
+}
+
+function onNoticeCheckboxChange() {
+  if (!form.value.is_on_notice) {
+    form.value.notice_period_ends_at = null;
+  }
+}
+
+function isNoticeDirty() {
+  const curOn = Boolean(form.value.is_on_notice);
+  const origOn = Boolean(originalForm.value?.is_on_notice);
+  const curDate = normalizeNoticeEndsAt(form.value.notice_period_ends_at) || null;
+  const origDate = normalizeNoticeEndsAt(originalForm.value?.notice_period_ends_at) || null;
+  return curOn !== origOn || curDate !== origDate;
+}
 
 onMounted(async () => {
   try {
@@ -908,7 +979,9 @@ const openAddModal = () => {
     branch_id: null,
     hiring_date: new Date().toISOString().slice(0, 10),
     left_at: null,
-    status: 'active'
+    status: 'active',
+    is_on_notice: false,
+    notice_period_ends_at: null,
   };
   activeTab.value = 'basic';
   showModal.value = true;
@@ -983,6 +1056,7 @@ const openEditModal = async (emp) => {
       hiring_date: personal.hiring_date,
       left_at: personal.left_at,
       status: personal.status,
+      ...readEmployeeNoticeFields(emp),
     };
 
     if (cleanData.manager_id != null && cleanData.manager_id !== '') {
@@ -1099,6 +1173,13 @@ const handleSubmit = async () => {
       notyf.error('Departments and job titles must have the same count.');
       return;
     }
+    if (isNoticeDirty() && form.value.is_on_notice) {
+      const endsAt = normalizeNoticeEndsAt(form.value.notice_period_ends_at);
+      if (!endsAt) {
+        notyf.error('Please set the notice period end date.');
+        return;
+      }
+    }
   }
 
   modalSaving.value = true;
@@ -1106,6 +1187,7 @@ const handleSubmit = async () => {
     if (isEditing.value) {
       const changes = {};
       const employeeFields = ['first_name', 'last_name', 'email', 'fingerPrint', 'manager_id', 'hiring_date', 'left_at', 'status'];
+      const noticeDirty = isNoticeDirty();
 
       for (const key of employeeFields) {
         if (key === 'status' &&
@@ -1135,10 +1217,31 @@ const handleSubmit = async () => {
         });
         if (!employeesListRefreshed) {
           await store.getEmployees();
+          employeesListRefreshed = true;
         }
       }
 
-      if (Object.keys(changes).length === 0 && !editAssignmentChanged) {
+      if (noticeDirty) {
+        const noticePayload = {
+          is_on_notice: Boolean(form.value.is_on_notice),
+        };
+        if (noticePayload.is_on_notice) {
+          noticePayload.notice_period_ends_at = normalizeNoticeEndsAt(
+            form.value.notice_period_ends_at,
+          );
+        }
+        await store.setEmployeeNotice(editingId.value, noticePayload);
+        if (!employeesListRefreshed) {
+          await store.getEmployees();
+          employeesListRefreshed = true;
+        }
+      }
+
+      if (
+        Object.keys(changes).length === 0 &&
+        !editAssignmentChanged &&
+        !noticeDirty
+      ) {
         notyf.success('No changes made.');
       }
 

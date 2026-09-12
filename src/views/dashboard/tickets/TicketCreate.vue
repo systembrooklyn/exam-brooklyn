@@ -138,7 +138,7 @@
         <div class="flex justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/60">
           <router-link
             to="/tickets"
-            class="px-4 py-2 text-sm font-semibold text-gray-650 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+            class="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
             Cancel
           </router-link>

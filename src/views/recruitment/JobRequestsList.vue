@@ -86,7 +86,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
       <!-- Loading -->
-      <div v-if="store.loading" class="flex justify-center items-center h-48">
+      <div v-if="listLoading" class="flex justify-center items-center h-48">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
       </div>
 
@@ -130,12 +130,19 @@
                     <Briefcase class="w-4 h-4 text-indigo-500" />
                   </div>
                   <div>
-                    <button
-                      @click="openDetailsModal(req.id)"
-                      class="font-semibold text-indigo-600 hover:underline leading-snug text-left cursor-pointer"
-                    >
-                      {{ req.position?.name ?? '—' }}
-                    </button>
+                    <div class="flex items-center gap-1.5">
+                      <button
+                        @click="openDetailsModal(req.id)"
+                        class="font-semibold text-indigo-600 hover:underline leading-snug text-left cursor-pointer"
+                        :disabled="detailsLoadingId !== null"
+                      >
+                        {{ req.position?.name ?? '—' }}
+                      </button>
+                      <span
+                        v-if="detailsLoadingId === req.id"
+                        class="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin flex-shrink-0"
+                      />
+                    </div>
                     <p class="text-[11px] text-gray-400 mt-0.5">{{ req.department?.name ?? '—' }}</p>
                   </div>
                 </div>
@@ -567,8 +574,10 @@ const confirmReject = async () => {
 // Details Modal
 const showDetailsModal = ref(false);
 const detailsRequest = ref(null);
+const detailsLoadingId = ref(null);
 
 const openDetailsModal = async (id) => {
+  detailsLoadingId.value = id;
   try {
     const res = await store.fetchRequest(id);
     detailsRequest.value = res;
@@ -577,6 +586,8 @@ const openDetailsModal = async (id) => {
     // secure mockup fallback in case request id is mock
     detailsRequest.value = store.requests.find(r => r.id === id);
     showDetailsModal.value = true;
+  } finally {
+    detailsLoadingId.value = null;
   }
 };
 
@@ -591,5 +602,14 @@ const confirmDelete = async () => {
 };
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
-onMounted(() => store.fetchRequests());
+const listLoading = ref(false);
+
+onMounted(async () => {
+  listLoading.value = true;
+  try {
+    await store.fetchRequests();
+  } finally {
+    listLoading.value = false;
+  }
+});
 </script>

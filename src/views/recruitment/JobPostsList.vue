@@ -69,7 +69,7 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
 
       <!-- Loading -->
-      <div v-if="store.loading" class="flex justify-center items-center h-48">
+      <div v-if="listLoading" class="flex justify-center items-center h-48">
         <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
       </div>
 
@@ -108,12 +108,19 @@
               <!-- Title -->
               <td class="px-4 py-3.5 font-semibold text-gray-900">
                 <div>
-                  <p
-                    @click="openDetailsModal(post.id)"
-                    class="cursor-pointer hover:text-indigo-600 hover:underline transition-colors inline-block"
-                  >
-                    {{ post.title }}
-                  </p>
+                  <div class="flex items-center gap-1.5">
+                    <button
+                      @click="openDetailsModal(post.id)"
+                      class="cursor-pointer hover:text-indigo-600 hover:underline transition-colors text-left font-semibold focus:outline-none"
+                      :disabled="detailsLoadingId !== null"
+                    >
+                      {{ post.title }}
+                    </button>
+                    <span
+                      v-if="detailsLoadingId === post.id"
+                      class="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin flex-shrink-0"
+                    />
+                  </div>
                   <p class="text-[10px] text-gray-400 font-normal mt-0.5">Slug: {{ post.slug }}</p>
                 </div>
               </td>
@@ -466,10 +473,16 @@ const authStore = useAuthStore();
 // ── Job Post Details ──────────────────────────────────────────────────────
 const showDetailsModal = ref(false);
 const detailsPost = computed(() => store.currentPost);
+const detailsLoadingId = ref(null);
 
 const openDetailsModal = async (id) => {
-  await store.fetchPost(id);
-  showDetailsModal.value = true;
+  detailsLoadingId.value = id;
+  try {
+    await store.fetchPost(id);
+    showDetailsModal.value = true;
+  } finally {
+    detailsLoadingId.value = null;
+  }
 };
 
 const detailsPostAction = (actionCallback) => {
@@ -558,5 +571,14 @@ const confirmPublish = async () => {
 };
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────
-onMounted(() => store.fetchPosts());
+const listLoading = ref(false);
+
+onMounted(async () => {
+  listLoading.value = true;
+  try {
+    await store.fetchPosts();
+  } finally {
+    listLoading.value = false;
+  }
+});
 </script>

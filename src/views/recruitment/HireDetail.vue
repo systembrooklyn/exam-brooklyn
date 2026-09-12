@@ -24,40 +24,52 @@
             </div>
             <div>
               <h1 class="text-2xl font-bold text-gray-900">{{ candidateName }}</h1>
-              <p class="text-sm text-gray-500 mt-0.5">{{ hire.application?.job_post?.title ?? 'N/A' }}</p>
+              <p class="text-sm text-gray-500 mt-0.5">{{ applicationObj?.job_post?.title || 'N/A' }}</p>
             </div>
           </div>
 
-          <!-- Status Badge + Actions -->
-          <div class="flex items-center gap-3 flex-wrap">
-            <span
-              class="px-3 py-1.5 rounded-full text-sm font-semibold border"
-              :class="store.statusMeta[hire.status]?.cls ?? 'bg-gray-50 text-gray-600 border-gray-200'"
-            >
-              {{ store.statusMeta[hire.status]?.label ?? hire.status }}
-            </span>
+            <!-- Status Badge + Actions -->
+            <div class="flex items-center gap-3 flex-wrap">
+              <span
+                class="px-3 py-1.5 rounded-full text-sm font-semibold border"
+                :class="store.statusMeta[hire.status]?.cls ?? 'bg-gray-50 text-gray-600 border-gray-200'"
+              >
+                {{ store.statusMeta[hire.status]?.label ?? hire.status }}
+              </span>
 
-            <!-- Mark Onboarded -->
-            <button
-              v-if="hire.status === 'pending_onboarding'"
-              @click="handleUpdate('onboarded')"
-              :disabled="store.submitting"
-              class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
-            >
-              <CheckCircle class="w-4 h-4" />
-              Mark Onboarded
-            </button>
+              <!-- Mark Onboarded -->
+              <button
+                v-if="hire.status === 'pending_onboarding' || hire.status === 'cancelled'"
+                @click="handleUpdate('onboarded')"
+                :disabled="store.submitting"
+                class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                <CheckCircle class="w-4 h-4" />
+                Mark Onboarded
+              </button>
 
-            <!-- Cancel -->
-            <button
-              v-if="hire.status !== 'cancelled'"
-              @click="handleUpdate('cancelled')"
-              :disabled="store.submitting"
-              class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-semibold rounded-xl border border-red-200 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              Cancel Hire
-            </button>
-          </div>
+              <!-- Revert/Restore to Pending -->
+              <button
+                v-if="hire.status === 'onboarded' || hire.status === 'cancelled'"
+                @click="handleUpdate('pending_onboarding')"
+                :disabled="store.submitting"
+                class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-semibold rounded-xl border border-amber-200 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                <Clock class="w-4 h-4" />
+                Revert to Pending
+              </button>
+
+              <!-- Cancel Hire -->
+              <button
+                v-if="hire.status === 'pending_onboarding' || hire.status === 'onboarded'"
+                @click="handleUpdate('cancelled')"
+                :disabled="store.submitting"
+                class="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-semibold rounded-xl border border-red-200 transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-2"
+              >
+                <XCircle class="w-4 h-4" />
+                Cancel Hire
+              </button>
+            </div>
         </div>
       </div>
 
@@ -70,10 +82,10 @@
             Hire Information
           </h2>
           <dl class="space-y-3">
-            <div class="flex justify-between text-sm">
+            <!-- <div class="flex justify-between text-sm">
               <dt class="text-gray-500">Hire ID</dt>
               <dd class="font-medium text-gray-800">#{{ hire.id }}</dd>
-            </div>
+            </div> -->
             <div class="flex justify-between text-sm">
               <dt class="text-gray-500">Status</dt>
               <dd>
@@ -86,15 +98,15 @@
               <dt class="text-gray-500">Hired At</dt>
               <dd class="font-medium text-gray-800">{{ hire.created_at ? formatDate(hire.created_at) : '—' }}</dd>
             </div>
-            <div class="flex justify-between text-sm">
+            <!-- <div class="flex justify-between text-sm">
               <dt class="text-gray-500">Application ID</dt>
               <dd>
                 <button
-                  @click="$router.push({ name: 'recruitment-application-detail', params: { id: hire.application_id } })"
+                  @click="$router.push({ name: 'recruitment-application-details', params: { id: hire.application_id } })"
                   class="text-emerald-600 hover:underline font-medium cursor-pointer"
                 >#{{ hire.application_id }}</button>
               </dd>
-            </div>
+            </div> -->
           </dl>
         </div>
 
@@ -140,30 +152,79 @@
           <User class="w-4 h-4 text-blue-500" />
           Candidate Details
         </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm" v-if="hire.application?.candidate">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-5 gap-x-4 text-sm" v-if="candidateObj">
           <div>
-            <p class="text-gray-400 text-xs mb-1">Email</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.email ?? '—' }}</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Email</p>
+            <p class="font-medium text-gray-800 break-all">{{ candidateObj.email ?? '—' }}</p>
           </div>
           <div>
-            <p class="text-gray-400 text-xs mb-1">Phone</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.phone ?? '—' }}</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Phone</p>
+            <p class="font-medium text-gray-800">{{ candidateObj.phone ?? '—' }}</p>
           </div>
           <div>
-            <p class="text-gray-400 text-xs mb-1">Experience</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.experience_years ?? '—' }} yrs</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Experience</p>
+            <p class="font-medium text-gray-800">{{ candidateObj.experience_years ?? '—' }} yrs</p>
           </div>
           <div>
-            <p class="text-gray-400 text-xs mb-1">City</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.city ?? '—' }}</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Location</p>
+            <p class="font-medium text-gray-800">
+              {{ candidateObj.city ? `${candidateObj.city}, ${candidateObj.country || 'Egypt'}` : '—' }}
+            </p>
           </div>
           <div>
-            <p class="text-gray-400 text-xs mb-1">Current Company</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.current_company ?? '—' }}</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Current Company</p>
+            <p class="font-medium text-gray-800">{{ candidateObj.current_company ?? '—' }}</p>
           </div>
           <div>
-            <p class="text-gray-400 text-xs mb-1">Education</p>
-            <p class="font-medium text-gray-800">{{ hire.application.candidate.highest_education ?? '—' }}</p>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Education</p>
+            <p class="font-medium text-gray-800">{{ candidateObj.highest_education ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Gender / Birthdate</p>
+            <p class="font-medium text-gray-800 capitalize">
+              {{ candidateObj.gender || '—' }} 
+              <span v-if="candidateObj.birth_date" class="text-gray-400 text-xs">({{ candidateObj.birth_date }})</span>
+            </p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">Notice Period</p>
+            <p class="font-medium text-gray-800">{{ candidateObj.notice_period ?? '—' }}</p>
+          </div>
+          <div>
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-1">LinkedIn Profile</p>
+            <a
+              v-if="candidateObj.linkedin"
+              :href="candidateObj.linkedin"
+              target="_blank"
+              class="text-indigo-600 hover:underline font-medium break-all flex items-center gap-1"
+            >
+              View Profile
+            </a>
+            <p v-else class="text-gray-400">—</p>
+          </div>
+          <div class="sm:col-span-2 lg:col-span-3 border-t border-gray-50 pt-4" v-if="candidateObj.skills?.length">
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-2">Key Skills</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="skill in candidateObj.skills"
+                :key="skill"
+                class="px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium"
+              >
+                {{ skill }}
+              </span>
+            </div>
+          </div>
+          <div class="sm:col-span-2 lg:col-span-3 border-t border-gray-50 pt-4" v-if="candidateObj.languages?.length">
+            <p class="text-gray-400 text-[10px] uppercase font-bold tracking-wider mb-2">Languages</p>
+            <div class="flex flex-wrap gap-1.5">
+              <span
+                v-for="lang in candidateObj.languages"
+                :key="lang"
+                class="px-2.5 py-0.5 bg-indigo-50/50 text-indigo-700 rounded-lg text-xs font-semibold"
+              >
+                {{ lang }}
+              </span>
+            </div>
           </div>
         </div>
         <p v-else class="text-sm text-gray-400 italic">Candidate info not available.</p>
@@ -175,15 +236,28 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import { ArrowLeft, UserCheck, CheckCircle, FileText, User } from 'lucide-vue-next';
+import { ArrowLeft, UserCheck, CheckCircle, FileText, User, XCircle, Clock } from 'lucide-vue-next';
 import { useHiresStore } from '@/stores/recruitment/hiresStore';
+import { useApplicationsStore } from '@/stores/recruitment/applicationsStore';
+import notyf from '@/components/global/notyf';
 
 const route = useRoute();
 const store = useHiresStore();
+const appStore = useApplicationsStore();
+
 const hire  = computed(() => store.currentHire);
 
+const applicationObj = computed(() => {
+  if (!hire.value) return null;
+  return hire.value.application || appStore.applications.find(a => Number(a.id) === Number(hire.value.application_id));
+});
+
+const candidateObj = computed(() => {
+  return hire.value?.candidate || applicationObj.value?.candidate;
+});
+
 const candidateName = computed(() => {
-  const c = hire.value?.application?.candidate;
+  const c = candidateObj.value;
   if (!c) return '—';
   return c.name || `${c.firstname ?? ''} ${c.lastname ?? ''}`.trim() || '—';
 });
@@ -202,9 +276,19 @@ function formatNum(n) {
 }
 
 async function handleUpdate(status) {
-  if (!confirm(`Mark this hire as "${status}"?`)) return;
-  await store.updateHire(route.params.id, { status });
+  const label = store.statusMeta[status]?.label || status;
+  if (!confirm(`Are you sure you want to change this hire's status to "${label}"?`)) return;
+  try {
+    await store.updateHire(route.params.id, { status });
+    notyf.success(`Hire status updated to "${label}" successfully.`);
+  } catch (err) {
+    const msg = err?.response?.data?.message || err?.message || 'Failed to update status.';
+    notyf.error(msg);
+  }
 }
 
-onMounted(() => store.fetchHire(route.params.id));
+onMounted(async () => {
+  store.fetchHire(route.params.id);
+  appStore.fetchApplications();
+});
 </script>

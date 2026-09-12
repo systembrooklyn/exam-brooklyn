@@ -71,8 +71,10 @@ export const useHiresStore = defineStore('hires', () => {
       const { data } = await apiClient.put(RECRUITMENT_HIRE_BY_ID(id), payload);
       const updated  = data?.data ?? data;
       const idx      = hires.value.findIndex(h => h.id === Number(id));
-      if (idx !== -1) hires.value[idx] = updated;
-      if (currentHire.value?.id === Number(id)) currentHire.value = updated;
+      if (idx !== -1) hires.value[idx] = { ...hires.value[idx], ...updated };
+      if (currentHire.value?.id === Number(id)) {
+        currentHire.value = { ...currentHire.value, ...updated };
+      }
       return updated;
     } catch (e) {
       error.value = e?.response?.data?.message ?? 'Failed to update hire.';

@@ -24,7 +24,7 @@
         <button
           @click="refreshData"
           :disabled="pageLoading"
-          class="inline-flex items-center justify-center p-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer disabled:opacity-60"
+          class="inline-flex items-center justify-center p-2.5 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer disabled:opacity-60"
           title="Refresh Tickets"
         >
           <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': pageLoading }" />
@@ -108,7 +108,7 @@
           <!-- Filters Toggle Button -->
           <button
             @click="showFilters = !showFilters"
-            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 border border-gray-250 dark:border-gray-700 rounded-xl shadow-sm transition-all cursor-pointer relative"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm transition-all cursor-pointer relative"
           >
             <SlidersHorizontal class="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
             <span>Filters</span>
@@ -226,7 +226,7 @@
                 <Smile class="w-6 h-6" />
               </div>
               <div>
-                <p class="text-xs text-gray-500 dark:text-gray-450 font-medium">Average Satisfaction</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Average Satisfaction</p>
                 <div class="flex items-baseline gap-1.5 mt-0.5">
                   <span class="text-2xl font-black text-gray-900 dark:text-white">{{ satisfactionStats.averagePct.toFixed(1) }}%</span>
                   <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full" :class="satisfactionStats.badgeClass">
@@ -242,11 +242,11 @@
                 <Star class="w-6 h-6" />
               </div>
               <div>
-                <p class="text-xs text-gray-550 dark:text-gray-455 font-medium">Ratings Breakdown</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Ratings Breakdown</p>
                 <p class="text-lg font-bold text-gray-900 dark:text-white mt-0.5">
-                  {{ satisfactionStats.ratedCount }} <span class="text-xs font-normal text-gray-550">rated</span>
-                  <span class="mx-1 text-gray-300 dark:text-gray-650">/</span>
-                  {{ satisfactionStats.autoCount }} <span class="text-xs font-normal text-gray-550">auto (10/10)</span>
+                  {{ satisfactionStats.ratedCount }} <span class="text-xs font-normal text-gray-500">rated</span>
+                  <span class="mx-1 text-gray-300 dark:text-gray-600">/</span>
+                  {{ satisfactionStats.autoCount }} <span class="text-xs font-normal text-gray-500">auto (10/10)</span>
                 </p>
               </div>
             </div>
@@ -257,7 +257,7 @@
                 <CircleCheck class="w-6 h-6" />
               </div>
               <div>
-                <p class="text-xs text-gray-500 dark:text-gray-450 font-medium">Total Closed Tickets</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Closed Tickets</p>
                 <p class="text-2xl font-black text-gray-900 dark:text-white mt-0.5">{{ satisfactionStats.totalClosed }}</p>
               </div>
             </div>
@@ -284,9 +284,9 @@
             <div class="flex items-center gap-3">
               <span class="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0 animate-pulse"></span>
               <span class="text-sm font-bold text-gray-900 dark:text-white">Contributing Tickets</span>
-              <span class="text-xs text-gray-400 dark:text-gray-550">{{ sortedInsightsTickets.length }} closed {{ sortedInsightsTickets.length === 1 ? 'ticket' : 'tickets' }}</span>
+              <span class="text-xs text-gray-400 dark:text-gray-500">{{ sortedInsightsTickets.length }} closed {{ sortedInsightsTickets.length === 1 ? 'ticket' : 'tickets' }}</span>
             </div>
-            <div class="text-xs text-gray-400 dark:text-gray-550 italic">Sorted by rating (lowest first)</div>
+            <div class="text-xs text-gray-400 dark:text-gray-500 italic">Sorted by rating (lowest first)</div>
           </div>
 
           <!-- Loading State -->
@@ -295,18 +295,18 @@
               <span class="absolute inset-0 border-3 border-amber-100 dark:border-amber-950 rounded-full"></span>
               <span class="absolute inset-0 border-3 border-amber-500 border-t-transparent rounded-full animate-spin"></span>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-455 animate-pulse font-medium">Loading contributing tickets...</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 animate-pulse font-medium">Loading contributing tickets...</p>
           </div>
 
           <!-- Empty State -->
           <div v-else-if="sortedInsightsTickets.length === 0" class="px-6 py-16 text-center">
             <div class="flex flex-col items-center justify-center max-w-xs mx-auto space-y-4">
-              <div class="p-4 rounded-full ring-8 bg-gray-50 dark:bg-gray-750 text-gray-400 ring-gray-100/60 dark:ring-gray-700/40">
+              <div class="p-4 rounded-full ring-8 bg-gray-50 dark:bg-gray-700 text-gray-400 ring-gray-100/60 dark:ring-gray-700/40">
                 <Ticket class="w-8 h-8" />
               </div>
               <div>
                 <h3 class="text-base font-semibold text-gray-900 dark:text-white">No closed tickets found</h3>
-                <p class="text-xs text-gray-550 dark:text-gray-400 mt-1.5">Adjust filter criteria to display closed tickets.</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">Adjust filter criteria to display closed tickets.</p>
               </div>
             </div>
           </div>
@@ -346,7 +346,7 @@
                   </span>
                   <span
                     @click.stop="copyEmail(ticket.user.email)"
-                    class="inline-flex items-center gap-1 text-[10px] text-gray-450 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50 transition-all font-medium"
+                    class="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50 transition-all font-medium"
                     title="Click to copy email"
                   >
                     <Mail class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
@@ -385,7 +385,7 @@
         <div class="px-5 py-3 border-b border-gray-150 dark:border-gray-700/60 flex items-center gap-3">
           <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" :class="activeTab === 'tasks' ? 'bg-indigo-500' : (filters.is_closed ? 'bg-purple-500' : 'bg-emerald-500')"></span>
           <span class="text-sm font-bold text-gray-900 dark:text-white">{{ activeTab === 'tasks' ? 'Task' : (filters.is_closed ? 'Closed' : 'Open') }} Tickets</span>
-          <span class="text-xs text-gray-400 dark:text-gray-550">{{ displayedTickets.length }} {{ displayedTickets.length === 1 ? 'result' : 'results' }}</span>
+          <span class="text-xs text-gray-400 dark:text-gray-500">{{ displayedTickets.length }} {{ displayedTickets.length === 1 ? 'result' : 'results' }}</span>
         </div>
 
         <!-- Loading Skeleton -->
@@ -424,7 +424,7 @@
         <!-- Ticket Rows -->
         <div v-else class="divide-y divide-gray-100 dark:divide-gray-700/50">
           <div
-            v-for="ticket in displayedTickets"
+            v-for="ticket in ticketsWithReaders"
             :key="ticket.serial"
             class="px-5 py-4 flex gap-3 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 cursor-pointer"
             @click="$router.push(`/tickets/${ticket.serial}`)"
@@ -456,7 +456,7 @@
                 </span>
                 <span
                   @click.stop="copyEmail(ticket.user.email)"
-                  class="inline-flex items-center gap-1 text-[10px] text-gray-450 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50 transition-all font-medium"
+                  class="inline-flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50 transition-all font-medium"
                   title="Click to copy email"
                 >
                   <Mail class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
@@ -465,8 +465,8 @@
                 <span v-if="ticket.comments_count"
                   class="relative flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-lg border transition-colors"
                   :class="ticket.has_unread_comments
-                    ? 'bg-rose-50 text-rose-650 dark:bg-rose-950/20 dark:text-rose-400 border-rose-150 dark:border-rose-900/40 font-bold shadow-sm'
-                    : 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-750 border-gray-150 dark:border-gray-700/50'"
+                    ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/20 dark:text-rose-400 border-rose-100 dark:border-rose-900/40 font-bold shadow-sm'
+                    : 'text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700 border-gray-150 dark:border-gray-700/50'"
                   :title="ticket.has_unread_comments ? 'Unread comments available' : 'Comments count'"
                 >
                   <MessageSquare class="w-3 h-3" :class="{ 'fill-rose-500/10': ticket.has_unread_comments }" />
@@ -478,12 +478,12 @@
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                   </span>
                 </span>
-                <span v-if="getOtherReaders(ticket.readers, ticket.user).length"
-                  class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-750 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50"
-                  :title="getOtherReaders(ticket.readers, ticket.user).map(formatReaderNameWithTime).join('\n')"
+                <span v-if="ticket.otherReaders.length"
+                  class="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700 px-1.5 py-0.5 rounded-lg border border-gray-150 dark:border-gray-700/50"
+                  :title="ticket.otherReaders.map(formatReaderNameWithTime).join('\n')"
                 >
                   <Eye class="w-3 h-3" />
-                  Seen by: {{ getOtherReaders(ticket.readers, ticket.user).map(formatReaderName).join(', ') }}
+                  Seen by: {{ ticket.otherReaders.map(formatReaderName).join(', ') }}
                 </span>
               </div>
             </div>
@@ -519,6 +519,11 @@ import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, S
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
 import notyf from '@/components/global/notyf';
+import {
+  getOtherReaders,
+  formatReaderName,
+  formatReaderNameWithTime,
+} from '@/utils/ticketsHelpers';
 import { Line } from 'vue-chartjs';
 import apiClient from '@/api/axiosInstance';
 import {
@@ -914,6 +919,13 @@ const displayedTickets = computed(() => {
   return activeTab.value === 'tasks' ? taskTicketsList.value : ticketsList.value;
 });
 
+const ticketsWithReaders = computed(() => {
+  return (displayedTickets.value || []).map((ticket) => ({
+    ...ticket,
+    otherReaders: getOtherReaders(ticket.readers, ticket.user, authStore.user),
+  }));
+});
+
 const hasActiveFilters = computed(() =>
   filters.type || filters.category || filters.start_date || filters.end_date || filters.unread_only
 );
@@ -961,43 +973,6 @@ const categoryOptions = computed(() => {
   const meta = store.metaOptions;
   return meta?.category || meta?.categories || [];
 });
-
-const getOtherReaders = (readers, ticketOwner) => {
-  if (!readers || !Array.isArray(readers)) return [];
-  const currentUser = authStore.user;
-  return readers.filter(r => {
-    const isSelf = currentUser && (
-      (currentUser.id && r.id && String(currentUser.id) === String(r.id)) ||
-      (currentUser.fingerPrint && r.fingerprint && String(currentUser.fingerPrint) === String(r.fingerprint)) ||
-      (currentUser.fingerprint && r.fingerprint && String(currentUser.fingerprint) === String(r.fingerprint)) ||
-      (currentUser.name && r.name && currentUser.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
-      (currentUser.email && r.email && currentUser.email.trim().toLowerCase() === r.email.trim().toLowerCase())
-    );
-
-    const isOwner = ticketOwner && (
-      (ticketOwner.id && r.id && String(ticketOwner.id) === String(r.id)) ||
-      (ticketOwner.fingerPrint && r.fingerprint && String(ticketOwner.fingerPrint) === String(r.fingerprint)) ||
-      (ticketOwner.fingerprint && r.fingerprint && String(ticketOwner.fingerprint) === String(r.fingerprint)) ||
-      (ticketOwner.name && r.name && ticketOwner.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
-      (ticketOwner.email && r.email && ticketOwner.email.trim().toLowerCase() === r.email.trim().toLowerCase())
-    );
-
-    return !isSelf && !isOwner;
-  });
-};
-
-const formatReaderName = (r) => {
-  return `${r.name}${r.fingerprint ? '_' + r.fingerprint : ''}`;
-};
-
-const formatReaderNameWithTime = (r) => {
-  if (!r.read_at) return formatReaderName(r);
-  const timeStr = new Date(r.read_at).toLocaleString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-  return `${formatReaderName(r)} at ${timeStr}`;
-};
 
 const toggleUnreadOnly = () => {
   filters.unread_only = !filters.unread_only;

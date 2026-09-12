@@ -562,16 +562,30 @@
           :key="emp.employee_id"
           class="py-3 flex items-center justify-between hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
         >
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
               {{ emp.name ? emp.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'E' }}
             </div>
-            <div>
-              <p class="text-sm font-semibold text-gray-900">{{ emp.name }}</p>
-              <p class="text-xs text-gray-400">FP: {{ emp.finger_print ?? '—' }}</p>
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <p class="text-sm font-semibold text-gray-900">{{ emp.name }}</p>
+                <span
+                  v-if="employeeIsOnNotice(emp)"
+                  class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200"
+                  :title="noticeEndsAtLabel(emp) ? `Ends ${noticeEndsAtLabel(emp)}` : 'On notice period'"
+                >
+                  On notice
+                </span>
+              </div>
+              <p class="text-xs text-gray-400">
+                FP: {{ emp.finger_print ?? '—' }}
+                <span v-if="employeeIsOnNotice(emp) && noticeEndsAtLabel(emp)" class="text-amber-700/80">
+                  · ends {{ noticeEndsAtLabel(emp) }}
+                </span>
+              </p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+          <div class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 flex-shrink-0">
             <MapPin class="w-3.5 h-3.5 text-indigo-500" />
             {{ emp.branch_name }}
           </div>
@@ -785,6 +799,27 @@ const viewEmployees = async (positionId, branchId, positionName, branchName = nu
     loadingEmployees.value = false;
   }
 };
+
+function employeeIsOnNotice(emp) {
+  const v = emp?.is_on_notice;
+  if (v === true || v === 1) return true;
+  const s = typeof v === 'string' ? v.trim().toLowerCase() : '';
+  return s === '1' || s === 'true' || s === 'yes';
+}
+
+function noticeEndsAtLabel(emp) {
+  const raw = emp?.notice_period_ends_at;
+  if (raw == null || raw === '') return '';
+  const s = String(raw).trim();
+  if (!s) return '';
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) return s.slice(0, 10);
+  return d.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+}
 
 const showPlanModal = ref(false);
 const editingPlan   = ref(null);

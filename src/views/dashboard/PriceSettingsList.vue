@@ -575,7 +575,7 @@
             <div
               class="px-6 py-4 bg-gray-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-700/60 flex justify-end gap-3">
               <button @click="closeModal"
-                class="px-4 py-2 text-sm font-semibold text-gray-650 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white rounded-xl hover:bg-gray-105 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                class="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer">
                 Cancel
               </button>
               <button @click="savePriceSetting" :disabled="saving"

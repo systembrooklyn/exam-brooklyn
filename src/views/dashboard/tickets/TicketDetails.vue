@@ -50,7 +50,7 @@
           <button
             @click="loadTicket(store.currentTicket.serial)"
             :disabled="store.loading"
-            class="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-750 transition-all duration-200 cursor-pointer disabled:opacity-60"
+            class="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700 text-sm font-semibold rounded-xl shadow-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer disabled:opacity-60"
             title="Refresh Ticket"
           >
             <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': store.loading }" />
@@ -91,7 +91,7 @@
               <span class="text-xs text-gray-400 dark:text-gray-500 ml-auto">{{
                 formatDate(store.currentTicket.created_at) }}</span>
             </div>
-            <div class="p-5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap select-text editor-content" v-html="store.currentTicket.desc || 'No description provided.'">
+            <div dir="auto" class="p-5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap select-text editor-content" v-html="sanitizedDesc">
             </div>
             <!-- Meta (URL, Attachment) -->
             <div v-if="store.currentTicket.url || store.currentTicket.attachment_url"
@@ -112,7 +112,7 @@
           </div>
 
           <!-- Comment Timeline -->
-          <div v-for="comment in store.currentTicket.comments" :key="comment.id"
+          <div v-for="comment in commentsWithReaders" :key="comment.id"
             class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-150 dark:border-gray-700/60 shadow-sm relative">
             <!-- Timeline Dot -->
             <div class="absolute -left-7 top-4 w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 flex items-center justify-center text-gray-500 dark:text-gray-400 z-10">
@@ -124,13 +124,12 @@
                 class="w-7 h-7 bg-indigo-100 dark:bg-indigo-900/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">
                 {{ (comment.user?.name || comment.author_name || 'U').charAt(0).toUpperCase() }}
               </span>
-              <!-- {{ comment.user?.fingerPrint }}   -->
               <span class="text-sm font-semibold text-gray-900 dark:text-white">
                 {{ comment.user?.name || comment.author_name || 'Support Team' }}<span v-if="comment.user?.fingerPrint">_{{ comment.user?.fingerPrint }}</span>
               </span>
               <span class="text-xs text-gray-400 dark:text-gray-500 ml-auto">{{ formatDate(comment.created_at) }}</span>
             </div>
-            <div class="p-5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap select-text editor-content" v-html="comment.body">
+            <div dir="auto" class="p-5 text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap select-text editor-content" v-html="comment.sanitizedBody">
             </div>
             <div v-if="comment.attachment_url" class="px-5 pb-4">
               <a :href="comment.attachment_url" target="_blank"
@@ -140,14 +139,14 @@
               </a>
             </div>
             <!-- Seen by section -->
-            <div v-if="getOtherReaders(comment.readers, comment.user || comment.author_name).length"
+            <div v-if="comment.otherReaders.length"
               class="px-5 pb-4 -mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
               <Eye class="w-3.5 h-3.5 flex-shrink-0" />
               <span class="font-medium text-gray-500 dark:text-gray-400">Seen by:</span>
-              <span v-for="(r, idx) in getOtherReaders(comment.readers, comment.user || comment.author_name)" :key="r.id" class="inline-flex items-center gap-1">
-                <span class="font-medium text-gray-650 dark:text-gray-300">{{ formatReaderName(r) }}</span>
-                <span class="text-[10px] text-gray-450 dark:text-gray-500">at {{ formatDate(r.read_at) }}</span>
-                <span v-if="idx < getOtherReaders(comment.readers, comment.user || comment.author_name).length - 1" class="text-gray-300 dark:text-gray-700 ml-1">•</span>
+              <span v-for="(r, idx) in comment.otherReaders" :key="r.id" class="inline-flex items-center gap-1">
+                <span class="font-medium text-gray-600 dark:text-gray-300">{{ formatReaderName(r) }}</span>
+                <span class="text-[10px] text-gray-400 dark:text-gray-500">at {{ formatDate(r.read_at) }}</span>
+                <span v-if="idx < comment.otherReaders.length - 1" class="text-gray-300 dark:text-gray-700 ml-1">•</span>
               </span>
             </div>
           </div>
@@ -227,7 +226,7 @@
               <!-- Actions -->
               <div class="flex items-center justify-end gap-3 pt-2 border-t border-gray-100 dark:border-gray-700/60">
                 <button v-if="authStore.can('can-close-ticket')" type="button" @click="closeTicket" :disabled="store.loading"
-                  class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-850 dark:hover:text-white bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer disabled:opacity-60">
+                  class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer disabled:opacity-60">
                   <CircleCheck class="w-4 h-4 text-purple-500" />
                   Close Ticket
                 </button>
@@ -245,7 +244,7 @@
           <div v-if="isClosed && !store.currentTicket.evaluate && isTicketOwner"
             class="bg-white dark:bg-gray-800 rounded-2xl border border-amber-100 dark:border-amber-900/50 shadow-sm relative mb-4">
             <!-- Timeline Dot -->
-            <div class="absolute -left-7 top-4 w-6 h-6 rounded-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-550 dark:text-amber-400 z-10">
+            <div class="absolute -left-7 top-4 w-6 h-6 rounded-full bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center justify-center text-amber-500 dark:text-amber-400 z-10">
               <Star class="w-3.5 h-3.5" />
             </div>
             <div
@@ -323,7 +322,7 @@
                 </template>
               </span>
             </div>
-            <div v-if="store.currentTicket.evaluation_notes" class="mt-1 pl-8 text-xs text-gray-650 dark:text-gray-400 italic">
+            <div v-if="store.currentTicket.evaluation_notes" class="mt-1 pl-8 text-xs text-gray-600 dark:text-gray-400 italic">
               "{{ store.currentTicket.evaluation_notes }}"
             </div>
           </div>
@@ -392,7 +391,7 @@
                   <span class="text-xs font-bold text-gray-800 dark:text-gray-200">{{ store.currentTicket.evaluate }}
                     / 10</span>
                 </div>
-                <p v-if="store.currentTicket.evaluation_notes" class="text-[11px] text-gray-550 dark:text-gray-400 italic mt-1 max-w-full truncate" :title="store.currentTicket.evaluation_notes">
+                <p v-if="store.currentTicket.evaluation_notes" class="text-[11px] text-gray-500 dark:text-gray-400 italic mt-1 max-w-full truncate" :title="store.currentTicket.evaluation_notes">
                   "{{ store.currentTicket.evaluation_notes }}"
                 </p>
               </div>
@@ -420,7 +419,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import {
   ChevronRight, CircleDot, CircleCheck, MessageSquare, Plus,
   FileText, Link, Paperclip, Star, Ticket, RotateCcw, Eye, RefreshCw
@@ -429,9 +428,13 @@ import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
 import Swal from 'sweetalert2';
 import WhatsAppEditor from '@/components/global/WhatsAppEditor.vue';
+import {
+  getOtherReaders as getOtherReadersUtil,
+  formatReaderName,
+  sanitizeTicketHtml,
+} from '@/utils/ticketsHelpers';
 
 const route = useRoute();
-const router = useRouter();
 const store = useTicketsStore();
 const authStore = useAuthStore();
 
@@ -452,38 +455,25 @@ const isTicketOwner = computed(() => {
   return currentUser.id === ticketUser.id || currentUser.email === ticketUser.email;
 });
 
-const getOtherReaders = (readers, commentOwner) => {
-  if (!readers || !Array.isArray(readers)) return [];
-  const currentUser = authStore.user;
-  return readers.filter(r => {
-    const isSelf = currentUser && (
-      (currentUser.id && r.id && String(currentUser.id) === String(r.id)) ||
-      (currentUser.fingerPrint && r.fingerprint && String(currentUser.fingerPrint) === String(r.fingerprint)) ||
-      (currentUser.fingerprint && r.fingerprint && String(currentUser.fingerprint) === String(r.fingerprint)) ||
-      (currentUser.name && r.name && currentUser.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
-      (currentUser.email && r.email && currentUser.email.trim().toLowerCase() === r.email.trim().toLowerCase())
-    );
+const sanitizedDesc = computed(() => {
+  const raw = store.currentTicket?.desc;
+  if (!raw) return 'No description provided.';
+  return sanitizeTicketHtml(raw);
+});
 
-    const isAuthor = commentOwner && (
-      (commentOwner.id && r.id && String(commentOwner.id) === String(r.id)) ||
-      (commentOwner.fingerPrint && r.fingerprint && String(commentOwner.fingerPrint) === String(r.fingerprint)) ||
-      (commentOwner.fingerprint && r.fingerprint && String(commentOwner.fingerprint) === String(r.fingerprint)) ||
-      (commentOwner.name && r.name && commentOwner.name.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
-      (commentOwner.email && r.email && commentOwner.email.trim().toLowerCase() === r.email.trim().toLowerCase())
-    );
-
-    const matchesAuthorName = !isAuthor && r.name && (
-      (typeof commentOwner === 'string' && commentOwner.trim().toLowerCase() === r.name.trim().toLowerCase()) ||
-      (commentOwner && typeof commentOwner === 'object' && commentOwner.author_name && String(commentOwner.author_name).trim().toLowerCase() === r.name.trim().toLowerCase())
-    );
-
-    return !isSelf && !isAuthor && !matchesAuthorName;
-  });
-};
-
-const formatReaderName = (r) => {
-  return `${r.name}${r.fingerprint ? '_' + r.fingerprint : ''}`;
-};
+const commentsWithReaders = computed(() => {
+  const comments = store.currentTicket?.comments;
+  if (!comments?.length) return [];
+  return comments.map((comment) => ({
+    ...comment,
+    sanitizedBody: sanitizeTicketHtml(comment.body),
+    otherReaders: getOtherReadersUtil(
+      comment.readers,
+      comment.user || comment.author_name,
+      authStore.user
+    ),
+  }));
+});
 
 const loadTicket = (serial) => {
   store.currentTicket = null;
@@ -502,21 +492,12 @@ watch(
   }
 );
 
-onUnmounted(() => {
-  store.currentTicket = null;
-});
-
 const formatDate = (dateString) => {
   if (!dateString) return 'recently';
   return new Date(dateString).toLocaleString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   });
-};
-
-const truncate = (text, length) => {
-  if (!text) return '';
-  return text.length > length ? text.substring(0, length) + '...' : text;
 };
 
 const handleCommentFile = (event) => {
@@ -666,6 +647,7 @@ watch(
 );
 
 onUnmounted(() => {
+  store.currentTicket = null;
   if (timerId) clearInterval(timerId);
 });
 </script>
