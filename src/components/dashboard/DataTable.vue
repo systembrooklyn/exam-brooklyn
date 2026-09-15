@@ -673,30 +673,51 @@ function canShowEmployeeReplyButton(item) {
 
 /**
  * Booking notes API pattern: "{note text} - {actor name} - {actor id}"
- * Parse from the end so note text may itself contain " - ".
+ * Always peel from the END so the note body may contain " - " freely.
  * Display label: FirstName_id (e.g. Hazem_533).
  */
 function parseBookingActionNote(raw) {
+  const empty = { body: "", actor: "", actorId: "", actorLabel: "", hasActor: false };
   const s = String(raw ?? "").trim();
-  if (!s) {
-    return { body: "", actor: "", actorId: "", actorLabel: "", hasActor: false };
+  if (!s) return empty;
+
+  // 1) Last segment must be numeric id:  "... - 533"
+  const idMatch = s.match(/^(.*)\s+-\s+(\d+)\s*$/);
+  if (!idMatch) {
+    return { ...empty, body: s };
   }
-  const parts = s.split(/\s+-\s+/);
-  if (parts.length >= 3) {
-    const actorId = parts[parts.length - 1].trim();
-    const actor = parts[parts.length - 2].trim();
-    if (actor && /^\d+$/.test(actorId)) {
-      const firstName = actor.split(/\s+/).filter(Boolean)[0] || actor;
-      return {
-        body: parts.slice(0, -2).join(" - ").trim(),
-        actor,
-        actorId,
-        actorLabel: `${firstName}_${actorId}`,
-        hasActor: true,
-      };
-    }
+
+  const beforeId = idMatch[1].replace(/\s+$/, "");
+  const actorId = idMatch[2];
+
+  // 2) Next segment from the end is actor name: "... - Hazem Essam"
+  const actorMatch = beforeId.match(/^(.*)\s+-\s+(.+)$/);
+  if (!actorMatch) {
+    return { ...empty, body: beforeId || s };
   }
-  return { body: s, actor: "", actorId: "", actorLabel: "", hasActor: false };
+
+  const body = actorMatch[1].replace(/\s+$/, "");
+  const actor = actorMatch[2].trim();
+
+  // Ignore placeholder / empty actor (e.g. trailing " - - 1")
+  if (!actor || actor === "-") {
+    return {
+      body: body || beforeId,
+      actor: "",
+      actorId: "",
+      actorLabel: "",
+      hasActor: false,
+    };
+  }
+
+  const firstName = actor.split(/\s+/).filter(Boolean)[0] || actor;
+  return {
+    body: body || "—",
+    actor,
+    actorId,
+    actorLabel: `${firstName}_${actorId}`,
+    hasActor: true,
+  };
 }
 
 const BOOKING_NOTE_MAX_CHARS = 90;
