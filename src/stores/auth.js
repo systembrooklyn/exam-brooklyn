@@ -152,6 +152,10 @@ export const useAuthStore = defineStore("authStore", () => {
   const loading = ref(false);
   const error = ref(null);
   const forgotSuccess = ref("");
+  /** True after first bootstrap (cookie restore + optional getUserByToken) finishes. */
+  const authReady = ref(false);
+  /** Shared so router guards and main.js await the same init. */
+  let initAuthPromise = null;
   const router = useRouter();
 
   const restoreTokenFromCookies = () => {
@@ -382,12 +386,25 @@ export const useAuthStore = defineStore("authStore", () => {
     return "";
   });
 
-  const initAuth = async () => {
-    restoreTokenFromCookies();
-    if (token.value) {
-      await getUserByToken();
-    }
+  const initAuth = () => {
+    if (initAuthPromise) return initAuthPromise;
+
+    initAuthPromise = (async () => {
+      try {
+        restoreTokenFromCookies();
+        if (token.value) {
+          await getUserByToken();
+        }
+      } finally {
+        authReady.value = true;
+      }
+    })();
+
+    return initAuthPromise;
   };
+
+  /** Await session bootstrap before permission-based redirects (refresh-safe). */
+  const ensureAuthReady = () => initAuth();
 
   return {
     token,
@@ -396,6 +413,7 @@ export const useAuthStore = defineStore("authStore", () => {
     loading,
     error,
     forgotSuccess,
+    authReady,
     login,
     logout,
     clearSession,
@@ -410,5 +428,6 @@ export const useAuthStore = defineStore("authStore", () => {
     payrollEmployeeId,
     hasHrRoleOrHrPermission,
     initAuth,
+    ensureAuthReady,
   };
 });

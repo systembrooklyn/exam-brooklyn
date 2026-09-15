@@ -15,33 +15,21 @@
     </div>
 
     <div class="flex flex-wrap gap-4 mb-6">
-      <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Search employee..."
-        class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-      />
+      <input v-model="searchQuery" type="text" placeholder="Search employee..."
+        class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
 
-      <select
-        v-model="listYear"
-        class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-      >
+      <select v-model="listYear"
+        class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
         <option :value="null">All years</option>
         <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
       </select>
     </div>
 
-    <HrDataTable
-      :headers="headers"
-      :items="filteredBalances"
-      :loading="store.loading"
-      emptyMessage="No vacation balances found."
-    >
+    <HrDataTable :headers="headers" :items="filteredBalances" :loading="store.loading"
+      emptyMessage="No vacation balances found.">
       <template #employee="{ item }">
-        <button
-          @click="viewVacationHistory(item)"
-          class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer transition-colors text-left"
-        >
+        <button @click="viewVacationHistory(item)"
+          class="font-medium text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer transition-colors text-left">
           {{ getRowEmployeeName(item) }}
         </button>
       </template>
@@ -68,22 +56,14 @@
 
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-2 flex-wrap">
-          <button
-            v-if="
-              item.contract &&
-              (authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
-                authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE))
-            "
-            type="button"
-            :disabled="editModalPrefetching"
-            @click="openEditModal(item)"
+          <button v-if="
+            item.contract &&
+            (authStore.can(HR_PERMISSION.UPDATE_VACATION_BALANCE) ||
+              authStore.can(HR_PERMISSION.ASSIGN_VACATION_BALANCE))
+          " type="button" :disabled="editModalPrefetching" @click="openEditModal(item)"
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center min-w-[1.25rem]"
-            title="Change vacation link for this contract"
-          >
-            <Loader2
-              v-if="editRowLoadingKey === item.tableRowKey"
-              class="w-5 h-5 animate-spin text-blue-600"
-            />
+            title="Change vacation link for this contract">
+            <Loader2 v-if="editRowLoadingKey === item.tableRowKey" class="w-5 h-5 animate-spin text-blue-600" />
             <Edit v-else class="w-5 h-5" />
           </button>
           <!-- <button
@@ -100,41 +80,24 @@
     </HrDataTable>
 
     <!-- New: simple POST. Edit: PUT contract ↔ vacation (same simple list as My vacations). -->
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Balance' : 'New Balance'"
-      :loading="
-        isEditing
-          ? store.contractLinkUpdating || editModalPrefetching
-          : store.loading
-      "
-      max-width-class="max-w-lg"
-      @close="closeModal"
-      @save="handleBalanceSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Balance' : 'New Balance'" :loading="isEditing
+        ? store.contractLinkUpdating || editModalPrefetching
+        : store.loading
+      " max-width-class="max-w-lg" @close="closeModal" @save="handleBalanceSubmit">
       <div class="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-4">
         <template v-if="!isEditing">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Year <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model.number="balanceForm.year"
-                type="number"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-              />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Year <span
+                  class="text-red-500">*</span></label>
+              <input v-model.number="balanceForm.year" type="number"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >Available days <span class="text-red-500">*</span></label
-              >
-              <input
-                v-model.number="balanceForm.available_days"
-                type="number"
-                min="0"
-                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-              />
+              <label class="block text-sm font-medium text-gray-700 mb-1">Available days <span
+                  class="text-red-500">*</span></label>
+              <input v-model.number="balanceForm.available_days" type="number" min="0"
+                class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
             </div>
           </div>
         </template>
@@ -151,21 +114,14 @@
             }}</span>
           </p>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Vacation balance <span class="text-red-500">*</span></label
-            >
-            <select
-              v-model.number="contractEditForm.new_vacation_balance_id"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white"
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-1">Vacation balance <span
+                class="text-red-500">*</span></label>
+            <select v-model.number="contractEditForm.new_vacation_balance_id"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none bg-white">
               <option v-if="!simpleVacationSelectOptions.length" disabled :value="0">
                 No balances loaded
               </option>
-              <option
-                v-for="opt in simpleVacationSelectOptions"
-                :key="opt.id"
-                :value="opt.id"
-              >
+              <option v-for="opt in simpleVacationSelectOptions" :key="opt.id" :value="opt.id">
                 {{ opt.label }}
               </option>
             </select>
@@ -174,42 +130,28 @@
             </p>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Start date <span class="text-gray-400 font-normal">(optional)</span></label
-            >
-            <input
-              v-model="contractEditForm.start_date"
-              type="date"
-              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-            />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Start date <span
+                class="text-gray-400 font-normal">(optional)</span></label>
+            <input v-model="contractEditForm.start_date" type="date"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
           </div>
         </template>
       </div>
     </HrModal>
 
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Are you sure?"
-      text="This balance record will be deleted."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?" text="This balance record will be deleted."
+      icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
 
     <!-- Vacation History Modal -->
-    <HrModal
-      :show="showHistoryModal"
-      :title="`Vacation History`"
-      :hasSave="false"
-      max-width-class="max-w-2xl"
-      @close="showHistoryModal = false"
-    >
+    <HrModal :show="showHistoryModal" :title="`Vacation History`" :hasSave="false" max-width-class="max-w-2xl"
+      @close="showHistoryModal = false">
       <div v-if="historyLoading" class="flex flex-col items-center justify-center py-12">
         <Loader2 class="w-10 h-10 animate-spin text-indigo-600 mb-4" />
         <p class="text-gray-500 font-medium animate-pulse">Fetching history...</p>
       </div>
 
-      <div v-else-if="!vacationHistory.length" class="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+      <div v-else-if="!vacationHistory.length"
+        class="text-center py-12 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
         <History class="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <h3 class="text-lg font-bold text-gray-700">No History Found</h3>
         <p class="text-gray-500 mt-1 max-w-xs mx-auto">This employee doesn't have any approved vacations on record.</p>
@@ -218,22 +160,27 @@
       <div v-else class="space-y-6">
         <!-- Top Info Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
-                <User class="w-6 h-6" />
+          <div
+            class="bg-gradient-to-br from-indigo-50 to-white p-4 rounded-2xl border border-indigo-100 shadow-sm flex items-center gap-4">
+            <div
+              class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+              <User class="w-6 h-6" />
             </div>
             <div>
               <p class="text-xs text-indigo-600 font-bold uppercase tracking-wider">Employee</p>
               <p class="text-gray-900 font-bold truncate">{{ selectedEmployeeName }}</p>
             </div>
           </div>
-          <div class="bg-gradient-to-br from-emerald-50 to-white p-4 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
-            <div class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
-                <ShieldCheck class="w-6 h-6" />
+          <div
+            class="bg-gradient-to-br from-emerald-50 to-white p-4 rounded-2xl border border-emerald-100 shadow-sm flex items-center gap-4">
+            <div
+              class="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+              <ShieldCheck class="w-6 h-6" />
             </div>
             <div>
               <p class="text-xs text-emerald-600 font-bold uppercase tracking-wider">Approved Total</p>
-              <p class="text-gray-900 font-extrabold text-xl">{{ totalVacationDays }} <span class="text-xs font-normal text-gray-500">Days</span></p>
+              <p class="text-gray-900 font-extrabold text-xl">{{ totalVacationDays }} <span
+                  class="text-xs font-normal text-gray-500">Days</span></p>
             </div>
           </div>
         </div>
@@ -261,15 +208,15 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-              <tr v-for="(vac, idx) in vacationHistory" :key="idx" class="hover:bg-indigo-50/30 transition-colors group">
+              <tr v-for="(vac, idx) in vacationHistory" :key="idx"
+                class="hover:bg-indigo-50/30 transition-colors group">
                 <td class="px-6 py-4 text-gray-900 font-semibold">
                   {{ vac.day || '-' }}
                 </td>
                 <td class="px-6 py-4 text-center">
-                  <span 
+                  <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-tighter"
-                    :class="vac.duration_type === 'full' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'"
-                  >
+                    :class="vac.duration_type === 'full' ? 'bg-indigo-100 text-indigo-700' : 'bg-amber-100 text-amber-700'">
                     {{ vac.duration_type || '-' }}
                   </span>
                 </td>
@@ -287,12 +234,12 @@
 
 <script setup>
 import { onMounted, ref, computed, watch } from "vue";
-import { 
-  Edit, 
-  Trash2, 
-  Loader2, 
-  Calendar, 
-  Clock, 
+import {
+  Edit,
+  Trash2,
+  Loader2,
+  Calendar,
+  Clock,
   CheckCircle,
   History,
   User,
@@ -711,6 +658,7 @@ const formatApprovedDate = (val) => {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

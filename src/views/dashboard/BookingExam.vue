@@ -94,7 +94,6 @@
             embedded
             compact
             cells-centered
-            :tabular-column-keys="bookingTabularKeys"
             :rounded-top="false"
             :headers="headers"
             :items="bookings"
@@ -103,6 +102,7 @@
             :hide-actions="true"
             :link-name-to-details="false"
             :collapsible-text-keys="bookingCollapsibleKeys"
+            @add-note="openNoteModal"
           />
         </div>
 
@@ -124,19 +124,117 @@
         </div>
       </div>
     </div>
+
+    <!-- Log student contact (note optional) -->
+    <div
+      v-if="showNoteModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-[2px]"
+      @click.self="closeNoteModal"
+    >
+      <div
+        class="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-2xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="booking-note-title"
+      >
+        <div class="flex items-center justify-between bg-[#092C67] px-5 py-4 text-white">
+          <div>
+            <h2 id="booking-note-title" class="text-base font-semibold tracking-wide sm:text-lg">
+              Log student contact
+            </h2>
+            <p class="mt-0.5 text-xs font-normal text-white/75">
+              Confirm the CTA — a note is optional
+            </p>
+          </div>
+          <button
+            type="button"
+            class="grid h-8 w-8 shrink-0 place-items-center rounded-full transition hover:bg-white/15"
+            aria-label="Close"
+            @click="closeNoteModal"
+          >
+            &times;
+          </button>
+        </div>
+
+        <div class="px-5 pb-2 pt-5">
+          <div
+            v-if="selectedBooking?.student?.name"
+            class="mb-4 rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-3"
+          >
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Student
+            </p>
+            <p class="mt-0.5 text-sm font-semibold text-slate-800">
+              {{ selectedBooking.student.name }}
+              <span
+                v-if="selectedBooking.student.st_num"
+                class="ms-1 font-medium tabular-nums text-slate-400"
+              >
+                · #{{ selectedBooking.student.st_num }}
+              </span>
+            </p>
+          </div>
+
+          <div class="mb-1.5 flex items-center justify-between gap-2">
+            <label
+              class="text-sm font-medium text-slate-700"
+              for="booking-note-text"
+            >
+              Note
+            </label>
+            <span class="text-xs font-medium text-slate-400">Optional</span>
+          </div>
+          <textarea
+            id="booking-note-text"
+            v-model="noteText"
+            rows="5"
+            placeholder="Add details about the call / message (optional)…"
+            class="min-h-[120px] w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <p class="mt-2 text-xs leading-relaxed text-slate-500">
+            You can confirm contact without writing a note. Add one only if you need a record of what was discussed.
+          </p>
+        </div>
+
+        <div class="flex justify-end gap-2 px-5 pb-5 pt-3">
+          <button
+            type="button"
+            class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+            :disabled="savingNote"
+            @click="closeNoteModal"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-xl bg-[#092C67] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0b3a85] disabled:cursor-not-allowed disabled:opacity-60"
+            :disabled="savingNote"
+            @click="saveNote"
+          >
+            <Loader2 v-if="savingNote" class="h-4 w-4 animate-spin" aria-hidden="true" />
+            <span>{{ noteText.trim() ? 'Confirm & save note' : 'Confirm contact' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Search, Loader2, ArrowLeft } from 'lucide-vue-next'
 import apiClient from '@/api/axiosInstance'
-import { BOOKINGS } from '@/api/Api'
+import { BOOKINGS, BOOKING_NOTES } from '@/api/Api'
 import DataTable from '@/components/dashboard/DataTable.vue'
 import notyf from '@/components/global/notyf'
 
 const loading = ref(false)
 const bookings = ref([])
+
+const showNoteModal = ref(false)
+const selectedBooking = ref(null)
+const noteText = ref('')
+const savingNote = ref(false)
 
 // Default to last 7 days
 const today = new Date().toISOString().split('T')[0]
@@ -148,21 +246,18 @@ const filters = ref({
 })
 
 const headers = [
-  { label: 'Student #', key: 'student.st_num' },
-  { label: 'Student name', key: 'student.name' },
+  { label: 'Student', key: 'student_name_and_num' },
   { label: 'Email', key: 'student.email' },
   { label: 'Phone', key: 'student.phones' },
-  { label: 'Course', key: 'exam.course_name' },
-  { label: 'Course code', key: 'exam.course_code' },
-  { label: 'Exam', key: 'exam.name' },
+  { label: 'Course', key: 'course_display' },
+  { label: 'Instructor name', key: 'exam.instructor_name' },
   { label: 'Branch', key: 'branch.name' },
   { label: 'Booking date', key: 'booking_datetime', sortable: true },
+  { label: 'Action', key: 'notes' },
 ]
 
 /** Keep long course/exam text readable without blowing row height; DataTable adds See more. */
-const bookingCollapsibleKeys = ['exam.course_name', 'exam.name']
-
-const bookingTabularKeys = ['student.st_num', 'exam.course_code']
+const bookingCollapsibleKeys = ['course_display', 'exam.instructor_name']
 
 const fetchBookings = async () => {
   if (!filters.value.from || !filters.value.to) {
@@ -179,7 +274,10 @@ const fetchBookings = async () => {
     
     // API returns results in response.data.data or response.data
     const data = response.data.data || response.data
-    bookings.value = Array.isArray(data) ? data : []
+    bookings.value = (Array.isArray(data) ? data : []).map((item) => ({
+      ...item,
+      course_display: `${item.exam?.course_name ?? ''}(${item.exam?.course_code ?? ''})`,
+    }))
     
     if (bookings.value.length === 0) {
       notyf.success('Query successful: No records found.')
@@ -194,6 +292,62 @@ const fetchBookings = async () => {
     loading.value = false
   }
 }
+
+const openNoteModal = (item) => {
+  selectedBooking.value = item
+  // Preserve empty string (contacted, no note) vs null (never contacted)
+  noteText.value = item?.notes != null ? String(item.notes) : ''
+  showNoteModal.value = true
+}
+
+const closeNoteModal = () => {
+  if (savingNote.value) return
+  showNoteModal.value = false
+  selectedBooking.value = null
+  noteText.value = ''
+}
+
+const saveNote = async () => {
+  const booking = selectedBooking.value
+  if (!booking?.id) return
+
+  const trimmed = noteText.value.trim()
+
+  savingNote.value = true
+  try {
+    // Empty notes is allowed — employee can confirm CTA without writing a note
+    const response = await apiClient.post(BOOKING_NOTES(booking.id), { notes: trimmed })
+    const payload = response.data?.data ?? response.data
+    const savedNotes = payload?.notes
+
+    const row = bookings.value.find((b) => String(b.id) === String(booking.id))
+    if (row) {
+      if (trimmed === '') {
+        // Keep '' so UI shows "Done" (not null = no action). Prefer API value if it has content.
+        row.notes =
+          savedNotes != null && String(savedNotes).trim() !== ''
+            ? savedNotes
+            : ''
+      } else {
+        // Prefer full API string (includes " - actor - id")
+        row.notes = savedNotes != null ? savedNotes : trimmed
+      }
+    }
+    notyf.success(trimmed ? 'Contact logged with note' : 'Contact confirmed')
+    showNoteModal.value = false
+    selectedBooking.value = null
+    noteText.value = ''
+  } catch (error) {
+    console.error('Error saving booking note:', error)
+    notyf.error(error.response?.data?.message || 'Failed to log contact. Please try again.')
+  } finally {
+    savingNote.value = false
+  }
+}
+
+onMounted(() => {
+  fetchBookings()
+})
 </script>
 
 <style scoped>

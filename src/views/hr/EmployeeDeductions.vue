@@ -10,21 +10,14 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <button
-          type="button"
+        <button type="button"
           class="w-10 h-10 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer"
-          :disabled="store.loading"
-          title="Refresh"
-          @click="fetchDeductions"
-        >
+          :disabled="store.loading" title="Refresh" @click="fetchDeductions">
           <LucideRefreshCw class="w-4 h-4" :class="{ 'animate-spin': store.loading }" />
         </button>
-        <button
-          v-if="canCreate"
-          type="button"
+        <button v-if="canCreate" type="button"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-          @click="openCreateModal"
-        >
+          @click="openCreateModal">
           <span class="text-xl">+</span> New Deduction
         </button>
       </div>
@@ -34,52 +27,33 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-        <SearchableSelect
-          v-model="filters.employee_id"
-          :options="employeeOptions"
-          placeholder="All Employees"
-          clear-label="All Employees"
-          search-placeholder="Search name..."
-          @change="fetchDeductions"
-        />
+        <SearchableSelect v-model="filters.employee_id" :options="employeeOptions" placeholder="All Employees"
+          clear-label="All Employees" search-placeholder="Search name..." @change="fetchDeductions" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Payroll Month</label>
-        <input
-          v-model="filters.payroll_month"
-          type="month"
+        <input v-model="filters.payroll_month" type="month"
           class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-          @change="fetchDeductions"
-        />
+          @change="fetchDeductions" />
       </div>
       <div class="flex items-end">
-        <button
-          type="button"
+        <button type="button"
           class="w-full md:w-auto px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
-          @click="clearFilters"
-        >
+          @click="clearFilters">
           Clear Filters
         </button>
       </div>
     </div>
 
     <!-- Table -->
-    <HrDataTable
-      :headers="headers"
-      :items="store.employeeDeductions"
-      :loading="store.loading"
-      :has-actions="canMutate"
-      emptyMessage="No employee deductions found."
-    >
+    <HrDataTable :headers="headers" :items="store.employeeDeductions" :loading="store.loading" :has-actions="canMutate"
+      emptyMessage="No employee deductions found.">
       <template #employee="{ item }">
         <span class="text-gray-800 font-medium">{{ rowEmployeeLabel(item) }}</span>
       </template>
       <template #deduction_type="{ item }">
-        <span
-          v-if="item.deduction_type"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-          :class="typeClass(item.deduction_type?.type)"
-        >
+        <span v-if="item.deduction_type" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+          :class="typeClass(item.deduction_type?.type)">
           {{ item.deduction_type?.name ?? "-" }}
         </span>
         <span v-else class="text-gray-400">-</span>
@@ -100,22 +74,12 @@
       </template>
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-3">
-          <button
-            type="button"
-            class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors"
-            title="Edit"
-            @click="openEditModal(item)"
-            v-if="canEdit"
-          >
+          <button type="button" class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors" title="Edit"
+            @click="openEditModal(item)" v-if="canEdit">
             <LucidePencil class="w-5 h-5" />
           </button>
-          <button
-            type="button"
-            class="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
-            title="Delete"
-            @click="confirmDelete(item)"
-            v-if="canDelete"
-          >
+          <button type="button" class="cursor-pointer text-red-500 hover:text-red-700 transition-colors" title="Delete"
+            @click="confirmDelete(item)" v-if="canDelete">
             <LucideTrash2 class="w-5 h-5" />
           </button>
         </div>
@@ -123,27 +87,16 @@
     </HrDataTable>
 
     <!-- Create / Edit Modal -->
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Employee Deduction' : 'New Employee Deduction'"
-      :loading="store.loading"
-      @close="closeModal"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Employee Deduction' : 'New Employee Deduction'"
+      :loading="store.loading" @close="closeModal" @save="handleSubmit">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Employee -->
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Employee <span class="text-red-500">*</span>
           </label>
-          <SearchableSelect
-            v-model="form.employee_id"
-            :options="employeeOptions"
-            placeholder="Select employee"
-            clear-label="Select employee"
-            search-placeholder="Search name..."
-            :clearable="false"
-          />
+          <SearchableSelect v-model="form.employee_id" :options="employeeOptions" placeholder="Select employee"
+            clear-label="Select employee" search-placeholder="Search name..." :clearable="false" />
         </div>
 
         <!-- Deduction Type -->
@@ -151,15 +104,9 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Deduction Type <span class="text-red-500">*</span>
           </label>
-          <SearchableSelect
-            v-model="form.deduction_type_id"
-            :options="deductionTypeOptions"
-            placeholder="Select deduction type"
-            clear-label="Select deduction type"
-            search-placeholder="Search type..."
-            :clearable="false"
-            @change="onDeductionTypeChange"
-          />
+          <SearchableSelect v-model="form.deduction_type_id" :options="deductionTypeOptions"
+            placeholder="Select deduction type" clear-label="Select deduction type" search-placeholder="Search type..."
+            :clearable="false" @change="onDeductionTypeChange" />
         </div>
 
         <!-- Payroll Month -->
@@ -167,11 +114,8 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Payroll Month <span class="text-red-500">*</span>
           </label>
-          <input
-            v-model="form.payroll_month"
-            type="month"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-          />
+          <input v-model="form.payroll_month" type="month"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
           <p v-if="payrollMonthHint" class="mt-1.5 flex items-center gap-1 text-xs text-indigo-600 font-medium">
             <span>→</span>
             <span>Payroll period: <strong>{{ form.payroll_month }}</strong></span>
@@ -184,14 +128,9 @@
             Amount <span class="text-red-500">*</span>
             <span class="text-xs text-indigo-500 ml-1">(required for Static type)</span>
           </label>
-          <input
-            v-model.number="form.amount"
-            type="number"
-            step="0.01"
-            min="0"
+          <input v-model.number="form.amount" type="number" step="0.01" min="0"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-            placeholder="e.g. 200.00"
-          />
+            placeholder="e.g. 200.00" />
         </div>
 
         <!-- Approved By -->
@@ -200,39 +139,24 @@
             Approved By
             <span class="text-xs text-gray-400 ml-1">(optional)</span>
           </label>
-          <SearchableSelect
-            v-model="form.approved_by"
-            :options="employeeOptions"
-            placeholder="None"
-            clear-label="None"
-            search-placeholder="Search name..."
-          />
+          <SearchableSelect v-model="form.approved_by" :options="employeeOptions" placeholder="None" clear-label="None"
+            search-placeholder="Search name..." />
         </div>
 
         <!-- Notes -->
         <div class="md:col-span-2">
           <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-          <textarea
-            v-model="form.notes"
-            rows="3"
+          <textarea v-model="form.notes" rows="3"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-            placeholder="Optional notes"
-          />
+            placeholder="Optional notes" />
         </div>
       </div>
     </HrModal>
 
     <!-- Delete confirmation -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Delete employee deduction?"
-      text="This deduction record will be soft deleted."
-      icon="warning"
-      confirmButtonText="Yes, delete"
-      cancelButtonText="Cancel"
-      @confirm="handleDelete"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Delete employee deduction?"
+      text="This deduction record will be soft deleted." icon="warning" confirmButtonText="Yes, delete"
+      cancelButtonText="Cancel" @confirm="handleDelete" @cancel="cancelDelete" />
   </div>
 </template>
 
@@ -540,6 +464,7 @@ onMounted(async () => {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

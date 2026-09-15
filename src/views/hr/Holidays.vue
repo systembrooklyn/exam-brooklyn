@@ -6,85 +6,53 @@
         <p class="text-gray-500 mt-1">Manage public holidays and double-pay status</p>
       </div>
       <div class="flex gap-2">
-        <button
-          v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)"
-          type="button"
+        <button v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)" type="button"
           :disabled="!canBulkUnlink || store.loading"
-          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border"
-          :class="
-            canBulkUnlink && !store.loading
+          class="px-4 py-2 rounded-lg flex items-center gap-2 transition-colors border" :class="canBulkUnlink && !store.loading
               ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 cursor-pointer'
               : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed'
-          "
-          @click="handleBulkUnlink"
-        >
+            " @click="handleBulkUnlink">
           <LucideUnlink class="w-4 h-4" /> Unlink Selected
         </button>
-        <button
-          v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)"
-          @click="openLinkModal"
-          class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.LINK_CONTRACT_TO_HOLIDAY)" @click="openLinkModal"
+          class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
           <LucideLink class="w-4 h-4" /> Link to Contract
         </button>
-        <button
-          v-if="authStore.can(HR_PERMISSION.CREATE_OFFICIAL_HOLIDAYS)"
-          @click="openAddModal"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.CREATE_OFFICIAL_HOLIDAYS)" @click="openAddModal"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
           <span class="text-xl">+</span> Add Holiday
         </button>
       </div>
     </div>
 
     <!-- Table -->
-    <HrDataTable
-      :headers="headers"
-      :items="holidays"
-      :loading="store.loading"
-      emptyMessage="No holidays found."
+    <HrDataTable :headers="headers" :items="holidays" :loading="store.loading" emptyMessage="No holidays found."
       :has-edit="authStore.can(HR_PERMISSION.UPDATE_OFFICIAL_HOLIDAYS)"
-      :has-delete="authStore.can(HR_PERMISSION.DELETE_OFFICIAL_HOLIDAYS)"
-      @edit="openEditModal"
-      @delete="confirmDelete"
-    >
+      :has-delete="authStore.can(HR_PERMISSION.DELETE_OFFICIAL_HOLIDAYS)" @edit="openEditModal" @delete="confirmDelete">
       <template #is_double_paid="{ item }">
-        <span 
-          class="px-2 py-1 rounded-full text-xs font-semibold uppercase"
-          :class="item.is_double_paid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
-        >
+        <span class="px-2 py-1 rounded-full text-xs font-semibold uppercase"
+          :class="item.is_double_paid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'">
           {{ item.is_double_paid ? 'Yes' : 'No' }}
         </span>
       </template>
       <template #linked_employees="{ item }">
-        <div
-          v-if="Array.isArray(item.linked_employees) && item.linked_employees.length"
-          class="w-full min-w-[22rem]"
-        >
+        <div v-if="Array.isArray(item.linked_employees) && item.linked_employees.length" class="w-full min-w-[22rem]">
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1.5">
-            <button
-              v-for="emp in visibleLinkedEmployees(item)"
-              :key="`${item.id}-${emp.contract_id}`"
-              type="button"
+            <button v-for="emp in visibleLinkedEmployees(item)" :key="`${item.id}-${emp.contract_id}`" type="button"
               class="inline-flex items-center justify-between gap-1.5 px-2 py-1 rounded-full border text-xs transition-colors cursor-pointer w-full min-w-0"
-              :class="
-                isContractSelected(item.id, emp.contract_id)
+              :class="isContractSelected(item.id, emp.contract_id)
                   ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100'
-              "
-              @click="toggleContractSelection(item.id, emp.contract_id)"
-            >
+                " @click="toggleContractSelection(item.id, emp.contract_id)">
               <span class="font-medium truncate">{{ emp.employee_name || `Employee #${emp.employee_id ?? '?'}` }}</span>
               <span class="opacity-70 whitespace-nowrap">(FP: {{ emp.fingerprint ?? '—' }})</span>
             </button>
           </div>
-          <button
-            v-if="hasMoreLinkedEmployees(item)"
-            type="button"
+          <button v-if="hasMoreLinkedEmployees(item)" type="button"
             class="mt-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 cursor-pointer"
-            @click="toggleLinkedEmployeesExpanded(item.id)"
-          >
-            {{ isLinkedEmployeesExpanded(item.id) ? 'See less' : `See more (${(item.linked_employees?.length || 0) - LINKED_EMPLOYEE_PREVIEW_COUNT})` }}
+            @click="toggleLinkedEmployeesExpanded(item.id)">
+            {{ isLinkedEmployeesExpanded(item.id) ? 'See less' : `See more (${(item.linked_employees?.length || 0) -
+            LINKED_EMPLOYEE_PREVIEW_COUNT})` }}
           </button>
         </div>
         <span v-else class="text-gray-300">—</span>
@@ -92,38 +60,29 @@
     </HrDataTable>
 
     <!-- Add/Edit Modal -->
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Holiday' : 'New Holiday'"
-      :loading="store.loading"
-      @close="closeModal"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Holiday' : 'New Holiday'" :loading="store.loading"
+      @close="closeModal" @save="handleSubmit">
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Holiday Name</label>
-          <input v-model="form.holiday_name" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-2" placeholder="e.g. Eid al-Fitr" />
+          <input v-model="form.holiday_name" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-2"
+            placeholder="e.g. Eid al-Fitr" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
           <input v-model="form.holiday_date" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2" />
         </div>
         <div class="flex items-center gap-2">
-          <input v-model="form.is_double_paid" type="checkbox" id="double_paid" class="w-4 h-4 text-indigo-600 border-gray-300 rounded" />
+          <input v-model="form.is_double_paid" type="checkbox" id="double_paid"
+            class="w-4 h-4 text-indigo-600 border-gray-300 rounded" />
           <label for="double_paid" class="text-sm font-medium text-gray-700">Double Paid</label>
         </div>
       </div>
     </HrModal>
 
     <!-- Link to Contract Modal -->
-    <HrModal
-      :show="showLinkModal"
-      title="Link Holiday to Contracts"
-      :loading="store.loading"
-      body-overflow-visible
-      @close="closeLinkModal"
-      @save="handleLink"
-    >
+    <HrModal :show="showLinkModal" title="Link Holiday to Contracts" :loading="store.loading" body-overflow-visible
+      @close="closeLinkModal" @save="handleLink">
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Select Holiday</label>
@@ -134,14 +93,8 @@
         </div>
         <div class="relative z-10">
           <label class="block text-sm font-medium text-gray-700 mb-1">Select Contracts</label>
-          <MultiSelect
-            v-model="linkForm.contract_ids"
-            :options="contractOptions"
-            label-key="label"
-            value-key="id"
-            placeholder="Select Contracts"
-            multiple
-          />
+          <MultiSelect v-model="linkForm.contract_ids" :options="contractOptions" label-key="label" value-key="id"
+            placeholder="Select Contracts" multiple />
           <p class="text-xs text-gray-500 mt-1">
             Select one or more contracts by employee name; IDs are sent when saving.
           </p>
@@ -150,14 +103,8 @@
     </HrModal>
 
     <!-- Delete Confirmation -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Delete Holiday?"
-      text="This action cannot be undone."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Delete Holiday?" text="This action cannot be undone."
+      icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
   </div>
 </template>
 
@@ -318,7 +265,7 @@ const handleSubmit = async () => {
     notyf.error('Please fill in all fields');
     return;
   }
-  
+
   const payload = {
     ...form.value,
     is_double_paid: form.value.is_double_paid ? 1 : 0

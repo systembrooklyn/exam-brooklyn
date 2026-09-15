@@ -267,7 +267,8 @@
         :class="{ 'opacity-50 cursor-not-allowed': !authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST) }">
         <input ref="selectAllCheckboxRef" type="checkbox"
           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" :checked="allPendingSelected"
-          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)" @change="toggleSelectAllPending" />
+          :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
+          @change="toggleSelectAllPending" />
         <span>Select all</span>
       </label>
       <span class="text-xs text-gray-500">({{ pendingSelectableIds.length }} {{ selectableStatusLabel }})</span>
@@ -280,7 +281,8 @@
       <template #select="{ item }">
         <div class="flex justify-center">
           <input type="checkbox" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-            :checked="isBulkSelected(item.id)" :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
+            :checked="isBulkSelected(item.id)"
+            :disabled="!authStore.can(HR_PERMISSION.APPROVE_EMPLOYEE_REQUEST) && !authStore.can(HR_PERMISSION.REJECT_EMPLOYEE_REQUEST)"
             @change="toggleBulkSelect(item.id)" />
         </div>
       </template>
@@ -463,7 +465,8 @@
           </div>
 
           <!-- Conditional: Duration Type (Vacation / Absence) -->
-          <div v-if="form.request_type === 'vacation' || form.request_type === 'absence'" class="col-span-2 md:col-span-1">
+          <div v-if="form.request_type === 'vacation' || form.request_type === 'absence'"
+            class="col-span-2 md:col-span-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Duration Type</label>
             <select v-model="form.duration_type" :disabled="editingIsApproverOnly || store.loading"
               class="w-full border border-gray-300 rounded-lg px-4 py-2">
@@ -506,7 +509,8 @@
       <Transition name="queue-modal">
         <div v-if="queueProgress.running" class="fixed inset-0 z-[9999] flex items-center justify-center">
           <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-          <div class="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-5">
+          <div
+            class="relative bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4 flex flex-col items-center gap-5">
             <!-- Icon -->
             <div class="w-14 h-14 rounded-full flex items-center justify-center"
               :class="queueProgress.type === 'approve' ? 'bg-emerald-50' : 'bg-rose-50'">
@@ -527,12 +531,13 @@
               <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                 <div class="h-3 rounded-full transition-all duration-300"
                   :class="queueProgress.type === 'approve' ? 'bg-emerald-500' : 'bg-rose-500'"
-                  :style="{ width: queueProgress.total > 0 ? ((queueProgress.done + queueProgress.failed) / queueProgress.total * 100).toFixed(1) + '%' : '0%' }"
-                ></div>
+                  :style="{ width: queueProgress.total > 0 ? ((queueProgress.done + queueProgress.failed) / queueProgress.total * 100).toFixed(1) + '%' : '0%' }">
+                </div>
               </div>
               <div class="flex justify-between text-xs text-gray-400 mt-1.5">
                 <span class="text-emerald-600 font-medium">✓ {{ queueProgress.done }} done</span>
-                <span v-if="queueProgress.failed > 0" class="text-rose-500 font-medium">✕ {{ queueProgress.failed }} failed</span>
+                <span v-if="queueProgress.failed > 0" class="text-rose-500 font-medium">✕ {{ queueProgress.failed }}
+                  failed</span>
                 <span class="tabular-nums">{{ queueProgress.total }} total</span>
               </div>
             </div>
@@ -1576,7 +1581,7 @@ const openEditModal = (item) => {
     if (item.overtime_minutes != null && item.overtime_minutes !== '') {
       otMinsForForm = Number(item.overtime_minutes);
     } else if (item.duration_hours != null && item.duration_hours !== '') {
-      otMinsForForm = Math.round(Number(item.duration_hours) * 60); 
+      otMinsForForm = Math.round(Number(item.duration_hours) * 60);
     }
   }
   form.value = {
@@ -2016,6 +2021,7 @@ const handleReject = async () => {
 .queue-modal-leave-active {
   transition: opacity 0.25s ease, transform 0.25s ease;
 }
+
 .queue-modal-enter-from,
 .queue-modal-leave-to {
   opacity: 0;

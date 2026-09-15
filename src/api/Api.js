@@ -52,6 +52,7 @@ export const SEND_STUDEND_MAIL = "sendStudentMail";
 export const SEND_STUDEND_SMS = "studentSrmSmsMessage";
 
 export const BOOKINGS = "bookings";
+export const BOOKING_NOTES = (id) => `bookings/${id}/note`;
 export const PAPERS_ALL = "papers/all";
 export const PAPER_STATUS = (id) => `papers/${id}/status`;
 

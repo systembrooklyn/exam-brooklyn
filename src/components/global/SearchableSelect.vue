@@ -1,73 +1,44 @@
 ﻿<template>
   <div ref="rootEl" class="relative w-full">
     <!-- Trigger button -->
-    <button
-      type="button"
+    <button type="button"
       class="w-full h-10 flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 text-sm bg-white text-left focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-      :disabled="disabled"
-      :aria-expanded="open"
-      aria-haspopup="listbox"
-      @click.stop="toggle"
-    >
+      :disabled="disabled" :aria-expanded="open" aria-haspopup="listbox" @click.stop="toggle">
       <span class="min-w-0 flex-1 truncate" :class="selectedLabel ? 'text-gray-800' : 'text-gray-400'">
         {{ selectedLabel || placeholder }}
       </span>
-      <LucideChevronDown
-        class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
-        :class="{ 'rotate-180': open }"
-        aria-hidden="true"
-      />
+      <LucideChevronDown class="w-4 h-4 shrink-0 text-gray-500 transition-transform pointer-events-none"
+        :class="{ 'rotate-180': open }" aria-hidden="true" />
     </button>
 
     <!-- Dropdown panel — flips upward automatically when near the bottom of viewport -->
-    <div
-      v-show="open"
-      class="absolute left-0 right-0 z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg"
-      :class="openUpward ? 'bottom-full mb-1' : 'top-full mt-1'"
-      role="listbox"
-      @mousedown.prevent
-    >
+    <div v-show="open" class="absolute left-0 right-0 z-[9999] rounded-lg border border-gray-200 bg-white shadow-lg"
+      :class="openUpward ? 'bottom-full mb-1' : 'top-full mt-1'" role="listbox" @mousedown.prevent>
       <!-- Search input -->
       <div class="px-2 pb-1.5 pt-1 border-b border-gray-100">
-        <input
-          ref="searchInputEl"
-          v-model="query"
-          type="search"
-          autocomplete="off"
-          :placeholder="searchPlaceholder"
+        <input ref="searchInputEl" v-model="query" type="search" autocomplete="off" :placeholder="searchPlaceholder"
           class="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
-          @keydown.escape.prevent="open = false"
-        />
+          @keydown.escape.prevent="open = false" />
       </div>
 
       <!-- Options list -->
       <div class="max-h-52 overflow-y-auto">
         <!-- All / clear option -->
-        <button
-          v-if="clearable"
-          type="button"
-          role="option"
+        <button v-if="clearable" type="button" role="option"
           class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
-          :class="{ 'bg-indigo-50 text-indigo-700 font-medium': !modelValue }"
-          @click="select('')"
-        >
+          :class="{ 'bg-indigo-50 text-indigo-700 font-medium': !modelValue }" @click="select('')">
           {{ clearLabel }}
         </button>
 
         <!-- Filtered options -->
-        <button
-          v-for="opt in filteredOptions"
-          :key="opt.value"
-          type="button"
-          role="option"
+        <button v-for="opt in filteredOptions" :key="opt.value" type="button" role="option"
           class="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left text-sm hover:bg-gray-50 cursor-pointer"
           :class="{
             'bg-indigo-50 text-indigo-700 font-medium': String(modelValue) === String(opt.value),
-          }"
-          @click="select(opt.value)"
-        >
+          }" @click="select(opt.value)">
           <span class="min-w-0 truncate">{{ opt.label }}</span>
-          <span v-if="opt.badge" class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
+          <span v-if="opt.badge"
+            class="inline-flex shrink-0 items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-800 tabular-nums">
             {{ opt.badge }}
           </span>
         </button>

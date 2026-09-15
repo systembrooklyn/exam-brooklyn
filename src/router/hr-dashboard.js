@@ -10,14 +10,16 @@ const HR_REQUESTS_ROUTE_ACCESS = [
   HR_PERMISSION.CREATE_REQUEST_FOR_OTHERS,
 ];
 
-function nextIfCanAny(permissions, next) {
+async function nextIfCanAny(permissions, next) {
   const auth = useAuthStore();
+  await auth.ensureAuthReady();
   if (permissions.some((p) => auth.can(p))) return next();
   return next({ name: "SystemsPage" });
 }
 
-function nextIfCanManagePayrollAdmin(next) {
+async function nextIfCanManagePayrollAdmin(next) {
   const auth = useAuthStore();
+  await auth.ensureAuthReady();
   if (auth.isAdminUser || auth.hasHrRoleOrHrPermission) return next();
   return next({ name: "hr-my-payroll" });
 }
@@ -72,8 +74,9 @@ export default {
     {
       path: "my-attendance",
       name: "hr-my-attendance",
-      beforeEnter: (_to, _from, next) => {
+      beforeEnter: async (_to, _from, next) => {
         const auth = useAuthStore();
+        await auth.ensureAuthReady();
         if (auth.isAdminUser) {
           return next({ name: "hr-home", replace: true });
         }
@@ -84,8 +87,9 @@ export default {
     {
       path: "my-payroll",
       name: "hr-my-payroll",
-      beforeEnter: (_to, _from, next) => {
+      beforeEnter: async (_to, _from, next) => {
         const auth = useAuthStore();
+        await auth.ensureAuthReady();
         if (auth.isAdminUser) {
           return next({ name: "hr-home", replace: true });
         }
@@ -113,8 +117,10 @@ export default {
     {
       path: "employees",
       name: "hr-employees",
-      beforeEnter: (_to, _from, next) => {
-        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+      beforeEnter: async (_to, _from, next) => {
+        const auth = useAuthStore();
+        await auth.ensureAuthReady();
+        if (!auth.can(HR_PERMISSION.VIEW_PAYROLL)) {
           return next({ name: "SystemsPage" });
         }
         return nextIfCanManagePayrollAdmin(next);
@@ -155,8 +161,10 @@ export default {
     {
       path: "payrolls",
       name: "hr-payrolls",
-      beforeEnter: (_to, _from, next) => {
-        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+      beforeEnter: async (_to, _from, next) => {
+        const auth = useAuthStore();
+        await auth.ensureAuthReady();
+        if (!auth.can(HR_PERMISSION.VIEW_PAYROLL)) {
           return next({ name: "SystemsPage" });
         }
         return nextIfCanManagePayrollAdmin(next);
@@ -166,8 +174,10 @@ export default {
     {
       path: "employee-adjustments",
       name: "hr-employee-adjustments",
-      beforeEnter: (_to, _from, next) => {
-        if (!useAuthStore().can(HR_PERMISSION.VIEW_PAYROLL)) {
+      beforeEnter: async (_to, _from, next) => {
+        const auth = useAuthStore();
+        await auth.ensureAuthReady();
+        if (!auth.can(HR_PERMISSION.VIEW_PAYROLL)) {
           return next({ name: "SystemsPage" });
         }
         return nextIfCanManagePayrollAdmin(next);

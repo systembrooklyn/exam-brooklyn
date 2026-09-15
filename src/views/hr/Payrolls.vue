@@ -388,7 +388,8 @@
                 </div>
                 <p class="text-xs text-gray-600 mt-1">
                   By <strong>{{ entry.action_by?.name }}</strong>
-                  <span v-if="entry.action_by?.job_titles?.length" class="text-gray-400"> ({{ entry.action_by.job_titles.join(', ') }})</span>
+                  <span v-if="entry.action_by?.job_titles?.length" class="text-gray-400"> ({{
+                    entry.action_by?.job_titles?.join(', ') }})</span>
                 </p>
                 <p v-if="entry.notes" class="text-[11px] text-gray-500 italic mt-0.5">{{ entry.notes }}</p>
               </div>

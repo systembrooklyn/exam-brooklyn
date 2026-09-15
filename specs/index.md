@@ -11,13 +11,16 @@
 
 | Task ID | Feature | Status | Created |
 |---------|---------|--------|---------|
-| *none* | — | — | — |
+| employee-notice-period | Employee notice period flag | Active | 2026-09-12 |
+| notice-staff-badge | Notice staff badge | Active | 2026-09-12 |
 
 ### Completed Features
 
 | Task ID | Feature | Completed |
 |---------|---------|-----------|
-| *none* | — | — |
+| job-request-prefill | Job request prefill + capacity guard | 2026-09-14 |
+| route-persist-on-refresh | Stay on same page after refresh | 2026-09-13 |
+| feat-001-sdd-commands | SDD commands bootstrap | — |
 
 ### Backlog Features
 

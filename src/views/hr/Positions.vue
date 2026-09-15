@@ -6,22 +6,16 @@
         <h1 class="text-2xl font-bold text-gray-800">Positions</h1>
         <p class="text-gray-500 mt-1">Manage positions and their hiring requirements</p>
       </div>
-      <button
-        v-if="authStore.can(HR_PERMISSION.CREATE_POSITION)"
-        @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-semibold cursor-pointer"
-      >
+      <button v-if="authStore.can(HR_PERMISSION.CREATE_POSITION)" @click="openAddModal"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-semibold cursor-pointer">
         <span class="text-lg leading-none">+</span> Add Position
       </button>
     </div>
 
     <!-- Filters -->
     <div class="flex flex-wrap items-center gap-3 mb-6">
-      <select
-        v-model="deptFilter"
-        @change="onDeptFilterChange"
-        class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
-      >
+      <select v-model="deptFilter" @change="onDeptFilterChange"
+        class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
         <option value="">All Departments</option>
         <option v-for="dept in departments" :key="dept.id" :value="dept.id">
           {{ dept.department_name }}
@@ -30,18 +24,12 @@
 
       <div class="relative">
         <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search positions..."
-          class="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-52"
-        />
+        <input v-model="searchQuery" type="text" placeholder="Search positions..."
+          class="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-52" />
       </div>
 
-      <select
-        v-model="statusFilter"
-        class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
-      >
+      <select v-model="statusFilter"
+        class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
         <option value="">All Statuses</option>
         <option value="set">Requirements Set</option>
         <option value="unset">Pending</option>
@@ -49,15 +37,18 @@
 
       <!-- Stats -->
       <div class="ml-auto flex items-center gap-2.5">
-        <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-100">
+        <span
+          class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-indigo-100">
           <Briefcase class="w-3.5 h-3.5" />
           {{ positions.length }} Positions
         </span>
-        <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-100">
+        <span
+          class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-100">
           <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span>
           {{ setCount }} Set
         </span>
-        <span class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-100">
+        <span
+          class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-lg text-xs font-semibold border border-amber-100">
           <span class="w-2 h-2 rounded-full bg-amber-400 inline-block"></span>
           {{ unsetCount }} Pending
         </span>
@@ -70,7 +61,8 @@
     </div>
 
     <!-- Empty -->
-    <div v-else-if="filteredPositions.length === 0" class="flex flex-col items-center justify-center h-48 text-gray-400">
+    <div v-else-if="filteredPositions.length === 0"
+      class="flex flex-col items-center justify-center h-48 text-gray-400">
       <Briefcase class="w-10 h-10 mb-2 opacity-40" />
       <p class="text-base font-medium">No positions found</p>
     </div>
@@ -82,23 +74,29 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide w-10">#</th>
-              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Position</th>
-              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Department</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Job Type</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Gender</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Salary</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Experience</th>
-              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Keywords</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Shifts</th>
-              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Actions</th>
+              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Position
+              </th>
+              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Department
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Job Type
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Gender
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Salary
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Experience
+              </th>
+              <th class="px-4 py-3.5 text-left font-semibold text-gray-500 text-xs uppercase tracking-wide">Keywords
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Shifts
+              </th>
+              <th class="px-4 py-3.5 text-center font-semibold text-gray-500 text-xs uppercase tracking-wide">Actions
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <tr
-              v-for="(position, index) in filteredPositions"
-              :key="position.id"
-              class="hover:bg-gray-50/60 transition-colors"
-            >
+            <tr v-for="(position, index) in filteredPositions" :key="position.id"
+              class="hover:bg-gray-50/60 transition-colors">
               <!-- # -->
               <td class="px-4 py-3.5 text-gray-400 font-medium text-xs">{{ index + 1 }}</td>
 
@@ -110,11 +108,10 @@
                   </div>
                   <div class="flex flex-col text-left">
                     <span class="font-semibold text-gray-800 leading-snug">{{ position.name }}</span>
-                    <span 
-                      class="text-[10px] font-medium flex items-center gap-1 mt-0.5"
-                      :class="requirementMap[position.id] ? 'text-emerald-600' : 'text-amber-600'"
-                    >
-                      <span class="w-1.5 h-1.5 rounded-full" :class="requirementMap[position.id] ? 'bg-emerald-500' : 'bg-amber-400'"></span>
+                    <span class="text-[10px] font-medium flex items-center gap-1 mt-0.5"
+                      :class="requirementMap[position.id] ? 'text-emerald-600' : 'text-amber-600'">
+                      <span class="w-1.5 h-1.5 rounded-full"
+                        :class="requirementMap[position.id] ? 'bg-emerald-500' : 'bg-amber-400'"></span>
                       {{ requirementMap[position.id] ? 'Set' : 'Pending' }}
                     </span>
                   </div>
@@ -123,14 +120,17 @@
 
               <!-- Department -->
               <td class="px-4 py-3.5">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
-                  {{ position.department?.name || position.department?.department_name || departmentNameById(position.department_id) || '—' }}
+                <span
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
+                  {{ position.department?.name || position.department?.department_name ||
+                    departmentNameById(position.department_id) || '—' }}
                 </span>
               </td>
 
               <!-- Job Type -->
               <td class="px-4 py-3.5 text-center">
-                <span v-if="requirementMap[position.id]" :class="jobTypeClass(requirementMap[position.id].job_type)" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap">
+                <span v-if="requirementMap[position.id]" :class="jobTypeClass(requirementMap[position.id].job_type)"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border whitespace-nowrap">
                   {{ formatJobType(requirementMap[position.id].job_type) }}
                 </span>
                 <span v-else class="text-gray-200">—</span>
@@ -138,7 +138,8 @@
 
               <!-- Gender -->
               <td class="px-4 py-3.5 text-center">
-                <span v-if="requirementMap[position.id]" class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100 capitalize">
+                <span v-if="requirementMap[position.id]"
+                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100 capitalize">
                   {{ requirementMap[position.id].gender || '—' }}
                 </span>
                 <span v-else class="text-gray-200">—</span>
@@ -146,9 +147,11 @@
 
               <!-- Salary -->
               <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                <template v-if="requirementMap[position.id] && (requirementMap[position.id].salary_min || requirementMap[position.id].salary_max)">
+                <template
+                  v-if="requirementMap[position.id] && (requirementMap[position.id].salary_min || requirementMap[position.id].salary_max)">
                   <span class="text-emerald-700 font-semibold text-xs">
-                    {{ formatNum(requirementMap[position.id].salary_min) }}–{{ formatNum(requirementMap[position.id].salary_max) }}
+                    {{ formatNum(requirementMap[position.id].salary_min) }}–{{
+                      formatNum(requirementMap[position.id].salary_max) }}
                     <span class="text-emerald-400 font-normal">EGP</span>
                   </span>
                 </template>
@@ -157,9 +160,11 @@
 
               <!-- Experience -->
               <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                <template v-if="requirementMap[position.id] && (requirementMap[position.id].experience_min != null || requirementMap[position.id].experience_max != null)">
+                <template
+                  v-if="requirementMap[position.id] && (requirementMap[position.id].experience_min != null || requirementMap[position.id].experience_max != null)">
                   <span class="text-gray-700 text-xs font-semibold">
-                    {{ requirementMap[position.id].experience_min ?? 0 }}–{{ requirementMap[position.id].experience_max ?? '∞' }}
+                    {{ requirementMap[position.id].experience_min ?? 0 }}–{{ requirementMap[position.id].experience_max
+                    ?? '∞' }}
                     <span class="text-gray-400 font-normal">yrs</span>
                   </span>
                 </template>
@@ -168,12 +173,11 @@
 
               <!-- Keywords -->
               <td class="px-4 py-3.5 max-w-[160px]">
-                <div v-if="requirementMap[position.id] && getKeywords(requirementMap[position.id]).length > 0" class="flex flex-wrap gap-1">
-                  <span
-                    v-for="kw in getKeywords(requirementMap[position.id]).slice(0, 2)"
-                    :key="kw"
-                    class="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full"
-                  >{{ kw }}</span>
+                <div v-if="requirementMap[position.id] && getKeywords(requirementMap[position.id]).length > 0"
+                  class="flex flex-wrap gap-1">
+                  <span v-for="kw in getKeywords(requirementMap[position.id]).slice(0, 2)" :key="kw"
+                    class="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full">{{ kw
+                    }}</span>
                   <span v-if="getKeywords(requirementMap[position.id]).length > 2" class="text-xs text-gray-400 py-0.5">
                     +{{ getKeywords(requirementMap[position.id]).length - 2 }}
                   </span>
@@ -183,12 +187,10 @@
 
               <!-- Shifts -->
               <td class="px-4 py-3.5 text-center whitespace-nowrap">
-                <div v-if="requirementMap[position.id] && getShiftsNames(requirementMap[position.id]).length > 0" class="flex flex-wrap gap-1 justify-center max-w-[200px]">
-                  <span
-                    v-for="shiftName in getShiftsNames(requirementMap[position.id])"
-                    :key="shiftName"
-                    class="text-xs bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md font-medium whitespace-nowrap"
-                  >
+                <div v-if="requirementMap[position.id] && getShiftsNames(requirementMap[position.id]).length > 0"
+                  class="flex flex-wrap gap-1 justify-center max-w-[200px]">
+                  <span v-for="shiftName in getShiftsNames(requirementMap[position.id])" :key="shiftName"
+                    class="text-xs bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md font-medium whitespace-nowrap">
                     {{ shiftName }}
                   </span>
                 </div>
@@ -199,36 +201,27 @@
               <td class="px-4 py-3.5">
                 <div class="flex items-center justify-center gap-2">
                   <!-- Requirements -->
-                  <button
-                    v-if="authStore.can(HR_PERMISSION.UPDATE_POSITION)"
-                    @click="openRequirementsModal(position)"
+                  <button v-if="authStore.can(HR_PERMISSION.UPDATE_POSITION)" @click="openRequirementsModal(position)"
                     class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer"
                     :class="requirementMap[position.id]
                       ? 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100'
                       : 'bg-indigo-600 text-white hover:bg-indigo-700'"
-                    :title="requirementMap[position.id] ? 'Edit Requirements' : 'Add Requirements'"
-                  >
+                    :title="requirementMap[position.id] ? 'Edit Requirements' : 'Add Requirements'">
                     <ClipboardList class="w-3.5 h-3.5" />
                     <span>{{ requirementMap[position.id] ? 'Req.' : 'Add Req.' }}</span>
                   </button>
 
                   <!-- Edit Position -->
-                  <button
-                    v-if="authStore.can(HR_PERMISSION.UPDATE_POSITION)"
-                    @click="openEditModal(position)"
+                  <button v-if="authStore.can(HR_PERMISSION.UPDATE_POSITION)" @click="openEditModal(position)"
                     class="p-1.5 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
-                    title="Edit Position"
-                  >
+                    title="Edit Position">
                     <Edit class="w-4 h-4" />
                   </button>
 
                   <!-- Delete -->
-                  <button
-                    v-if="authStore.can(HR_PERMISSION.DELETE_POSITION)"
-                    @click="confirmDelete(position.id)"
+                  <button v-if="authStore.can(HR_PERMISSION.DELETE_POSITION)" @click="confirmDelete(position.id)"
                     class="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors cursor-pointer"
-                    title="Delete Position"
-                  >
+                    title="Delete Position">
                     <Trash2 class="w-4 h-4" />
                   </button>
                 </div>
@@ -240,33 +233,23 @@
     </div>
 
     <!-- Add/Edit Position Modal -->
-    <HrModal
-      :show="showPositionModal"
-      :title="isEditing ? 'Edit Position' : 'New Position'"
-      :loading="positionsStore.loading"
-      @close="showPositionModal = false"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showPositionModal" :title="isEditing ? 'Edit Position' : 'New Position'"
+      :loading="positionsStore.loading" @close="showPositionModal = false" @save="handleSubmit">
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Position Name <span class="text-red-500">*</span>
           </label>
-          <input
-            v-model="form.name"
-            type="text"
+          <input v-model="form.name" type="text"
             class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-            placeholder="e.g., Senior Engineer"
-          />
+            placeholder="e.g., Senior Engineer" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Department <span class="text-red-500">*</span>
           </label>
-          <select
-            v-model="form.department_id"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white"
-          >
+          <select v-model="form.department_id"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
             <option :value="null">— Select Department —</option>
             <option v-for="dept in departments" :key="dept.id" :value="dept.id">
               {{ dept.department_name }}
@@ -277,21 +260,12 @@
     </HrModal>
 
     <!-- Delete Confirm -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Are you sure?"
-      text="This position will be deleted permanently."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="showDeleteConfirm = false"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?" text="This position will be deleted permanently."
+      icon="warning" @confirm="handleDeleteConfirm" @cancel="showDeleteConfirm = false" />
 
     <!-- Requirements Modal -->
-    <PositionRequirementsModal
-      :show="showRequirementsModal"
-      :position-id="activePositionId"
-      @close="onRequirementsClose"
-    />
+    <PositionRequirementsModal :show="showRequirementsModal" :position-id="activePositionId"
+      @close="onRequirementsClose" />
   </div>
 </template>
 
@@ -332,12 +306,12 @@ const filteredPositions = computed(() => {
     const q = searchQuery.value.trim().toLowerCase();
     list = list.filter(p => p.name?.toLowerCase().includes(q));
   }
-  if (statusFilter.value === 'set')   list = list.filter(p =>  requirementMap.value[p.id]);
+  if (statusFilter.value === 'set') list = list.filter(p => requirementMap.value[p.id]);
   if (statusFilter.value === 'unset') list = list.filter(p => !requirementMap.value[p.id]);
   return list;
 });
 
-const setCount   = computed(() => positions.value.filter(p =>  requirementMap.value[p.id]).length);
+const setCount = computed(() => positions.value.filter(p => requirementMap.value[p.id]).length);
 const unsetCount = computed(() => positions.value.filter(p => !requirementMap.value[p.id]).length);
 
 // ── Helpers ───────────────────────────────────────────────
@@ -404,10 +378,10 @@ const onDeptFilterChange = async () => {
 
 // ── Position CRUD ─────────────────────────────────────────
 const showPositionModal = ref(false);
-const isEditing        = ref(false);
-const editingId        = ref(null);
+const isEditing = ref(false);
+const editingId = ref(null);
 const showDeleteConfirm = ref(false);
-const deleteId         = ref(null);
+const deleteId = ref(null);
 
 const form = ref({ name: '', department_id: null });
 
@@ -455,7 +429,7 @@ const handleDeleteConfirm = async () => {
 
 // ── Requirements Modal ────────────────────────────────────
 const showRequirementsModal = ref(false);
-const activePositionId      = ref(null);
+const activePositionId = ref(null);
 
 const openRequirementsModal = (position) => {
   activePositionId.value = position.id;

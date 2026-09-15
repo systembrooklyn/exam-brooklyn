@@ -13,20 +13,14 @@
         </p>
       </div>
       <div class="flex items-center gap-2">
-        <button
-          v-if="authStore.can(HR_PERMISSION.RECALC_ALL_MANPOWER_PLANS)"
-          @click="handleRecalcAll"
+        <button v-if="authStore.can(HR_PERMISSION.RECALC_ALL_MANPOWER_PLANS)" @click="handleRecalcAll"
           class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-semibold cursor-pointer"
-          :disabled="plansStore.loading"
-        >
-          <RefreshCw class="w-4 h-4" :class="{'animate-spin': plansStore.loading}" />
+          :disabled="plansStore.loading">
+          <RefreshCw class="w-4 h-4" :class="{ 'animate-spin': plansStore.loading }" />
           Recalculate All
         </button>
-        <button
-          v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)"
-          @click="openPlanModal(null)"
-          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-semibold cursor-pointer"
-        >
+        <button v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)" @click="openPlanModal(null)"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-semibold cursor-pointer">
           <Plus class="w-4 h-4" /> Set Headcount Plan
         </button>
       </div>
@@ -85,24 +79,17 @@
         <Building class="w-4 h-4 text-indigo-400" /> Department Coverage
       </h2>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div
-          v-for="dept in deptStats"
-          :key="dept.name"
-          class="bg-gray-50 rounded-xl p-4 border border-gray-100"
-        >
+        <div v-for="dept in deptStats" :key="dept.name" class="bg-gray-50 rounded-xl p-4 border border-gray-100">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-semibold text-gray-700 truncate">{{ dept.name }}</span>
-            <span
-              class="text-xs font-bold px-2 py-0.5 rounded-full ml-2 flex-shrink-0"
-              :class="dept.pct >= 80 ? 'bg-emerald-100 text-emerald-700' : dept.pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'"
-            >{{ dept.pct }}%</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ml-2 flex-shrink-0"
+              :class="dept.pct >= 80 ? 'bg-emerald-100 text-emerald-700' : dept.pct >= 50 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'">{{
+              dept.pct }}%</span>
           </div>
           <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div
-              class="h-2 rounded-full transition-all duration-500"
+            <div class="h-2 rounded-full transition-all duration-500"
               :class="dept.pct >= 80 ? 'bg-emerald-500' : dept.pct >= 50 ? 'bg-amber-400' : 'bg-red-400'"
-              :style="{ width: dept.pct + '%' }"
-            ></div>
+              :style="{ width: dept.pct + '%' }"></div>
           </div>
           <p class="text-xs text-gray-400">
             {{ dept.current }} / {{ dept.ideal }} employees &nbsp;·&nbsp;
@@ -117,26 +104,18 @@
       <div class="flex flex-wrap items-center gap-3">
         <div class="relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search positions..."
-            class="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-52 bg-white"
-          />
+          <input v-model="searchQuery" type="text" placeholder="Search positions..."
+            class="border border-gray-200 rounded-lg pl-9 pr-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-52 bg-white" />
         </div>
 
-        <select
-          v-model="deptFilter"
-          class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
-        >
+        <select v-model="deptFilter"
+          class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
           <option value="">All Departments</option>
           <option v-for="d in uniqueDepts" :key="d" :value="d">{{ d }}</option>
         </select>
 
-        <select
-          v-model="statusFilter"
-          class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white"
-        >
+        <select v-model="statusFilter"
+          class="border border-gray-200 rounded-lg px-4 py-2 text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-white">
           <option value="">All Statuses</option>
           <option value="filled">Filled</option>
           <option value="open">Has Vacancy</option>
@@ -145,16 +124,12 @@
       </div>
 
       <div class="flex items-center gap-2 text-xs">
-        <button
-          @click="expandAll"
-          class="px-2.5 py-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors border border-gray-200 bg-white cursor-pointer"
-        >
+        <button @click="expandAll"
+          class="px-2.5 py-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors border border-gray-200 bg-white cursor-pointer">
           Expand All Branches
         </button>
-        <button
-          @click="collapseAll"
-          class="px-2.5 py-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors border border-gray-200 bg-white cursor-pointer"
-        >
+        <button @click="collapseAll"
+          class="px-2.5 py-1 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors border border-gray-200 bg-white cursor-pointer">
           Collapse All
         </button>
       </div>
@@ -179,17 +154,22 @@
           <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
               <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide w-12">#</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Position / Branch</th>
-              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Department</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Position /
+                Branch</th>
+              <th class="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Department
+              </th>
               <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Ideal</th>
-              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Current</th>
-              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Vacancy</th>
-              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Coverage</th>
-              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
+              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Current
+              </th>
+              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Vacancy
+              </th>
+              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Coverage
+              </th>
+              <th class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Status
+              </th>
               <th
                 v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS) || authStore.can('create-job-requests')"
-                class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide"
-              >Actions</th>
+                class="px-4 py-3.5 text-center text-xs font-semibold text-gray-400 uppercase tracking-wide">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -200,11 +180,8 @@
                 <td class="px-4 py-3.5 text-gray-400 text-xs font-medium">
                   <div class="flex items-center gap-1">
                     <span>{{ idx + 1 }}</span>
-                    <button
-                      v-if="row.plans.length > 0"
-                      @click="toggleExpand(row.position.id)"
-                      class="text-gray-400 hover:text-gray-600 focus:outline-none p-0.5 rounded cursor-pointer transition-transform duration-200"
-                    >
+                    <button v-if="row.plans.length > 0" @click="toggleExpand(row.position.id)"
+                      class="text-gray-400 hover:text-gray-600 focus:outline-none p-0.5 rounded cursor-pointer transition-transform duration-200">
                       <ChevronDown v-if="expandedPositions.has(row.position.id)" class="w-3.5 h-3.5" />
                       <ChevronRight v-else class="w-3.5 h-3.5" />
                     </button>
@@ -218,10 +195,8 @@
                       <Briefcase class="w-4 h-4 text-indigo-500" />
                     </div>
                     <div>
-                      <span
-                        class="font-bold text-gray-900 leading-snug cursor-pointer hover:underline"
-                        @click="row.plans.length > 0 ? toggleExpand(row.position.id) : null"
-                      >
+                      <span class="font-bold text-gray-900 leading-snug cursor-pointer hover:underline"
+                        @click="row.plans.length > 0 ? toggleExpand(row.position.id) : null">
                         {{ row.position.name }}
                       </span>
                       <span v-if="row.plans.length > 0" class="text-[10px] text-gray-400 block font-normal mt-0.5">
@@ -233,7 +208,8 @@
 
                 <!-- Department Name -->
                 <td class="px-4 py-3.5">
-                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100 whitespace-nowrap">
                     {{ row.deptName }}
                   </span>
                 </td>
@@ -246,11 +222,9 @@
 
                 <!-- Aggregated Current -->
                 <td class="px-4 py-3.5 text-center font-bold text-gray-700">
-                  <span
-                    v-if="row.plans.length > 0"
+                  <span v-if="row.plans.length > 0"
                     @click="row.current > 0 ? viewEmployees(row.position.id, null, row.position.name) : null"
-                    :class="row.current > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''"
-                  >
+                    :class="row.current > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''">
                     {{ row.current }}
                   </span>
                   <span v-else class="text-gray-200">—</span>
@@ -259,13 +233,12 @@
                 <!-- Aggregated Vacancy -->
                 <td class="px-4 py-3.5 text-center">
                   <template v-if="row.plans.length > 0">
-                    <span
-                      v-if="row.vacancy > 0"
-                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600 border border-red-100"
-                    >
+                    <span v-if="row.vacancy > 0"
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-red-50 text-red-600 border border-red-100">
                       <TrendingDown class="w-3 h-3" /> {{ row.vacancy }} needed
                     </span>
-                    <span v-else class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                    <span v-else
+                      class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-100">
                       <CheckCircle class="w-3 h-3" /> Full
                     </span>
                   </template>
@@ -277,11 +250,9 @@
                   <template v-if="row.plans.length > 0">
                     <div class="flex items-center gap-2 justify-center">
                       <div class="w-16 bg-gray-100 rounded-full h-1.5">
-                        <div
-                          class="h-1.5 rounded-full transition-all"
+                        <div class="h-1.5 rounded-full transition-all"
                           :class="row.pct >= 100 ? 'bg-emerald-500' : row.pct >= 60 ? 'bg-amber-400' : 'bg-red-400'"
-                          :style="{ width: Math.min(row.pct, 100) + '%' }"
-                        ></div>
+                          :style="{ width: Math.min(row.pct, 100) + '%' }"></div>
                       </div>
                       <span class="text-xs font-bold text-gray-500 w-9 text-left">{{ row.pct }}%</span>
                     </div>
@@ -291,29 +262,25 @@
 
                 <!-- Aggregated Overall Status -->
                 <td class="px-4 py-3.5 text-center">
-                  <span :class="overallStatusBadge(row).cls" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap">
+                  <span :class="overallStatusBadge(row).cls"
+                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border whitespace-nowrap">
                     <component :is="overallStatusBadge(row).icon" class="w-3 h-3" />
                     {{ overallStatusBadge(row).label }}
                   </span>
                 </td>
 
                 <!-- Parent Actions: Set/Add Plan + Request Hiring -->
-                <td v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can('create-job-requests')" class="px-4 py-3.5 text-center">
+                <td v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS) || authStore.can('create-job-requests')"
+                  class="px-4 py-3.5 text-center">
                   <div class="flex items-center justify-center gap-2">
-                    <button
-                      v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)"
-                      @click="openPlanModal(row)"
+                    <button v-if="authStore.can(HR_PERMISSION.CREATE_MANPOWER_PLANS)" @click="openPlanModal(row)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                      title="Add branch plan"
-                    >
+                      title="Add branch plan">
                       <Plus class="w-3 h-3" /> Add Plan
                     </button>
-                    <button
-                      v-if="row.vacancy > 0 && authStore.can('create-job-requests')"
-                      @click="requestHiring(row)"
+                    <button v-if="row.vacancy > 0 && authStore.can('create-job-requests')" @click="requestHiring(row)"
                       class="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
-                      title="Request to hire for this vacancy"
-                    >
+                      title="Request to hire for this vacancy">
                       <UserPlus class="w-3 h-3" /> Request Hiring
                     </button>
                   </div>
@@ -321,12 +288,8 @@
               </tr>
 
               <!-- Child Rows: Individual Branch Plans (Shown when expanded) -->
-              <tr
-                v-if="expandedPositions.has(row.position.id)"
-                v-for="plan in row.plans"
-                :key="'plan-' + plan.id"
-                class="bg-gray-50/50 hover:bg-gray-100/50 transition-colors border-b border-gray-100/50 text-xs text-gray-600"
-              >
+              <tr v-show="expandedPositions.has(row.position.id)" v-for="plan in row.plans" :key="'plan-' + plan.id"
+                class="bg-gray-50/50 hover:bg-gray-100/50 transition-colors border-b border-gray-100/50 text-xs text-gray-600">
                 <!-- Indented # Column -->
                 <td class="px-4 py-2.5"></td>
 
@@ -351,21 +314,19 @@
                 <td class="px-4 py-2.5 text-center font-semibold text-gray-700">
                   <span
                     @click="plan.current_count > 0 ? viewEmployees(row.position.id, plan.branch?.id ?? plan.branch_id, row.position.name, plan.branch?.name || plan.branch?.branch_name) : null"
-                    :class="plan.current_count > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''"
-                  >
+                    :class="plan.current_count > 0 ? 'cursor-pointer text-indigo-600 hover:text-indigo-800 hover:underline' : ''">
                     {{ plan.current_count }}
                   </span>
                 </td>
 
                 <!-- Branch Vacancy -->
                 <td class="px-4 py-2.5 text-center">
-                  <span
-                    v-if="plansStore.vacancyOf(plan) > 0"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-500 border border-red-100/60"
-                  >
+                  <span v-if="plansStore.vacancyOf(plan) > 0"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-50 text-red-500 border border-red-100/60">
                     {{ plansStore.vacancyOf(plan) }} needed
                   </span>
-                  <span v-else class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-500 border border-emerald-100/60">
+                  <span v-else
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-500 border border-emerald-100/60">
                     Full ✓
                   </span>
                 </td>
@@ -374,58 +335,49 @@
                 <td class="px-4 py-2.5 text-center">
                   <div class="flex items-center gap-2 justify-center">
                     <div class="w-12 bg-gray-100 rounded-full h-1">
-                      <div
-                        class="h-1 rounded-full transition-all"
+                      <div class="h-1 rounded-full transition-all"
                         :class="planCoveragePct(plan) >= 100 ? 'bg-emerald-500' : planCoveragePct(plan) >= 60 ? 'bg-amber-400' : 'bg-red-400'"
-                        :style="{ width: Math.min(planCoveragePct(plan), 100) + '%' }"
-                      ></div>
+                        :style="{ width: Math.min(planCoveragePct(plan), 100) + '%' }"></div>
                     </div>
-                    <span class="text-[10px] font-medium text-gray-400 w-7 text-left">{{ planCoveragePct(plan) }}%</span>
+                    <span class="text-[10px] font-medium text-gray-400 w-7 text-left">{{ planCoveragePct(plan)
+                      }}%</span>
                   </div>
                 </td>
 
                 <!-- Branch Plan Status -->
                 <td class="px-4 py-2.5 text-center">
-                  <span :class="statusBadge(plan).cls" class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border whitespace-nowrap">
+                  <span :class="statusBadge(plan).cls"
+                    class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium border whitespace-nowrap">
                     <component :is="statusBadge(plan).icon" class="w-2.5 h-2.5" />
                     {{ statusBadge(plan).label }}
                   </span>
                 </td>
 
                 <!-- Branch Plan Actions (Edit / Recalc / Delete / Request Hiring) -->
-                <td v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS) || authStore.can('create-job-requests')" class="px-4 py-2.5">
+                <td
+                  v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS) || authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS) || authStore.can('create-job-requests')"
+                  class="px-4 py-2.5">
                   <div class="flex items-center justify-center gap-1.5">
-                    <button
-                      v-if="authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS)"
-                      @click="handleRecalcPlan(plan.id)"
+                    <button v-if="authStore.can(HR_PERMISSION.RECALC_MANPOWER_PLANS)" @click="handleRecalcPlan(plan.id)"
                       class="p-1 text-indigo-500 hover:bg-indigo-50 rounded transition-colors cursor-pointer"
-                      title="Recalculate this plan"
-                      :disabled="plansStore.loading"
-                    >
+                      title="Recalculate this plan" :disabled="plansStore.loading">
                       <RefreshCw class="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS)"
-                      @click="openPlanModal(row, plan)"
+                    <button v-if="authStore.can(HR_PERMISSION.UPDATE_MANPOWER_PLANS)" @click="openPlanModal(row, plan)"
                       class="p-1 text-blue-500 hover:bg-blue-50 rounded transition-colors cursor-pointer"
-                      title="Edit branch plan"
-                    >
+                      title="Edit branch plan">
                       <Edit class="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      v-if="authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS)"
+                    <button v-if="authStore.can(HR_PERMISSION.DELETE_MANPOWER_PLANS)"
                       @click="confirmDeletePlan(plan.id)"
                       class="p-1 text-red-400 hover:bg-red-50 rounded transition-colors cursor-pointer"
-                      title="Remove branch plan"
-                    >
+                      title="Remove branch plan">
                       <Trash2 class="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      v-if="plansStore.vacancyOf(plan) > 0 && authStore.can('create-job-requests')"
+                    <button v-if="plansStore.vacancyOf(plan) > 0 && authStore.can('create-job-requests')"
                       @click="requestHiringBranch(row, plan)"
                       class="p-1 text-amber-500 hover:bg-amber-50 rounded transition-colors cursor-pointer"
-                      title="Request hiring for this branch vacancy"
-                    >
+                      title="Request hiring for this branch vacancy">
                       <UserPlus class="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -438,24 +390,16 @@
     </div>
 
     <!-- ── Headcount Plan Modal ────────────────────────────── -->
-    <HrModal
-      :show="showPlanModal"
-      :title="editingPlan ? 'Edit Headcount Plan' : 'Set Headcount Plan'"
-      :loading="plansStore.loading"
-      @close="showPlanModal = false"
-      @save="handlePlanSave"
-    >
+    <HrModal :show="showPlanModal" :title="editingPlan ? 'Edit Headcount Plan' : 'Set Headcount Plan'"
+      :loading="plansStore.loading" @close="showPlanModal = false" @save="handlePlanSave">
       <div class="space-y-5">
         <!-- Position Select -->
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Position <span class="text-red-500">*</span>
           </label>
-          <select
-            v-model="planForm.position_id"
-            :disabled="!!editingPlan"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400"
-          >
+          <select v-model="planForm.position_id" :disabled="!!editingPlan"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400">
             <option :value="null">— Select position —</option>
             <option v-for="p in positionsStore.positions" :key="p.id" :value="p.id">
               {{ p.name }}
@@ -468,11 +412,8 @@
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Branch <span class="text-red-500">*</span>
           </label>
-          <select
-            v-model="planForm.branch_id"
-            :disabled="!!editingPlan"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400"
-          >
+          <select v-model="planForm.branch_id" :disabled="!!editingPlan"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white disabled:bg-gray-50 disabled:text-gray-400">
             <option :value="null">— Select Branch —</option>
             <option v-for="b in branches" :key="b.id" :value="b.id">
               {{ b.name || b.branch_name }}
@@ -486,23 +427,17 @@
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Ideal Headcount <span class="text-red-500">*</span>
             </label>
-            <input
-              v-model.number="planForm.ideal_count"
-              type="number" min="1"
+            <input v-model.number="planForm.ideal_count" type="number" min="1"
               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-              placeholder="e.g. 5"
-            />
+              placeholder="e.g. 5" />
             <p class="text-xs text-gray-400 mt-1">Required number of employees</p>
           </div>
 
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Current Count</label>
-            <input
-              v-model.number="planForm.current_count"
-              type="number" min="0"
+            <input v-model.number="planForm.current_count" type="number" min="0"
               class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-              placeholder="e.g. 3"
-            />
+              placeholder="e.g. 3" />
             <p class="text-xs text-gray-400 mt-1">Current employees at this branch</p>
           </div>
         </div>
@@ -513,18 +448,17 @@
           <div class="flex items-center gap-3">
             <div class="flex-1">
               <div class="w-full bg-indigo-100 rounded-full h-2">
-                <div
-                  class="h-2 rounded-full transition-all"
+                <div class="h-2 rounded-full transition-all"
                   :class="previewPct >= 100 ? 'bg-emerald-500' : previewPct >= 60 ? 'bg-amber-400' : 'bg-red-400'"
-                  :style="{ width: Math.min(previewPct, 100) + '%' }"
-                ></div>
+                  :style="{ width: Math.min(previewPct, 100) + '%' }"></div>
               </div>
             </div>
             <span class="text-xs font-bold text-indigo-700">{{ previewPct }}%</span>
           </div>
           <p class="text-xs text-indigo-600 mt-1.5">
             {{ planForm.current_count || 0 }} / {{ planForm.ideal_count }} filled
-            <span v-if="previewVacancy > 0" class="text-red-500 font-semibold ml-1">· {{ previewVacancy }} vacancy</span>
+            <span v-if="previewVacancy > 0" class="text-red-500 font-semibold ml-1">· {{ previewVacancy }}
+              vacancy</span>
             <span v-else class="text-emerald-600 font-semibold ml-1">· Fully staffed ✓</span>
           </p>
         </div>
@@ -532,23 +466,14 @@
     </HrModal>
 
     <!-- ── Delete Confirm ─────────────────────────────────── -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Remove Headcount Plan?"
-      text="This will delete the staffing plan for this branch. The position itself will remain."
-      icon="warning"
-      @confirm="handleDeletePlan"
-      @cancel="showDeleteConfirm = false"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Remove Headcount Plan?"
+      text="This will delete the staffing plan for this branch. The position itself will remain." icon="warning"
+      @confirm="handleDeletePlan" @cancel="showDeleteConfirm = false" />
 
     <!-- ── Employees List Modal ────────────────────────────── -->
-    <HrModal
-      :show="showEmployeesModal"
+    <HrModal :show="showEmployeesModal"
       :title="`Current Staff — ${selectedPositionName} ${selectedBranchName ? `(${selectedBranchName})` : ''}`"
-      :has-save="false"
-      cancel-label="Close"
-      @close="showEmployeesModal = false"
-    >
+      :has-save="false" cancel-label="Close" @close="showEmployeesModal = false">
       <div v-if="loadingEmployees" class="flex justify-center items-center py-12">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
@@ -557,23 +482,20 @@
         <p class="text-sm font-medium">No employees assigned to this position.</p>
       </div>
       <div v-else class="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-        <div
-          v-for="emp in selectedEmployees"
-          :key="emp.employee_id"
-          class="py-3 flex items-center justify-between hover:bg-gray-50/50 px-2 rounded-lg transition-colors"
-        >
+        <div v-for="emp in selectedEmployees" :key="emp.employee_id"
+          class="py-3 flex items-center justify-between hover:bg-gray-50/50 px-2 rounded-lg transition-colors">
           <div class="flex items-center gap-3 min-w-0">
-            <div class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
-              {{ emp.name ? emp.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'E' }}
+            <div
+              class="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm flex-shrink-0">
+              {{emp.name ? emp.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() : 'E'
+              }}
             </div>
             <div class="min-w-0">
               <div class="flex flex-wrap items-center gap-2">
                 <p class="text-sm font-semibold text-gray-900">{{ emp.name }}</p>
-                <span
-                  v-if="employeeIsOnNotice(emp)"
+                <span v-if="employeeIsOnNotice(emp)"
                   class="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200"
-                  :title="noticeEndsAtLabel(emp) ? `Ends ${noticeEndsAtLabel(emp)}` : 'On notice period'"
-                >
+                  :title="noticeEndsAtLabel(emp) ? `Ends ${noticeEndsAtLabel(emp)}` : 'On notice period'">
                   On notice
                 </span>
               </div>
@@ -585,7 +507,8 @@
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 flex-shrink-0">
+          <div
+            class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200 flex-shrink-0">
             <MapPin class="w-3.5 h-3.5 text-indigo-500" />
             {{ emp.branch_name }}
           </div>
@@ -613,16 +536,16 @@ import HrModal from '@/components/hr-dashboard/HrModal.vue';
 import SweetAlert2Modal from '@/components/global/SweetAlert2Modal.vue';
 import notyf from '@/components/global/notyf';
 
-const plansStore      = useManpowerPlansStore();
-const positionsStore  = useHrPositionsStore();
-const deptsStore      = useHrDepartmentsStore();
+const plansStore = useManpowerPlansStore();
+const positionsStore = useHrPositionsStore();
+const deptsStore = useHrDepartmentsStore();
 const reservationStore = useReservationStore();
-const authStore       = useAuthStore();
-const router          = useRouter();
+const authStore = useAuthStore();
+const router = useRouter();
 
 // ── Filters ───────────────────────────────────────────────────────────────
 const searchQuery = ref('');
-const deptFilter  = ref('');
+const deptFilter = ref('');
 const statusFilter = ref('');
 
 // ── Loading ────────────────────────────────────────────────────────────────
@@ -658,10 +581,10 @@ const requestHiring = (row) => {
   router.push({
     name: 'recruitment-job-request-create',
     query: {
-      position_id:   row.position.id,
+      position_id: row.position.id,
       position_name: row.position.name,
       department_id: row.deptId ?? '',
-      vacancy:       row.vacancy ?? 1,
+      vacancy: row.vacancy ?? 1,
     },
   });
 };
@@ -671,11 +594,11 @@ const requestHiringBranch = (row, plan) => {
   router.push({
     name: 'recruitment-job-request-create',
     query: {
-      position_id:   row.position.id,
+      position_id: row.position.id,
       position_name: row.position.name,
       department_id: row.deptId ?? '',
-      branch_id:     plan.branch?.id ?? plan.branch_id ?? '',
-      vacancy:       plansStore.vacancyOf(plan),
+      branch_id: plan.branch?.id ?? plan.branch_id ?? '',
+      vacancy: plansStore.vacancyOf(plan),
     },
   });
 };
@@ -698,6 +621,10 @@ const plansByPositionId = computed(() => {
 const allRows = computed(() => {
   return positionsStore.positions.map(position => {
     const plans = plansByPositionId.value[position.id] || [];
+    const deptId =
+      position.department_id ??
+      position.department?.id ??
+      null;
     const deptName =
       position.department?.name ||
       position.department?.department_name ||
@@ -705,12 +632,12 @@ const allRows = computed(() => {
       '—';
 
     // Sum details across all plans for this position
-    const ideal   = plans.reduce((sum, p) => sum + (p.ideal_count || 0), 0);
+    const ideal = plans.reduce((sum, p) => sum + (p.ideal_count || 0), 0);
     const current = plans.reduce((sum, p) => sum + (p.current_count || 0), 0);
     const vacancy = plans.reduce((sum, p) => sum + plansStore.vacancyOf(p), 0);
-    const pct     = ideal > 0 ? Math.round((current / ideal) * 100) : 0;
+    const pct = ideal > 0 ? Math.round((current / ideal) * 100) : 0;
 
-    return { position, plans, deptName, ideal, current, vacancy, pct };
+    return { position, plans, deptId, deptName, ideal, current, vacancy, pct };
   });
 });
 
@@ -725,8 +652,8 @@ const filteredRows = computed(() => {
   if (deptFilter.value) {
     rows = rows.filter(r => r.deptName === deptFilter.value);
   }
-  if (statusFilter.value === 'filled')  rows = rows.filter(r => r.plans.length > 0 && r.vacancy === 0);
-  if (statusFilter.value === 'open')    rows = rows.filter(r => r.plans.length > 0 && r.vacancy > 0);
+  if (statusFilter.value === 'filled') rows = rows.filter(r => r.plans.length > 0 && r.vacancy === 0);
+  if (statusFilter.value === 'open') rows = rows.filter(r => r.plans.length > 0 && r.vacancy > 0);
   if (statusFilter.value === 'no_plan') rows = rows.filter(r => r.plans.length === 0);
   return rows;
 });
@@ -735,10 +662,10 @@ const filteredRows = computed(() => {
 const stats = computed(() => {
   const all = allRows.value;
   return {
-    total:         all.length,
-    filled:        all.filter(r => r.plans.length > 0 && r.vacancy === 0).length,
+    total: all.length,
+    filled: all.filter(r => r.plans.length > 0 && r.vacancy === 0).length,
     openVacancies: plansStore.plans.reduce((sum, p) => sum + plansStore.vacancyOf(p), 0),
-    noPlan:        all.filter(r => r.plans.length === 0).length,
+    noPlan: all.filter(r => r.plans.length === 0).length,
   };
 });
 
@@ -750,7 +677,7 @@ const deptStats = computed(() => {
     if (!map[key]) map[key] = { name: key, positions: 0, ideal: 0, current: 0 };
     map[key].positions++;
     row.plans.forEach(plan => {
-      map[key].ideal   += plan.ideal_count   ?? 0;
+      map[key].ideal += plan.ideal_count ?? 0;
       map[key].current += plan.current_count ?? 0;
     });
   });
@@ -822,10 +749,10 @@ function noticeEndsAtLabel(emp) {
 }
 
 const showPlanModal = ref(false);
-const editingPlan   = ref(null);
-const planForm      = ref({ position_id: null, branch_id: null, ideal_count: 1, current_count: 0 });
+const editingPlan = ref(null);
+const planForm = ref({ position_id: null, branch_id: null, ideal_count: 1, current_count: 0 });
 
-const previewPct     = computed(() =>
+const previewPct = computed(() =>
   planForm.value.ideal_count > 0
     ? Math.round(((planForm.value.current_count || 0) / planForm.value.ideal_count) * 100)
     : 0
@@ -838,17 +765,17 @@ const openPlanModal = (row, plan = null) => {
   if (plan) {
     editingPlan.value = plan;
     planForm.value = {
-      position_id:   row.position.id,
-      branch_id:     plan.branch?.id ?? plan.branch_id ?? null,
-      ideal_count:   plan.ideal_count,
+      position_id: row.position.id,
+      branch_id: plan.branch?.id ?? plan.branch_id ?? null,
+      ideal_count: plan.ideal_count,
       current_count: plan.current_count,
     };
   } else {
     editingPlan.value = null;
     planForm.value = {
-      position_id:   row?.position?.id ?? null,
-      branch_id:     null,
-      ideal_count:   1,
+      position_id: row?.position?.id ?? null,
+      branch_id: null,
+      ideal_count: 1,
       current_count: 0,
     };
   }
@@ -870,9 +797,9 @@ const handlePlanSave = async () => {
   }
 
   const payload = {
-    position_id:   planForm.value.position_id,
-    branch_id:     planForm.value.branch_id,
-    ideal_count:   planForm.value.ideal_count,
+    position_id: planForm.value.position_id,
+    branch_id: planForm.value.branch_id,
+    ideal_count: planForm.value.ideal_count,
     current_count: planForm.value.current_count || 0
   };
 
@@ -888,7 +815,7 @@ const handlePlanSave = async () => {
 
 // ── Delete Plan actions ────────────────────────────────────────────────────
 const showDeleteConfirm = ref(false);
-const deletingPlanId    = ref(null);
+const deletingPlanId = ref(null);
 
 const confirmDeletePlan = (id) => {
   deletingPlanId.value = id;
@@ -909,7 +836,7 @@ const handleRecalcAll = async () => {
       plansStore.getPlans(),
       positionsStore.getPositions(),
     ]);
-  } catch (_) {}
+  } catch (_) { }
 };
 
 const handleRecalcPlan = async (id) => {
@@ -920,7 +847,7 @@ const handleRecalcPlan = async (id) => {
       plansStore.getPlans(),
       positionsStore.getPositions(),
     ]);
-  } catch (_) {}
+  } catch (_) { }
 };
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
@@ -946,8 +873,16 @@ onMounted(async () => {
   animation: fadeIn 0.5s ease-out forwards;
   opacity: 0;
 }
+
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

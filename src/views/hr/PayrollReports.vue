@@ -3,40 +3,33 @@
     <!-- Header -->
     <div class="mb-8">
       <h1 class="text-2xl font-bold text-gray-900">Payroll Reports & Analytics</h1>
-      <p class="text-sm text-gray-500 mt-0.5">Explore employee payouts, historical trends, deduction metrics and contractor summaries</p>
+      <p class="text-sm text-gray-500 mt-0.5">Explore employee payouts, historical trends, deduction metrics and
+        contractor summaries</p>
     </div>
 
     <!-- Navigation Tabs -->
     <div class="flex border-b border-gray-100 mb-6 flex-wrap">
-      <button
-        @click="activeTab = 'dashboard'"
+      <button @click="activeTab = 'dashboard'"
         class="px-5 py-3 text-sm font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 'dashboard' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
-      >
+        :class="activeTab === 'dashboard' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'">
         <LayoutDashboard class="w-4 h-4" />
         Dashboard Summary
       </button>
-      <button
-        @click="activeTab = 'period'"
+      <button @click="activeTab = 'period'"
         class="px-5 py-3 text-sm font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 'period' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
-      >
+        :class="activeTab === 'period' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'">
         <CalendarRange class="w-4 h-4" />
         Period Summary
       </button>
-      <button
-        @click="activeTab = 'history'"
+      <button @click="activeTab = 'history'"
         class="px-5 py-3 text-sm font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 'history' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
-      >
+        :class="activeTab === 'history' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'">
         <History class="w-4 h-4" />
         Employee History
       </button>
-      <button
-        @click="activeTab = 'freelancers'"
+      <button @click="activeTab = 'freelancers'"
         class="px-5 py-3 text-sm font-semibold border-b-2 transition-all cursor-pointer flex items-center gap-2"
-        :class="activeTab === 'freelancers' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'"
-      >
+        :class="activeTab === 'freelancers' ? 'border-amber-500 text-amber-600' : 'border-transparent text-gray-400 hover:text-gray-600'">
         <Users class="w-4 h-4" />
         Freelancer Summary
       </button>
@@ -47,26 +40,19 @@
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">Month</label>
-          <input
-            type="month"
-            v-model="dashboardFilters.month"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="dashboardFilters.month"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">Department</label>
-          <select
-            v-model="dashboardFilters.department_id"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          >
+          <select v-model="dashboardFilters.department_id"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20">
             <option value="">All Departments</option>
             <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.department_name || d.name }}</option>
           </select>
         </div>
-        <button
-          @click="loadDashboard"
-          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
-        >
+        <button @click="loadDashboard"
+          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">
           Generate Report
         </button>
       </div>
@@ -99,24 +85,16 @@
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">From</label>
-          <input
-            type="month"
-            v-model="periodFilters.from"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="periodFilters.from"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">To</label>
-          <input
-            type="month"
-            v-model="periodFilters.to"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="periodFilters.to"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
-        <button
-          @click="loadPeriod"
-          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
-        >
+        <button @click="loadPeriod"
+          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">
           Compare Months
         </button>
       </div>
@@ -125,7 +103,8 @@
         <div class="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
 
-      <div v-else-if="reportsStore.periodData.length === 0" class="text-center py-16 bg-white border border-gray-100 rounded-2xl">
+      <div v-else-if="reportsStore.periodData.length === 0"
+        class="text-center py-16 bg-white border border-gray-100 rounded-2xl">
         <CalendarRange class="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p class="text-gray-500 font-medium">No comparison data available for this range</p>
       </div>
@@ -134,10 +113,14 @@
         <table class="w-full text-sm">
           <thead class="bg-gray-50 border-b border-gray-100">
             <tr>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Period Month</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Amount</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Allowances</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Deductions</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Period Month
+              </th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Amount
+              </th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total
+                Allowances</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Total
+                Deductions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
@@ -157,34 +140,24 @@
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">Employee</label>
-          <select
-            v-model="historyFilters.employee_id"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 w-52"
-          >
+          <select v-model="historyFilters.employee_id"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20 w-52">
             <option value="">Select Employee...</option>
             <option v-for="emp in employees" :key="emp.id" :value="emp.id">{{ emp.name }}</option>
           </select>
         </div>
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">From</label>
-          <input
-            type="month"
-            v-model="historyFilters.from"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="historyFilters.from"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">To</label>
-          <input
-            type="month"
-            v-model="historyFilters.to"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="historyFilters.to"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
-        <button
-          @click="loadHistory"
-          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
-        >
+        <button @click="loadHistory"
+          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">
           Show History
         </button>
       </div>
@@ -193,7 +166,8 @@
         <div class="w-8 h-8 border-3 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
       </div>
 
-      <div v-else-if="reportsStore.employeeHistory.length === 0" class="text-center py-16 bg-white border border-gray-100 rounded-2xl">
+      <div v-else-if="reportsStore.employeeHistory.length === 0"
+        class="text-center py-16 bg-white border border-gray-100 rounded-2xl">
         <History class="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p class="text-gray-500 font-medium">No payroll history found for this employee</p>
       </div>
@@ -203,10 +177,14 @@
           <thead class="bg-gray-50 border-b border-gray-100">
             <tr>
               <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Month</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Salary</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Allowances</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Deductions</th>
-              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Salary</th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Base Salary
+              </th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Allowances
+              </th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Deductions
+              </th>
+              <th class="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Net Salary
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
@@ -227,16 +205,11 @@
       <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-wrap items-center gap-4">
         <div class="flex items-center gap-3">
           <label class="text-xs font-bold text-gray-500 uppercase">Select Month</label>
-          <input
-            type="month"
-            v-model="freelancerFilters.month"
-            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20"
-          />
+          <input type="month" v-model="freelancerFilters.month"
+            class="border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-amber-500/20" />
         </div>
-        <button
-          @click="loadFreelancers"
-          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer"
-        >
+        <button @click="loadFreelancers"
+          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold rounded-xl transition-colors cursor-pointer">
           Get Payout Data
         </button>
       </div>
@@ -254,7 +227,8 @@
           <div>
             <p class="text-sm font-semibold text-gray-500 mb-1">Freelancers Net Payouts</p>
             <h2 class="text-3xl font-bold text-gray-800">{{ formatCurrency(freelancersTotal) }} EGP</h2>
-            <span class="text-xs text-gray-400 mt-2 block">Total payout records for {{ freelancerFilters.month || 'selected period' }}</span>
+            <span class="text-xs text-gray-400 mt-2 block">Total payout records for {{ freelancerFilters.month ||
+              'selected period' }}</span>
           </div>
         </div>
       </div>
@@ -276,7 +250,7 @@ const deptsStore = useHrDepartmentsStore();
 const activeTab = ref('dashboard');
 
 const departments = computed(() => deptsStore.departments);
-const employees   = computed(() => employeesStore.employees);
+const employees = computed(() => employeesStore.employees);
 
 // Filters
 const dashboardFilters = reactive({ month: new Date().toISOString().substring(0, 7), department_id: '' });
@@ -297,8 +271,8 @@ async function loadDashboard() {
     const data = await reportsStore.fetchPayrollDashboard(dashboardFilters);
     dashboardSummary.value = {
       net_salaries: data?.net_salaries ?? data?.netSalaries ?? 0,
-      deductions:   data?.deductions ?? 0,
-      additions:    data?.additions ?? 0
+      deductions: data?.deductions ?? 0,
+      additions: data?.additions ?? 0
     };
   } catch {
     dashboardSummary.value = { net_salaries: 450000, deductions: 12000, additions: 35000 };

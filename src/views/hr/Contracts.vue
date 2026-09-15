@@ -5,9 +5,7 @@
         <h1 class="text-2xl font-bold text-gray-800">Contracts</h1>
         <p class="text-gray-500 mt-1">Manage employee contracts and terms</p>
       </div>
-      <button
-        v-if="authStore.can(HR_PERMISSION.CREATE_CONTRACT)"
-        @click="openAddModal"
+      <button v-if="authStore.can(HR_PERMISSION.CREATE_CONTRACT)" @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
         <span class="text-xl">+</span> New Contract
       </button>
@@ -45,15 +43,9 @@
 
 
     <!-- Table -->
-    <HrDataTable
-      :headers="headers"
-      :items="filteredContracts"
-      :loading="contractStore.loading"
-      emptyMessage="No contracts found."
-      :has-delete="false"
-      :has-edit="authStore.can(HR_PERMISSION.UPDATE_CONTRACT)"
-      @edit="openEditModal"
-    >
+    <HrDataTable :headers="headers" :items="filteredContracts" :loading="contractStore.loading"
+      emptyMessage="No contracts found." :has-delete="false" :has-edit="authStore.can(HR_PERMISSION.UPDATE_CONTRACT)"
+      @edit="openEditModal">
       <template #employee="{ item }">
         <span class="font-medium text-gray-900">
           {{ item.employee?.name?.trim() || getEmployeeName(item.employee_id) || '—' }}
@@ -63,17 +55,15 @@
       <template #shift="{ item }">
         <div class="text-gray-600 text-xs space-y-1">
           <template v-if="getContractShiftDisplayRows(item).length">
-            <div
-              v-for="(row, index) in getContractShiftDisplayRows(item)"
-              :key="`${item.id}-shift-row-${row.shift_id ?? row.shift?.id}-${index}`"
-            >
+            <div v-for="(row, index) in getContractShiftDisplayRows(item)"
+              :key="`${item.id}-shift-row-${row.shift_id ?? row.shift?.id}-${index}`">
               {{ formatContractShiftRow(row) }}
             </div>
           </template>
           <span v-else class="block">
             {{ item.shift?.shift_name || getShiftLabelById(item.shift_id) || '-' }}
             <span v-if="item.shift">({{ formatTime(item.shift.start_time) }} - {{ formatTime(item.shift.end_time)
-              }})</span>
+            }})</span>
           </span>
         </div>
       </template>
@@ -199,30 +189,21 @@
             </h3>
             <div class="space-y-4">
               <div class="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  @click="setScheduleMode('single')"
+                <button type="button" @click="setScheduleMode('single')"
                   class="px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
-                  :class="scheduleMode === 'single' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-                >
+                  :class="scheduleMode === 'single' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'">
                   Single Shift
                 </button>
-                <button
-                  type="button"
-                  @click="setScheduleMode('double')"
+                <button type="button" @click="setScheduleMode('double')"
                   class="px-4 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
-                  :class="scheduleMode === 'double' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'"
-                >
+                  :class="scheduleMode === 'double' ? 'bg-indigo-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'">
                   Two Shifts
                 </button>
               </div>
 
               <div class="grid grid-cols-1 gap-4" :class="scheduleMode === 'double' ? 'lg:grid-cols-2' : ''">
-                <div
-                  v-for="(shiftEntry, index) in activeShiftEntries"
-                  :key="`form-shift-${index}`"
-                  class="bg-white border border-gray-200 rounded-xl p-4 space-y-3"
-                >
+                <div v-for="(shiftEntry, index) in activeShiftEntries" :key="`form-shift-${index}`"
+                  class="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
                   <div class="flex items-center justify-between">
                     <h4 class="text-sm font-semibold text-gray-800">
                       {{ scheduleMode === 'double' ? `Shift ${index + 1}` : 'Shift' }}
@@ -232,10 +213,8 @@
 
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Shift</label>
-                    <select
-                      v-model="shiftEntry.shift_id"
-                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white"
-                    >
+                    <select v-model="shiftEntry.shift_id"
+                      class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all bg-white">
                       <option :value="null">Select Shift</option>
                       <option v-for="shift in shifts" :key="shift.id" :value="shift.id">
                         {{ shift.shift_name }} ({{ formatTime(shift.start_time) }} - {{ formatTime(shift.end_time) }})
@@ -246,15 +225,10 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Assigned Days</label>
                     <div class="flex flex-wrap gap-2">
-                      <button
-                        v-for="(day, dayIndex) in daysOfWeek"
-                        :key="`${index}-${dayIndex}`"
-                        type="button"
-                        @click="toggleShiftDay(index, dayIndex)"
-                        :disabled="isShiftDayDisabled(index, dayIndex)"
+                      <button v-for="(day, dayIndex) in daysOfWeek" :key="`${index}-${dayIndex}`" type="button"
+                        @click="toggleShiftDay(index, dayIndex)" :disabled="isShiftDayDisabled(index, dayIndex)"
                         class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
-                        :class="shiftEntry.days.includes(dayIndex) ? 'bg-indigo-600 text-white ring-2 ring-indigo-600 ring-offset-1' : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'"
-                      >
+                        :class="shiftEntry.days.includes(dayIndex) ? 'bg-indigo-600 text-white ring-2 ring-indigo-600 ring-offset-1' : 'bg-gray-50 text-gray-700 border border-gray-200 hover:bg-gray-100'">
                         {{ day }}
                       </button>
                     </div>

@@ -19,9 +19,10 @@ app.use(VueTelInput);
 app.use(pinia);
 app.use(router);
 
-// ✅ استدعاء initAuth قبل mount
+// Start session restore immediately; guards await the same promise via ensureAuthReady().
 const authStore = useAuthStore();
-authStore.initAuth().then(() => {
+authStore.initAuth().then(async () => {
+  await router.isReady();
   app.mount("#app");
   startVersionWatcher();
 });

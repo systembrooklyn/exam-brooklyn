@@ -64,19 +64,14 @@
       </div>
     </template>
 
-    <div
-      v-if="hideControls && !reportData && store.loading"
+    <div v-if="hideControls && !reportData && store.loading"
       class="flex justify-center items-center min-h-[280px] rounded-xl border border-gray-100 bg-gray-50/40"
-      aria-busy="true"
-      aria-label="Loading report"
-    >
+      aria-busy="true" aria-label="Loading report">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
     </div>
 
-    <div
-      v-else-if="hideControls && !reportData && !store.loading && reportRequested"
-      class="rounded-xl border border-gray-100 bg-gray-50/40 px-6 py-10 text-center text-sm text-gray-600"
-    >
+    <div v-else-if="hideControls && !reportData && !store.loading && reportRequested"
+      class="rounded-xl border border-gray-100 bg-gray-50/40 px-6 py-10 text-center text-sm text-gray-600">
       Could not load report data for this period. Try another month or refresh the page.
     </div>
 
@@ -92,19 +87,14 @@
           <p class="text-sm text-gray-500">
             {{ reportData.period?.from }} - {{ reportData.period?.to }}
           </p>
-          <p
-            v-if="reportSubjectContractTypeDisplay"
-            class="text-xs font-semibold text-indigo-700 mt-1.5"
-          >
+          <p v-if="reportSubjectContractTypeDisplay" class="text-xs font-semibold text-indigo-700 mt-1.5">
             Contract: {{ reportSubjectContractTypeDisplay }}
           </p>
         </div>
       </div>
 
-      <div
-        class="grid grid-cols-1 gap-3 report-summary-grid"
-        :class="showMonthlyHoursSummaryCard ? 'md:grid-cols-4' : 'md:grid-cols-3'"
-      >
+      <div class="grid grid-cols-1 gap-3 report-summary-grid"
+        :class="showMonthlyHoursSummaryCard ? 'md:grid-cols-4' : 'md:grid-cols-3'">
         <div class="p-3 rounded-xl border summary-card emerald-card flex items-center gap-3">
           <div class="p-2 bg-emerald-100 rounded-lg text-emerald-600">
             <CheckCircle class="w-4 h-4" />
@@ -135,10 +125,8 @@
             </p>
           </div>
         </div>
-        <div
-          v-if="showMonthlyHoursSummaryCard"
-          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3"
-        >
+        <div v-if="showMonthlyHoursSummaryCard"
+          class="p-3 rounded-xl border summary-card sky-card flex items-center gap-3">
           <div class="p-2 bg-sky-100 rounded-lg text-sky-600">
             <CalendarClock class="w-4 h-4" />
           </div>
@@ -189,49 +177,33 @@
               <th class="p-4 font-extrabold text-center text-gray-700 max-w-[12rem]">
                 Approved requests
               </th>
-              <th
-                v-if="showDayRequestAction"
-                class="p-4 font-extrabold text-center no-print text-gray-700"
-              >
+              <th v-if="showDayRequestAction" class="p-4 font-extrabold text-center no-print text-gray-700">
                 Action
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 text-[11px]">
-            <tr
-              v-for="day in paginatedDays"
-              :key="day.date"
-              class="divide-x divide-gray-200 transition-colors"
-              :class="rowAttendanceClass(day)"
-            >
+            <tr v-for="day in paginatedDays" :key="day.date" class="divide-x divide-gray-200 transition-colors"
+              :class="rowAttendanceClass(day)">
               <td class="p-3 text-center text-xs align-top">
                 <div class="flex flex-col items-center gap-1">
                   <span class="font-bold">{{ formatDate(day.date) }}</span>
                   <template v-if="isReportDayHolidayForUi(day)">
                     <div
-                      class="rounded-md border border-violet-200 bg-violet-100/80 px-2 py-1 max-w-[13rem] text-center"
-                    >
-                      <span
-                        class="block text-[8px] font-extrabold uppercase tracking-wide text-violet-700"
-                      >
+                      class="rounded-md border border-violet-200 bg-violet-100/80 px-2 py-1 max-w-[13rem] text-center">
+                      <span class="block text-[8px] font-extrabold uppercase tracking-wide text-violet-700">
                         Official holiday
                       </span>
-                      <span
-                        v-if="holidayDisplayLabel(day)"
-                        class="block text-[10px] font-semibold text-violet-950 leading-snug mt-0.5"
-                      >
+                      <span v-if="holidayDisplayLabel(day)"
+                        class="block text-[10px] font-semibold text-violet-950 leading-snug mt-0.5">
                         {{ holidayDisplayLabel(day) }}
                       </span>
                     </div>
                   </template>
                   <template v-else-if="reportDayHasWarningHour(day)">
-                    <div
-                      class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 max-w-[13rem] text-center"
-                      title="This day was calculated with adjusted hour rules. Do not submit a lateness request for this date."
-                    >
-                      <span
-                        class="block text-[8px] font-extrabold uppercase tracking-wide text-amber-900"
-                      >
+                    <div class="rounded-md border border-amber-300 bg-amber-50 px-2 py-1 max-w-[13rem] text-center"
+                      title="This day was calculated with adjusted hour rules. Do not submit a lateness request for this date.">
+                      <span class="block text-[8px] font-extrabold uppercase tracking-wide text-amber-900">
                         Adjusted hours
                       </span>
                       <span class="block text-[9px] font-medium text-amber-800 mt-0.5 leading-snug">
@@ -266,10 +238,10 @@
                       <div class="flex flex-col items-center">
                         <span class="text-[8px] uppercase font-bold text-gray-400">In</span>
                         <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getLatenessValue(day) > 0
-                            ? (latenessInGracePeriodForDisplay(day)
-                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                              : 'bg-red-50 text-red-700 border-red-200')
-                            : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
+                          ? (latenessInGracePeriodForDisplay(day)
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-red-50 text-red-700 border-red-200')
+                          : 'bg-indigo-50/30 text-indigo-700 border-indigo-100/50'
                           ">
                           {{ formatTime(day.attendance.check_in, true) }}
                         </span>
@@ -282,11 +254,9 @@
                         </span>
                       </div>
                     </div>
-                    <span
-                      v-if="holidayWorkedDoublePay(day)"
+                    <span v-if="holidayWorkedDoublePay(day)"
                       class="inline-flex flex-col items-center gap-0.5 rounded-lg border border-emerald-300 bg-emerald-100 px-2 py-1 text-center"
-                      title="Worked on a double-pay official holiday — counts as two working days"
-                    >
+                      title="Worked on a double-pay official holiday — counts as two working days">
                       <span class="text-[9px] font-extrabold uppercase tracking-wide text-emerald-900">
                         2 work days
                       </span>
@@ -299,20 +269,14 @@
                 <span v-else class="text-gray-300">--</span>
               </td>
               <td class="p-3 text-center">
-                <span
-                  v-if="getLatenessValue(day) > 0"
-                  class="inline-block px-2 py-1 rounded font-bold text-[10px] border"
-                  :class="
-                    latenessInGracePeriodForDisplay(day)
+                <span v-if="getLatenessValue(day) > 0"
+                  class="inline-block px-2 py-1 rounded font-bold text-[10px] border" :class="latenessInGracePeriodForDisplay(day)
                       ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
                       : 'bg-red-100 text-red-700 border-red-200'
-                  "
-                  :title="
-                    latenessInGracePeriodForDisplay(day)
+                    " :title="latenessInGracePeriodForDisplay(day)
                       ? 'Within grace period — no lateness request needed'
                       : ''
-                  "
-                >
+                    ">
                   {{ getLatenessValue(day) }}m
                 </span>
                 <span v-else class="text-gray-300">-</span>
@@ -329,8 +293,8 @@
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">Before</span>
                     <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getOvertimeBefore(day) > 0
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-gray-50 text-gray-400 border-gray-100'
                       ">
                       {{ getOvertimeBefore(day) }}m
                     </span>
@@ -338,8 +302,8 @@
                   <div class="flex flex-col items-center">
                     <span class="text-[8px] uppercase font-bold text-gray-400">After</span>
                     <span class="px-2 py-1 rounded border font-bold text-[10px]" :class="getOvertimeAfter(day) > 0
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-gray-50 text-gray-400 border-gray-100'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      : 'bg-gray-50 text-gray-400 border-gray-100'
                       ">
                       {{ getOvertimeAfter(day) }}m
                     </span>
@@ -350,15 +314,11 @@
                 </div>
               </td>
               <td class="p-3 text-left align-top max-w-[14rem]">
-                <ul
-                  v-if="approvedRequestsForDay(day).length"
-                  class="space-y-1.5 text-[10px] text-gray-800 list-none m-0 p-0"
-                >
-                  <li
-                    v-for="req in approvedRequestsForDay(day)"
+                <ul v-if="approvedRequestsForDay(day).length"
+                  class="space-y-1.5 text-[10px] text-gray-800 list-none m-0 p-0">
+                  <li v-for="req in approvedRequestsForDay(day)"
                     :key="req.id ?? `${day.date}-${req.type}-${req.created_at}`"
-                    class="leading-snug border-l-2 border-indigo-200 pl-2"
-                  >
+                    class="leading-snug border-l-2 border-indigo-200 pl-2">
                     <span class="font-semibold text-indigo-800">{{
                       formatDayRequestTypeLabel(req)
                     }}</span>
@@ -370,11 +330,8 @@
                 <span v-else class="text-gray-300 text-center block">—</span>
               </td>
               <td v-if="showDayRequestAction" class="p-3 text-center no-print">
-                <button
-                  type="button"
-                  @click="emitRequestForDay(day)"
-                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer"
-                >
+                <button type="button" @click="emitRequestForDay(day)"
+                  class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-medium px-2 py-1 rounded transition-colors shadow-sm cursor-pointer">
                   Request
                 </button>
               </td>
@@ -407,8 +364,8 @@
             <button v-for="page in totalPages" :key="page" type="button" @click="currentPage = page"
               class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all border cursor-pointer"
               :class="currentPage === page
-                  ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
                 ">
               {{ page }}
             </button>
@@ -600,7 +557,7 @@ watch(
 onMounted(async () => {
   document.addEventListener("mousedown", onDocumentMousedownEmployeeDropdown);
   if (authStore.can(HR_PERMISSION.VIEW_CONTRACT)) {
-    void contractStore.getContracts().catch(() => {});
+    void contractStore.getContracts().catch(() => { });
   }
   if (props.showEmployeeSelect) {
     try {
@@ -729,7 +686,7 @@ const handleReport = async ({ preservePage = false } = {}) => {
       !ct &&
       authStore.can(HR_PERMISSION.VIEW_CONTRACT)
     ) {
-      void contractStore.getContracts().catch(() => {});
+      void contractStore.getContracts().catch(() => { });
     }
     if (!preservePage) {
       currentPage.value = 1;

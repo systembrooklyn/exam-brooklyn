@@ -46,7 +46,8 @@
                     </li>
                     <li v-for="emp in filteredEmployeesForSelect" :key="emp.id">
                       <button type="button" role="option"
-                        class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer" :class="{
+                        class="flex w-full items-center justify-between gap-2 px-3 py-2 text-left hover:bg-indigo-50 cursor-pointer"
+                        :class="{
                           'bg-indigo-50 font-medium text-indigo-800':
                             String(filterForm.employee_id) === String(emp.id),
                         }" @click="selectEmployeeFilter(emp.id)">
@@ -56,7 +57,8 @@
                             ({{ pickEmployeeFingerprint(emp) }})
                           </span>
                         </div>
-                        <span v-if="activeContractTypeForEmployee(contractStore.contracts, emp.id)" class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
+                        <span v-if="activeContractTypeForEmployee(contractStore.contracts, emp.id)"
+                          class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-55 text-indigo-800 capitalize shrink-0">
                           {{ activeContractTypeForEmployee(contractStore.contracts, emp.id) }}
                         </span>
                       </button>
@@ -131,14 +133,16 @@
 
 
       <!-- Total Worked Hours Card -->
-      <div v-if="isHourlyEmployeeSelected" class="mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between">
+      <div v-if="isHourlyEmployeeSelected"
+        class="mb-6 bg-indigo-50 border border-indigo-100 rounded-2xl p-5 flex items-center justify-between">
         <div>
           <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider">Total Worked Hours</p>
           <p class="text-3xl font-extrabold text-indigo-950 mt-1 tabular-nums">
             {{ totalWorkedHoursSum }} <span class="text-base font-semibold text-indigo-600">hrs</span>
           </p>
         </div>
-        <div class="text-sm text-indigo-600 font-medium bg-white px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
+        <div
+          class="text-sm text-indigo-600 font-medium bg-white px-3 py-1.5 rounded-lg border border-indigo-100 shadow-sm">
           Based on {{ attendanceLogs.length }} log{{ attendanceLogs.length === 1 ? '' : 's' }}
         </div>
       </div>
@@ -283,18 +287,18 @@ function pickEmployeeFingerprint(emp) {
 
 function calculateWorkedHoursForLog(item) {
   if (!item || !item.check_in || !item.check_out) return '-';
-  
+
   const timeToMinutes = (timeStr) => {
     if (!timeStr) return 0;
     const parts = String(timeStr).split(':').map(Number);
     if (parts.length < 2) return 0;
     return (parts[0] || 0) * 60 + (parts[1] || 0);
   };
-  
+
   const checkInMin = timeToMinutes(item.check_in);
   const checkOutMin = timeToMinutes(item.check_out);
   let duration = checkOutMin - checkInMin;
-  
+
   if (item.break_in && item.break_out) {
     const breakInMin = timeToMinutes(item.break_in);
     const breakOutMin = timeToMinutes(item.break_out);
@@ -303,7 +307,7 @@ function calculateWorkedHoursForLog(item) {
       duration -= breakDuration;
     }
   }
-  
+
   if (duration <= 0) return '0.00';
   return (duration / 60).toFixed(2);
 }

@@ -5,40 +5,33 @@
         <h1 class="text-2xl font-bold text-gray-800">Job Assignments</h1>
         <p class="text-gray-500 mt-1">Link employees to departments and job titles</p>
       </div>
-      <button
-        v-if="authStore.can(HR_PERMISSION.ASSIGN_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
-        @click="openAddModal"
-        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-      >
+      <button v-if="authStore.can(HR_PERMISSION.ASSIGN_RELATION_EMPLOYEE_JOB_DEPARTMENT)" @click="openAddModal"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
         <span class="text-xl">+</span> Assign Job
       </button>
     </div>
 
     <!-- Filters -->
     <div class="flex flex-wrap gap-4 mb-6">
-        <input v-model="searchQuery" type="text" placeholder="Search employee or job title..." class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
-        
-         <select v-model="deptFilter" class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
-            <option :value="null">All Departments</option>
-            <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                {{ dept.department_name }}
-            </option>
-        </select>
+      <input v-model="searchQuery" type="text" placeholder="Search employee or job title..."
+        class="border border-gray-200 rounded-lg px-4 py-2 w-full max-w-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20" />
+
+      <select v-model="deptFilter"
+        class="border border-gray-200 rounded-lg px-4 py-2 text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+        <option :value="null">All Departments</option>
+        <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+          {{ dept.department_name }}
+        </option>
+      </select>
     </div>
 
 
 
     <!-- Table -->
-    <HrDataTable
-      :headers="headers"
-      :items="filteredLinks"
-      :loading="store.loading"
-      emptyMessage="No assignments found."
+    <HrDataTable :headers="headers" :items="filteredLinks" :loading="store.loading" emptyMessage="No assignments found."
       :has-edit="authStore.can(HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
-      :has-delete="authStore.can(HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT)"
-      @edit="openEditModal"
-      @delete="confirmDelete"
-    >
+      :has-delete="authStore.can(HR_PERMISSION.UPDATE_RELATION_EMPLOYEE_JOB_DEPARTMENT)" @edit="openEditModal"
+      @delete="confirmDelete">
       <template #employee_id="{ item }">
         <span class="font-medium text-gray-900">
           {{ item.employee?.name?.trim() || getEmployeeName(item.employee_id) || '—' }}
@@ -55,59 +48,53 @@
     </HrDataTable>
 
     <!-- Add/Edit Modal -->
-    <HrModal
-      :show="showModal"
-      :title="isEditing ? 'Edit Assignment' : 'New Assignment'"
-      :loading="store.loading"
-      @close="closeModal"
-      @save="handleSubmit"
-    >
+    <HrModal :show="showModal" :title="isEditing ? 'Edit Assignment' : 'New Assignment'" :loading="store.loading"
+      @close="closeModal" @save="handleSubmit">
       <div class="space-y-4">
         <div>
-             <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
-             <select v-model="form.employee_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none" :disabled="isEditing">
-                <option :value="null">Select Employee</option>
-                <option v-for="emp in employees" :key="emp.id" :value="emp.id">
-                    {{ emp.first_name }} {{ emp.last_name }}
-                </option>
-            </select>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+          <select v-model="form.employee_id"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none"
+            :disabled="isEditing">
+            <option :value="null">Select Employee</option>
+            <option v-for="emp in employees" :key="emp.id" :value="emp.id">
+              {{ emp.first_name }} {{ emp.last_name }}
+            </option>
+          </select>
         </div>
-         <div class="grid grid-cols-2 gap-4">
-            <div>
-                 <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                <select v-model="form.department_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
-                    <option :value="null">Select Dept</option>
-                    <option v-for="dept in departments" :key="dept.id" :value="dept.id">
-                        {{ dept.department_name }}
-                    </option>
-                </select>
-             </div>
-             <div>
-                 <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
-                <select v-model="form.job_title_id" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
-                    <option :value="null">Select Job</option>
-                    <option v-for="job in jobTitles" :key="job.id" :value="job.id">
-                        {{ job.title_name }}
-                    </option>
-                </select>
-             </div>
-         </div>
-         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Hired At</label>
-            <input v-model="form.hired_at" type="date" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none" />
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+            <select v-model="form.department_id"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
+              <option :value="null">Select Dept</option>
+              <option v-for="dept in departments" :key="dept.id" :value="dept.id">
+                {{ dept.department_name }}
+              </option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+            <select v-model="form.job_title_id"
+              class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
+              <option :value="null">Select Job</option>
+              <option v-for="job in jobTitles" :key="job.id" :value="job.id">
+                {{ job.title_name }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Hired At</label>
+          <input v-model="form.hired_at" type="date"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none" />
         </div>
       </div>
     </HrModal>
 
     <!-- Delete Confirmation -->
-    <SweetAlert2Modal
-      v-if="showDeleteConfirm"
-      title="Are you sure?"
-      text="This assignment will be deleted."
-      icon="warning"
-      @confirm="handleDeleteConfirm"
-      @cancel="cancelDelete"
-    />
+    <SweetAlert2Modal v-if="showDeleteConfirm" title="Are you sure?" text="This assignment will be deleted."
+      icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
   </div>
 </template>
 
@@ -207,13 +194,13 @@ const getEmployeeName = (id) => {
 };
 
 const getDepartmentName = (id) => {
-    const d = departments.value.find(x => x.id === id);
-    return d ? d.department_name : `ID: ${id}`;
+  const d = departments.value.find(x => x.id === id);
+  return d ? d.department_name : `ID: ${id}`;
 };
 
 const getJobTitleName = (id) => {
-    const j = jobTitles.value.find(x => x.id === id);
-    return j ? j.title_name : `ID: ${id}`;
+  const j = jobTitles.value.find(x => x.id === id);
+  return j ? j.title_name : `ID: ${id}`;
 };
 
 const openAddModal = () => {
@@ -264,7 +251,7 @@ const handleSubmit = async () => {
     }
     closeModal();
   } catch (error) {
-     console.error(error);
+    console.error(error);
   }
 };
 
@@ -287,8 +274,8 @@ const handleDeleteConfirm = async () => {
 };
 
 const cancelDelete = () => {
-    showDeleteConfirm.value = false;
-    deleteId.value = null;
+  showDeleteConfirm.value = false;
+  deleteId.value = null;
 };
 </script>
 
@@ -298,7 +285,14 @@ const cancelDelete = () => {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

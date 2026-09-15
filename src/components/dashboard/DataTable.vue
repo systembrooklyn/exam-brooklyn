@@ -124,6 +124,24 @@
                 }}</span>
               </div>
 
+              <!-- Student name + # on two lines -->
+              <div
+                v-else-if="header.key === 'student_name_and_num'"
+                class="min-w-0 max-w-[14rem]"
+                :class="cellsCentered ? 'mx-auto text-center' : 'text-start'"
+              >
+                <p class="truncate text-sm font-semibold leading-snug text-gray-900 dark:text-gray-100"
+                  :title="item?.student?.name || ''">
+                  {{ item?.student?.name || '—' }}
+                </p>
+                <p
+                  v-if="item?.student?.st_num != null && String(item.student.st_num).trim() !== ''"
+                  class="mt-0.5 text-xs font-medium tabular-nums text-slate-500 dark:text-slate-400"
+                >
+                  #{{ item.student.st_num }}
+                </p>
+              </div>
+
               <span v-else-if="badgeKeys.includes(header.key)" :class="badgeSpanClass(header.key, item)">
                 {{ badgeDisplayText(item, header.key) }}
               </span>
@@ -229,6 +247,94 @@
                   </template>
                   <span v-else class="text-gray-400 dark:text-gray-500">—</span>
                 </template>
+              </div>
+
+              <!-- Booking Action: CTA status; button only when no action yet -->
+              <div
+                v-else-if="header.key === 'notes'"
+                class="w-full min-w-0"
+                :class="cellsCentered ? 'flex justify-center' : ''"
+              >
+                <!-- Never contacted → icon + log button -->
+                <div
+                  v-if="item.notes == null"
+                  class="inline-flex items-center gap-2"
+                >
+                  <span
+                    class="inline-flex text-slate-400 dark:text-slate-500"
+                    title="No action yet"
+                  >
+                    <CircleOff class="h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span class="sr-only">No action yet</span>
+                  </span>
+                  <button
+                    type="button"
+                    class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 shadow-sm transition hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                    title="Log contact"
+                    aria-label="Log contact"
+                    @click="emit('add-note', item)"
+                  >
+                    <StickyNote class="h-4 w-4" aria-hidden="true" />
+                  </button>
+                </div>
+
+                <!-- Contacted without a written note -->
+                <span
+                  v-else-if="!String(item.notes).trim()"
+                  class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
+                  title="Contacted — no note"
+                >
+                  <CheckCircle2 class="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span class="text-xs font-medium">Done</span>
+                </span>
+
+                <!-- Contacted with note (may include " - actor - id") -->
+                <div
+                  v-else
+                  class="w-full min-w-0 max-w-[16rem] sm:max-w-[18rem] rounded-xl border border-emerald-100 bg-emerald-50/70 px-2.5 py-2 text-start shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/30"
+                  :class="cellsCentered ? 'mx-auto' : ''"
+                >
+                  <template
+                    v-for="parsed in [parseBookingActionNote(item.notes)]"
+                    :key="`${item.id}-note`"
+                  >
+                    <div class="flex items-start gap-2">
+                      <CheckCircle2
+                        class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                        aria-hidden="true"
+                      />
+                      <div class="min-w-0 flex-1">
+                        <p
+                          class="whitespace-pre-wrap break-words text-sm leading-snug text-gray-900 dark:text-gray-100"
+                          style="direction: auto; unicode-bidi: plaintext"
+                          :title="parsed.body"
+                        >
+                          {{ displayBookingActionNoteBody(item) }}
+                        </p>
+                        <button
+                          v-if="bookingActionNoteNeedsToggle(item)"
+                          type="button"
+                          class="mt-1 text-xs font-medium text-indigo-600 underline-offset-2 hover:underline dark:text-indigo-400"
+                          @click="toggleTextMore(item.id, 'notes')"
+                        >
+                          {{ isTextMoreExpanded(item.id, 'notes') ? 'See less' : 'See more' }}
+                        </button>
+                        <p
+                          v-if="parsed.hasActor"
+                          class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-emerald-200/70 pt-1.5 text-[11px] dark:border-emerald-800/50"
+                        >
+                          <span class="font-semibold uppercase tracking-wide text-slate-400">By</span>
+                          <span
+                            class="font-semibold tabular-nums text-slate-700 dark:text-slate-200"
+                            :title="parsed.actor"
+                          >
+                            {{ parsed.actorLabel }}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </template>
+                </div>
               </div>
 
               <!-- Default rendering for other columns -->
@@ -338,7 +444,7 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow, RotateCcw } from "lucide-vue-next";
+import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow, RotateCcw, CircleOff, StickyNote, CheckCircle2 } from "lucide-vue-next";
 import DetailsPopup from "../global/DetailsPopup.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -451,6 +557,7 @@ const emit = defineEmits([
   "delete",
   "open-scholarship-detail",
   "employee-reply",
+  "add-note",
   "update:selected",
   "restore",
 ]);
@@ -526,12 +633,30 @@ function bodyTdClass(header) {
     const ha = props.cellsCentered ? "text-center" : "text-start";
     return ["break-words", "align-middle", pad, "whitespace-normal", ha, "tabular-nums"].join(" ");
   }
+  if (header.key === "student_name_and_num") {
+    const ha = props.cellsCentered ? "text-center" : "text-start";
+    return ["break-words", "align-middle", pad, "whitespace-normal", ha, "min-w-[10rem]", "max-w-[14rem]"].join(" ");
+  }
   if (props.attributedReplyKeys.includes(header.key)) {
     const ha = props.cellsCentered ? "text-center" : "text-start";
     return ["break-words", pad, "whitespace-normal", ha, "align-top", "max-w-[min(92vw,26rem)] sm:max-w-lg lg:max-w-2xl", tab].filter(Boolean).join(" ");
   }
   if (header.key === "booking_datetime") {
     return ["break-words", "align-middle", pad, "whitespace-normal", c, "tabular-nums"].filter(Boolean).join(" ");
+  }
+  if (header.key === "notes") {
+    return [
+      "break-words",
+      "align-middle",
+      pad,
+      "whitespace-normal",
+      c,
+      "min-w-[11rem]",
+      "max-w-[16rem]",
+      "sm:max-w-[18rem]",
+    ]
+      .filter(Boolean)
+      .join(" ");
   }
 
   const parts = ["break-words", "align-middle", pad, "whitespace-nowrap"];
@@ -544,6 +669,50 @@ function canShowEmployeeReplyButton(item) {
   const v = item?.employee_response;
   if (v === null || v === undefined) return true;
   return String(v).trim() === "";
+}
+
+/**
+ * Booking notes API pattern: "{note text} - {actor name} - {actor id}"
+ * Parse from the end so note text may itself contain " - ".
+ * Display label: FirstName_id (e.g. Hazem_533).
+ */
+function parseBookingActionNote(raw) {
+  const s = String(raw ?? "").trim();
+  if (!s) {
+    return { body: "", actor: "", actorId: "", actorLabel: "", hasActor: false };
+  }
+  const parts = s.split(/\s+-\s+/);
+  if (parts.length >= 3) {
+    const actorId = parts[parts.length - 1].trim();
+    const actor = parts[parts.length - 2].trim();
+    if (actor && /^\d+$/.test(actorId)) {
+      const firstName = actor.split(/\s+/).filter(Boolean)[0] || actor;
+      return {
+        body: parts.slice(0, -2).join(" - ").trim(),
+        actor,
+        actorId,
+        actorLabel: `${firstName}_${actorId}`,
+        hasActor: true,
+      };
+    }
+  }
+  return { body: s, actor: "", actorId: "", actorLabel: "", hasActor: false };
+}
+
+const BOOKING_NOTE_MAX_CHARS = 90;
+
+function bookingActionNoteNeedsToggle(item) {
+  const { body } = parseBookingActionNote(item?.notes);
+  return body.length > BOOKING_NOTE_MAX_CHARS;
+}
+
+function displayBookingActionNoteBody(item) {
+  const { body } = parseBookingActionNote(item?.notes);
+  if (!body) return "—";
+  if (isTextMoreExpanded(item.id, "notes") || body.length <= BOOKING_NOTE_MAX_CHARS) {
+    return body;
+  }
+  return `${body.slice(0, BOOKING_NOTE_MAX_CHARS)}…`;
 }
 
 /**
@@ -658,6 +827,14 @@ function rawCellValue(item, path) {
     if (st != null && String(st).trim() !== "") parts.push(String(st).trim());
     if (id != null && String(id).trim() !== "") parts.push(String(id));
     return parts.join(" · ");
+  }
+  if (path === "student_name_and_num") {
+    const name = item?.student?.name;
+    const st = item?.student?.st_num;
+    const parts = [];
+    if (name != null && String(name).trim() !== "") parts.push(String(name).trim());
+    if (st != null && String(st).trim() !== "") parts.push(`#${String(st).trim()}`);
+    return parts.join(" ");
   }
   const v = path
     .split(".")
@@ -939,6 +1116,15 @@ function getValueByPath(obj, path) {
     if (st != null && String(st).trim() !== "") parts.push(String(st).trim());
     if (id != null && String(id).trim() !== "") parts.push(String(id));
     return parts.join(" · ");
+  }
+
+  if (path === "student_name_and_num") {
+    const name = obj?.student?.name;
+    const st = obj?.student?.st_num;
+    const parts = [];
+    if (name != null && String(name).trim() !== "") parts.push(String(name).trim());
+    if (st != null && String(st).trim() !== "") parts.push(`#${String(st).trim()}`);
+    return parts.join(" ");
   }
 
   if (path === "price") {

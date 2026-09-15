@@ -5,9 +5,7 @@
         <h1 class="text-2xl font-bold text-gray-800">Employees Directory</h1>
         <p class="text-gray-500 mt-1">Manage employee profiles and roles</p>
       </div>
-      <button
-        v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)"
-        @click="openAddModal"
+      <button v-if="authStore.can(HR_PERMISSION.CREATE_EMPLOYEE)" @click="openAddModal"
         class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors cursor-pointer">
         <span class="text-xl">+</span> Add Employee
       </button>
@@ -28,41 +26,27 @@
     </div>
 
     <!-- Table -->
-    <HrDataTable
-      :headers="headers"
-      :items="filteredEmployees"
-      :loading="store.loading"
+    <HrDataTable :headers="headers" :items="filteredEmployees" :loading="store.loading"
       emptyMessage="No employees found."
       :has-actions="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE) || authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)">
       <template #actions="{ item }">
         <div class="flex items-center justify-center gap-3">
-          <button
-            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)"
-            type="button"
-            :disabled="editLoadingId != null"
+          <button v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)" type="button" :disabled="editLoadingId != null"
             class="cursor-pointer text-blue-600 hover:text-blue-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Edit"
-            @click="openEditModal(item)">
+            title="Edit" @click="openEditModal(item)">
             <Loader2 v-if="editLoadingId != null && Number(editLoadingId) === Number(item.id)"
               class="w-5 h-5 animate-spin text-blue-600" />
             <Edit v-else class="w-5 h-5" />
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE) && !isTerminatedEmployeeRow(item)"
-            type="button"
+          <button v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE) && !isTerminatedEmployeeRow(item)" type="button"
             :disabled="editLoadingId != null"
             class="cursor-pointer text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Terminate"
-            @click="openTerminateModal(item)">
+            title="Terminate" @click="openTerminateModal(item)">
             <UserMinus class="w-5 h-5" />
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)"
-            type="button"
-            :disabled="editLoadingId != null"
+          <button v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE)" type="button" :disabled="editLoadingId != null"
             class="cursor-pointer text-red-500 hover:text-red-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            title="Delete"
-            @click="confirmDelete(item.id)">
+            title="Delete" @click="confirmDelete(item.id)">
             <Trash2 class="w-5 h-5" />
           </button>
         </div>
@@ -77,7 +61,7 @@
 
           <div class="text-left">
             <div class="font-medium text-gray-900">{{ item.personal_info?.first_name }} {{ item.personal_info?.last_name
-              }}</div>
+            }}</div>
             <!-- <div class="text-xs text-gray-500">{{ item.email || item.personal_info?.email || '-' }}</div> -->
           </div>
         </div>
@@ -99,12 +83,8 @@
     </HrDataTable>
 
     <!-- Add/Edit Modal — mount only if user can create or update (read-only viewers skip form + link APIs) -->
-    <HrModal
-      v-if="canOpenEmployeeModal"
-      :show="showModal"
-      :title="isEditing ? 'Edit Employee' : 'New Employee'"
-      :loading="modalSaving"
-      maxWidthClass="max-w-4xl" @close="closeModal" @save="handleSubmit">
+    <HrModal v-if="canOpenEmployeeModal" :show="showModal" :title="isEditing ? 'Edit Employee' : 'New Employee'"
+      :loading="modalSaving" maxWidthClass="max-w-4xl" @close="closeModal" @save="handleSubmit">
       <div class="space-y-4">
         <!-- Tabs Header -->
         <div class="flex p-1 bg-gray-100 rounded-xl mb-6">
@@ -127,9 +107,7 @@
             </svg>
             Status
           </button>
-          <button
-            v-if="authStore.can(HR_PERMISSION.ASSIGN_MANAGER)"
-            @click="activeTab = 'manager'"
+          <button v-if="authStore.can(HR_PERMISSION.ASSIGN_MANAGER)" @click="activeTab = 'manager'"
             class="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer"
             :class="activeTab === 'manager' ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200/50'">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -213,21 +191,14 @@
                   Positions
                   <span class="ml-1 text-xs font-normal text-gray-400">(optional)</span>
                 </label>
-                <MultiSelect
-                  v-model="form.position_ids"
-                  :options="positionOptions"
-                  labelKey="name"
-                  valueKey="id"
-                  placeholder="Select Positions"
-                />
+                <MultiSelect v-model="form.position_ids" :options="positionOptions" labelKey="name" valueKey="id"
+                  placeholder="Select Positions" />
               </div>
               <!-- Branch -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                <select
-                  v-model="form.branch_id"
-                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
-                >
+                <select v-model="form.branch_id"
+                  class="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all">
                   <option :value="null">— No Branch —</option>
                   <option v-for="branch in branchOptions" :key="branch.id" :value="branch.id">
                     {{ branch.name }}
@@ -248,27 +219,22 @@
               </div>
               <!-- Notice period (edit only; frees manpower headcount) -->
               <div v-if="isEditing" class="md:col-span-2 space-y-3 pt-1">
-                <label
-                  class="flex items-start gap-3 cursor-pointer select-none"
+                <label class="flex items-start gap-3 cursor-pointer select-none"
                   :class="editingEmployeeWasTerminated ? 'opacity-50 cursor-not-allowed' : ''">
-                  <input
-                    v-model="form.is_on_notice"
-                    type="checkbox"
+                  <input v-model="form.is_on_notice" type="checkbox"
                     class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                    :disabled="editingEmployeeWasTerminated"
-                    @change="onNoticeCheckboxChange" />
+                    :disabled="editingEmployeeWasTerminated" @change="onNoticeCheckboxChange" />
                   <span>
                     <span class="block text-sm font-medium text-gray-700">On notice period</span>
                     <span class="block text-xs text-gray-500 mt-0.5">
-                      When enabled, this employee is excluded from manpower headcount so you can open a replacement job request.
+                      When enabled, this employee is excluded from manpower headcount so you can open a replacement job
+                      request.
                     </span>
                   </span>
                 </label>
                 <div v-if="form.is_on_notice && !editingEmployeeWasTerminated">
                   <label class="block text-sm font-medium text-gray-700 mb-1">Notice period ends at</label>
-                  <input
-                    v-model="form.notice_period_ends_at"
-                    type="date"
+                  <input v-model="form.notice_period_ends_at" type="date"
                     class="w-full max-w-xs border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all" />
                 </div>
               </div>
@@ -278,7 +244,8 @@
 
         <!-- Status Tab -->
         <div v-if="activeTab === 'status'" class="space-y-4">
-          <div v-if="isEditing && editingEmployeeWasTerminated" class="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <div v-if="isEditing && editingEmployeeWasTerminated"
+            class="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
             <div>
               <span class="block text-xs font-semibold uppercase text-gray-500 mb-1">Status</span>
               <span class="text-sm font-medium text-gray-900 capitalize">{{ form.status || '—' }}</span>
@@ -367,39 +334,27 @@
       </div>
     </HrModal>
 
-    <HrModal
-      v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)"
-      :show="showTerminateModal"
-      title="Terminate employee"
-      :loading="terminateSubmitting"
-      save-label="Terminate"
-      max-width-class="max-w-lg"
-      @close="closeTerminateModal"
+    <HrModal v-if="authStore.can(HR_PERMISSION.UPDATE_EMPLOYEE)" :show="showTerminateModal" title="Terminate employee"
+      :loading="terminateSubmitting" save-label="Terminate" max-width-class="max-w-lg" @close="closeTerminateModal"
       @save="submitTerminateEmployee">
       <div v-if="terminateTarget" class="space-y-4">
         <p class="text-sm text-gray-700">
           You are terminating <strong class="font-semibold text-gray-900">{{ terminateTargetDisplayName }}</strong>.
         </p>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Termination date <span class="text-red-500">*</span></label>
-          <input
-            v-model="terminateForm.termination_date"
-            type="date"
+          <label class="block text-sm font-medium text-gray-700 mb-1">Termination date <span
+              class="text-red-500">*</span></label>
+          <input v-model="terminateForm.termination_date" type="date"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Reason <span class="text-red-500">*</span></label>
-          <textarea
-            v-model="terminateForm.reason"
-            rows="3"
-            placeholder="e.g. Resigned — new opportunity"
-            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-y min-h-[5rem]"
-          ></textarea>
+          <textarea v-model="terminateForm.reason" rows="3" placeholder="e.g. Resigned — new opportunity"
+            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-y min-h-[5rem]"></textarea>
         </div>
         <div v-if="terminateTargetIsManager">
           <label class="block text-sm font-medium text-gray-700 mb-1">Reassign subordinates to</label>
-          <select
-            v-model="terminateForm.reassign_subordinates_to"
+          <select v-model="terminateForm.reassign_subordinates_to"
             class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-indigo-500 outline-none">
             <option value="">— None —</option>
             <option v-for="row in employeesForTerminateReassign" :key="row.id" :value="String(row.id)">
@@ -407,18 +362,18 @@
             </option>
           </select>
           <p class="text-xs text-gray-500 mt-1.5">
-            Choose who receives this manager&apos;s direct reports after termination (payroll expects an employee ID when applicable).
+            Choose who receives this manager&apos;s direct reports after termination (payroll expects an employee ID
+            when
+            applicable).
           </p>
         </div>
       </div>
     </HrModal>
 
     <!-- Delete Confirmation -->
-    <SweetAlert2Modal
-      v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE) && showDeleteConfirm"
-      title="Are you sure?"
-      text="This employee will be deleted permanently."
-      icon="warning" @confirm="handleDeleteConfirm" @cancel="cancelDelete" />
+    <SweetAlert2Modal v-if="authStore.can(HR_PERMISSION.DELETE_EMPLOYEE) && showDeleteConfirm" title="Are you sure?"
+      text="This employee will be deleted permanently." icon="warning" @confirm="handleDeleteConfirm"
+      @cancel="cancelDelete" />
   </div>
 </template>
 

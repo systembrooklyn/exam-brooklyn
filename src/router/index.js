@@ -147,40 +147,50 @@ const router = createRouter({
   routes,
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to) => {
   const authStore = useAuthStore();
+  // Wait for cookie + user/permissions before any deny → Systems redirect.
+  await authStore.ensureAuthReady();
+
   const isAuthenticated = !!authStore.token;
 
   if (to.path === "/" && isAuthenticated) {
-    return next({ name: "SystemsPage" });
+    return { name: "SystemsPage" };
   }
 
-  const publicPages = ["login", "reset-password", "error", "public-careers", "public-career-detail"];
+  const publicPages = [
+    "login",
+    "reset-password",
+    "error",
+    "public-careers",
+    "public-career-detail",
+  ];
 
   const authRequired = !publicPages.includes(to.name);
 
   if (authRequired && !isAuthenticated) {
-    return next({ name: "login" });
+    return { name: "login" };
   }
 
   // ✅ Access control via access-control.js
   const access = accessControl[to.name];
   if (access) {
     if (access.blockedIfHas?.some((p) => authStore.hasPermission(p))) {
-      return next({ name: "dashboard" });
+      return { name: "dashboard" };
     }
     if (access.requires?.some((p) => !authStore.hasPermission(p))) {
-      return next({ name: "SystemsPage" });
+      return { name: "SystemsPage" };
     }
   }
 
   // ✅ Meta-based permission check (can() so admins align with HR UI)
+  // Empty string means "no permission required" (used on some layouts).
   const required = to.meta?.requiresPermission;
   if (required && !authStore.can(required)) {
-    return next({ name: "SystemsPage" });
+    return { name: "SystemsPage" };
   }
 
-  next();
+  return true;
 });
 
 export default router;
