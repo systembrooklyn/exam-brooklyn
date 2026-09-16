@@ -113,3 +113,71 @@ export function sanitizeTicketHtml(html) {
     ALLOWED_ATTR: TICKET_HTML_ALLOWED_ATTR,
   });
 }
+
+/**
+ * Tickets list URL query contract (UI persistence only):
+ * - tab: omit when open; else closed|tasks|insights
+ * - type, category, start_date, end_date: omit when empty
+ * - unread_only: '1' when true (never for insights)
+ */
+const TICKETS_LIST_TABS = new Set(["open", "closed", "tasks", "insights"]);
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function queryParam(value) {
+  if (Array.isArray(value)) value = value[0];
+  if (value == null) return "";
+  return String(value).trim();
+}
+
+function parseDateParam(value) {
+  const raw = queryParam(value);
+  return DATE_RE.test(raw) ? raw : "";
+}
+
+export function parseTicketsListQuery(query = {}) {
+  const rawTab = queryParam(query.tab).toLowerCase() || "open";
+  const tab = TICKETS_LIST_TABS.has(rawTab) ? rawTab : "open";
+  const unreadRaw = queryParam(query.unread_only).toLowerCase();
+
+  return {
+    tab,
+    type: queryParam(query.type),
+    category: queryParam(query.category),
+    start_date: parseDateParam(query.start_date),
+    end_date: parseDateParam(query.end_date),
+    unread_only: unreadRaw === "1" || unreadRaw === "true",
+  };
+}
+
+export function resolveAllowedTab(tab, { canTasks = false, canInsights = false } = {}) {
+  if (!TICKETS_LIST_TABS.has(tab)) return "open";
+  if (tab === "tasks" && !canTasks) return "open";
+  if (tab === "insights" && !canInsights) return "open";
+  return tab;
+}
+
+export function buildTicketsListQuery({
+  tab = "open",
+  type = "",
+  category = "",
+  start_date = "",
+  end_date = "",
+  unread_only = false,
+} = {}) {
+  const query = {};
+  const safeTab = TICKETS_LIST_TABS.has(tab) ? tab : "open";
+
+  if (safeTab !== "open") query.tab = safeTab;
+  if (type) query.type = String(type);
+  if (category) query.category = String(category);
+  if (start_date && DATE_RE.test(start_date)) query.start_date = start_date;
+  if (end_date && DATE_RE.test(end_date)) query.end_date = end_date;
+  if (unread_only && safeTab !== "insights") query.unread_only = "1";
+
+  return query;
+}
+
+export function ticketsListQueryEquals(a = {}, b = {}) {
+  const keys = ["tab", "type", "category", "start_date", "end_date", "unread_only"];
+  return keys.every((key) => queryParam(a[key]) === queryParam(b[key]));
+}

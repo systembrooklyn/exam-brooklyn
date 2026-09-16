@@ -91,7 +91,12 @@
         <tbody class="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
           <!-- Render data rows -->
           <tr v-for="item in paginatedItems" :key="item.id"
-            class="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 bg-white dark:bg-gray-800 transition-all duration-150 group border-b border-gray-100 dark:border-gray-700/50">
+            class="transition-all duration-150 group border-b border-gray-100 dark:border-gray-700/50"
+            :class="isTodayHighlightedRow(item)
+              ? 'bg-amber-50/90 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/45 ring-1 ring-inset ring-amber-200/70 dark:ring-amber-700/40'
+              : 'bg-white dark:bg-gray-800 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20'"
+            :title="isTodayHighlightedRow(item) ? 'Today' : undefined"
+          >
             <td v-if="selectable" class="w-12 px-4 py-4 text-center align-middle">
               <input type="checkbox" :checked="isSelectedRow(item.id)" @change="toggleSelectRow(item.id)"
                 class="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
@@ -124,15 +129,36 @@
                 }}</span>
               </div>
 
-              <!-- Student name + # on two lines -->
+              <!-- Student name + created_at on two lines -->
               <div
-                v-else-if="header.key === 'student_name_and_num'"
+                v-else-if="header.key === 'student_name_and_Created_at'"
                 class="min-w-0 max-w-[14rem]"
                 :class="cellsCentered ? 'mx-auto text-center' : 'text-start'"
               >
                 <p class="truncate text-sm font-semibold leading-snug text-gray-900 dark:text-gray-100"
                   :title="item?.student?.name || ''">
                   {{ item?.student?.name || '—' }}
+                </p>
+                <p
+                  v-if="item?.created_at"
+                  class="mt-0.5 text-xs font-medium tabular-nums text-slate-500 dark:text-slate-400"
+                  :title="formatDateShort(item.created_at)"
+                >
+                  {{ formatDateShort(item.created_at) }}
+                </p>
+              </div>
+
+              <!-- Email + student # on two lines -->
+              <div
+                v-else-if="header.key === 'student_email_and_num'"
+                class="min-w-0 max-w-[14rem]"
+                :class="cellsCentered ? 'mx-auto text-center' : 'text-start'"
+              >
+                <p
+                  class="truncate text-sm leading-snug text-gray-900 dark:text-gray-100"
+                  :title="item?.student?.email || ''"
+                >
+                  {{ item?.student?.email || '—' }}
                 </p>
                 <p
                   v-if="item?.student?.st_num != null && String(item.student.st_num).trim() !== ''"
@@ -295,8 +321,8 @@
                   :class="cellsCentered ? 'mx-auto' : ''"
                 >
                   <template
-                    v-for="parsed in [parseBookingActionNote(item.notes)]"
-                    :key="`${item.id}-note`"
+                    v-for="(parsed, noteIndex) in [parseBookingActionNote(item.notes)]"
+                    :key="noteIndex"
                   >
                     <div class="flex items-start gap-2">
                       <CheckCircle2
@@ -550,6 +576,25 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  /**
+   * When set to a date field on each row (e.g. created_at, booking_datetime),
+   * rows whose calendar day matches today get a highlight + stronger hover.
+   */
+  highlightTodayField: {
+    type: String,
+    default: null,
+  },
+  /** Optional initial sort column key (e.g. booking_datetime). */
+  initialSortKey: {
+    type: String,
+    default: null,
+  },
+  /** Initial sort direction when initialSortKey is set. */
+  initialSortDirection: {
+    type: String,
+    default: "asc",
+    validator: (v) => v === "asc" || v === "desc",
+  },
 });
 
 const emit = defineEmits([
@@ -633,7 +678,11 @@ function bodyTdClass(header) {
     const ha = props.cellsCentered ? "text-center" : "text-start";
     return ["break-words", "align-middle", pad, "whitespace-normal", ha, "tabular-nums"].join(" ");
   }
-  if (header.key === "student_name_and_num") {
+  if (header.key === "student_name_and_Created_at") {
+    const ha = props.cellsCentered ? "text-center" : "text-start";
+    return ["break-words", "align-middle", pad, "whitespace-normal", ha, "min-w-[10rem]", "max-w-[14rem]"].join(" ");
+  }
+  if (header.key === "student_email_and_num") {
     const ha = props.cellsCentered ? "text-center" : "text-start";
     return ["break-words", "align-middle", pad, "whitespace-normal", ha, "min-w-[10rem]", "max-w-[14rem]"].join(" ");
   }
@@ -669,6 +718,23 @@ function canShowEmployeeReplyButton(item) {
   const v = item?.employee_response;
   if (v === null || v === undefined) return true;
   return String(v).trim() === "";
+}
+
+function toLocalDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function isTodayHighlightedRow(item) {
+  const field = props.highlightTodayField;
+  if (!field || !item) return false;
+  const raw = item[field];
+  if (raw == null || raw === "") return false;
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return toLocalDateKey(parsed) === toLocalDateKey(new Date());
 }
 
 /**
@@ -798,8 +864,10 @@ const currentPage = ref(1);
 const itemsPerPage = 10;
 const selectedExam = ref(null);
 
-const sortColumnKey = ref(null);
-const sortDirection = ref("desc");
+const sortColumnKey = ref(props.initialSortKey || null);
+const sortDirection = ref(
+  props.initialSortKey ? props.initialSortDirection || "asc" : "desc"
+);
 
 function sortHeaderState(header) {
   if (!header?.sortable) return "idle";
@@ -849,11 +917,19 @@ function rawCellValue(item, path) {
     if (id != null && String(id).trim() !== "") parts.push(String(id));
     return parts.join(" · ");
   }
-  if (path === "student_name_and_num") {
+  if (path === "student_name_and_Created_at") {
     const name = item?.student?.name;
-    const st = item?.student?.st_num;
+    const created = item?.created_at ? formatDateShort(item.created_at) : "";
     const parts = [];
     if (name != null && String(name).trim() !== "") parts.push(String(name).trim());
+    if (created) parts.push(created);
+    return parts.join(" ");
+  }
+  if (path === "student_email_and_num") {
+    const email = item?.student?.email;
+    const st = item?.student?.st_num;
+    const parts = [];
+    if (email != null && String(email).trim() !== "") parts.push(String(email).trim());
     if (st != null && String(st).trim() !== "") parts.push(`#${String(st).trim()}`);
     return parts.join(" ");
   }
@@ -1139,11 +1215,20 @@ function getValueByPath(obj, path) {
     return parts.join(" · ");
   }
 
-  if (path === "student_name_and_num") {
+  if (path === "student_name_and_Created_at") {
     const name = obj?.student?.name;
-    const st = obj?.student?.st_num;
+    const created = obj?.created_at ? formatDateShort(obj.created_at) : "";
     const parts = [];
     if (name != null && String(name).trim() !== "") parts.push(String(name).trim());
+    if (created) parts.push(created);
+    return parts.join(" ");
+  }
+
+  if (path === "student_email_and_num") {
+    const email = obj?.student?.email;
+    const st = obj?.student?.st_num;
+    const parts = [];
+    if (email != null && String(email).trim() !== "") parts.push(String(email).trim());
     if (st != null && String(st).trim() !== "") parts.push(`#${String(st).trim()}`);
     return parts.join(" ");
   }

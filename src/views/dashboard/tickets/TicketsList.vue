@@ -317,7 +317,7 @@
               v-for="ticket in sortedInsightsTickets"
               :key="ticket.serial"
               class="px-5 py-4 flex gap-3 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10 transition-all duration-150 cursor-pointer"
-              @click="$router.push(`/tickets/${ticket.serial}`)"
+              @click="openTicket(ticket.serial)"
             >
               <!-- Star Indicator or Check -->
               <div class="pt-0.5 flex-shrink-0">
@@ -427,7 +427,7 @@
             v-for="ticket in ticketsWithReaders"
             :key="ticket.serial"
             class="px-5 py-4 flex gap-3 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-150 cursor-pointer"
-            @click="$router.push(`/tickets/${ticket.serial}`)"
+            @click="openTicket(ticket.serial)"
           >
             <!-- Status Icon -->
             <div class="pt-0.5 flex-shrink-0">
@@ -514,7 +514,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { Ticket, CircleDot, CircleCheck, ChevronRight, Plus, X, MessageSquare, Star, Mail, RefreshCw, Eye, TrendingUp, ChevronDown, Smile, ClipboardList, SlidersHorizontal } from 'lucide-vue-next';
 import { useTicketsStore } from '@/stores/ticketsStore';
 import { useAuthStore } from '@/stores/auth';
@@ -523,6 +523,10 @@ import {
   getOtherReaders,
   formatReaderName,
   formatReaderNameWithTime,
+  parseTicketsListQuery,
+  buildTicketsListQuery,
+  resolveAllowedTab,
+  ticketsListQueryEquals,
 } from '@/utils/ticketsHelpers';
 import { Line } from 'vue-chartjs';
 import apiClient from '@/api/axiosInstance';
@@ -549,12 +553,14 @@ ChartJS.register(
   Filler
 );
 
+const route = useRoute();
 const router = useRouter();
 const store = useTicketsStore();
 const authStore = useAuthStore();
 
 const pageLoading = ref(false);
 const activeTab = ref('open');
+let isSyncingFromRoute = false;
 
 // Independent filter and data states for the Insights tab
 const insightsLoading = ref(false);
@@ -610,6 +616,7 @@ const setActiveTab = (tab) => {
     filters.is_closed = false;
     fetchData();
   }
+  syncToRoute();
 };
 
 const fetchInsightsData = async () => {
@@ -814,6 +821,67 @@ const filters = reactive({
   unread_only: false,
 });
 
+const getListViewState = () => {
+  const active = activeTab.value === 'insights' ? insightsFilters : filters;
+  return {
+    tab: activeTab.value,
+    type: active.type || '',
+    category: active.category || '',
+    start_date: active.start_date || '',
+    end_date: active.end_date || '',
+    unread_only: activeTab.value === 'insights' ? false : !!filters.unread_only,
+  };
+};
+
+const syncToRoute = () => {
+  if (isSyncingFromRoute) return;
+  const nextQuery = buildTicketsListQuery(getListViewState());
+  if (ticketsListQueryEquals(route.query, nextQuery)) return;
+  router.replace({ query: nextQuery });
+};
+
+const syncFromRoute = () => {
+  isSyncingFromRoute = true;
+  try {
+    const parsed = parseTicketsListQuery(route.query);
+    const tab = resolveAllowedTab(parsed.tab, {
+      canTasks: authStore.can('view-task-tickets'),
+      canInsights: authStore.can('view-others-tickets'),
+    });
+
+    activeTab.value = tab;
+    filters.is_closed = tab === 'closed';
+
+    if (tab === 'insights') {
+      insightsFilters.type = parsed.type;
+      insightsFilters.category = parsed.category;
+      insightsFilters.start_date = parsed.start_date;
+      insightsFilters.end_date = parsed.end_date;
+    } else {
+      filters.type = parsed.type;
+      filters.category = parsed.category;
+      filters.start_date = parsed.start_date;
+      filters.end_date = parsed.end_date;
+      filters.unread_only = parsed.unread_only;
+    }
+
+    const normalized = buildTicketsListQuery(getListViewState());
+    if (!ticketsListQueryEquals(route.query, normalized)) {
+      router.replace({ query: normalized });
+    }
+  } finally {
+    isSyncingFromRoute = false;
+  }
+};
+
+const openTicket = (serial) => {
+  router.push({
+    name: 'tickets-details',
+    params: { serial },
+    query: buildTicketsListQuery(getListViewState()),
+  });
+};
+
 const ticketsList = computed(() => {
   let list = filters.is_closed ? (store.closedTickets || []) : (store.openTickets || []);
   if (!filters.is_closed && authStore.can('view-task-tickets')) {
@@ -926,9 +994,16 @@ const ticketsWithReaders = computed(() => {
   }));
 });
 
-const hasActiveFilters = computed(() =>
-  filters.type || filters.category || filters.start_date || filters.end_date || filters.unread_only
-);
+const hasActiveFilters = computed(() => {
+  const active = activeFilters.value;
+  return !!(
+    active.type ||
+    active.category ||
+    active.start_date ||
+    active.end_date ||
+    (activeTab.value !== 'insights' && filters.unread_only)
+  );
+});
 
 const showFilters = ref(false);
 
@@ -976,6 +1051,7 @@ const categoryOptions = computed(() => {
 
 const toggleUnreadOnly = () => {
   filters.unread_only = !filters.unread_only;
+  syncToRoute();
 };
 
 const unreadCurrentCount = computed(() => {
@@ -1081,6 +1157,7 @@ const handleFilterChange = () => {
   } else {
     fetchData();
   }
+  syncToRoute();
 };
 
 const onDateChange = () => {
@@ -1106,9 +1183,11 @@ const clearFilters = () => {
     filters.unread_only = false;
     fetchData();
   }
+  syncToRoute();
 };
 
 onMounted(async () => {
+  syncFromRoute();
   pageLoading.value = true;
   try {
     await store.fetchMetaOptions();
@@ -1116,7 +1195,7 @@ onMounted(async () => {
       store.fetchTickets({}), // Open
       store.fetchTickets({ is_closed: 1 }) // Closed
     ];
-    if (authStore.can('view-others-tickets')) {
+    if (activeTab.value === 'insights' && authStore.can('view-others-tickets')) {
       promises.push(fetchInsightsData());
     }
     await Promise.all(promises);

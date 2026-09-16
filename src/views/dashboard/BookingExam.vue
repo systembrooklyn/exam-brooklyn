@@ -37,10 +37,45 @@
               Results load for the interval you choose.
             </p>
           </div> -->
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-3">
+          <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+            <!-- Filter by: Created at | Booking date -->
+            <div class="flex flex-col gap-1.5">
+              <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                Filter by
+              </span>
+              <div
+                class="inline-flex h-11 rounded-xl border border-slate-200 bg-slate-50/80 p-1 shadow-inner shadow-slate-900/5"
+                role="group"
+                aria-label="Date filter field"
+              >
+                <button
+                  type="button"
+                  class="rounded-lg px-3 text-sm font-semibold transition"
+                  :class="dateFilterMode === 'created_at'
+                    ? 'bg-[#092C67] text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-white hover:text-slate-900'"
+                  :aria-pressed="dateFilterMode === 'created_at'"
+                  @click="setDateFilterMode('created_at')"
+                >
+                  Created at
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg px-3 text-sm font-semibold transition"
+                  :class="dateFilterMode === 'booking_datetime'
+                    ? 'bg-[#092C67] text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-white hover:text-slate-900'"
+                  :aria-pressed="dateFilterMode === 'booking_datetime'"
+                  @click="setDateFilterMode('booking_datetime')"
+                >
+                  Booking date
+                </button>
+              </div>
+            </div>
+
             <div class="flex flex-col gap-1.5">
               <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="booking-from">
-                From
+                {{ dateFilterMode === 'created_at' ? 'Created from' : 'Booking from' }}
               </label>
               <input
                 id="booking-from"
@@ -51,7 +86,7 @@
             </div>
             <div class="flex flex-col gap-1.5">
               <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="booking-to">
-                To
+                {{ dateFilterMode === 'created_at' ? 'Created to' : 'Booking to' }}
               </label>
               <input
                 id="booking-to"
@@ -102,6 +137,9 @@
             :hide-actions="true"
             :link-name-to-details="false"
             :collapsible-text-keys="bookingCollapsibleKeys"
+            :highlight-today-field="dateFilterMode"
+            initial-sort-key="booking_datetime"
+            initial-sort-direction="asc"
             @add-note="openNoteModal"
           />
         </div>
@@ -236,18 +274,32 @@ const selectedBooking = ref(null)
 const noteText = ref('')
 const savingNote = ref(false)
 
-// Default to last 7 days
-const today = new Date().toISOString().split('T')[0]
-const lastWeek = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+// Default: From = yesterday, To = From + 7 days
+const toDateInputValue = (date) => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const fromDate = new Date()
+fromDate.setHours(0, 0, 0, 0)
+fromDate.setDate(fromDate.getDate() - 1)
+
+const toDate = new Date(fromDate)
+toDate.setDate(toDate.getDate() + 7)
 
 const filters = ref({
-  from: lastWeek,
-  to: today
+  from: toDateInputValue(fromDate),
+  to: toDateInputValue(toDate),
 })
 
+/** 'created_at' | 'booking_datetime' */
+const dateFilterMode = ref('created_at')
+
 const headers = [
-  { label: 'Student', key: 'student_name_and_num' },
-  { label: 'Email', key: 'student.email' },
+  { label: 'Student', key: 'student_name_and_Created_at' },
+  { label: 'Email', key: 'student_email_and_num' },
   { label: 'Phone', key: 'student.phones' },
   { label: 'Course', key: 'course_display' },
   { label: 'Instructor name', key: 'exam.instructor_name' },
@@ -259,6 +311,21 @@ const headers = [
 /** Keep long course/exam text readable without blowing row height; DataTable adds See more. */
 const bookingCollapsibleKeys = ['course_display', 'exam.instructor_name']
 
+const isDateInRange = (item, from, to, mode) => {
+  const raw = mode === 'booking_datetime' ? item?.booking_datetime : item?.created_at
+  if (!raw || !from || !to) return false
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return false
+  const day = toDateInputValue(parsed)
+  return day >= from && day <= to
+}
+
+const setDateFilterMode = (mode) => {
+  if (dateFilterMode.value === mode || loading.value) return
+  dateFilterMode.value = mode
+  fetchBookings()
+}
+
 const fetchBookings = async () => {
   if (!filters.value.from || !filters.value.to) {
     notyf.error('Please select both From and To dates')
@@ -269,15 +336,22 @@ const fetchBookings = async () => {
   try {
     const response = await apiClient.post(BOOKINGS, {
       from: filters.value.from,
-      to: filters.value.to
+      to: filters.value.to,
+      filter_by: dateFilterMode.value,
     })
     
     // API returns results in response.data.data or response.data
     const data = response.data.data || response.data
-    bookings.value = (Array.isArray(data) ? data : []).map((item) => ({
-      ...item,
-      course_display: `${item.exam?.course_name ?? ''}(${item.exam?.course_code ?? ''})`,
-    }))
+    const rows = (Array.isArray(data) ? data : [])
+      .filter((item) =>
+        isDateInRange(item, filters.value.from, filters.value.to, dateFilterMode.value)
+      )
+      .map((item) => ({
+        ...item,
+        course_display: `${item.exam?.course_name ?? ''}(${item.exam?.course_code ?? ''})`,
+      }))
+
+    bookings.value = rows
     
     if (bookings.value.length === 0) {
       notyf.success('Query successful: No records found.')

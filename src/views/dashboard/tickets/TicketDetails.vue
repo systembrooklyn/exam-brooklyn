@@ -17,7 +17,7 @@
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div>
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
-            <router-link to="/tickets"
+            <router-link :to="listBackTo"
               class="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors font-medium">Tickets</router-link>
             <ChevronRight class="w-3.5 h-3.5" />
             <span>#{{ store.currentTicket.serial }}</span>
@@ -409,7 +409,7 @@
         <Ticket class="w-8 h-8" />
       </div>
       <h3 class="text-base font-semibold text-gray-900 dark:text-white">Ticket not found</h3>
-      <router-link to="/tickets"
+      <router-link :to="listBackTo"
         class="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">← Back to all
         tickets</router-link>
     </div>
@@ -432,6 +432,8 @@ import {
   getOtherReaders as getOtherReadersUtil,
   formatReaderName,
   sanitizeTicketHtml,
+  parseTicketsListQuery,
+  buildTicketsListQuery,
 } from '@/utils/ticketsHelpers';
 
 const route = useRoute();
@@ -443,6 +445,11 @@ const commentFile = ref(null);
 const evalHover = ref(null);
 const selectedScore = ref(null);
 const evaluationNotes = ref('');
+
+const listBackTo = computed(() => ({
+  path: '/tickets',
+  query: buildTicketsListQuery(parseTicketsListQuery(route.query)),
+}));
 
 const isClosed = computed(() => {
   return store.currentTicket?.status === 'closed' || store.currentTicket?.is_closed;
