@@ -95,7 +95,7 @@
             :class="isTodayHighlightedRow(item)
               ? 'bg-amber-50/90 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/45 ring-1 ring-inset ring-amber-200/70 dark:ring-amber-700/40'
               : 'bg-white dark:bg-gray-800 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20'"
-            :title="isTodayHighlightedRow(item) ? 'Today' : undefined"
+            :title="highlightRowTitle(item)"
           >
             <td v-if="selectable" class="w-12 px-4 py-4 text-center align-middle">
               <input type="checkbox" :checked="isSelectedRow(item.id)" @change="toggleSelectRow(item.id)"
@@ -579,6 +579,7 @@ const props = defineProps({
   /**
    * When set to a date field on each row (e.g. created_at, booking_datetime),
    * rows whose calendar day matches today get a highlight + stronger hover.
+   * For created_at, only the previous calendar day is highlighted.
    */
   highlightTodayField: {
     type: String,
@@ -734,7 +735,23 @@ function isTodayHighlightedRow(item) {
   if (raw == null || raw === "") return false;
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return false;
-  return toLocalDateKey(parsed) === toLocalDateKey(new Date());
+
+  const rowKey = toLocalDateKey(parsed);
+  const today = new Date();
+
+  // Created at filter: highlight previous calendar day only
+  if (field === "created_at") {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return rowKey === toLocalDateKey(yesterday);
+  }
+
+  return rowKey === toLocalDateKey(today);
+}
+
+function highlightRowTitle(item) {
+  if (!isTodayHighlightedRow(item)) return undefined;
+  return props.highlightTodayField === "created_at" ? "Yesterday" : "Today";
 }
 
 /**
@@ -1091,6 +1108,10 @@ function comparableSortValue(item, path) {
   if (!item || !path) return "";
   if (path === "booking_datetime") {
     const t = new Date(item.booking_datetime ?? 0).getTime();
+    return Number.isNaN(t) ? 0 : t;
+  }
+  if (path === "student_name_and_Created_at" || path === "created_at") {
+    const t = new Date(item.created_at ?? 0).getTime();
     return Number.isNaN(t) ? 0 : t;
   }
   const v = path.split(".").reduce((o, k) => (o != null ? o[k] : undefined), item);

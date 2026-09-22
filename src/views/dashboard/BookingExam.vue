@@ -126,6 +126,7 @@
 
         <div v-if="bookings.length > 0" class="fade-in min-w-0 max-w-full">
           <DataTable
+            :key="dateFilterMode"
             embedded
             compact
             cells-centered
@@ -137,8 +138,8 @@
             :hide-actions="true"
             :link-name-to-details="false"
             :collapsible-text-keys="bookingCollapsibleKeys"
-            :highlight-today-field="dateFilterMode"
-            initial-sort-key="booking_datetime"
+            :highlight-today-field="dateFilterMode === 'created_at' ? 'created_at' : 'booking_datetime'"
+            :initial-sort-key="activeSortKey"
             initial-sort-direction="asc"
             @add-note="openNoteModal"
           />
@@ -259,7 +260,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Search, Loader2, ArrowLeft } from 'lucide-vue-next'
 import apiClient from '@/api/axiosInstance'
 import { BOOKINGS, BOOKING_NOTES } from '@/api/Api'
@@ -297,8 +298,15 @@ const filters = ref({
 /** 'created_at' | 'booking_datetime' */
 const dateFilterMode = ref('created_at')
 
+/** Ascending sort follows the active date filter (Created at ↔ Booking date). */
+const activeSortKey = computed(() =>
+  dateFilterMode.value === 'created_at'
+    ? 'student_name_and_Created_at'
+    : 'booking_datetime'
+)
+
 const headers = [
-  { label: 'Student', key: 'student_name_and_Created_at' },
+  { label: 'Student', key: 'student_name_and_Created_at', sortable: true },
   { label: 'Email', key: 'student_email_and_num' },
   { label: 'Phone', key: 'student.phones' },
   { label: 'Course', key: 'course_display' },
