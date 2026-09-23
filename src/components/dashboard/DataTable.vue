@@ -304,38 +304,34 @@
                   </button>
                 </div>
 
-                <!-- Contacted without a written note -->
-                <span
-                  v-else-if="!String(item.notes).trim()"
-                  class="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400"
-                  title="Contacted — no note"
-                >
-                  <CheckCircle2 class="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span class="text-xs font-medium">Done</span>
-                </span>
-
-                <!-- Contacted with note (may include " - actor - id") -->
+                <!-- Contacted: status-colored; show status when note is Done/empty, else note body -->
                 <div
                   v-else
-                  class="w-full min-w-0 max-w-[16rem] sm:max-w-[18rem] rounded-xl border border-emerald-100 bg-emerald-50/70 px-2.5 py-2 text-start shadow-sm dark:border-emerald-900/40 dark:bg-emerald-950/30"
-                  :class="cellsCentered ? 'mx-auto' : ''"
+                  class="w-full min-w-0 max-w-[16rem] sm:max-w-[18rem] rounded-xl border px-2.5 py-2 text-start shadow-sm"
+                  :class="[
+                    bookingContactStatusStyles(item).card,
+                    cellsCentered ? 'mx-auto' : '',
+                  ]"
                 >
                   <template
                     v-for="(parsed, noteIndex) in [parseBookingActionNote(item.notes)]"
                     :key="noteIndex"
                   >
                     <div class="flex items-start gap-2">
-                      <CheckCircle2
-                        class="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                      <component
+                        :is="bookingContactStatusIcon(item)"
+                        class="mt-0.5 h-3.5 w-3.5 shrink-0"
+                        :class="bookingContactStatusStyles(item).icon"
                         aria-hidden="true"
                       />
                       <div class="min-w-0 flex-1">
                         <p
-                          class="whitespace-pre-wrap break-words text-sm leading-snug text-gray-900 dark:text-gray-100"
+                          class="whitespace-pre-wrap break-words text-sm font-medium leading-snug"
+                          :class="bookingContactStatusStyles(item).text"
                           style="direction: auto; unicode-bidi: plaintext"
-                          :title="parsed.body"
+                          :title="displayBookingContactLabel(item)"
                         >
-                          {{ displayBookingActionNoteBody(item) }}
+                          {{ displayBookingContactLabel(item) }}
                         </p>
                         <button
                           v-if="bookingActionNoteNeedsToggle(item)"
@@ -347,7 +343,8 @@
                         </button>
                         <p
                           v-if="parsed.hasActor"
-                          class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t border-emerald-200/70 pt-1.5 text-[11px] dark:border-emerald-800/50"
+                          class="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 border-t pt-1.5 text-[11px]"
+                          :class="bookingContactStatusStyles(item).actorBorder"
                         >
                           <span class="font-semibold uppercase tracking-wide text-slate-400">By</span>
                           <span
@@ -470,7 +467,7 @@
 
 <script setup>
 import { ref, computed, watch } from "vue";
-import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow, RotateCcw, CircleOff, StickyNote, CheckCircle2 } from "lucide-vue-next";
+import { Edit, MessageCircleReply, Trash2, ArrowUpDown, ArrowDownWideNarrow, ArrowUpWideNarrow, RotateCcw, CircleOff, StickyNote, CheckCircle2, Clock, XCircle } from "lucide-vue-next";
 import DetailsPopup from "../global/DetailsPopup.vue";
 import { useAuthStore } from "@/stores/auth";
 
@@ -805,18 +802,86 @@ function parseBookingActionNote(raw) {
 
 const BOOKING_NOTE_MAX_CHARS = 90;
 
-function bookingActionNoteNeedsToggle(item) {
-  const { body } = parseBookingActionNote(item?.notes);
-  return body.length > BOOKING_NOTE_MAX_CHARS;
+const BOOKING_CONTACT_STATUS_STYLES = {
+  confirmed: {
+    text: "text-emerald-700 dark:text-emerald-400",
+    icon: "text-emerald-600 dark:text-emerald-400",
+    card: "border-emerald-100 bg-emerald-50/70 dark:border-emerald-900/40 dark:bg-emerald-950/30",
+    actorBorder: "border-emerald-200/70 dark:border-emerald-800/50",
+  },
+  pending: {
+    text: "text-amber-700 dark:text-amber-400",
+    icon: "text-amber-500 dark:text-amber-400",
+    card: "border-amber-100 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/30",
+    actorBorder: "border-amber-200/70 dark:border-amber-800/50",
+  },
+  canceled: {
+    text: "text-rose-700 dark:text-rose-400",
+    icon: "text-rose-600 dark:text-rose-400",
+    card: "border-rose-100 bg-rose-50/70 dark:border-rose-900/40 dark:bg-rose-950/30",
+    actorBorder: "border-rose-200/70 dark:border-rose-800/50",
+  },
+};
+
+function normalizeBookingContactStatus(raw) {
+  const s = String(raw ?? "").trim().toLowerCase();
+  if (s === "cancelled") return "canceled";
+  if (s === "confirmed" || s === "pending" || s === "canceled") return s;
+  return "confirmed";
 }
 
-function displayBookingActionNoteBody(item) {
+function resolveBookingContactStatus(item) {
+  return normalizeBookingContactStatus(item?.status);
+}
+
+function bookingContactStatusStyles(item) {
+  return BOOKING_CONTACT_STATUS_STYLES[resolveBookingContactStatus(item)];
+}
+
+function bookingContactStatusIcon(item) {
+  const status = resolveBookingContactStatus(item);
+  if (status === "pending") return Clock;
+  if (status === "canceled") return XCircle;
+  return CheckCircle2;
+}
+
+/** True when note body is empty or the placeholder word Done (show status instead). */
+function bookingContactNoteIsStatusPlaceholder(body) {
+  const b = String(body ?? "").trim();
+  if (!b || b === "—") return true;
+  return /\bDone\b/i.test(b);
+}
+
+function bookingContactLabelSource(item) {
   const { body } = parseBookingActionNote(item?.notes);
-  if (!body) return "—";
-  if (isTextMoreExpanded(item.id, "notes") || body.length <= BOOKING_NOTE_MAX_CHARS) {
-    return body;
+  if (bookingContactNoteIsStatusPlaceholder(body)) {
+    return resolveBookingContactStatus(item);
   }
-  return `${body.slice(0, BOOKING_NOTE_MAX_CHARS)}…`;
+  return body;
+}
+
+function bookingActionNoteNeedsToggle(item) {
+  if (bookingContactNoteIsStatusPlaceholder(parseBookingActionNote(item?.notes).body)) {
+    return false;
+  }
+  return bookingContactLabelSource(item).length > BOOKING_NOTE_MAX_CHARS;
+}
+
+function displayBookingContactLabel(item) {
+  const label = bookingContactLabelSource(item);
+  if (!label) return "—";
+  if (
+    isTextMoreExpanded(item.id, "notes") ||
+    label.length <= BOOKING_NOTE_MAX_CHARS
+  ) {
+    return label;
+  }
+  return `${label.slice(0, BOOKING_NOTE_MAX_CHARS)}…`;
+}
+
+/** @deprecated Prefer displayBookingContactLabel — kept for any external callers */
+function displayBookingActionNoteBody(item) {
+  return displayBookingContactLabel(item);
 }
 
 /**

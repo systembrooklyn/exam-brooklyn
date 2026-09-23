@@ -244,15 +244,60 @@
           >
             Cancel
           </button>
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-xl bg-[#092C67] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0b3a85] disabled:cursor-not-allowed disabled:opacity-60"
-            :disabled="savingNote"
-            @click="saveNote"
-          >
-            <Loader2 v-if="savingNote" class="h-4 w-4 animate-spin" aria-hidden="true" />
-            <span>{{ noteText.trim() ? 'Confirm & save note' : 'Confirm contact' }}</span>
-          </button>
+          <div class="relative" ref="statusSplitRef">
+            <div class="inline-flex overflow-hidden rounded-xl shadow-sm">
+              <button
+                type="button"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                :class="selectedStatusMeta.btnClass"
+                :disabled="savingNote"
+                @click="saveNote"
+              >
+                <Loader2 v-if="savingNote" class="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>{{ selectedStatusMeta.label }}</span>
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center border-l border-white/25 px-2.5 py-2 text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+                :class="selectedStatusMeta.btnClass"
+                :disabled="savingNote"
+                aria-label="Choose contact status"
+                aria-haspopup="listbox"
+                :aria-expanded="statusMenuOpen"
+                @click.stop="statusMenuOpen = !statusMenuOpen"
+              >
+                <ChevronDown
+                  class="h-4 w-4 transition-transform"
+                  :class="statusMenuOpen ? 'rotate-180' : ''"
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
+            <div
+              v-if="statusMenuOpen"
+              class="absolute bottom-full end-0 z-10 mb-1.5 min-w-[10.5rem] overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg"
+              role="listbox"
+              aria-label="Contact status"
+            >
+              <button
+                v-for="opt in contactStatuses"
+                :key="opt.value"
+                type="button"
+                role="option"
+                class="flex w-full items-center gap-2 px-3 py-2 text-start text-sm font-medium transition hover:bg-slate-50"
+                :class="opt.value === selectedStatus ? 'bg-slate-50' : ''"
+                :aria-selected="opt.value === selectedStatus"
+                @click="selectContactStatus(opt.value)"
+              >
+                <span
+                  class="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  :class="opt.dotClass"
+                  aria-hidden="true"
+                />
+                <span :class="opt.textClass">{{ opt.label }}</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -260,8 +305,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { Search, Loader2, ArrowLeft } from 'lucide-vue-next'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { Search, Loader2, ArrowLeft, ChevronDown } from 'lucide-vue-next'
 import apiClient from '@/api/axiosInstance'
 import { BOOKINGS, BOOKING_NOTES } from '@/api/Api'
 import DataTable from '@/components/dashboard/DataTable.vue'
@@ -274,6 +319,53 @@ const showNoteModal = ref(false)
 const selectedBooking = ref(null)
 const noteText = ref('')
 const savingNote = ref(false)
+
+const contactStatuses = [
+  {
+    value: 'confirmed',
+    label: 'confirmed',
+    btnClass: 'bg-emerald-600 hover:bg-emerald-700',
+    textClass: 'text-emerald-700',
+    dotClass: 'bg-emerald-500',
+  },
+  {
+    value: 'pending',
+    label: 'pending',
+    btnClass: 'bg-amber-500 hover:bg-amber-600',
+    textClass: 'text-amber-700',
+    dotClass: 'bg-amber-500',
+  },
+  {
+    value: 'canceled',
+    label: 'canceled',
+    btnClass: 'bg-rose-600 hover:bg-rose-700',
+    textClass: 'text-rose-700',
+    dotClass: 'bg-rose-500',
+  },
+]
+
+const selectedStatus = ref('confirmed')
+const statusMenuOpen = ref(false)
+const statusSplitRef = ref(null)
+
+const selectedStatusMeta = computed(
+  () => contactStatuses.find((s) => s.value === selectedStatus.value) ?? contactStatuses[0]
+)
+
+const selectContactStatus = (value) => {
+  selectedStatus.value = value
+  statusMenuOpen.value = false
+}
+
+const onDocPointerDown = (event) => {
+  const el = statusSplitRef.value
+  if (!el || !statusMenuOpen.value) return
+  if (!el.contains(event.target)) statusMenuOpen.value = false
+}
+
+watch(showNoteModal, (open) => {
+  if (!open) statusMenuOpen.value = false
+})
 
 // Default: From = yesterday, To = From + 7 days
 const toDateInputValue = (date) => {
@@ -379,6 +471,11 @@ const openNoteModal = (item) => {
   selectedBooking.value = item
   // Preserve empty string (contacted, no note) vs null (never contacted)
   noteText.value = item?.notes != null ? String(item.notes) : ''
+  const existing = String(item?.status ?? '').trim().toLowerCase()
+  selectedStatus.value = contactStatuses.some((s) => s.value === existing)
+    ? existing
+    : 'confirmed'
+  statusMenuOpen.value = false
   showNoteModal.value = true
 }
 
@@ -387,6 +484,8 @@ const closeNoteModal = () => {
   showNoteModal.value = false
   selectedBooking.value = null
   noteText.value = ''
+  selectedStatus.value = 'confirmed'
+  statusMenuOpen.value = false
 }
 
 const saveNote = async () => {
@@ -394,18 +493,25 @@ const saveNote = async () => {
   if (!booking?.id) return
 
   const trimmed = noteText.value.trim()
+  const status = selectedStatus.value
 
   savingNote.value = true
+  statusMenuOpen.value = false
   try {
-    // Empty notes is allowed — employee can confirm CTA without writing a note
-    const response = await apiClient.post(BOOKING_NOTES(booking.id), { notes: trimmed })
+    // Omit notes when empty — only send status
+    const body = { status }
+    if (trimmed) body.notes = trimmed
+
+    const response = await apiClient.post(BOOKING_NOTES(booking.id), body)
     const payload = response.data?.data ?? response.data
     const savedNotes = payload?.notes
+    const savedStatus = payload?.status ?? status
 
     const row = bookings.value.find((b) => String(b.id) === String(booking.id))
     if (row) {
+      row.status = savedStatus
       if (trimmed === '') {
-        // Keep '' so UI shows "Done" (not null = no action). Prefer API value if it has content.
+        // Keep '' so UI shows status label (not null = no action). Prefer API value if it has content.
         row.notes =
           savedNotes != null && String(savedNotes).trim() !== ''
             ? savedNotes
@@ -415,10 +521,11 @@ const saveNote = async () => {
         row.notes = savedNotes != null ? savedNotes : trimmed
       }
     }
-    notyf.success(trimmed ? 'Contact logged with note' : 'Contact confirmed')
+    notyf.success(trimmed ? 'Contact logged with note' : `Contact ${status}`)
     showNoteModal.value = false
     selectedBooking.value = null
     noteText.value = ''
+    selectedStatus.value = 'confirmed'
   } catch (error) {
     console.error('Error saving booking note:', error)
     notyf.error(error.response?.data?.message || 'Failed to log contact. Please try again.')
@@ -428,7 +535,12 @@ const saveNote = async () => {
 }
 
 onMounted(() => {
+  document.addEventListener('pointerdown', onDocPointerDown)
   fetchBookings()
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocPointerDown)
 })
 </script>
 
