@@ -93,8 +93,8 @@
           <tr v-for="item in paginatedItems" :key="item.id"
             class="transition-all duration-150 group border-b border-gray-100 dark:border-gray-700/50"
             :class="isTodayHighlightedRow(item)
-              ? 'bg-amber-50/90 dark:bg-amber-950/30 hover:bg-amber-100 dark:hover:bg-amber-900/45 ring-1 ring-inset ring-amber-200/70 dark:ring-amber-700/40'
-              : 'bg-white dark:bg-gray-800 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20'"
+              ? 'bg-violet-200/80 dark:bg-violet-800/50 hover:bg-violet-300 dark:hover:bg-violet-700/60 ring-1 ring-inset ring-violet-400/80 dark:ring-violet-500/50 shadow-[inset_4px_0_0_0] shadow-violet-500'
+              : 'bg-white dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-indigo-950/30'"
             :title="highlightRowTitle(item)"
           >
             <td v-if="selectable" class="w-12 px-4 py-4 text-center align-middle">

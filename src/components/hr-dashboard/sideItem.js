@@ -203,18 +203,29 @@ export function buildHrSidebarItems(
           permission: HR_PERMISSION.VIEW_EMPLOYEE_DEDUCTION,
         },
         {
-          name: "Freelancers Payroll",
-          route: "hr-freelancers-payroll",
-          permission: "view-freelancers",
-        },
-        {
           name: "Payroll Reports",
           route: "hr-payroll-reports",
-          permission: "view-payroll-dashboard",
+          permission: HR_PERMISSION.VIEW_PAYROLL_DASHBOARD,
         },
       ],
     });
   }
+
+  // Freelancers (standalone — not under Payroll)
+  // Admin/HR: always visible. Others: need view-freelancers or view-freelancer-payrolls.
+  items.push({
+    name: "Freelancers",
+    icon: UserMinus,
+    route: "hr-freelancers-payroll",
+    ...(canManagePayrollAdminPages
+      ? {}
+      : {
+          permissions: [
+            HR_PERMISSION.VIEW_FREELANCERS,
+            HR_PERMISSION.VIEW_FREELANCER_PAYROLLS,
+          ],
+        }),
+  });
 
   // System/Org Configuration
   items.push({

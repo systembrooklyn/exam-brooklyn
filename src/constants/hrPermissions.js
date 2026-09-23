@@ -116,7 +116,21 @@ export const HR_PERMISSION = {
   VIEW_INTERVIEW_STAGES: "view-interview-stages",
   VIEW_RECRUITMENT_REPORTS: "view-recruitment-reports",
 
-  // Freelancer Payroll & Reports
+  // Freelancer Management
   VIEW_FREELANCERS: "view-freelancers",
+  CREATE_FREELANCERS: "create-freelancers",
+  UPDATE_FREELANCERS: "update-freelancers",
+  DELETE_FREELANCERS: "delete-freelancers",
+
+  // Freelancer Payroll Management
+  VIEW_FREELANCER_PAYROLLS: "view-freelancer-payrolls",
+  CREATE_FREELANCER_PAYROLLS: "create-freelancer-payrolls",
+  UPDATE_FREELANCER_PAYROLLS: "update-freelancer-payrolls",
+  DELETE_FREELANCER_PAYROLLS: "delete-freelancer-payrolls",
+
+  // Freelancer Payroll Reporting
+  VIEW_FREELANCER_PAYROLL_TOTAL: "view-freelancer-payroll-total",
+
+  // Payroll Reports
   VIEW_PAYROLL_DASHBOARD: "view-payroll-dashboard",
 };

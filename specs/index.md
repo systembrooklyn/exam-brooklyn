@@ -18,6 +18,7 @@
 
 | Task ID | Feature | Completed |
 |---------|---------|-----------|
+| freelancer-payroll | Freelancer management & payroll | 2026-09-23 |
 | job-request-prefill | Job request prefill + capacity guard | 2026-09-14 |
 | route-persist-on-refresh | Stay on same page after refresh | 2026-09-13 |
 | feat-001-sdd-commands | SDD commands bootstrap | — |

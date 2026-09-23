@@ -199,13 +199,25 @@ export default {
     {
       path: "freelancers-payroll",
       name: "hr-freelancers-payroll",
-      meta: { requiresPermission: "view-freelancers" },
+      beforeEnter: async (_to, _from, next) => {
+        const auth = useAuthStore();
+        await auth.ensureAuthReady();
+        if (
+          auth.isAdminUser ||
+          auth.hasHrRoleOrHrPermission ||
+          auth.can(HR_PERMISSION.VIEW_FREELANCERS) ||
+          auth.can(HR_PERMISSION.VIEW_FREELANCER_PAYROLLS)
+        ) {
+          return next();
+        }
+        return next({ name: "SystemsPage" });
+      },
       component: () => import("@/views/hr/FreelancersPayroll.vue"),
     },
     {
       path: "payroll-reports",
       name: "hr-payroll-reports",
-      meta: { requiresPermission: "view-payroll-dashboard" },
+      meta: { requiresPermission: HR_PERMISSION.VIEW_PAYROLL_DASHBOARD },
       component: () => import("@/views/hr/PayrollReports.vue"),
     },
   ],
