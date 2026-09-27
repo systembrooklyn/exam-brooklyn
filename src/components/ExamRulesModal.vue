@@ -79,7 +79,7 @@ const acceptRules = () => {
             بالقاعة.
           </p>
         </div>
-        <div
+        <!-- <div
           class="rule-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start gap-3"
         >
           <span
@@ -93,7 +93,7 @@ const acceptRules = () => {
             يسمح في حالة أداء اختبارات المواد استخدام Google Translate من على
             الحاسب فقط وغير مسموح بذلك في حالة أداء اختبارات القبول.
           </p>
-        </div>
+        </div> -->
       </div>
       <div class="flex items-center justify-center mb-6">
         <label class="flex items-center cursor-pointer">
