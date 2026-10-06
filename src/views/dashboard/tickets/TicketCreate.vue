@@ -71,8 +71,8 @@
 
         <!-- URL -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-            URL <span class="text-[10px] text-gray-400 lowercase italic normal-case">(optional)</span>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 required">
+            URL <span class="text-red-500">*</span>
           </label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
@@ -81,10 +81,14 @@
             <input
               type="url"
               v-model="form.url"
+              required
               placeholder="https://example.com"
-              class="w-full border border-gray-200 dark:border-gray-700 rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400"
+              @input="errors.url = ''"
+              class="w-full border rounded-xl pl-10 pr-4 py-2.5 text-sm bg-white dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all placeholder:text-gray-400"
+              :class="errors.url ? 'border-red-400 dark:border-red-600' : 'border-gray-200 dark:border-gray-700'"
             />
           </div>
+          <p v-if="errors.url" class="text-xs text-red-500 mt-1.5">{{ errors.url }}</p>
         </div>
 
         <!-- Description -->
@@ -100,15 +104,17 @@
 
         <!-- Attachment -->
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
-            Attachment <span class="text-[10px] text-gray-400 lowercase italic normal-case">(optional)</span>
+          <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 required">
+            Attachment <span class="text-red-500 required">*</span>
           </label>
 
           <div
             class="flex flex-col items-center justify-center px-6 pt-6 pb-5 border-2 border-dashed rounded-xl transition-all cursor-pointer"
             :class="selectedFileName
               ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/30 dark:bg-emerald-950/20'
-              : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10'"
+              : errors.attachment
+                ? 'border-red-400 dark:border-red-600 bg-red-50/30 dark:bg-red-950/10'
+                : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-indigo-50/20 dark:hover:bg-indigo-950/10'"
           >
             <div v-if="!selectedFileName" class="text-center">
               <Paperclip class="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
@@ -132,6 +138,7 @@
               </button>
             </div>
           </div>
+          <p v-if="errors.attachment" class="text-xs text-red-500 mt-1.5">{{ errors.attachment }}</p>
         </div>
 
         <!-- Footer Actions -->
@@ -171,6 +178,7 @@ const store = useTicketsStore();
 const form = ref({ type: '', category: '', url: '', desc: '' });
 const file = ref(null);
 const selectedFileName = ref('');
+const errors = ref({ url: '', attachment: '' });
 
 const typeOptions = computed(() => {
   const meta = store.metaOptions;
@@ -191,6 +199,7 @@ const handleFileUpload = (event) => {
   if (f) {
     file.value = f;
     selectedFileName.value = f.name;
+    errors.value.attachment = '';
   }
 };
 
@@ -199,14 +208,36 @@ const clearFile = () => {
   selectedFileName.value = '';
 };
 
+const isValidUrl = (value) => {
+  try {
+    const u = new URL(value);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+const validate = () => {
+  const url = form.value.url.trim();
+  errors.value.url = !url
+    ? 'URL is required.'
+    : !isValidUrl(url)
+      ? 'Please enter a valid URL (e.g. https://example.com).'
+      : '';
+  errors.value.attachment = file.value ? '' : 'Attachment is required.';
+  return !errors.value.url && !errors.value.attachment;
+};
+
 const submitTicket = async () => {
+  if (!validate()) return;
+
   try {
     const formData = new FormData();
     formData.append('type', form.value.type);
     formData.append('category', form.value.category);
-    if (form.value.url) formData.append('url', form.value.url);
+    formData.append('url', form.value.url.trim());
     formData.append('desc', form.value.desc);
-    if (file.value) formData.append('attachment', file.value);
+    formData.append('attachment', file.value);
 
     await store.createTicket(formData);
     router.push('/tickets');
